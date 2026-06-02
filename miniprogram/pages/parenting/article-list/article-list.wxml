@@ -1,0 +1,128 @@
+<!-- 文章列表页面 -->
+<view class="page page-transition">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜索育儿知识..."
+        value="{{keyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        confirm-type="search"
+      />
+      <text class="clear-btn" wx:if="{{keyword}}" bindtap="onClearSearch">✕</text>
+    </view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="filter-section">
+    <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
+      <view class="filter-list">
+        <view
+          class="filter-item {{currentCategory === item.id ? 'active' : ''}}"
+          wx:for="{{categoryList}}"
+          wx:key="id"
+          bindtap="onCategoryChange"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 年龄段筛选 -->
+  <view class="filter-section age-filter">
+    <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
+      <view class="filter-list">
+        <view
+          class="filter-item age-item {{currentAge === item.id ? 'active' : ''}}"
+          wx:for="{{ageList}}"
+          wx:key="id"
+          bindtap="onAgeChange"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 文章列表 -->
+  <view class="article-section">
+    <!-- 骨架屏加载状态 -->
+    <view class="skeleton-container" wx:if="{{loading && articleList.length === 0}}">
+      <view class="skeleton-card" wx:for="{{5}}" wx:key="*this">
+        <view class="skeleton-article">
+          <view class="skeleton skeleton-image" style="width: 200rpx; height: 200rpx;"></view>
+          <view class="skeleton-content">
+            <view class="skeleton skeleton-title"></view>
+            <view class="skeleton skeleton-text" style="width: 80%;"></view>
+            <view class="skeleton skeleton-text" style="width: 60%;"></view>
+            <view class="skeleton-tags">
+              <view class="skeleton" style="width: 80rpx; height: 36rpx; display: inline-block; margin-right: 12rpx;"></view>
+              <view class="skeleton" style="width: 80rpx; height: 36rpx; display: inline-block;"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-wrap" wx:if="{{!loading && articleList.length === 0}}">
+      <text class="empty-icon">📚</text>
+      <text class="empty-text">暂无文章</text>
+      <text class="empty-desc">换个条件试试吧</text>
+    </view>
+
+    <!-- 列表 -->
+    <view class="article-list" wx:if="{{!loading && articleList.length > 0}}">
+      <view
+        class="article-card list-item-enter"
+        wx:for="{{articleList}}"
+        wx:key="id"
+        style="animation-delay: {{index * 50}}ms"
+      >
+        <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}">
+          <image
+            class="article-cover image-fade-in {{item.imageLoaded ? 'loaded' : ''}}"
+            src="{{item.cover || '/images/default-article.png'}}"
+            mode="aspectFill"
+            lazy-load="{{true}}"
+            bindload="onImageLoad"
+            data-index="{{index}}"
+          />
+          <view class="article-content">
+            <text class="article-title">{{item.title}}</text>
+            <text class="article-summary">{{item.summary}}</text>
+            <view class="article-tags">
+              <text class="tag" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
+              <text class="tag tag-age" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
+            </view>
+            <view class="article-meta">
+              <text class="meta-item">{{item.author || '小牛育儿'}}</text>
+              <text class="meta-item" wx:if="{{item.viewCount}}">👁️ {{item.viewCount}}</text>
+            </view>
+          </view>
+        </view>
+        <view
+          class="favorite-btn {{item.isFavorite ? 'active' : ''}}"
+          catchtap="onFavoriteTap"
+          data-id="{{item.id}}"
+          data-index="{{index}}"
+        >
+          <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{articleList.length > 0}}">
+      <view class="loading-spinner-small" wx:if="{{loading}}"></view>
+      <text wx:if="{{loading}}">加载中...</text>
+      <text wx:if="{{!loading && !hasMore}}">没有更多了</text>
+    </view>
+  </view>
+</view>

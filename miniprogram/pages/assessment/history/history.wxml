@@ -1,0 +1,151 @@
+<!-- 成长观察历史记录页面 -->
+<view class="page page-transition">
+  <!-- 顶部操作栏 -->
+  <view class="header-bar">
+    <view class="header-info">
+      <text class="record-count">共 {{records.length}} 条记录</text>
+    </view>
+    <view class="header-actions">
+      <view class="action-btn" bindtap="showTrendChart">
+        <text class="action-icon">📈</text>
+        <text class="action-text">趋势</text>
+      </view>
+      <view class="action-btn" bindtap="showFilter">
+        <text class="action-icon">🔍</text>
+        <text class="action-text">筛选</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 记录列表 -->
+  <view class="record-list" wx:if="{{records.length > 0}}">
+    <view 
+      class="record-item" 
+      wx:for="{{records}}" 
+      wx:key="recordId"
+      bindtap="viewRecord"
+      data-id="{{item.recordId}}"
+    >
+      <view class="record-left">
+        <view class="record-icon">{{item.assessmentCode === 'sensory' ? '🧠' : item.assessmentCode === 'focus' ? '💡' : item.assessmentCode === 'adhd' ? '📝' : item.assessmentCode === 'multi_intelligence' ? '🎨' : item.assessmentCode === 'emotion' ? '🤗' : '📚'}}</view>
+      </view>
+      <view class="record-content">
+        <view class="record-header">
+          <text class="record-name">{{item.assessmentName}}</text>
+          <view class="record-level" style="background: {{item.level === '优秀' ? '#FF6B35' : item.level === '良好' ? '#FF7E4B' : item.level === '正常' ? '#FFA000' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};">{{item.level}}</view>
+        </view>
+        <view class="record-info">
+          <text class="record-child">{{item.childName}}</text>
+          <text class="record-divider">|</text>
+          <text class="record-score">{{item.percentage}}分</text>
+        </view>
+        <text class="record-time">{{item.completedAtStr || item.completedAt}}</text>
+      </view>
+      <view class="record-right">
+        <text class="record-arrow">›</text>
+      </view>
+      
+      <!-- 删除按钮 -->
+      <view class="delete-btn" catchtap="deleteRecord" data-id="{{item.recordId}}">
+        <text class="delete-icon">×</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">暂无记录</text>
+    <text class="empty-hint">完成一次观察后，记录会显示在这里</text>
+    <navigator url="/pages/assessment/assessment" class="empty-btn">去观察</navigator>
+  </view>
+
+  <!-- 骨架屏加载状态 -->
+  <view class="skeleton-container" wx:if="{{loading}}">
+    <view class="skeleton-record" wx:for="{{6}}" wx:key="*this">
+      <view class="skeleton" style="width: 80rpx; height: 80rpx; border-radius: 50%; margin-right: 24rpx;"></view>
+      <view class="skeleton-record-content">
+        <view class="skeleton skeleton-title" style="width: 40%; margin-bottom: 16rpx;"></view>
+        <view class="skeleton skeleton-text" style="width: 60%;"></view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 筛选弹窗 -->
+<view class="modal-mask" wx:if="{{showFilterModal}}" bindtap="hideFilter">
+  <view class="filter-modal" catchtap="preventBubble">
+    <view class="modal-header">
+      <text class="modal-title">筛选记录</text>
+      <view class="modal-close" bindtap="hideFilter">×</view>
+    </view>
+    
+    <view class="filter-section">
+      <text class="filter-label">类型</text>
+      <view class="filter-options">
+        <view 
+          class="filter-option {{filterType === item.code ? 'active' : ''}}" 
+          wx:for="{{assessmentTypes}}" 
+          wx:key="code"
+          bindtap="selectType"
+          data-code="{{item.code}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+    
+    <view class="filter-section" wx:if="{{childrenList.length > 1}}">
+      <text class="filter-label">孩子</text>
+      <view class="filter-options">
+        <view 
+          class="filter-option {{filterChild === 'all' ? 'active' : ''}}" 
+          bindtap="selectChild"
+          data-id="all"
+        >
+          全部孩子
+        </view>
+        <view 
+          class="filter-option {{filterChild === item.id ? 'active' : ''}}" 
+          wx:for="{{childrenList}}" 
+          wx:key="id"
+          bindtap="selectChild"
+          data-id="{{item.id}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+    
+    <view class="filter-footer">
+      <view class="reset-btn" bindtap="resetFilter">重置</view>
+      <view class="confirm-btn" bindtap="hideFilter">确定</view>
+    </view>
+  </view>
+</view>
+
+<!-- 成长趋势弹窗 -->
+<view class="modal-mask" wx:if="{{showTrend}}" bindtap="hideTrend">
+  <view class="trend-modal" catchtap="preventBubble">
+    <view class="modal-header">
+      <text class="modal-title">成长趋势</text>
+      <view class="modal-close" bindtap="hideTrend">×</view>
+    </view>
+    
+    <view class="trend-chart">
+      <view class="chart-bars">
+        <view class="chart-bar-item" wx:for="{{trendData}}" wx:key="recordId">
+          <view class="bar-wrapper">
+            <view class="bar" style="height: {{item.percentage}}%; background: {{item.level === '优秀' ? '#FF6B35' : item.level === '良好' ? '#FF7E4B' : item.level === '正常' ? '#FFA000' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};"></view>
+          </view>
+          <text class="bar-label">{{item.percentage}}</text>
+          <text class="bar-date">{{item.completedAtStr || ''}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="trend-legend">
+      <text class="legend-text">分数变化趋势（最近{{trendData.length}}次记录）</text>
+    </view>
+  </view>
+</view>

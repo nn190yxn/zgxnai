@@ -1,0 +1,105 @@
+<!-- 个人中心 -->
+<view class="page">
+  <!-- 用户信息 -->
+  <view class="user-section">
+    <view class="user-avatar">😊</view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.name || '游客用户'}}</text>
+      <text class="user-id">ID: {{userInfo.id || 'guest'}}</text>
+    </view>
+    <button class="login-btn" wx:if="{{!isLoggedIn}}" bindtap="login">登录</button>
+  </view>
+
+  <!-- 孩子档案入口 -->
+  <view class="section">
+    <view class="child-entry" bindtap="goToChildren">
+      <view class="child-entry-left">
+        <view class="child-entry-icon">👶</view>
+        <view class="child-entry-info">
+          <text class="child-entry-title">孩子档案</text>
+          <text class="child-entry-desc" wx:if="{{currentChild}}">当前：{{currentChild.name}} {{currentChild.gender === 'male' ? '👦' : currentChild.gender === 'female' ? '👧' : ''}}</text>
+          <text class="child-entry-desc" wx:else>添加孩子信息，获取更精准的建议</text>
+        </view>
+      </view>
+      <view class="child-entry-right">
+        <text class="child-count" wx:if="{{childrenCount > 0}}">{{childrenCount}}个孩子</text>
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+
+    <!-- 当前孩子信息卡片 -->
+    <view class="current-child-card" wx:if="{{currentChild}}">
+      <view class="child-avatar-small">
+        <image wx:if="{{currentChild.avatar}}" src="{{currentChild.avatar}}" mode="aspectFill" class="avatar-img-small" binderror="onCurrentChildAvatarError"></image>
+        <text wx:else class="avatar-text-small">{{currentChild.gender === 'male' ? '👦' : currentChild.gender === 'female' ? '👧' : '👶'}}</text>
+      </view>
+      <view class="child-info-small">
+        <view class="child-name-row-small">
+          <text class="child-name-small">{{currentChild.name}}</text>
+          <text class="default-badge-small">默认</text>
+        </view>
+        <view class="child-detail-small">
+          <text class="detail-text-small">{{currentChild.gender === 'male' ? '男' : currentChild.gender === 'female' ? '女' : '未知'}}</text>
+          <text class="detail-divider-small" wx:if="{{currentChild.birthday}}">|</text>
+          <text class="detail-text-small" wx:if="{{currentChild.birthday}}">{{currentChild.ageText || ''}}</text>
+        </view>
+      </view>
+      <view class="switch-btn" bindtap="goToChildren">
+        <text class="switch-text">切换</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能列表 -->
+  <view class="section">
+    <view class="menu-list">
+      <view class="menu-item" bindtap="viewHistory">
+        <text class="menu-icon">📋</text>
+        <text class="menu-text">聊天记录</text>
+        <text class="menu-arrow">→</text>
+      </view>
+      <view class="menu-item" bindtap="viewAssessments">
+        <text class="menu-icon">📊</text>
+        <text class="menu-text">成长记录</text>
+        <text class="menu-arrow">→</text>
+      </view>
+      <view class="menu-item" bindtap="feedback">
+        <text class="menu-icon">💬</text>
+        <text class="menu-text">意见反馈</text>
+        <text class="menu-arrow">→</text>
+      </view>
+      <view class="menu-item" bindtap="aboutUs">
+        <text class="menu-icon">ℹ️</text>
+        <text class="menu-text">关于我们</text>
+        <text class="menu-arrow">→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 协议与合规 -->
+  <view class="section">
+    <view class="menu-list">
+      <view class="menu-item" bindtap="viewPrivacy">
+        <text class="menu-icon">🔒</text>
+        <text class="menu-text">隐私政策</text>
+        <text class="menu-arrow">→</text>
+      </view>
+      <view class="menu-item" bindtap="viewAgreement">
+        <text class="menu-icon">📜</text>
+        <text class="menu-text">用户协议</text>
+        <text class="menu-arrow">→</text>
+      </view>
+      <view class="menu-item danger" bindtap="viewAccountDeletion">
+        <text class="menu-icon">🗑️</text>
+        <text class="menu-text">账号注销</text>
+        <text class="menu-arrow">→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version">
+    <text>小牛育儿AI助理 v4.0</text>
+    <text>知识库+AI双轨架构</text>
+  </view>
+</view>

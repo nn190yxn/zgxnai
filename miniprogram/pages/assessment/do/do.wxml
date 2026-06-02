@@ -1,0 +1,80 @@
+<!-- 答题页面 -->
+<view class="page page-transition">
+  <!-- 顶部进度条 -->
+  <view class="progress-header">
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progress}}%;"></view>
+    </view>
+    <view class="progress-info">
+      <text class="progress-text">{{currentIndex + 1}} / {{totalQuestions}}</text>
+      <text class="time-text">⏱️ {{timeText}}</text>
+    </view>
+  </view>
+
+  <!-- 题目卡片 -->
+  <view class="question-card" wx:if="{{currentQuestion}}">
+    <view class="question-header">
+      <text class="question-number">第 {{currentIndex + 1}} 题</text>
+      <text class="assessment-name">{{assessmentName}}</text>
+    </view>
+    
+    <view class="question-content">
+      <text class="question-text">{{currentQuestion.text}}</text>
+      <text class="question-desc" wx:if="{{currentQuestion.description && currentQuestion.description !== currentQuestion.text}}">{{currentQuestion.description}}</text>
+    </view>
+    
+    <!-- 选项列表 -->
+    <view class="options-list">
+      <view 
+        class="option-item {{selectedOption === index ? 'selected' : ''}}" 
+        wx:for="{{currentQuestion.options}}" 
+        wx:key="index"
+        bindtap="selectOption"
+        data-index="{{index}}"
+      >
+        <view class="option-radio">
+          <view class="radio-inner" wx:if="{{selectedOption === index}}"></view>
+        </view>
+        <view class="option-content">
+          <text class="option-text">{{item.label || item}}</text>
+          <text class="option-desc" wx:if="{{item.description}}">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 题目导航点 -->
+  <view class="question-nav">
+    <scroll-view scroll-x class="nav-scroll">
+      <view class="nav-dots">
+        <view 
+          class="nav-dot {{currentIndex === index ? 'current' : ''}} {{answers[index].answer >= 0 ? 'answered' : ''}}" 
+          wx:for="{{totalQuestions}}" 
+          wx:key="index"
+          bindtap="goToQuestion"
+          data-index="{{index}}"
+        >
+          <text>{{index + 1}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 底部导航按钮 -->
+  <view class="bottom-nav">
+    <view class="nav-btn exit-btn" bindtap="exitAssessment">
+      <text class="btn-icon">✕</text>
+      <text class="btn-text">退出</text>
+    </view>
+    
+    <view class="nav-btn prev-btn {{currentIndex <= 0 ? 'disabled' : ''}}" bindtap="prevQuestion">
+      <text class="btn-icon">←</text>
+      <text class="btn-text">上一题</text>
+    </view>
+    
+    <view class="nav-btn next-btn" bindtap="nextQuestion">
+      <text class="btn-text">{{currentIndex >= totalQuestions - 1 ? '提交' : '下一题'}}</text>
+      <text class="btn-icon">→</text>
+    </view>
+  </view>
+</view>

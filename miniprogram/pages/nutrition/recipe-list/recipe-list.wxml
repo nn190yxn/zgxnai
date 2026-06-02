@@ -1,0 +1,133 @@
+<!-- 食谱列表页面 -->
+<view class="page page-transition">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrap">
+      <text class="search-icon">🔍</text>
+      <input 
+        class="search-input" 
+        placeholder="搜索食谱、食材..." 
+        value="{{keyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        confirm-type="search"
+      />
+      <text class="clear-btn" wx:if="{{keyword}}" bindtap="onClearSearch">✕</text>
+    </view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="filter-section">
+    <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
+      <view class="filter-list">
+        <view 
+          class="filter-item {{currentCategory === item.id ? 'active' : ''}}" 
+          wx:for="{{categoryList}}" 
+          wx:key="id"
+          bindtap="onCategoryChange"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 年龄段筛选 -->
+  <view class="filter-section age-filter">
+    <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
+      <view class="filter-list">
+        <view 
+          class="filter-item age-item {{currentAge === item.id ? 'active' : ''}}" 
+          wx:for="{{ageList}}" 
+          wx:key="id"
+          bindtap="onAgeChange"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 食谱列表 -->
+  <view class="recipe-section">
+    <!-- 骨架屏加载状态 -->
+    <view class="skeleton-container" wx:if="{{loading && recipeList.length === 0}}">
+      <view class="skeleton-card" wx:for="{{5}}" wx:key="*this">
+        <view class="skeleton-recipe">
+          <view class="skeleton skeleton-image" style="width: 200rpx; height: 200rpx;"></view>
+          <view class="skeleton-content">
+            <view class="skeleton skeleton-title"></view>
+            <view class="skeleton skeleton-text" style="width: 80%;"></view>
+            <view class="skeleton skeleton-text" style="width: 60%;"></view>
+            <view class="skeleton-tags">
+              <view class="skeleton" style="width: 80rpx; height: 36rpx; display: inline-block; margin-right: 12rpx;"></view>
+              <view class="skeleton" style="width: 80rpx; height: 36rpx; display: inline-block;"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty-wrap" wx:if="{{!loading && recipeList.length === 0}}">
+      <text class="empty-icon">🍽️</text>
+      <text class="empty-text">暂无食谱</text>
+      <text class="empty-desc">换个条件试试吧</text>
+    </view>
+    
+    <!-- 列表 -->
+    <view class="recipe-list" wx:if="{{!loading && recipeList.length > 0}}">
+      <view 
+        class="recipe-card list-item-enter" 
+        wx:for="{{recipeList}}" 
+        wx:key="id"
+        style="animation-delay: {{index * 50}}ms"
+      >
+        <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}">
+          <image 
+            wx:if="{{item.hasImage}}"
+            class="recipe-image image-fade-in {{item.imageLoaded ? 'loaded' : ''}}" 
+            src="{{item.image}}" 
+            mode="aspectFill"
+            lazy-load="{{true}}"
+            bindload="onImageLoad"
+            data-index="{{index}}"
+          />
+          <view wx:if="{{!item.hasImage}}" class="recipe-visual recipe-visual-thumb">
+            <text class="recipe-visual-icon">{{item.visualIcon}}</text>
+            <text class="recipe-visual-title">{{item.category || '食谱'}}</text>
+          </view>
+          <view class="recipe-content">
+            <text class="recipe-name">{{item.name}}</text>
+            <text class="recipe-desc">{{item.description}}</text>
+            <view class="recipe-tags">
+              <text class="tag" wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag">{{tag}}</text>
+            </view>
+            <view class="recipe-meta">
+              <text class="meta-item">⏱️ {{item.cookTime}}</text>
+              <text class="meta-item" wx:if="{{item.viewCount}}">👁️ {{item.viewCount}}</text>
+              <text class="meta-item" wx:if="{{item.difficulty}}">📊 {{item.difficulty}}</text>
+            </view>
+          </view>
+        </view>
+        <view 
+          class="favorite-btn {{item.isFavorite ? 'active' : ''}}" 
+          catchtap="onFavoriteTap" 
+          data-id="{{item.id}}" 
+          data-index="{{index}}"
+        >
+          <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{recipeList.length > 0}}">
+      <view class="loading-spinner-small" wx:if="{{loading}}"></view>
+      <text wx:if="{{loading}}">加载中...</text>
+      <text wx:if="{{!loading && !hasMore}}">没有更多了</text>
+    </view>
+  </view>
+</view>
