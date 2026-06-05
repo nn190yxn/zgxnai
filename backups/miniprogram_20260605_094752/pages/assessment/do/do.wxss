@@ -1,0 +1,293 @@
+/* 答题页面样式 */
+
+.page {
+  min-height: 100vh;
+  background: #F5F5F5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部进度条 */
+.progress-header {
+  background: #fff;
+  padding: 24rpx 32rpx;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.progress-bar {
+  height: 12rpx;
+  background: #E8E8E8;
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF6B35, #FF8F5A);
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-text {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+.time-text {
+  font-size: 26rpx;
+  color: #FF6B35;
+  font-weight: 600;
+}
+
+/* 题目卡片 */
+.question-card {
+  flex: 1;
+  background: #fff;
+  margin: 24rpx 32rpx;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.question-number {
+  font-size: 28rpx;
+  color: #FF6B35;
+  font-weight: 600;
+}
+
+.assessment-name {
+  font-size: 24rpx;
+  color: #999;
+  background: #F5F5F5;
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.question-content {
+  margin-bottom: 32rpx;
+}
+
+.question-text {
+  font-size: 34rpx;
+  color: #333;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.question-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #8A8A8A;
+  line-height: 1.5;
+}
+
+/* 选项列表 */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: #FAFAFA;
+  border-radius: 16rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.option-item:active {
+  transform: scale(0.98);
+}
+
+.option-item.selected {
+  background: #FFF3ED;
+  border-color: #FF6B35;
+}
+
+.option-radio {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 2rpx solid #CCC;
+  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.option-item.selected .option-radio {
+  border-color: #FF6B35;
+}
+
+.radio-inner {
+  width: 24rpx;
+  height: 24rpx;
+  background: #FF6B35;
+  border-radius: 50%;
+}
+
+.option-text {
+  font-size: 30rpx;
+  color: #333;
+  line-height: 1.5;
+}
+
+.option-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.option-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #8A8A8A;
+  line-height: 1.45;
+}
+
+.option-item.selected .option-text {
+  color: #FF6B35;
+  font-weight: 500;
+}
+
+/* 题目导航点 */
+.question-nav {
+  background: #fff;
+  padding: 16rpx 0;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.nav-scroll {
+  width: 100%;
+}
+
+.nav-dots {
+  display: flex;
+  padding: 0 32rpx;
+  gap: 12rpx;
+}
+
+.nav-dot {
+  min-width: 56rpx;
+  height: 56rpx;
+  background: #F5F5F5;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.nav-dot.answered {
+  background: #FFF3ED;
+  color: #FF6B35;
+}
+
+.nav-dot.current {
+  background: #FF6B35;
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-dot.current.answered {
+  background: #FF6B35;
+  color: #fff;
+}
+
+/* 底部导航按钮 */
+.bottom-nav {
+  display: flex;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  gap: 16rpx;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.nav-btn:active {
+  transform: scale(0.98);
+}
+
+.exit-btn {
+  width: 120rpx;
+  background: #F5F5F5;
+  color: #666;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.exit-btn .btn-icon {
+  font-size: 28rpx;
+}
+
+.exit-btn .btn-text {
+  font-size: 22rpx;
+}
+
+.prev-btn {
+  flex: 1;
+  background: #fff;
+  border: 2rpx solid #FF6B35;
+  color: #FF6B35;
+  gap: 8rpx;
+}
+
+.prev-btn.disabled {
+  border-color: #CCC;
+  color: #CCC;
+}
+
+.next-btn {
+  flex: 1.5;
+  background: linear-gradient(135deg, #FF6B35, #FF7E4B);
+  color: #fff;
+  gap: 8rpx;
+}
+
+.next-btn .btn-text {
+  font-size: 30rpx;
+}
+
+.next-btn .btn-icon {
+  font-size: 28rpx;
+}

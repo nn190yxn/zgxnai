@@ -1,0 +1,136 @@
+<!-- 孩子档案编辑页面 -->
+<view class="page">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-container" wx:if="{{!loading}}">
+    <!-- 头像 -->
+    <view class="avatar-section">
+      <view class="avatar-wrapper" bindtap="chooseAvatar">
+        <image wx:if="{{formData.avatar}}" src="{{formData.avatar}}" mode="aspectFill" class="avatar-img" binderror="onAvatarError"></image>
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-icon">{{formData.gender === 'male' ? '👦' : formData.gender === 'female' ? '👧' : '👶'}}</text>
+        </view>
+        <view class="avatar-edit-icon">
+          <text>📷</text>
+        </view>
+      </view>
+      <text class="avatar-tip">点击更换头像</text>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="form-section">
+      <view class="section-title">基本信息</view>
+      
+      <!-- 姓名 -->
+      <view class="form-item {{errors.name ? 'error' : ''}}">
+        <text class="form-label required">姓名</text>
+        <input class="form-input" placeholder="请输入孩子姓名" value="{{formData.name}}" data-field="name" bindinput="onInputChange" maxlength="20" />
+      </view>
+      <view class="error-tip" wx:if="{{errors.name}}">{{errors.name}}</view>
+
+      <!-- 昵称 -->
+      <view class="form-item">
+        <text class="form-label">昵称</text>
+        <input class="form-input" placeholder="请输入昵称（选填）" value="{{formData.nickname}}" data-field="nickname" bindinput="onInputChange" maxlength="20" />
+      </view>
+
+      <!-- 性别 -->
+      <view class="form-item">
+        <text class="form-label required">性别</text>
+        <radio-group class="radio-group" bindchange="onGenderChange">
+          <label class="radio-item" wx:for="{{genderOptions}}" wx:key="value">
+            <radio value="{{item.value}}" checked="{{formData.gender === item.value}}" color="#FF6B35" />
+            <text class="radio-label">{{item.label}}</text>
+          </label>
+        </radio-group>
+      </view>
+
+      <!-- 出生日期 -->
+      <view class="form-item {{errors.birthday ? 'error' : ''}}">
+        <text class="form-label required">出生日期</text>
+        <picker mode="date" value="{{formData.birthday}}" start="2010-01-01" end="{{today}}" bindchange="onDateChange" class="form-picker">
+          <view class="picker-value {{formData.birthday ? '' : 'placeholder'}}">
+            {{formData.birthday || '请选择出生日期'}}
+          </view>
+        </picker>
+      </view>
+      <view class="error-tip" wx:if="{{errors.birthday}}">{{errors.birthday}}</view>
+    </view>
+
+    <!-- 身体信息 -->
+    <view class="form-section">
+      <view class="section-title">身体信息</view>
+      
+      <!-- 身高 -->
+      <view class="form-item">
+        <text class="form-label">身高</text>
+        <view class="input-with-unit">
+          <input class="form-input" type="digit" placeholder="请输入身高" value="{{formData.height}}" data-field="height" bindinput="onInputChange" />
+          <text class="unit">cm</text>
+        </view>
+      </view>
+
+      <!-- 体重 -->
+      <view class="form-item">
+        <text class="form-label">体重</text>
+        <view class="input-with-unit">
+          <input class="form-input" type="digit" placeholder="请输入体重" value="{{formData.weight}}" data-field="weight" bindinput="onInputChange" />
+          <text class="unit">kg</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 标签 -->
+    <view class="form-section">
+      <view class="section-title">
+        <text>性格标签</text>
+        <text class="section-tip">（最多选择{{maxTags}}个）</text>
+      </view>
+      
+      <view class="tags-container">
+        <view class="tag-item {{selectedTags.indexOf(item) > -1 ? 'selected' : ''}}"
+              wx:for="{{tagOptions}}"
+              wx:key="*this"
+              wx:for-item="item"
+              wx:for-index="index"
+              data-tag="{{item}}"
+              data-index="{{index}}"
+              catchtap="onTagToggle">
+          <text class="tag-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 健康信息 -->
+    <view class="form-section">
+      <view class="section-title">健康信息</view>
+      
+      <!-- 过敏信息 -->
+      <view class="form-item form-item-textarea">
+        <text class="form-label">过敏信息</text>
+        <textarea class="form-textarea" placeholder="请输入过敏信息（选填）" value="{{formData.allergies}}" data-field="allergies" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
+      </view>
+
+      <!-- 特殊情况 -->
+      <view class="form-item form-item-textarea">
+        <text class="form-label">特殊情况</text>
+        <textarea class="form-textarea" placeholder="请输入特殊情况说明（选填）" value="{{formData.specialConditions}}" data-field="specialConditions" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="button-group">
+      <button class="btn btn-cancel" bindtap="cancel">取消</button>
+      <button class="btn btn-save" bindtap="save" loading="{{submitting}}">保存</button>
+    </view>
+
+    <!-- 删除按钮 -->
+    <view class="delete-section" wx:if="{{isEdit}}">
+      <button class="btn btn-delete" bindtap="deleteChild">删除档案</button>
+    </view>
+  </view>
+</view>

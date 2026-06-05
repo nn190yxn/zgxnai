@@ -1,0 +1,67 @@
+<!-- 会员中心页面 - 审核期版本 -->
+<view class="membership-page">
+  <!-- 会员状态卡片 -->
+  <view class="membership-card">
+    <view class="membership-header">
+      <text class="membership-title">会员中心</text>
+    </view>
+    <view class="membership-body">
+      <view class="membership-info">
+        <text class="membership-type">{{membershipInfo.membership_type === 'trial' ? '试用期会员' : '免费用户'}}</text>
+        <text class="membership-days" wx:if="{{membershipInfo.days_left > 0}}">剩余 {{membershipInfo.days_left}} 天</text>
+      </view>
+      <view class="membership-actions">
+        <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used}}">激活15天免费试用</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 审核期提示 -->
+  <view class="audit-notice" wx:if="{{!showPayment}}">
+    <view class="notice-icon">🎉</view>
+    <text class="notice-title">会员功能即将上线</text>
+    <text class="notice-desc">当前为功能体验期，所有功能免费使用</text>
+    <text class="notice-desc">正式版上线后，将提供月卡/季卡/年卡多种选择</text>
+  </view>
+
+  <!-- 会员套餐（审核期隐藏） -->
+  <view class="plans-section" wx:if="{{showPayment}}">
+    <view class="section-title">选择会员套餐</view>
+    <view class="plans-list">
+      <view class="plan-item" wx:for="{{plans}}" wx:key="code" data-code="{{item.code}}" bindtap="selectPlan">
+        <view class="plan-header">
+          <text class="plan-name">{{item.name}}</text>
+          <text class="plan-duration">{{item.duration}}</text>
+        </view>
+        <view class="plan-price">
+          <text class="price-current">¥{{item.price}}</text>
+        </view>
+        <view class="plan-desc">{{item.description}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 兑换码 -->
+  <view class="promo-section">
+    <view class="section-title">兑换码</view>
+    <view class="promo-input">
+      <input type="text" placeholder="输入兑换码" value="{{promoCode}}" bindinput="inputPromoCode" />
+      <button class="btn-promo" bindtap="redeemPromoCode">兑换</button>
+    </view>
+  </view>
+
+  <!-- 裂变邀请 -->
+  <view class="referral-section">
+    <view class="section-title">邀请好友</view>
+    <view class="referral-info">
+      <text class="referral-desc">邀请好友，双方各得7天会员</text>
+    </view>
+    <view class="referral-stats">
+      <view class="stat-item">
+        <text class="stat-value">{{referralStats.total_invites || 0}}</text>
+        <text class="stat-label">已邀请</text>
+      </view>
+    </view>
+    <button class="btn-share" bindtap="shareInvite">邀请好友</button>
+  </view>
+</view>

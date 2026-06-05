@@ -1,0 +1,215 @@
+<!-- 食谱详情页面 -->
+<view class="page page-transition">
+  <!-- 骨架屏加载状态 -->
+  <view class="skeleton-detail-container" wx:if="{{loading}}">
+    <view class="skeleton skeleton-image" style="width: 100%; height: 400rpx; margin-bottom: 24rpx;"></view>
+    <view class="skeleton-content" style="padding: 0 32rpx;">
+      <view class="skeleton skeleton-title" style="width: 60%; margin-bottom: 24rpx;"></view>
+      <view class="skeleton skeleton-text" style="width: 100%; margin-bottom: 16rpx;"></view>
+      <view class="skeleton skeleton-text" style="width: 80%; margin-bottom: 16rpx;"></view>
+      <view class="skeleton skeleton-text" style="width: 90%; margin-bottom: 32rpx;"></view>
+      <view class="skeleton-section">
+        <view class="skeleton skeleton-title" style="width: 30%; margin-bottom: 20rpx;"></view>
+        <view class="skeleton skeleton-text" style="width: 100%; margin-bottom: 16rpx;"></view>
+        <view class="skeleton skeleton-text" style="width: 100%; margin-bottom: 16rpx;"></view>
+      </view>
+    </view>
+  </view>
+
+  <block wx:elif="{{recipe}}">
+    <view class="offline-tip" wx:if="{{offlineFallback}}">当前为离线示例内容，可能与真实数据不一致</view>
+    <!-- 食谱图片 -->
+    <view class="recipe-header">
+      <image
+        wx:if="{{recipe.hasImage}}"
+        class="recipe-image image-fade-in {{imageLoaded ? 'loaded' : ''}}"
+        src="{{recipe.image}}"
+        mode="aspectFill"
+        lazy-load="{{true}}"
+        bindload="onImageLoad"
+        bindtap="previewImage"
+        data-url="{{recipe.image}}"
+      />
+      <view wx:if="{{!recipe.hasImage}}" class="recipe-visual recipe-visual-hero">
+        <text class="recipe-visual-icon">{{recipe.visualIcon}}</text>
+        <text class="recipe-visual-title">{{recipe.category || '儿童营养食谱'}}</text>
+        <text class="recipe-visual-subtitle">{{recipe.nutrition.highlight || '家常营养搭配'}}</text>
+      </view>
+      <view class="header-actions">
+        <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
+          <text class="action-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+          <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
+        </view>
+        <button class="action-btn share-btn" open-type="share">
+          <text class="action-icon">📤</text>
+          <text class="action-text">分享</text>
+        </button>
+      </view>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="info-section">
+      <text class="recipe-name">{{recipe.name}}</text>
+      <text class="recipe-desc">{{recipe.description}}</text>
+      
+      <!-- 营养标签 -->
+      <view class="nutrition-tags" wx:if="{{recipe.tags && recipe.tags.length > 0}}">
+        <text class="tag" wx:for="{{recipe.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+
+      <!-- 基本信息 -->
+      <view class="basic-info">
+        <view class="info-item">
+          <text class="info-icon">⏱️</text>
+          <text class="info-label">烹饪时间</text>
+          <text class="info-value">{{recipe.cookTime || '30分钟'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-icon">🔥</text>
+          <text class="info-label">热量</text>
+          <text class="info-value">{{recipe.calories || '200卡'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-icon">📊</text>
+          <text class="info-label">难度</text>
+          <text class="info-value">{{recipe.difficulty || '简单'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-icon">👶</text>
+          <text class="info-label">适合年龄</text>
+          <text class="info-value">{{recipe.ageRange || '1-3岁'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 营养分析 -->
+    <view class="section" wx:if="{{recipe.nutrition}}">
+      <view class="section-header">
+        <text class="section-title">营养分析</text>
+      </view>
+      <view class="nutrition-card">
+        <view class="nutrition-item" wx:if="{{recipe.nutrition.protein}}">
+          <text class="nutrition-name">蛋白质</text>
+          <view class="nutrition-bar-wrap">
+            <view class="nutrition-bar" style="width: {{recipe.nutrition.proteinPercent || 50}}%;"></view>
+          </view>
+          <text class="nutrition-value">{{recipe.nutrition.protein}}</text>
+        </view>
+        <view class="nutrition-item" wx:if="{{recipe.nutrition.carbs}}">
+          <text class="nutrition-name">碳水化合物</text>
+          <view class="nutrition-bar-wrap">
+            <view class="nutrition-bar carbs" style="width: {{recipe.nutrition.carbsPercent || 50}}%;"></view>
+          </view>
+          <text class="nutrition-value">{{recipe.nutrition.carbs}}</text>
+        </view>
+        <view class="nutrition-item" wx:if="{{recipe.nutrition.fat}}">
+          <text class="nutrition-name">脂肪</text>
+          <view class="nutrition-bar-wrap">
+            <view class="nutrition-bar fat" style="width: {{recipe.nutrition.fatPercent || 50}}%;"></view>
+          </view>
+          <text class="nutrition-value">{{recipe.nutrition.fat}}</text>
+        </view>
+        <view class="nutrition-item" wx:if="{{recipe.nutrition.fiber}}">
+          <text class="nutrition-name">膳食纤维</text>
+          <view class="nutrition-bar-wrap">
+            <view class="nutrition-bar fiber" style="width: {{recipe.nutrition.fiberPercent || 50}}%;"></view>
+          </view>
+          <text class="nutrition-value">{{recipe.nutrition.fiber}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 食材清单 -->
+    <view class="section" wx:if="{{recipe.ingredients && recipe.ingredients.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">食材清单</text>
+        <text class="section-action" bindtap="copyIngredients">复制</text>
+      </view>
+      <view class="ingredient-list">
+        <view class="ingredient-item" wx:for="{{recipe.ingredients}}" wx:key="name">
+          <text class="ingredient-name">{{item.name}}</text>
+          <text class="ingredient-amount">{{item.amount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 详细步骤 -->
+    <view class="section" wx:if="{{recipe.steps && recipe.steps.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">烹饪步骤</text>
+        <text class="section-count">共{{recipe.steps.length}}步</text>
+      </view>
+      
+      <!-- 步骤进度 -->
+      <view class="step-progress">
+        <view 
+          class="step-dot {{index <= currentStep ? 'active' : ''}}" 
+          wx:for="{{recipe.steps}}" 
+          wx:key="index"
+          bindtap="onStepChange"
+          data-index="{{index}}"
+        >
+          <text>{{index + 1}}</text>
+        </view>
+      </view>
+
+      <!-- 当前步骤详情 -->
+      <view class="step-detail">
+        <view class="step-header">
+          <text class="step-number">第{{currentStep + 1}}步</text>
+        </view>
+        <image 
+          class="step-image" 
+          wx:if="{{recipe.steps[currentStep].image}}"
+          src="{{recipe.steps[currentStep].image}}" 
+          mode="aspectFill"
+        />
+        <text class="step-content">{{recipe.steps[currentStep].content}}</text>
+        <text class="step-tip" wx:if="{{recipe.steps[currentStep].tip}}">
+          <text class="tip-label">小贴士：</text>{{recipe.steps[currentStep].tip}}
+        </text>
+      </view>
+
+      <!-- 步骤导航 -->
+      <view class="step-nav">
+        <view class="nav-btn {{currentStep === 0 ? 'disabled' : ''}}" bindtap="prevStep">
+          <text>上一步</text>
+        </view>
+        <view class="nav-btn primary {{currentStep === recipe.steps.length - 1 ? 'disabled' : ''}}" bindtap="nextStep">
+          <text>下一步</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 小贴士 -->
+    <view class="section" wx:if="{{recipe.tips}}">
+      <view class="section-header">
+        <text class="section-title">小贴士</text>
+      </view>
+      <view class="tips-card">
+        <text class="tips-content">{{recipe.tips}}</text>
+      </view>
+    </view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-bar">
+      <view class="bar-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
+        <text class="bar-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+        <text class="bar-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
+      </view>
+      <button class="bar-btn share-btn" open-type="share">
+        <text class="bar-icon">📤</text>
+        <text class="bar-text">分享</text>
+      </button>
+    </view>
+
+    <!-- 占位 -->
+    <view class="bottom-placeholder"></view>
+  </block>
+
+  <!-- 空状态 -->
+  <view class="empty-wrap" wx:else>
+    <text class="empty-icon">🍽️</text>
+    <text class="empty-text">食谱不存在</text>
+  </view>
+</view>

@@ -1,0 +1,88 @@
+<!-- 知识点列表页面 -->
+<view class="page page-transition">
+  <!-- 骨架屏加载状态 -->
+  <view class="skeleton-container" wx:if="{{loading}}">
+    <view class="skeleton-chapter" wx:for="{{3}}" wx:key="*this">
+      <view class="skeleton skeleton-title" style="width: 40%; height: 36rpx; margin-bottom: 20rpx;"></view>
+      <view class="skeleton-point" wx:for="{{4}}" wx:for-item="p" wx:key="*this">
+        <view class="skeleton" style="width: 40rpx; height: 40rpx; border-radius: 50%; margin-right: 20rpx;"></view>
+        <view class="skeleton" style="flex: 1; height: 32rpx;"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 章节列表 -->
+  <view class="chapter-list" wx:if="{{!loading && chapterList.length > 0}}">
+    <block wx:for="{{chapterList}}" wx:key="id">
+      <!-- 章节头部 -->
+      <view class="chapter-header" bindtap="toggleChapter" data-id="{{item.id}}">
+        <view class="chapter-info">
+          <text class="chapter-name">{{item.name}}</text>
+          <view class="chapter-progress">
+            <view class="progress-bar-mini">
+              <view class="progress-fill-mini" style="width: {{item.progress}}%;"></view>
+            </view>
+            <text class="progress-text-mini">{{item.progress}}%</text>
+          </view>
+        </view>
+        <text class="chapter-arrow {{expandedChapterId === item.id ? 'expanded' : ''}}">▼</text>
+      </view>
+
+      <!-- 知识点列表 -->
+      <view class="point-list" wx:if="{{expandedChapterId === item.id}}">
+        <view class="point-item" wx:for="{{item.points}}" wx:for-item="point" wx:key="id" bindtap="onPointTap" data-point="{{point}}">
+          <view class="point-status {{point.status}}">
+            <text class="status-icon">{{point.status === 'mastered' ? '✓' : point.status === 'learning' ? '●' : '○'}}</text>
+          </view>
+          <view class="point-content">
+            <text class="point-name">{{point.name}}</text>
+            <view class="point-meta">
+              <text class="point-difficulty difficulty-{{point.difficulty}}">{{point.difficulty === 1 ? '简单' : point.difficulty === 2 ? '中等' : '困难'}}</text>
+              <text class="point-status-text status-{{point.status}}">{{point.status === 'mastered' ? '已掌握' : point.status === 'learning' ? '学习中' : '待学习'}}</text>
+            </view>
+          </view>
+          <view class="point-actions">
+            <view class="action-btn test-btn" catchtap="onQuickTest" data-point="{{point}}">
+              <text class="action-icon">📝</text>
+              <text class="action-text">测试</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && chapterList.length === 0}}">
+    <text class="empty-icon">📚</text>
+    <text class="empty-text">暂无知识点数据</text>
+  </view>
+</view>
+
+<!-- 快速测试弹窗 -->
+<view class="modal-mask" wx:if="{{showTestModal}}" bindtap="hideTestModal">
+  <view class="test-modal" catchtap="preventBubble">
+    <view class="modal-header">
+      <text class="modal-title">快速测试</text>
+      <view class="modal-close" bindtap="hideTestModal">×</view>
+    </view>
+    <view class="modal-body">
+      <view class="test-info">
+        <text class="test-icon">📝</text>
+        <text class="test-name">{{currentPoint.name}}</text>
+      </view>
+      <view class="test-desc">
+        <text>将对本知识点进行快速测试，检验学习成果。</text>
+      </view>
+      <view class="test-tips">
+        <text class="tips-item">• 测试包含5道题目</text>
+        <text class="tips-item">• 预计用时5分钟</text>
+        <text class="tips-item">• 测试后可查看详细解析</text>
+      </view>
+    </view>
+    <view class="modal-footer">
+      <view class="btn-cancel" bindtap="hideTestModal">取消</view>
+      <view class="btn-confirm" bindtap="startTest">开始测试</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,77 @@
+<view class="page">
+  <view class="header">
+    <text class="title">生成朋友圈成长卡</text>
+    <text class="subtitle">少字、像海报，适合截图发布</text>
+  </view>
+
+  <view class="card">
+    <view class="card-head">
+      <text class="badge">{{shareCard.badge}}</text>
+      <text class="name">{{shareCard.headline}}</text>
+      <text class="subline">{{shareCard.subline}}</text>
+    </view>
+
+    <view class="hero-metric">
+      <text class="hero-num">{{shareCard.heroMetric}}</text>
+      <text class="hero-label">{{shareCard.heroLabel}}</text>
+    </view>
+
+    <view class="chips">
+      <view class="chip" wx:for="{{shareCard.chips}}" wx:key="label">
+        <text class="chip-value">{{item.value}}</text>
+        <text class="chip-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="card-footer">
+      <text class="brand">小牛育儿AI助理</text>
+      <text class="cta">{{shareCard.cta}}</text>
+    </view>
+  </view>
+
+  <view class="copy-card">
+    <text class="copy-title">配文</text>
+    <text class="copy-text">{{previewText}}</text>
+  </view>
+
+  <view class="actions">
+    <view class="btn btn-secondary" bindtap="goToReadingTask">继续打卡</view>
+    <view class="btn btn-primary" bindtap="copyShareText">复制分享文案</view>
+  </view>
+
+  <view class="tip">截图发朋友圈更像成长海报。</view>
+
+  <view class="stats-panel" wx:if="{{showLogs}}">
+      <text class="stats-title">分享统计面板（简版）</text>
+    <view class="stats-grid">
+      <view class="stats-item">
+        <text class="stats-num">{{statsSummary.totalEvents}}</text>
+        <text class="stats-label">总事件</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-num">{{statsSummary.entryCount}}</text>
+        <text class="stats-label">转入次数</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-num">{{statsSummary.previewCount}}</text>
+        <text class="stats-label">预览次数</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-num">{{statsSummary.copyCount}}</text>
+        <text class="stats-label">复制次数</text>
+      </view>
+    </view>
+    <text class="stats-extra">最近转入来源：{{statsSummary.latestEntry}}</text>
+    <view class="source-top" wx:if="{{statsSummary.sourceTop.length > 0}}">
+      <text class="source-title">来源Top：</text>
+      <text class="source-item" wx:for="{{statsSummary.sourceTop}}" wx:key="source">{{item.source}} ({{item.count}})</text>
+    </view>
+  </view>
+
+  <view class="debug-toggle" wx:if="{{showLogs}}" bindtap="toggleRecentLogs">查看最近分享日志</view>
+  <view class="debug-logs" wx:if="{{showLogs && recentLogs.length > 0}}">
+    <view class="debug-item" wx:for="{{recentLogs}}" wx:key="timestamp">
+      <text class="debug-line">{{item.type}} | {{item.source}} | {{item.from}}</text>
+    </view>
+  </view>
+</view>
