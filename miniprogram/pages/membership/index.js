@@ -51,7 +51,9 @@ Page({
     }).then(data => {
       this.setData({ membershipInfo: data });
     }).catch(err => {
-      console.error('获取会员信息失败', err);
+      if (app.globalData.isDebug) {
+        console.error('获取会员信息失败', err);
+      }
     });
   },
 
@@ -63,7 +65,9 @@ Page({
     }).then(data => {
       this.setData({ referralStats: data });
     }).catch(err => {
-      console.error('获取邀请统计失败', err);
+      if (app.globalData.isDebug) {
+        console.error('获取邀请统计失败', err);
+      }
     });
   },
 
@@ -80,7 +84,9 @@ Page({
         wx.showToast({ title: '试用期已使用过', icon: 'none' });
       }
     }).catch(err => {
-      console.error('激活试用失败', err);
+      if (app.globalData.isDebug) {
+        console.error('激活试用失败', err);
+      }
       wx.showToast({ title: '激活失败', icon: 'none' });
     });
   },
@@ -115,7 +121,9 @@ Page({
         wx.showToast({ title: data.message || '兑换失败', icon: 'none' });
       }
     }).catch(err => {
-      console.error('兑换失败', err);
+      if (app.globalData.isDebug) {
+        console.error('兑换失败', err);
+      }
       wx.showToast({ title: '兑换失败', icon: 'none' });
     });
   },
@@ -134,7 +142,9 @@ Page({
         });
       }
     }).catch(err => {
-      console.error('获取邀请码失败', err);
+      if (app.globalData.isDebug) {
+        console.error('获取邀请码失败', err);
+      }
     });
   },
 

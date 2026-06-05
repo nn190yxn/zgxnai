@@ -327,7 +327,7 @@ Page({
         page: that.data.page + 1
       });
     }).catch(function(err) {
-      console.error('加载更多文章失败', err);
+      if (app.globalData.isDebug) console.error('加载更多文章失败', err);
     }).finally(function() {
       that.setData({
         loading: false

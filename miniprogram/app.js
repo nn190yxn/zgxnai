@@ -83,17 +83,22 @@ App({
     childProfileUtil.loadChildrenData(this);
   },
 
-  onError: function(error) {
+onError: function(error) {
     console.error('App runtime error', error);
-    var message = typeof error === 'string' ? error : (error && (error.message || error.errMsg)) || '';
-    if (message.indexOf('timeout') !== -1) {
-      console.warn('[DEBUG] === TIMEOUT ERROR DETECTED ===');
-      console.warn('[DEBUG] Error string repr:', JSON.stringify(error));
-      console.warn('[DEBUG] Error constructor:', error && error.constructor && error.constructor.name);
-      console.warn('[DEBUG] Stack:', error && error.stack);
-      console.warn('[DEBUG] Check [wx-api:pending] logs above for the native API that timed out.');
-      if (wx.__gantuPendingApiCalls) {
-        console.warn('[DEBUG] Pending API calls:', JSON.stringify(wx.__gantuPendingApiCalls));
+    
+    // 仅开发环境输出详细调试信息
+    if (this.globalData.isDebug) {
+      var message = typeof error === 'string' ? error : (error && (error.message || error.errMsg)) || '';
+      if (message.indexOf('timeout') !== -1) {
+        console.warn('[DEBUG] === TIMEOUT ERROR DETECTED ===');
+        console.warn('[DEBUG] Error string repr:', JSON.stringify(error));
+        console.warn('[DEBUG] Error constructor:', error && error.constructor && error.constructor.name);
+        console.warn('[DEBUG] Stack:', error && error.stack);
+        console.warn('[DEBUG] Check [wx-api:pending] logs above for the native API that timed out.');
+
+        if (wx.__gantuPendingApiCalls) {
+          console.warn('[DEBUG] Pending API calls:', JSON.stringify(wx.__gantuPendingApiCalls));
+        }
       }
     }
   },

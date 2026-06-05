@@ -1,8 +1,20 @@
 // JWT身份认证中间件
 const jwt = require('jsonwebtoken');
 
-// 密钥配置（生产环境应从环境变量获取）
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+// 密钥配置（生产环境强制检查）
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// 生产环境强制检查JWT密钥
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('[Security] JWT_SECRET must be set in production environment. Generate with: openssl rand -base64 32');
+}
+
+// 开发环境警告
+if (!JWT_SECRET && process.env.NODE_ENV !== 'production') {
+  console.warn('[Security] Using development JWT secret - DO NOT use in production');
+}
+
+const JWT_SECRET_FINAL = JWT_SECRET || 'dev-temp-secret-not-for-production-use';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 /**
@@ -11,7 +23,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
  * @returns {string} JWT令牌
  */
 function generateToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET_FINAL, { expiresIn: JWT_EXPIRES_IN });
 }
 
 /**
@@ -21,7 +33,7 @@ function generateToken(payload) {
  */
 function verifyToken(token) {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET_FINAL);
   } catch (err) {
     return null;
   }

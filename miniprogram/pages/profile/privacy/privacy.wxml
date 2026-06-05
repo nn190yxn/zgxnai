@@ -1,7 +1,7 @@
 <view class="container">
   <view class="header">
     <text class="title">隐私政策</text>
-    <text class="date">更新日期：2026年5月8日</text>
+    <text class="date">更新日期：2026年6月5日</text>
   </view>
 
   <view class="content">
@@ -55,6 +55,43 @@
     <text class="section-title">八、政策更新</text>
     <text class="section-text">
       我们可能会不时更新本隐私政策。更新后的政策将在本小程序内公布。如有重大变更，我们将通过适当方式通知您。
+    </text>
+
+    <text class="section-title">九、数据存储与跨境传输</text>
+    <text class="section-text">
+      我们的服务器位于中国大陆境内，所有数据均在境内存储。我们不会将您的个人信息跨境传输至境外。数据备份采用加密存储，定期进行完整性验证。
+    </text>
+
+    <text class="section-title">十、数据删除流程</text>
+    <text class="section-text">
+      您可以通过以下方式申请删除数据：
+    </text>
+    <text class="list-item">• 在"我的-账号注销"页面提交注销申请</text>
+    <text class="list-item">• 我们将在15个工作日内完成数据删除</text>
+    <text class="list-item">• 删除后数据不可恢复，请谨慎操作</text>
+    <text class="list-item">• 删除范围包括：账户信息、儿童档案、测评记录、聊天记录等</text>
+
+    <text class="section-title">十一、微信授权信息说明</text>
+    <text class="section-text">
+      我们通过微信小程序提供服务，可能申请以下权限：
+    </text>
+    <text class="list-item">• 用户信息：获取微信昵称和头像（用于个性化展示）</text>
+    <text class="list-item">• 相册/摄像头：用于上传儿童照片和记录视频</text>
+    <text class="list-item">• 录音：用于口头复述录音功能</text>
+    <text class="list-item">• 地理位置：用于推荐本地化育儿资源（可选）</text>
+    <text class="section-text">
+      所有权限均可拒绝，不影响基础功能使用。
+    </text>
+
+    <text class="section-title">十二、第三方服务说明</text>
+    <text class="section-text">
+      我们可能使用以下第三方服务：
+    </text>
+    <text class="list-item">• 微信支付：用于会员订阅支付（审核通过后上线）</text>
+    <text class="list-item">• 数据统计：用于分析用户行为和优化服务</text>
+    <text class="list-item">• 云存储：用于存储用户上传的图片和音频</text>
+    <text class="section-text">
+      第三方服务商承诺遵守个人信息保护法规，不会滥用您的个人信息。
     </text>
   </view>
 </view>

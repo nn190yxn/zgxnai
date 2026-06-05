@@ -157,7 +157,7 @@ Page({
       tag = that.data.tagOptions[Number(indexValue)];
     }
     if (!tag) {
-      console.warn('Tag tap ignored: invalid index', {
+      if (app.globalData.isDebug) console.warn('Tag tap ignored: invalid index', {
         index: indexValue,
         dataset: e.currentTarget.dataset
       });
@@ -255,7 +255,7 @@ Page({
             data = {};
           }
           if (res.statusCode < 200 || res.statusCode >= 300) {
-            console.error('头像上传接口失败', {
+            if (app.globalData.isDebug) console.error('头像上传接口失败', {
               url: uploadUrl,
               statusCode: res.statusCode,
               response: data
@@ -279,7 +279,7 @@ Page({
           }
         },
         fail: function(err) {
-          console.error('头像上传网络失败', {
+          if (app.globalData.isDebug) console.error('头像上传网络失败', {
             url: uploadUrl,
             error: err
           });
@@ -294,7 +294,7 @@ Page({
       });
     }).catch(function(err) {
       wx.hideLoading();
-      console.error('头像上传前登录失败', err);
+      if (app.globalData.isDebug) console.error('头像上传前登录失败', err);
       wx.showToast({
         title: that.getErrorMessage(err, '请先登录'),
         icon: 'none'
@@ -494,7 +494,7 @@ Page({
     }).catch(function(err) {
       wx.hideLoading();
       that.setData({ submitting: false });
-      console.error('保存孩子档案失败', err);
+      if (app.globalData.isDebug) console.error('保存孩子档案失败', err);
       wx.showToast({
         title: that.getErrorMessage(err, '保存失败'),
         icon: 'none'

@@ -59,7 +59,7 @@ Page({
         hotKeywords: list || []
       });
     }).catch(function(err) {
-      console.error('加载热门搜索失败', err);
+      if (app.globalData.isDebug) console.error('加载热门搜索失败', err);
       that.setData({
         hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养']
       });
@@ -173,7 +173,7 @@ Page({
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      console.error('搜索失败', err);
+      if (app.globalData.isDebug) console.error('搜索失败', err);
       wx.showToast({
         title: '搜索失败',
         icon: 'none'
@@ -372,7 +372,7 @@ Page({
         page: that.data.page + 1
       });
     }).catch(function(err) {
-      console.error('加载更多失败', err);
+      if (app.globalData.isDebug) console.error('加载更多失败', err);
     }).finally(function() {
       if (requestSeq !== that.data.requestSeq) {
         return;

@@ -291,7 +291,7 @@ Page({
       that.updateReadingTaskStats(tasks);
       that.loadReadingWeeklyReport();
     }).catch(function(err) {
-      console.error('[Textbook] 获取阅读任务失败:', err);
+      if (app.globalData.isDebug) console.error('[Textbook] 获取阅读任务失败:', err);
       // 出错时回退到默认数据
       that.loadDefaultReadingTasks(completedMap, ageName);
     });

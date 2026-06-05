@@ -62,7 +62,7 @@ Page({
       // 更新本地缓存
       wx.setStorageSync('childrenList', children);
     }).catch(function(err) {
-      console.error('加载孩子档案列表失败', err);
+      if (app.globalData.isDebug) console.error('加载孩子档案列表失败', err);
       that.setData({ loading: false });
       // 如果没有缓存数据，显示空状态
       if (!cachedChildren || cachedChildren.length === 0) {

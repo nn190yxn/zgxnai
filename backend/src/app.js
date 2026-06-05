@@ -23,8 +23,15 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // 允许没有origin的请求（如移动端、Postman）
-    if (!origin) return callback(null, true);
+    // 生产环境严格限制
+    if (!origin) {
+      if (process.env.NODE_ENV === 'production') {
+        return callback(new Error('[Security] Origin required in production'), false);
+      }
+      // 仅开发环境允许无origin请求（如移动端、Postman）
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) === -1) {
       return callback(new Error('CORS policy: Origin not allowed'), false);
     }
