@@ -16,7 +16,8 @@ var ENV_CONFIG = {
     enableNetworkProbe: false,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
-    enableStartupSafeMode: false
+    enableStartupSafeMode: false,
+    enablePayment: true
   },
   production: {
     apiBaseUrl: 'https://api.supercalf.com/api/v1',
@@ -30,7 +31,8 @@ var ENV_CONFIG = {
     enableNetworkProbe: true,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: true,
-    enableStartupSafeMode: false
+    enableStartupSafeMode: false,
+    enablePayment: true
   }
 };
 
