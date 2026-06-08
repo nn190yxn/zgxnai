@@ -79,6 +79,7 @@ const membershipRoutes = require('./routes/membership');
 const paymentRoutes = require('./routes/payment');
 const referralRoutes = require('./routes/referral');
 const authRoutes = require('./routes/auth');
+const childrenRoutes = require('./routes/children');
 
 // 公开路由（无需认证）
 app.use('/api/v1/health', healthRoutes);
@@ -95,6 +96,7 @@ app.use('/api/v1/recommendations', authenticateToken, recommendationRoutes);
 app.use('/api/v1/membership', authenticateToken, membershipRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/referral', authenticateToken, referralRoutes);
+app.use('/api/v1/children', childrenRoutes);
 
 // 404处理
 app.use((req, res) => {

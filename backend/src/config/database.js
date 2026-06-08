@@ -48,6 +48,21 @@ function initDatabase() {
     )
   `);
 
+  const childColumns = db.prepare('PRAGMA table_info(children)').all().map(column => column.name);
+  const childColumnMigrations = [
+    ['nickname', 'TEXT'],
+    ['current_height', 'REAL'],
+    ['current_weight', 'REAL'],
+    ['allergies', 'TEXT'],
+    ['special_notes', 'TEXT'],
+    ['tags', 'TEXT']
+  ];
+  for (const [columnName, columnType] of childColumnMigrations) {
+    if (!childColumns.includes(columnName)) {
+      db.exec(`ALTER TABLE children ADD COLUMN ${columnName} ${columnType}`);
+    }
+  }
+
   // 评估记录表
   db.exec(`
     CREATE TABLE IF NOT EXISTS assessment_records (
