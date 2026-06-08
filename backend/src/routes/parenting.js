@@ -2,6 +2,83 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
+
+const ARTICLE_TYPE = 'parenting_article';
+
+function getUserId(req) {
+  return req.user && (req.user.userId || req.user.id);
+}
+
+function isFavorited(userId, articleId) {
+  if (!userId) {
+    return false;
+  }
+  return !!db.prepare(`
+    SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ?
+  `).get(userId, ARTICLE_TYPE, String(articleId));
+}
+
+function normalizeArticle(article, userId) {
+  if (!article) {
+    return null;
+  }
+  const favorited = isFavorited(userId, article.id);
+  return {
+    ...article,
+    is_favorited: favorited,
+    isFavorite: favorited
+  };
+}
+
+function searchArticles(req, res) {
+  try {
+    const keyword = req.query.q || req.query.keyword;
+    const { page = 1, page_size = 10 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(page_size);
+    const limit = parseInt(page_size);
+
+    if (!keyword) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { page: 1, page_size: limit, total: 0, has_more: false }
+      });
+    }
+
+    const searchTerm = `%${keyword}%`;
+    const articles = db.prepare(`
+      SELECT * FROM articles
+      WHERE is_published = 1
+      AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+      ORDER BY read_count DESC, created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(searchTerm, searchTerm, searchTerm, searchTerm, limit, offset);
+
+    const count = db.prepare(`
+      SELECT COUNT(*) as count FROM articles
+      WHERE is_published = 1
+      AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+    `).get(searchTerm, searchTerm, searchTerm, searchTerm).count;
+
+    res.json({
+      success: true,
+      data: articles.map(article => normalizeArticle(article, getUserId(req))),
+      pagination: {
+        page: parseInt(page),
+        page_size: limit,
+        total: count,
+        has_more: offset + limit < count
+      }
+    });
+  } catch (err) {
+    console.error('[Parenting] 搜索文章失败:', err);
+    res.status(500).json({
+      success: false,
+      message: '搜索文章失败'
+    });
+  }
+}
 
 // 获取文章列表
 // GET /api/v1/parenting/articles
@@ -35,7 +112,7 @@ router.get('/articles', (req, res) => {
 
     res.json({
       success: true,
-      data: articles,
+      data: articles.map(article => normalizeArticle(article, getUserId(req))),
       pagination: {
         page: parseInt(page),
         page_size: limit,
@@ -54,50 +131,46 @@ router.get('/articles', (req, res) => {
 
 // 搜索文章
 // GET /api/v1/parenting/articles/search
-router.get('/articles/search', (req, res) => {
-  try {
-    const { q, page = 1, page_size = 10 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(page_size);
-    const limit = parseInt(page_size);
+router.get('/articles/search', searchArticles);
 
-    if (!q) {
-      return res.json({
-        success: true,
-        data: [],
-        pagination: { page: 1, page_size: limit, total: 0, has_more: false }
-      });
+// 兼容前端搜索入口
+// GET /api/v1/parenting/search
+router.get('/search', searchArticles);
+
+// 获取相关文章
+// GET /api/v1/parenting/articles/:id/related
+router.get('/articles/:id/related', (req, res) => {
+  try {
+    const { id } = req.params;
+    const article = db.prepare('SELECT * FROM articles WHERE id = ? AND is_published = 1').get(id);
+
+    if (!article) {
+      return res.status(404).json({ success: false, message: '文章不存在' });
     }
 
-    const searchTerm = `%${q}%`;
-    const articles = db.prepare(`
-      SELECT * FROM articles 
-      WHERE is_published = 1 
-      AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+    const related = db.prepare(`
+      SELECT * FROM articles
+      WHERE is_published = 1 AND id != ? AND (category = ? OR sub_category = ?)
       ORDER BY read_count DESC, created_at DESC
-      LIMIT ? OFFSET ?
-    `).all(searchTerm, searchTerm, searchTerm, searchTerm, limit, offset);
+      LIMIT 5
+    `).all(id, article.category, article.sub_category);
 
-    const count = db.prepare(`
-      SELECT COUNT(*) as count FROM articles 
-      WHERE is_published = 1 
-      AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
-    `).get(searchTerm, searchTerm, searchTerm, searchTerm).count;
+    const fallback = related.length ? related : db.prepare(`
+      SELECT * FROM articles
+      WHERE is_published = 1 AND id != ?
+      ORDER BY read_count DESC, created_at DESC
+      LIMIT 5
+    `).all(id);
 
     res.json({
       success: true,
-      data: articles,
-      pagination: {
-        page: parseInt(page),
-        page_size: limit,
-        total: count,
-        has_more: offset + limit < count
-      }
+      data: fallback.map(item => normalizeArticle(item, getUserId(req)))
     });
   } catch (err) {
-    console.error('[Parenting] 搜索文章失败:', err);
+    console.error('[Parenting] 获取相关文章失败:', err);
     res.status(500).json({
       success: false,
-      message: '搜索文章失败'
+      message: '获取相关文章失败'
     });
   }
 });
@@ -126,7 +199,7 @@ router.get('/articles/:id', (req, res) => {
 
     res.json({
       success: true,
-      data: article
+      data: normalizeArticle(article, getUserId(req))
     });
   } catch (err) {
     console.error('[Parenting] 获取文章详情失败:', err);
@@ -134,6 +207,36 @@ router.get('/articles/:id', (req, res) => {
       success: false,
       message: '获取文章详情失败'
     });
+  }
+});
+
+// 收藏或取消收藏文章
+// POST /api/v1/parenting/articles/:id/favorite
+router.post('/articles/:id/favorite', authenticateToken, (req, res) => {
+  try {
+    const article = db.prepare('SELECT id FROM articles WHERE id = ? AND is_published = 1').get(req.params.id);
+    if (!article) {
+      return res.status(404).json({ success: false, message: '文章不存在' });
+    }
+
+    const userId = getUserId(req);
+    const articleId = String(req.params.id);
+    const existing = db.prepare(`
+      SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ?
+    `).get(userId, ARTICLE_TYPE, articleId);
+
+    if (existing) {
+      db.prepare('DELETE FROM user_favorites WHERE id = ?').run(existing.id);
+      return res.json({ success: true, data: { is_favorited: false, isFavorite: false } });
+    }
+
+    db.prepare(`
+      INSERT INTO user_favorites (user_id, item_type, item_id) VALUES (?, ?, ?)
+    `).run(userId, ARTICLE_TYPE, articleId);
+    return res.json({ success: true, data: { is_favorited: true, isFavorite: true } });
+  } catch (err) {
+    console.error('[Parenting] 切换收藏失败:', err);
+    return res.status(500).json({ success: false, message: '收藏操作失败' });
   }
 });
 
