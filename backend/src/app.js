@@ -78,9 +78,11 @@ const recommendationRoutes = require('./routes/recommendations');
 const membershipRoutes = require('./routes/membership');
 const paymentRoutes = require('./routes/payment');
 const referralRoutes = require('./routes/referral');
+const authRoutes = require('./routes/auth');
 
 // 公开路由（无需认证）
 app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // 需要认证的路由
 app.use('/api/v1/assessments', authenticateToken, assessmentRoutes);
