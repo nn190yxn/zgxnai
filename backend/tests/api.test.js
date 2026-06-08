@@ -263,6 +263,11 @@ describe('后端API测试', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toBeDefined();
+      expect(res.body.data.answer).toBeDefined();
+      expect(res.body.data.answer_source).toBe('knowledge_fallback');
+      expect(res.body.data.ai_status.configured).toBe(false);
+      expect(res.body.data.fallback_reason).toBe('AI_NOT_CONFIGURED');
+      expect(Array.isArray(res.body.data.sources)).toBe(true);
     });
 
     it('缺少message应返回400', async () => {

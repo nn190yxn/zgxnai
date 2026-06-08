@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../config/database');
+const { getAIStatus, generateAIAnswer } = require('../services/ai');
 
 // 系统提示词配置
 const SYSTEM_PROMPTS = {
@@ -268,8 +269,7 @@ function searchKnowledgeBase(query, intent) {
   return results;
 }
 
-// 生成专业回答
-function generateProfessionalAnswer(message, intent, knowledgeItems, context) {
+function buildPrompt(message, intent, knowledgeItems, context) {
   // 构建上下文
   let contextStr = '';
   if (context && context.length > 0) {
@@ -293,18 +293,34 @@ function generateProfessionalAnswer(message, intent, knowledgeItems, context) {
   // 获取提示词
   const prompt = selectPrompt(intent);
   
-  // 构建完整提示
-  const fullPrompt = `${prompt}
+  return `${prompt}
 
 ${contextStr}${knowledgeStr}
 
 当前问题：${message}
 
 请基于以上信息和你的专业知识，给出专业、具体、可操作的回答。`;
+}
 
-  // 这里应该调用真实的AI服务（如OpenAI、通义千问等）
-  // 目前使用模拟回答
-  return generateMockAnswer(message, intent, knowledgeItems);
+// 生成专业回答
+async function generateProfessionalAnswer(message, intent, knowledgeItems, context) {
+  const fullPrompt = buildPrompt(message, intent, knowledgeItems, context);
+  const aiResult = await generateAIAnswer(fullPrompt, { message, intent, knowledgeItems, context });
+
+  if (aiResult.success) {
+    return {
+      answer: aiResult.answer,
+      answer_source: 'ai',
+      ai_status: getAIStatus()
+    };
+  }
+
+  return {
+    answer: generateMockAnswer(message, intent, knowledgeItems),
+    answer_source: 'knowledge_fallback',
+    ai_status: getAIStatus(),
+    fallback_reason: aiResult.code
+  };
 }
 
 // 模拟回答生成（实际应替换为真实AI服务）
@@ -948,7 +964,7 @@ ${knowledgeItems.length > 1 ? knowledgeItems[1].content.substring(0, 200) + '...
 }
 
 // 发送消息（增强版）
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { message, child_profile, session_id } = req.body;
 
@@ -977,7 +993,8 @@ router.post('/', (req, res) => {
     const knowledgeItems = searchKnowledgeBase(message, intent.intent);
     
     // 生成专业回答
-    const answer = generateProfessionalAnswer(message, intent.intent, knowledgeItems, context);
+    const answerResult = await generateProfessionalAnswer(message, intent.intent, knowledgeItems, context);
+    const answer = answerResult.answer;
 
     // 保存AI回复
     db.prepare(`
@@ -992,7 +1009,10 @@ router.post('/', (req, res) => {
         sources: knowledgeItems.map(item => item.title),
         session_id: sessionId,
         intent: intent.intent,
-        confidence: intent.confidence
+        confidence: intent.confidence,
+        answer_source: answerResult.answer_source,
+        ai_status: answerResult.ai_status,
+        fallback_reason: answerResult.fallback_reason || null
       }
     });
   } catch (err) {
