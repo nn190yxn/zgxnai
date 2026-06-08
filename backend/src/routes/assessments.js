@@ -3,6 +3,69 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../config/database');
 
+const ASSESSMENT_META = {
+  sensory: { name: '儿童感觉统合能力发展评定量表', maxScore: 50 },
+  focus: { name: '专注力观察', maxScore: 3 },
+  adhd: { name: 'ADHD风险观察筛查', maxScore: 3 },
+  multi_intelligence: { name: '多元智能观察', maxScore: 3 },
+  emotion: { name: '情绪能力观察', maxScore: 3 },
+  learning: { name: '学习适应观察', maxScore: 3 }
+};
+
+function normalizeLevel(level) {
+  const map = {
+    excellent: '优秀',
+    good: '良好',
+    medium: '中等',
+    attention: '需关注',
+    intervention: '需干预'
+  };
+  return map[level] || level || '';
+}
+
+function buildDimensionScores(recordId) {
+  const dimensions = db.prepare('SELECT * FROM assessment_dimensions WHERE record_id = ?').all(recordId);
+  return dimensions.map(item => ({
+    dimension_id: item.dimension_name,
+    dimension_name: item.dimension_name,
+    name: item.dimension_name,
+    score: item.score,
+    score_rate: item.score_rate,
+    standard_score: item.standard_score
+  }));
+}
+
+function normalizeRecord(row) {
+  if (!row) {
+    return null;
+  }
+  const child = db.prepare('SELECT name FROM children WHERE id = ?').get(row.child_id);
+  const meta = ASSESSMENT_META[row.assessment_code] || {};
+  const dimensionScores = buildDimensionScores(row.id);
+  const reportData = {
+    interpretations: db.prepare(`
+      SELECT * FROM assessment_interpretations
+      WHERE assessment_code = ? AND ? BETWEEN score_min AND score_max
+    `).all(row.assessment_code, row.percentage || 0),
+    suggestions: db.prepare(`
+      SELECT * FROM assessment_suggestions
+      WHERE assessment_code = ? AND level = ?
+    `).all(row.assessment_code, row.overall_level)
+  };
+
+  return {
+    ...row,
+    assessment_type: row.assessment_code,
+    assessment_name: row.assessment_name || meta.name || row.assessment_code,
+    child_name: child ? child.name : '',
+    overall_score: row.total_score,
+    dimension_scores: dimensionScores,
+    report_data: reportData,
+    overall_level_text: normalizeLevel(row.overall_level),
+    max_score: row.max_score || meta.maxScore || 3
+  };
+}
+
 // 获取评估工具列表
 // GET /api/v1/assessments
 router.get('/', (req, res) => {
@@ -145,11 +208,21 @@ router.post('/:code/submit', (req, res) => {
       success: true,
       data: {
         record_id: recordId,
+        id: recordId,
         assessment_code: code,
+        assessment_type: code,
+        assessment_name: ASSESSMENT_META[code] ? ASSESSMENT_META[code].name : code,
         total_score: totalScore,
+        overall_score: totalScore,
         max_score: maxScore,
         percentage: percentage,
         overall_level: level,
+        overall_level_text: normalizeLevel(level),
+        dimension_scores: [],
+        report_data: {
+          interpretations: interpretations,
+          suggestions: suggestions
+        },
         interpretations: interpretations,
         suggestions: suggestions
       }
@@ -197,7 +270,7 @@ router.get('/results/:id', (req, res) => {
     res.json({
       success: true,
       data: {
-        ...record,
+        ...normalizeRecord(record),
         dimensions: dimensions,
         interpretations: interpretations,
         suggestions: suggestions
@@ -233,13 +306,70 @@ router.get('/history', (req, res) => {
 
     res.json({
       success: true,
-      data: records
+      data: records.map(normalizeRecord)
     });
   } catch (err) {
     console.error('[Assessments] 获取历史记录失败:', err);
     res.status(500).json({
       success: false,
       message: '获取历史记录失败'
+    });
+  }
+});
+
+// 获取评估历史记录数量
+// GET /api/v1/assessments/history/count
+router.get('/history/count', (req, res) => {
+  try {
+    const { child_id } = req.query;
+    let query = 'SELECT COUNT(*) as count FROM assessment_records';
+    const params = [];
+
+    if (child_id) {
+      query += ' WHERE child_id = ?';
+      params.push(child_id);
+    }
+
+    const result = db.prepare(query).get(...params);
+    res.json({
+      success: true,
+      data: { count: result.count }
+    });
+  } catch (err) {
+    console.error('[Assessments] 获取历史数量失败:', err);
+    res.status(500).json({
+      success: false,
+      message: '获取历史数量失败'
+    });
+  }
+});
+
+// 删除评估记录
+// DELETE /api/v1/assessments/records/:id
+router.delete('/records/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const record = db.prepare('SELECT id FROM assessment_records WHERE id = ?').get(id);
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: '评估记录不存在'
+      });
+    }
+
+    const transaction = db.transaction(() => {
+      db.prepare('DELETE FROM assessment_dimensions WHERE record_id = ?').run(id);
+      db.prepare('DELETE FROM assessment_records WHERE id = ?').run(id);
+    });
+    transaction();
+
+    res.json({ success: true, message: '评估记录已删除' });
+  } catch (err) {
+    console.error('[Assessments] 删除评估记录失败:', err);
+    res.status(500).json({
+      success: false,
+      message: '删除评估记录失败'
     });
   }
 });
@@ -255,13 +385,25 @@ router.get('/:code/questions', (req, res) => {
     const questions = [
       {
         id: 1,
+        dimension: 'attention',
         text: '孩子在进行活动时，是否容易分心？',
-        options: ['从不', '偶尔', '经常', '总是']
+        options: [
+          { value: 0, label: '从不' },
+          { value: 1, label: '偶尔' },
+          { value: 2, label: '经常' },
+          { value: 3, label: '总是' }
+        ]
       },
       {
         id: 2,
+        dimension: 'sensory',
         text: '孩子是否喜欢被拥抱或身体接触？',
-        options: ['非常不喜欢', '不太喜欢', '比较喜欢', '非常喜欢']
+        options: [
+          { value: 0, label: '非常不喜欢' },
+          { value: 1, label: '不太喜欢' },
+          { value: 2, label: '比较喜欢' },
+          { value: 3, label: '非常喜欢' }
+        ]
       }
     ];
 
