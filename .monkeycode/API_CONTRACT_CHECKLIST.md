@@ -1,6 +1,7 @@
 # API 契约清单与阶段0基线报告
 
 **生成日期**: 2026-06-08  
+**最近更新**: 2026-06-08 Phase 8 final audit
 **基线标签**: `repair-baseline-phase-0-20260608-1358`  
 **基线提交**: `3c8f62a docs: add staged repair plan with backup and regression gates`  
 **范围**: `miniprogram/` 前端请求路径与 `backend/src/` 后端路由。
@@ -63,6 +64,9 @@ cd backend && npm test
 | `/education/tasks/today` | `/api/v1/education/tasks/today` | GET | required | 教育任务 |
 | `/education/tasks/:id/complete` | `/api/v1/education/tasks/:id/complete` | POST | required | 任务完成 |
 | `/education/progress/overview` | `/api/v1/education/progress/overview` | GET | required | 教育进度 |
+| `/education/knowledge/chapters` | `/api/v1/education/knowledge/chapters` | GET | required | 教育知识章节 |
+| `/education/knowledge/detail` | `/api/v1/education/knowledge/detail` | GET | required | 教育知识详情 |
+| `/education/progress` | `/api/v1/education/progress` | POST | required | 知识点进度更新 |
 | `/membership/info` | `/api/v1/membership/info` | GET | required | 会员信息 |
 | `/membership/trial/activate` | `/api/v1/membership/trial/activate` | POST | required | 试用激活 |
 | `/membership/promo/redeem` | `/api/v1/membership/promo/redeem` | POST | required | 兑换码 |
@@ -105,11 +109,13 @@ cd backend && npm test
 
 ### 4.3 教育知识点相关缺失
 
+Phase 8 已补齐以下接口，保留本节作为历史缺口记录。
+
 | 前端调用路径 | 调用位置 | 缺失影响 | 修复阶段 |
 |-------------|----------|----------|----------|
-| `/education/knowledge/detail` | `textbook/knowledge-detail/knowledge-detail.js` | 知识点详情缺失 | 阶段5后或阶段4扩展 |
-| `/education/knowledge/chapters` | `textbook/knowledge-list/knowledge-list.js` | 知识章节列表缺失 | 阶段5后或阶段4扩展 |
-| `/education/progress` | `textbook/knowledge-detail/knowledge-detail.js` | 知识点进度更新缺失 | 阶段5后或阶段4扩展 |
+| `/education/knowledge/detail` | `textbook/knowledge-detail/knowledge-detail.js` | 已补齐 | 阶段8 |
+| `/education/knowledge/chapters` | `textbook/knowledge-list/knowledge-list.js` | 已补齐 | 阶段8 |
+| `/education/progress` | `textbook/knowledge-detail/knowledge-detail.js` | 已补齐 | 阶段8 |
 
 ---
 
@@ -174,3 +180,23 @@ cd backend && npm test
 ## 八、阶段0结论
 
 阶段0确认项目具备可测试基线，但核心接口缺口比原审计摘要更具体。后续修复应先完成 `/auth` 和 `/children`，再进入营养、内容收藏、评估和支付门禁，避免下游功能在身份体系未稳定前反复返工。
+
+---
+
+## 九、阶段8最终复核结论
+
+阶段8完成后，阶段0记录的 P0/P1 后端接口缺口已补齐，并通过全量后端回归。
+
+执行命令:
+
+```bash
+cd backend && npm test -- --runInBand
+```
+
+测试结果:
+
+- Test Suites: 7 passed, 7 total
+- Tests: 70 passed, 70 total
+- Coverage Lines: 65.56%
+
+生产前仍需完成真实生产配置和微信开发者工具手动验收，包括 `JWT_SECRET`、微信登录、微信支付、AI provider、线上域名与小程序审核资料。

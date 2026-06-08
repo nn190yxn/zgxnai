@@ -3,13 +3,18 @@ const app = require('../src/app');
 const { generateToken } = require('../src/middleware/auth');
 const { db } = require('../src/config/database');
 
-const userToken = generateToken({ userId: 1, username: 'test' });
+const TEST_USER_ID = 101;
+const userToken = generateToken({ userId: TEST_USER_ID, username: 'children-test' });
 
 describe('孩子档案接口测试', () => {
   beforeEach(() => {
-    db.prepare('DELETE FROM assessment_dimensions WHERE record_id IN (SELECT id FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = 1))').run();
-    db.prepare('DELETE FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = 1)').run();
-    db.prepare('DELETE FROM children WHERE user_id = 1').run();
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, openid, nickname)
+      VALUES (?, ?, ?)
+    `).run(TEST_USER_ID, 'children-test-user', '孩子测试用户');
+    db.prepare('DELETE FROM assessment_dimensions WHERE record_id IN (SELECT id FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?))').run(TEST_USER_ID);
+    db.prepare('DELETE FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?)').run(TEST_USER_ID);
+    db.prepare('DELETE FROM children WHERE user_id = ?').run(TEST_USER_ID);
   });
 
   it('应创建并返回孩子档案列表', async () => {

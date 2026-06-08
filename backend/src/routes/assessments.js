@@ -171,16 +171,12 @@ router.post('/:code/submit', (req, res) => {
     else if (percentage >= 55) level = 'medium';
     else if (percentage >= 40) level = 'attention';
 
-    // 确保孩子记录存在
-    let childId = child_id;
-    const childExists = db.prepare('SELECT id FROM children WHERE id = ?').get(childId);
-    if (!childExists) {
-      // 创建默认孩子记录
-      const defaultChild = db.prepare(`
-        INSERT INTO children (user_id, name, gender, birthday)
-        VALUES (1, '测试孩子', 'unknown', '2020-01-01')
-      `).run();
-      childId = defaultChild.lastInsertRowid;
+    const child = db.prepare('SELECT id FROM children WHERE id = ? AND user_id = ?').get(child_id, req.user.userId);
+    if (!child) {
+      return res.status(403).json({
+        success: false,
+        message: '无权提交该孩子的评估记录'
+      });
     }
 
     // 存储评估记录
@@ -188,7 +184,7 @@ router.post('/:code/submit', (req, res) => {
       INSERT INTO assessment_records 
       (child_id, assessment_code, age_group, total_score, max_score, percentage, overall_level)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(childId, code, age_group, totalScore, maxScore, percentage, level);
+    `).run(child.id, code, age_group, totalScore, maxScore, percentage, level);
 
     // 存储维度得分
     const recordId = result.lastInsertRowid;
@@ -243,8 +239,10 @@ router.get('/results/:id', (req, res) => {
     const { id } = req.params;
     
     const record = db.prepare(`
-      SELECT * FROM assessment_records WHERE id = ?
-    `).get(id);
+      SELECT ar.* FROM assessment_records ar
+      JOIN children c ON c.id = ar.child_id
+      WHERE ar.id = ? AND c.user_id = ?
+    `).get(id, req.user.userId);
 
     if (!record) {
       return res.status(404).json({
@@ -291,11 +289,15 @@ router.get('/history', (req, res) => {
   try {
     const { child_id, limit = 20, offset = 0 } = req.query;
     
-    let query = 'SELECT * FROM assessment_records';
-    let params = [];
-    
+    let query = `
+      SELECT ar.* FROM assessment_records ar
+      JOIN children c ON c.id = ar.child_id
+      WHERE c.user_id = ?
+    `;
+    let params = [req.user.userId];
+
     if (child_id) {
-      query += ' WHERE child_id = ?';
+      query += ' AND ar.child_id = ?';
       params.push(child_id);
     }
     
@@ -322,11 +324,15 @@ router.get('/history', (req, res) => {
 router.get('/history/count', (req, res) => {
   try {
     const { child_id } = req.query;
-    let query = 'SELECT COUNT(*) as count FROM assessment_records';
-    const params = [];
+    let query = `
+      SELECT COUNT(*) as count FROM assessment_records ar
+      JOIN children c ON c.id = ar.child_id
+      WHERE c.user_id = ?
+    `;
+    const params = [req.user.userId];
 
     if (child_id) {
-      query += ' WHERE child_id = ?';
+      query += ' AND ar.child_id = ?';
       params.push(child_id);
     }
 
@@ -349,7 +355,11 @@ router.get('/history/count', (req, res) => {
 router.delete('/records/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const record = db.prepare('SELECT id FROM assessment_records WHERE id = ?').get(id);
+    const record = db.prepare(`
+      SELECT ar.id FROM assessment_records ar
+      JOIN children c ON c.id = ar.child_id
+      WHERE ar.id = ? AND c.user_id = ?
+    `).get(id, req.user.userId);
 
     if (!record) {
       return res.status(404).json({

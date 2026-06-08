@@ -3,13 +3,27 @@ const app = require('../src/app');
 const { generateToken } = require('../src/middleware/auth');
 const { db } = require('../src/config/database');
 
-const userToken = generateToken({ userId: 1, username: 'test' });
+const TEST_USER_ID = 102;
+const userToken = generateToken({ userId: TEST_USER_ID, username: 'assessment-test' });
+const OTHER_USER_ID = 103;
+const otherUserToken = generateToken({ userId: OTHER_USER_ID, username: 'assessment-other-test' });
 
 describe('评估接口兼容性测试', () => {
   beforeEach(() => {
-    db.prepare('DELETE FROM assessment_dimensions WHERE record_id IN (SELECT id FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = 1))').run();
-    db.prepare('DELETE FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = 1)').run();
-    db.prepare('DELETE FROM children WHERE user_id = 1').run();
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, openid, nickname)
+      VALUES (?, ?, ?)
+    `).run(TEST_USER_ID, 'assessment-test-user', '评估测试用户');
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, openid, nickname)
+      VALUES (?, ?, ?)
+    `).run(OTHER_USER_ID, 'assessment-other-test-user', '评估其他用户');
+    db.prepare('DELETE FROM assessment_dimensions WHERE record_id IN (SELECT id FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?))').run(OTHER_USER_ID);
+    db.prepare('DELETE FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?)').run(OTHER_USER_ID);
+    db.prepare('DELETE FROM children WHERE user_id = ?').run(OTHER_USER_ID);
+    db.prepare('DELETE FROM assessment_dimensions WHERE record_id IN (SELECT id FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?))').run(TEST_USER_ID);
+    db.prepare('DELETE FROM assessment_records WHERE child_id IN (SELECT id FROM children WHERE user_id = ?)').run(TEST_USER_ID);
+    db.prepare('DELETE FROM children WHERE user_id = ?').run(TEST_USER_ID);
   });
 
   async function createChild() {
@@ -17,6 +31,16 @@ describe('评估接口兼容性测试', () => {
       .post('/api/v1/children')
       .set('Authorization', 'Bearer ' + userToken)
       .send({ name: '评估宝宝', gender: 'female', birthday: '2020-01-01' });
+
+    expect(res.status).toBe(201);
+    return res.body.data.id;
+  }
+
+  async function createOtherChild() {
+    const res = await request(app)
+      .post('/api/v1/children')
+      .set('Authorization', 'Bearer ' + otherUserToken)
+      .send({ name: '其他宝宝', gender: 'female', birthday: '2020-01-01' });
 
     expect(res.status).toBe(201);
     return res.body.data.id;
@@ -124,5 +148,26 @@ describe('评估接口兼容性测试', () => {
     }));
     expect(deleteRes.status).toBe(200);
     expect(countRes.body.data.count).toBe(0);
+  });
+
+  it('不能提交或读取其他用户孩子的评估记录', async () => {
+    const otherChildId = await createOtherChild();
+
+    const submitRes = await request(app)
+      .post('/api/v1/assessments/sensory/submit')
+      .set('Authorization', 'Bearer ' + userToken)
+      .send({
+        child_id: otherChildId,
+        age_group: '3-4岁',
+        answers: [{ question_id: 1, value: 2 }]
+      });
+
+    const historyRes = await request(app)
+      .get('/api/v1/assessments/history')
+      .set('Authorization', 'Bearer ' + userToken);
+
+    expect(submitRes.status).toBe(403);
+    expect(historyRes.status).toBe(200);
+    expect(historyRes.body.data).toEqual([]);
   });
 });
