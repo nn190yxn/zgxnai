@@ -242,6 +242,18 @@ function initDatabase() {
     )
   `);
 
+  // 用户收藏表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      item_type TEXT NOT NULL,
+      item_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, item_type, item_id)
+    )
+  `);
+
   // 埋点事件表
   db.exec(`
     CREATE TABLE IF NOT EXISTS event_tracks (
@@ -377,6 +389,8 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category);
     CREATE INDEX IF NOT EXISTS idx_articles_title ON articles(title);
     CREATE INDEX IF NOT EXISTS idx_articles_tags ON articles(tags);
+    CREATE INDEX IF NOT EXISTS idx_user_favorites_user ON user_favorites(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_favorites_item ON user_favorites(item_type, item_id);
     CREATE INDEX IF NOT EXISTS idx_events_type ON event_tracks(event_type);
     CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
