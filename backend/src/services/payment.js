@@ -5,13 +5,41 @@ const { activateSubscription } = require('./membership');
 
 // 微信支付配置（生产环境从环境变量读取）
 const WX_PAY_CONFIG = {
-  appid: process.env.WX_APPID || 'wx_appid_placeholder',
-  mchid: process.env.WX_MCHID || 'mchid_placeholder',
-  apiKey: process.env.WX_API_KEY || 'api_key_placeholder',
-  notifyUrl: process.env.WX_NOTIFY_URL || 'https://api.supercalf.com/api/v1/payment/notify',
-  certPath: process.env.WX_CERT_PATH || '',
-  keyPath: process.env.WX_KEY_PATH || ''
+  appid: process.env.WECHAT_APPID || process.env.WX_APPID || '',
+  mchid: process.env.WECHAT_PAY_MCH_ID || process.env.WX_MCHID || '',
+  apiKey: process.env.WECHAT_PAY_API_KEY || process.env.WX_API_KEY || '',
+  notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || process.env.WX_NOTIFY_URL || '',
+  certPath: process.env.WECHAT_PAY_CERT_PATH || process.env.WX_CERT_PATH || '',
+  keyPath: process.env.WECHAT_PAY_KEY_PATH || process.env.WX_KEY_PATH || ''
 };
+
+const PAYMENT_NOT_CONFIGURED = 'WECHAT_PAY_NOT_CONFIGURED';
+
+function getWechatPayMissingConfig() {
+  const required = [
+    ['WECHAT_APPID', WX_PAY_CONFIG.appid],
+    ['WECHAT_PAY_MCH_ID', WX_PAY_CONFIG.mchid],
+    ['WECHAT_PAY_API_KEY', WX_PAY_CONFIG.apiKey],
+    ['WECHAT_PAY_NOTIFY_URL', WX_PAY_CONFIG.notifyUrl],
+    ['WECHAT_PAY_CERT_PATH', WX_PAY_CONFIG.certPath],
+    ['WECHAT_PAY_KEY_PATH', WX_PAY_CONFIG.keyPath]
+  ];
+
+  return required.filter(([, value]) => !value).map(([name]) => name);
+}
+
+function isWechatPayConfigured() {
+  return getWechatPayMissingConfig().length === 0;
+}
+
+function paymentConfigError() {
+  return {
+    success: false,
+    code: PAYMENT_NOT_CONFIGURED,
+    message: '微信支付配置中，请使用试用或兑换码功能',
+    missing_config: getWechatPayMissingConfig()
+  };
+}
 
 /**
  * 生成唯一订单号
@@ -24,6 +52,10 @@ function generateOrderNo() {
  * 创建支付订单
  */
 function createPaymentOrder(userId, planCode, options = {}) {
+  if (!isWechatPayConfigured()) {
+    return paymentConfigError();
+  }
+
   const plan = db.prepare('SELECT * FROM plans WHERE code = ? AND is_active = 1').get(planCode);
   if (!plan) {
     return { success: false, message: '套餐不存在' };
@@ -51,6 +83,10 @@ function createPaymentOrder(userId, planCode, options = {}) {
  * 微信支付统一下单（生产环境调用微信真实接口）
  */
 function unifiedOrder(orderNo, planCode, openid) {
+  if (!isWechatPayConfigured()) {
+    return paymentConfigError();
+  }
+
   const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(orderNo);
   if (!order) {
     return { success: false, message: '订单不存在' };
@@ -85,6 +121,10 @@ function unifiedOrder(orderNo, planCode, openid) {
  * 处理支付回调
  */
 function handlePaymentNotify(notifyData) {
+  if (!isWechatPayConfigured()) {
+    return paymentConfigError();
+  }
+
   // 解析微信支付回调数据
   const { out_trade_no, transaction_id, result_code } = notifyData;
 
@@ -183,5 +223,8 @@ module.exports = {
   queryOrder,
   requestAutoRenew,
   cancelAutoRenew,
+  isWechatPayConfigured,
+  getWechatPayMissingConfig,
+  PAYMENT_NOT_CONFIGURED,
   WX_PAY_CONFIG
 };

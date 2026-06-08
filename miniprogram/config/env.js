@@ -17,7 +17,8 @@ var ENV_CONFIG = {
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
-    enablePayment: true
+    showMembership: true,
+    enableWechatPay: false
   },
   production: {
     apiBaseUrl: 'https://api.supercalf.com/api/v1',
@@ -32,7 +33,8 @@ var ENV_CONFIG = {
     enableBootIsolation: false,
     enableRuntimeConfigFetch: true,
     enableStartupSafeMode: false,
-    enablePayment: true
+    showMembership: true,
+    enableWechatPay: false
   }
 };
 

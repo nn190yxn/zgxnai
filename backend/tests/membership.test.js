@@ -91,16 +91,22 @@ describe('会员制度测试', () => {
 
   // 支付订单
   describe('POST /api/v1/payment/create', () => {
-    it('创建月卡订单应成功', async () => {
+    beforeEach(() => {
+      db.prepare("DELETE FROM payment_orders WHERE user_id = 1").run();
+    });
+
+    it('微信支付配置缺失时应拒绝创建订单', async () => {
       const res = await request(app)
         .post('/api/v1/payment/create')
         .set('Authorization', 'Bearer ' + testToken)
         .send({ plan_code: 'month', auto_renew: true });
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.order_no).toBeDefined();
-      expect(res.body.amount).toBe(1990);
+      const orderCount = db.prepare('SELECT COUNT(*) as count FROM payment_orders WHERE user_id = 1').get();
+      expect(res.status).toBe(503);
+      expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('WECHAT_PAY_NOT_CONFIGURED');
+      expect(res.body.message).toContain('微信支付配置中');
+      expect(orderCount.count).toBe(0);
     });
 
     it('缺少套餐应返回错误', async () => {
@@ -110,6 +116,17 @@ describe('会员制度测试', () => {
         .send({});
 
       expect(res.status).toBe(400);
+    });
+
+    it('微信支付统一下单配置缺失时应返回业务错误', async () => {
+      const res = await request(app)
+        .post('/api/v1/payment/unified-order')
+        .set('Authorization', 'Bearer ' + testToken)
+        .send({ order_no: 'NN_TEST_ORDER', openid: 'openid_test' });
+
+      expect(res.status).toBe(503);
+      expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('WECHAT_PAY_NOT_CONFIGURED');
     });
   });
 

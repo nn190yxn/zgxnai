@@ -7,8 +7,16 @@ const {
   unifiedOrder,
   handlePaymentNotify,
   queryOrder,
-  cancelAutoRenew
+  cancelAutoRenew,
+  PAYMENT_NOT_CONFIGURED
 } = require('../services/payment');
+
+function sendPaymentResult(res, result) {
+  if (result && result.code === PAYMENT_NOT_CONFIGURED) {
+    return res.status(503).json(result);
+  }
+  return res.json(result);
+}
 
 /**
  * POST /api/v1/payment/create
@@ -23,7 +31,7 @@ router.post('/create', authenticateToken, (req, res) => {
   }
 
   const result = createPaymentOrder(userId, plan_code, { auto_renew });
-  res.json(result);
+  sendPaymentResult(res, result);
 });
 
 /**
@@ -37,8 +45,8 @@ router.post('/unified-order', authenticateToken, (req, res) => {
     return res.status(400).json({ success: false, message: '订单号不能为空' });
   }
 
-  const result = unifiedOrder(order_no, openid);
-  res.json(result);
+  const result = unifiedOrder(order_no, null, openid);
+  sendPaymentResult(res, result);
 });
 
 /**

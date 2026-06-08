@@ -1,6 +1,6 @@
 // 会员中心页面 - 审核期版本
 const app = getApp();
-const { ENABLE_PAYMENT } = require('../../config/payment');
+const { ENABLE_WECHAT_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
 
 Page({
   data: {
@@ -15,7 +15,8 @@ Page({
     },
     
     // 支付开关
-    showPayment: ENABLE_PAYMENT,
+    showMembership: SHOW_MEMBERSHIP,
+    showPayment: ENABLE_WECHAT_PAY,
     
     // 套餐列表
     plans: [
