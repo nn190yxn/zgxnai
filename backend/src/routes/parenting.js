@@ -169,10 +169,16 @@ router.get('/search', searchArticles);
 router.get('/articles/:id/related', (req, res) => {
   try {
     const { id } = req.params;
+    
+    // 本地文章 ID 直接返回空数组
+    if (String(id).startsWith('local_')) {
+      return res.json({ success: true, data: [] });
+    }
+    
     const article = db.prepare('SELECT * FROM articles WHERE id = ? AND is_published = 1').get(id);
 
     if (!article) {
-      return res.status(404).json({ success: false, message: '文章不存在' });
+      return res.json({ success: true, data: [] });
     }
 
     const related = db.prepare(`

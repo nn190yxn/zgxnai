@@ -294,6 +294,14 @@ Page({
   // 加载相关文章
   loadRelatedArticles: function() {
     var that = this;
+    
+    // 本地文章不请求相关文章
+    if (String(that.data.articleId || '').indexOf('local_parenting_') === 0) {
+      that.setData({
+        relatedArticles: that.getLocalRelatedArticles(that.data.articleId)
+      });
+      return;
+    }
 
     if (app.shouldUseMockFallback()) {
       that.setData({
