@@ -277,6 +277,71 @@ function initDatabase() {
     )
   `);
 
+  // 文章点赞表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS article_likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      article_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, article_id)
+    )
+  `);
+
+  // 文章评论表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS article_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      article_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      parent_id INTEGER DEFAULT 0,
+      likes INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 用户阅读记录表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_reads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      article_id TEXT NOT NULL,
+      read_time INTEGER DEFAULT 0,
+      read_percent INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, article_id)
+    )
+  `);
+
+  // 用户笔记表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      article_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      paragraph_index INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 每日打卡表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_checkins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      checkin_date TEXT NOT NULL,
+      article_count INTEGER DEFAULT 0,
+      read_time INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, checkin_date)
+    )
+  `);
+
   // 会员套餐表
   db.exec(`
     CREATE TABLE IF NOT EXISTS plans (

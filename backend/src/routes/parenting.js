@@ -273,4 +273,160 @@ router.post('/articles/:id/favorite', authenticateToken, (req, res) => {
   }
 });
 
+// 获取文章点赞数
+function getArticleLikeCount(articleId) {
+  return db.prepare('SELECT COUNT(*) as count FROM article_likes WHERE article_id = ?').get(articleId).count;
+}
+
+// 获取用户是否点赞
+function isArticleLikedByUser(userId, articleId) {
+  if (!userId) return false;
+  return !!db.prepare('SELECT id FROM article_likes WHERE user_id = ? AND article_id = ?').get(userId, articleId);
+}
+
+// 点赞或取消点赞文章
+// POST /api/v1/parenting/articles/:id/like
+router.post('/articles/:id/like', authenticateToken, (req, res) => {
+  try {
+    const article = db.prepare('SELECT id FROM articles WHERE id = ? AND is_published = 1').get(req.params.id);
+    if (!article) {
+      return res.status(404).json({ success: false, message: '文章不存在' });
+    }
+
+    const userId = getUserId(req);
+    const articleId = String(req.params.id);
+    const existing = db.prepare('SELECT id FROM article_likes WHERE user_id = ? AND article_id = ?').get(userId, articleId);
+
+    if (existing) {
+      db.prepare('DELETE FROM article_likes WHERE id = ?').run(existing.id);
+      return res.json({ success: true, data: { is_liked: false, isLiked: false, like_count: getArticleLikeCount(articleId) } });
+    }
+
+    db.prepare('INSERT INTO article_likes (user_id, article_id) VALUES (?, ?)').run(userId, articleId);
+    return res.json({ success: true, data: { is_liked: true, isLiked: true, like_count: getArticleLikeCount(articleId) } });
+  } catch (err) {
+    console.error('[Parenting] 切换点赞失败:', err);
+    return res.status(500).json({ success: false, message: '点赞操作失败' });
+  }
+});
+
+// 获取文章评论列表
+// GET /api/v1/parenting/articles/:id/comments
+router.get('/articles/:id/comments', (req, res) => {
+  try {
+    const articleId = String(req.params.id);
+    const { page = 1, page_size = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(page_size);
+    const limit = parseInt(page_size);
+
+    const comments = db.prepare(`
+      SELECT c.*, u.nickname as user_nickname, u.avatar as user_avatar
+      FROM article_comments c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE c.article_id = ? AND c.parent_id = 0
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(articleId, limit, offset);
+
+    const count = db.prepare('SELECT COUNT(*) as count FROM article_comments WHERE article_id = ? AND parent_id = 0').get(articleId).count;
+
+    res.json({
+      success: true,
+      data: comments,
+      pagination: { page: parseInt(page), page_size: limit, total: count, has_more: offset + limit < count }
+    });
+  } catch (err) {
+    console.error('[Parenting] 获取评论失败:', err);
+    res.status(500).json({ success: false, message: '获取评论失败' });
+  }
+});
+
+// 发表评论
+// POST /api/v1/parenting/articles/:id/comments
+router.post('/articles/:id/comments', authenticateToken, (req, res) => {
+  try {
+    const article = db.prepare('SELECT id FROM articles WHERE id = ? AND is_published = 1').get(req.params.id);
+    if (!article) {
+      return res.status(404).json({ success: false, message: '文章不存在' });
+    }
+
+    const { content, parent_id = 0 } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ success: false, message: '评论内容不能为空' });
+    }
+
+    const userId = getUserId(req);
+    const articleId = String(req.params.id);
+
+    db.prepare('INSERT INTO article_comments (user_id, article_id, content, parent_id) VALUES (?, ?, ?, ?)')
+      .run(userId, articleId, content.trim(), parent_id);
+
+    res.json({ success: true, message: '评论成功' });
+  } catch (err) {
+    console.error('[Parenting] 发表评论失败:', err);
+    res.status(500).json({ success: false, message: '评论失败' });
+  }
+});
+
+// 记录阅读进度
+// POST /api/v1/parenting/articles/:id/read-progress
+router.post('/articles/:id/read-progress', authenticateToken, (req, res) => {
+  try {
+    const { read_time, read_percent } = req.body;
+    const userId = getUserId(req);
+    const articleId = String(req.params.id);
+
+    const existing = db.prepare('SELECT id FROM user_reads WHERE user_id = ? AND article_id = ?').get(userId, articleId);
+    if (existing) {
+      db.prepare('UPDATE user_reads SET read_time = ?, read_percent = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(read_time || 0, read_percent || 0, existing.id);
+    } else {
+      db.prepare('INSERT INTO user_reads (user_id, article_id, read_time, read_percent) VALUES (?, ?, ?, ?)')
+        .run(userId, articleId, read_time || 0, read_percent || 0);
+    }
+
+    res.json({ success: true, message: '阅读进度已记录' });
+  } catch (err) {
+    console.error('[Parenting] 记录阅读进度失败:', err);
+    res.status(500).json({ success: false, message: '记录阅读进度失败' });
+  }
+});
+
+// 每日打卡
+// POST /api/v1/parenting/checkin
+router.post('/checkin', authenticateToken, (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const today = new Date().toISOString().split('T')[0];
+
+    const existing = db.prepare('SELECT id FROM daily_checkins WHERE user_id = ? AND checkin_date = ?').get(userId, today);
+    if (existing) {
+      db.prepare('UPDATE daily_checkins SET article_count = article_count + 1 WHERE id = ?').run(existing.id);
+      return res.json({ success: true, data: { checked_in: true, message: '今日已打卡' } });
+    }
+
+    db.prepare('INSERT INTO daily_checkins (user_id, checkin_date, article_count) VALUES (?, ?, 1)').run(userId, today);
+    res.json({ success: true, data: { checked_in: true, message: '打卡成功' } });
+  } catch (err) {
+    console.error('[Parenting] 打卡失败:', err);
+    res.status(500).json({ success: false, message: '打卡失败' });
+  }
+});
+
+// 获取打卡记录
+// GET /api/v1/parenting/checkins
+router.get('/checkins', authenticateToken, (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const checkins = db.prepare(`
+      SELECT * FROM daily_checkins WHERE user_id = ? ORDER BY checkin_date DESC LIMIT 30
+    `).all(userId);
+
+    res.json({ success: true, data: checkins });
+  } catch (err) {
+    console.error('[Parenting] 获取打卡记录失败:', err);
+    res.status(500).json({ success: false, message: '获取打卡记录失败' });
+  }
+});
+
 module.exports = router;

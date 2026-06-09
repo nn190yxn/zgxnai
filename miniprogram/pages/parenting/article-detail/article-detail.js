@@ -9,6 +9,14 @@ Page({
     article: null,
     // 是否收藏
     isFavorite: false,
+    // 是否点赞
+    isLiked: false,
+    // 点赞数
+    likeCount: 0,
+    // 评论列表
+    comments: [],
+    // 评论输入内容
+    commentText: '',
     // 相关文章
     relatedArticles: [],
     // 加载状态
@@ -461,6 +469,86 @@ Page({
   onPullDownRefresh: function() {
     this.loadArticleDetail(true);
     this.loadRelatedArticles();
+    this.loadComments();
+  },
+
+  // 加载评论列表
+  loadComments: function() {
+    var that = this;
+    if (String(that.data.articleId || '').indexOf('local_parenting_') === 0) {
+      that.setData({ comments: [] });
+      return;
+    }
+    
+    app.request({
+      url: '/parenting/articles/' + that.data.articleId + '/comments',
+      method: 'GET'
+    }).then(function(res) {
+      if (res && res.data) {
+        that.setData({ comments: res.data || [] });
+      }
+    }).catch(function(err) {
+      console.log('获取评论失败', err);
+    });
+  },
+
+  // 切换点赞
+  toggleLike: function() {
+    var that = this;
+    if (that.data.offlineFallback) {
+      wx.showToast({ title: '离线示例不可点赞', icon: 'none' });
+      return;
+    }
+    
+    app.request({
+      url: '/parenting/articles/' + that.data.articleId + '/like',
+      method: 'POST'
+    }).then(function(res) {
+      if (res && res.data) {
+        that.setData({
+          isLiked: res.data.isLiked || res.data.is_liked,
+          likeCount: res.data.like_count || 0
+        });
+        wx.showToast({
+          title: that.data.isLiked ? '已点赞' : '已取消',
+          icon: 'success'
+        });
+      }
+    }).catch(function(err) {
+      wx.showToast({ title: '点赞失败', icon: 'none' });
+    });
+  },
+
+  // 评论输入
+  onCommentInput: function(e) {
+    this.setData({ commentText: e.detail.value });
+  },
+
+  // 提交评论
+  submitComment: function() {
+    var that = this;
+    var content = that.data.commentText;
+    if (!content || !content.trim()) {
+      wx.showToast({ title: '请输入评论内容', icon: 'none' });
+      return;
+    }
+    
+    if (that.data.offlineFallback) {
+      wx.showToast({ title: '离线示例不可评论', icon: 'none' });
+      return;
+    }
+    
+    app.request({
+      url: '/parenting/articles/' + that.data.articleId + '/comments',
+      method: 'POST',
+      data: { content: content.trim() }
+    }).then(function() {
+      wx.showToast({ title: '评论成功', icon: 'success' });
+      that.setData({ commentText: '' });
+      that.loadComments();
+    }).catch(function(err) {
+      wx.showToast({ title: '评论失败', icon: 'none' });
+    });
   },
 
   // 图片加载完成

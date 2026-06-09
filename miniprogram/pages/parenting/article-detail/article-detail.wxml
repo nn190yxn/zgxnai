@@ -121,6 +121,54 @@
       </view>
     </view>
 
+    <!-- 互动功能区 -->
+    <view class="interaction-section">
+      <!-- 点赞和收藏 -->
+      <view class="action-bar">
+        <view class="action-item {{isLiked ? 'active' : ''}}" bindtap="toggleLike">
+          <text class="action-icon">{{isLiked ? '👍' : '👍'}}</text>
+          <text class="action-count">{{likeCount || 0}}</text>
+        </view>
+        <view class="action-item {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
+          <text class="action-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+          <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
+        </view>
+        <button class="action-item share-btn" open-type="share">
+          <text class="action-icon">📤</text>
+          <text class="action-text">分享</text>
+        </button>
+      </view>
+
+      <!-- 评论输入框 -->
+      <view class="comment-input-section">
+        <input 
+          class="comment-input" 
+          placeholder="写下你的想法..." 
+          value="{{commentText}}"
+          bindinput="onCommentInput"
+          confirm-type="send"
+          bindconfirm="submitComment"
+        />
+        <button class="comment-submit" bindtap="submitComment">发送</button>
+      </view>
+
+      <!-- 评论列表 -->
+      <view class="comments-section" wx:if="{{comments.length > 0}}">
+        <view class="section-header">
+          <text class="section-title">💬 评论 ({{comments.length}})</text>
+        </view>
+        <view class="comment-list">
+          <view class="comment-item" wx:for="{{comments}}" wx:key="id">
+            <view class="comment-header">
+              <text class="comment-author">{{item.user_nickname || '匿名用户'}}</text>
+              <text class="comment-time">{{item.created_at}}</text>
+            </view>
+            <text class="comment-content">{{item.content}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
       <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">

@@ -106,8 +106,6 @@
           <view class="article-content no-image">
             <text class="article-title">{{item.title}}</text>
             <text class="article-summary">{{item.summary}}</text>
-            <text class="article-title">{{item.title}}</text>
-            <text class="article-summary">{{item.summary}}</text>
             <view class="article-tags">
               <text class="tag tag-primary" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
               <text class="tag tag-accent" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
