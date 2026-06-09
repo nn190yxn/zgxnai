@@ -242,6 +242,17 @@ function initDatabase() {
     )
   `);
 
+  const articleColumns = db.prepare('PRAGMA table_info(articles)').all().map(column => column.name);
+  if (!articleColumns.includes('cover')) {
+    db.exec(`ALTER TABLE articles ADD COLUMN cover TEXT`);
+  }
+  if (!articleColumns.includes('cover_image')) {
+    db.exec(`ALTER TABLE articles ADD COLUMN cover_image TEXT`);
+  }
+  if (!articleColumns.includes('icon_url')) {
+    db.exec(`ALTER TABLE articles ADD COLUMN icon_url TEXT`);
+  }
+
   // 用户收藏表
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_favorites (
