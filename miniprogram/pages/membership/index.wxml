@@ -16,19 +16,19 @@
     </view>
   </view>
 
-  <!-- 审核期提示 -->
+  <!-- 支付状态提示 -->
   <view class="audit-notice" wx:if="{{!showPayment}}">
-    <view class="notice-icon">🎉</view>
+    <view class="notice-icon">VIP</view>
     <text class="notice-title">会员功能即将上线</text>
-    <text class="notice-desc">当前为功能体验期，所有功能免费使用</text>
-    <text class="notice-desc">正式版上线后，将提供月卡/季卡/年卡多种选择</text>
+    <text class="notice-desc">{{paymentNotice}}</text>
+    <text class="notice-desc">当前可使用免费试用、兑换码和邀请奖励</text>
   </view>
 
-  <!-- 会员套餐（审核期隐藏） -->
-  <view class="plans-section" wx:if="{{showPayment}}">
+  <!-- 会员套餐 -->
+  <view class="plans-section" wx:if="{{showMembership}}">
     <view class="section-title">选择会员套餐</view>
     <view class="plans-list">
-      <view class="plan-item" wx:for="{{plans}}" wx:key="code" data-code="{{item.code}}" bindtap="selectPlan">
+      <view class="plan-item {{selectedPlan === item.code ? 'plan-selected' : ''}}" wx:for="{{plans}}" wx:key="code" data-code="{{item.code}}" bindtap="selectPlan">
         <view class="plan-header">
           <text class="plan-name">{{item.name}}</text>
           <text class="plan-duration">{{item.duration}}</text>
@@ -39,6 +39,8 @@
         <view class="plan-desc">{{item.description}}</view>
       </view>
     </view>
+    <button wx:if="{{showPayment}}" class="btn-pay">立即开通</button>
+    <button wx:else class="btn-pay btn-pay-disabled" disabled="true">微信支付暂未开放</button>
   </view>
 
   <!-- 兑换码 -->

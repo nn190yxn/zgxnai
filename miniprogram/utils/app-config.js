@@ -6,8 +6,8 @@ function normalizeRuntimeConfig(payload) {
   return {
     envName: data.env_name || data.envName || (envConfig.envName || 'development'),
     debug: !!data.debug,
-    aiChatEnabled: data.ai_chat_enabled !== undefined ? !!data.ai_chat_enabled : (envConfig.envName !== 'production'),
-    multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.envName !== 'production'),
+    aiChatEnabled: data.ai_chat_enabled !== undefined ? !!data.ai_chat_enabled : (envConfig.enableAiChat !== false),
+    multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
     paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : false,
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
     aiServiceReady: data.ai_service_ready !== undefined ? !!data.ai_service_ready : (envConfig.envName !== 'production'),

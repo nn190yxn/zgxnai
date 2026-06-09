@@ -18,7 +18,9 @@ var ENV_CONFIG = {
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
     showMembership: true,
-    enableWechatPay: false
+    enableWechatPay: false,
+    enableAiChat: true,
+    enableMultimodal: false
   },
   production: {
     apiBaseUrl: 'https://api.woyai.cn/api/v1',
@@ -34,7 +36,9 @@ var ENV_CONFIG = {
     enableRuntimeConfigFetch: true,
     enableStartupSafeMode: false,
     showMembership: true,
-    enableWechatPay: false
+    enableWechatPay: false,
+    enableAiChat: true,
+    enableMultimodal: false
   }
 };
 

@@ -17,6 +17,7 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_WECHAT_PAY,
+    paymentNotice: ENABLE_WECHAT_PAY ? '选择套餐后可发起微信支付' : '微信支付暂未开放，可先使用试用或兑换码',
     
     // 套餐列表
     plans: [
@@ -96,6 +97,9 @@ Page({
   selectPlan(e) {
     const code = e.currentTarget.dataset.code;
     this.setData({ selectedPlan: code });
+    if (!this.data.showPayment) {
+      wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
+    }
   },
 
   // 输入兑换码

@@ -48,8 +48,8 @@ App({
     runtimeConfig: {
       envName: envConfig.envName || 'development',
       debug: envConfig.envName !== 'production',
-      aiChatEnabled: envConfig.envName !== 'production',
-      multimodalEnabled: envConfig.envName !== 'production',
+      aiChatEnabled: envConfig.enableAiChat !== false,
+      multimodalEnabled: envConfig.enableMultimodal === true,
       paymentEnabled: false,
       aiMockFallback: !!envConfig.allowMockFallback,
       aiServiceReady: envConfig.envName !== 'production',
