@@ -223,7 +223,7 @@ Page({
       method: 'GET',
       data: {
         childId: (this.data.currentChild && this.data.currentChild.id) || 0,
-        grade: ageName
+        grade: ageName.replace(/\s+/g, '').replace('岁', '')
       }
     }).then(function(res) {
       var list = (res && res.list) || [];

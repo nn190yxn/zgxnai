@@ -592,6 +592,51 @@ function seedData() {
   // 阅读任务种子数据 - 扩充版
   const tasks = [
     {
+      task_code: 'r0_1',
+      title: '宝宝视觉追踪：看看玩具在哪里',
+      subject_code: 'reading_comprehension',
+      age_range: '0-1岁',
+      difficulty: 1,
+      duration: 5,
+      material: '颜色鲜艳的玩具或绘本封面',
+      objective: '训练宝宝视觉追踪能力',
+      steps: `1. 在宝宝视线范围内缓慢移动玩具
+2. 观察宝宝眼睛是否跟随
+3. 在不同方向重复练习`,
+      parent_prompt: '引导宝宝视线跟随玩具移动',
+      content: '0-1岁宝宝视觉发育关键期训练',
+      image_url: '',
+      icon_url: 'https://example.com/images/icons/eye.png',
+      cover_image: '',
+      audio_url: '',
+      video_url: '',
+      tips: '每次练习时间不宜过长，5-10分钟为宜',
+      example_answer: '宝宝眼睛能跟随玩具移动'
+    },
+    {
+      task_code: 'r0_2',
+      title: '亲子朗读：听听绘本的声音',
+      subject_code: 'reading_comprehension',
+      age_range: '1-2岁',
+      difficulty: 1,
+      duration: 10,
+      material: '简单的绘本或卡片',
+      objective: '通过朗读培养宝宝语言感知',
+      steps: `1. 选择简单的绘本或卡片
+2. 用温柔的声音朗读或讲解
+3. 让宝宝触摸画面
+4. 观察宝宝反应`,
+      parent_prompt: '用温柔的声音为宝宝读书',
+      content: '1-2岁宝宝语言启蒙训练',
+      image_url: '',
+      icon_url: 'https://example.com/images/icons/speak.png',
+      cover_image: '',
+      audio_url: '',
+      video_url: '',
+      tips: '语速要慢，音调要温和，重复朗读效果更好',
+      example_answer: '宝宝能专注听5-10分钟'
+    },
+    {
       task_code: 'r1',
       title: '绘本封面观察：猜一猜主角',
       subject_code: 'reading_comprehension',

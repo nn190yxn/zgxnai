@@ -28,6 +28,7 @@ router.get('/tasks/today', (req, res) => {
     const { childId, grade } = req.query;
 
     // 获取今日任务 - 返回完整字段
+    const normalizedGrade = (grade || '3-4').replace(/\s+/g, '').replace(/岁$/, '');
     const tasks = db.prepare(`
       SELECT t.*, tp.status, tp.progress 
       FROM reading_tasks t
@@ -35,7 +36,7 @@ router.get('/tasks/today', (req, res) => {
       WHERE t.age_range LIKE ?
       ORDER BY t.difficulty ASC
       LIMIT 4
-    `).all(childId || 0, `%${grade || '3-4岁'}%`);
+    `).all(childId || 0, `%${normalizedGrade}%`);
 
     res.json({
       success: true,
