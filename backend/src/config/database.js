@@ -129,6 +129,34 @@ function initDatabase() {
     )
   `);
 
+  // 发展里程碑评估记录表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS milestone_assessments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      age_range TEXT NOT NULL,
+      total_score INTEGER DEFAULT 0,
+      total_items INTEGER DEFAULT 0,
+      overall_percentage INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // 发展里程碑评估维度得分表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS milestone_assessment_dimensions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      assessment_id INTEGER NOT NULL,
+      dimension_id TEXT NOT NULL,
+      score INTEGER DEFAULT 0,
+      total INTEGER DEFAULT 0,
+      percentage INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assessment_id) REFERENCES milestone_assessments(id) ON DELETE CASCADE
+    )
+  `);
+
   // 聊天消息表
   db.exec(`
     CREATE TABLE IF NOT EXISTS chat_messages (
@@ -872,63 +900,14 @@ function seedData() {
   }
 
   // 育儿文章种子数据
-  const articles = [
-    {
-      title: '3-6岁孩子情绪表达的4个引导技巧',
-      summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
-      content: `情绪表达是儿童发展的重要能力...
-
-【技巧一：命名情绪】
-当孩子哭闹时，不要急着制止，而是帮助他认识："你现在是感到生气吗？"
-
-【技巧二：接纳感受】
-告诉孩子："生气是可以的，但打人不行。"
-
-【技巧三：提供替代方案】
-"你可以用语言说出来，或者画出来。"
-
-【技巧四：建立冷静角】
-在家中设置一个安静的角落，让孩子可以在情绪激动时自我调节。`,
-      category: '情绪管理',
-      sub_category: '情绪表达',
-      age_group: '3-6岁',
-      tags: '情绪,表达,引导',
-      author: '小牛育儿专家团',
-      evidence_level: 'A',
-      cover: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=300&fit=crop'
-    },
-    {
-      title: '建立睡前流程：让孩子更快入睡',
-      summary: '固定节奏和低刺激环境可以显著降低入睡阻力。',
-      content: `良好的睡眠习惯对孩子的成长至关重要...
-
-【步骤一：固定时间】
-每天晚上在同一时间开始睡前流程。
-
-【步骤二：降低刺激】
-睡前1小时避免电子屏幕，调暗灯光。
-
-【步骤三：建立仪式】
-洗澡→换睡衣→讲故事→睡觉，形成固定流程。
-
-【步骤四：保持一致】
-即使周末也要保持相同的作息时间。`,
-      category: '行为习惯',
-      sub_category: '睡眠习惯',
-      age_group: '0-6岁',
-      tags: '睡眠,习惯,流程',
-      author: '小牛育儿专家团',
-      evidence_level: 'A',
-      cover: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05a55?w=400&h=300&fit=crop'
-    }
-  ];
-
+  const articleSeeds = require('../data/articleSeeds');
+  
   const insertArticle = db.prepare(`
     INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  for (const article of articles) {
+  for (const article of articleSeeds) {
     insertArticle.run(
       article.title, article.summary, article.content, article.category,
       article.sub_category, article.age_group, article.tags, article.author, article.evidence_level,

@@ -19,6 +19,8 @@
     "pages/parenting/article-list/article-list",
     "pages/parenting/article-detail/article-detail",
     "pages/parenting/search/search",
+    "pages/parenting/milestone/milestone",
+    "pages/parenting/milestone-result/milestone-result",
     "pages/textbook/textbook",
     "pages/textbook/knowledge-list/knowledge-list",
     "pages/textbook/knowledge-detail/knowledge-detail",

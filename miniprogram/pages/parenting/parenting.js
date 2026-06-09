@@ -3,43 +3,52 @@ var app = getApp();
 
 Page({
   data: {
-    // 分类列表
+    // 分类列表 - 每个分类配有独特的emoji、颜色和描述
     categoryList: [
       {
         id: 1,
         icon: '🧘',
         name: '情绪管理',
-        desc: '帮助孩子认识和管理情绪'
+        desc: '帮助孩子认识和管理情绪',
+        color: '#4A90D9',
+        bgColor: '#E8F0FE',
+        emoji: '😊'
       },
       {
         id: 2,
-        icon: '📝',
+        icon: '🌱',
         name: '行为习惯',
-        desc: '培养良好生活习惯和行为规范'
+        desc: '培养良好生活习惯和行为规范',
+        color: '#5DBA8B',
+        bgColor: '#E8F5EE',
+        emoji: '✨'
       },
       {
         id: 3,
-        icon: '🤝',
-        name: '社交能力',
-        desc: '提升孩子人际交往与沟通能力'
+        icon: '🧠',
+        name: '认知发展',
+        desc: '促进孩子思维与认知能力提升',
+        color: '#9B7ED9',
+        bgColor: '#F0EBFA',
+        emoji: '💡'
       },
       {
         id: 4,
-        icon: '🧠',
-        name: '认知发展',
-        desc: '促进孩子思维与认知能力提升'
+        icon: '🤝',
+        name: '社交能力',
+        desc: '提升孩子人际交往与沟通能力',
+        color: '#E89A4C',
+        bgColor: '#FDF2E3',
+        emoji: '💬'
       },
       {
         id: 5,
-        icon: '🛡️',
-        name: '安全教育',
-        desc: '提高孩子安全意识和自我保护能力'
-      },
-      {
-        id: 6,
-        icon: '👨‍👩‍👧',
-        name: '性教育',
-        desc: '适龄性教育知识与方法指导'
+        icon: '🍎',
+        name: '营养健康',
+        desc: '科学喂养和健康护理知识',
+        color: '#E8737A',
+        bgColor: '#FDECEC',
+        emoji: '🥗'
       }
     ],
     // 热门文章轮播
@@ -218,6 +227,16 @@ Page({
     var name = e.currentTarget.dataset.name;
     wx.navigateTo({
       url: '/pages/parenting/article-list/article-list?categoryId=' + id + '&categoryName=' + encodeURIComponent(name),
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  // 跳转到发展里程碑评估
+  goToMilestone: function() {
+    wx.navigateTo({
+      url: '/pages/parenting/milestone/milestone',
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

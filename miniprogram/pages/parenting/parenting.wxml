@@ -27,13 +27,31 @@
         bindtap="onCategoryTap" 
         data-id="{{item.id}}"
         data-name="{{item.name}}"
+        style="background: {{item.bgColor}}; border: 2rpx solid {{item.color}}20;"
       >
-        <view class="card-icon-wrap">
-          <text class="card-icon">{{item.icon}}</text>
+        <view class="card-icon-wrap" style="background: {{item.color}}15;">
+          <text class="card-icon" style="color: {{item.color}};">{{item.emoji}}</text>
         </view>
-        <text class="card-name">{{item.name}}</text>
+        <text class="card-name" style="color: {{item.color}};">{{item.name}}</text>
         <text class="card-desc">{{item.desc}}</text>
       </view>
+    </view>
+  </view>
+
+  <!-- 发展里程碑评估入口 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">成长评估</text>
+    </view>
+    <view class="milestone-entry" bindtap="goToMilestone">
+      <view class="milestone-content">
+        <text class="milestone-icon">🎯</text>
+        <view class="milestone-text">
+          <text class="milestone-title">发展里程碑评估</text>
+          <text class="milestone-desc">了解孩子在各年龄段的发展情况</text>
+        </view>
+      </view>
+      <text class="milestone-arrow">></text>
     </view>
   </view>
 

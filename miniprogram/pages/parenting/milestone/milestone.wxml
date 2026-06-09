@@ -1,0 +1,100 @@
+<view class="page-container">
+  <view class="header">
+    <text class="title">发展里程碑评估</text>
+    <text class="subtitle">了解孩子在各年龄段的发展情况</text>
+  </view>
+
+  <!-- 年龄段选择 -->
+  <view class="section" wx:if="{{step === 'age'}}">
+    <text class="section-title">请选择孩子的年龄段</text>
+    <view class="age-grid">
+      <view 
+        class="age-card {{selectedAge === item.id ? 'active' : ''}}" 
+        wx:for="{{ageRanges}}" 
+        wx:key="id"
+        bindtap="selectAge"
+        data-id="{{item.id}}"
+      >
+        <text class="age-name">{{item.name}}</text>
+        <text class="age-months">{{item.months}}</text>
+      </view>
+    </view>
+    <button class="btn-primary" bindtap="startAssessment" disabled="{{!selectedAge}}">开始评估</button>
+  </view>
+
+  <!-- 评估问题 -->
+  <view class="section" wx:if="{{step === 'assess'}}">
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progressPercent}}%"></view>
+    </view>
+    <text class="progress-text">{{currentQuestionIndex + 1}} / {{currentIndicators.length}}</text>
+    
+    <view class="question-card" wx:if="{{currentIndicator}}">
+      <view class="dimension-tag" style="background: {{currentDimension.color}}20; color: {{currentDimension.color}};">
+        {{currentDimension.icon}} {{currentDimension.name}}
+      </view>
+      <text class="question-text">{{currentIndicator.text}}</text>
+      <text class="question-hint">宝宝能做到这一点吗？</text>
+      
+      <view class="answer-options">
+        <view class="answer-btn {{answers[currentIndicator.id] === true ? 'selected-yes' : ''}}" bindtap="answerYes">
+          <text class="answer-icon">✅</text>
+          <text class="answer-text">能做到</text>
+        </view>
+        <view class="answer-btn {{answers[currentIndicator.id] === false ? 'selected-no' : ''}}" bindtap="answerNo">
+          <text class="answer-icon">❌</text>
+          <text class="answer-text">还不能</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="nav-buttons">
+      <button class="btn-secondary" bindtap="prevQuestion" disabled="{{currentQuestionIndex === 0}}">上一题</button>
+      <button class="btn-primary" bindtap="nextQuestion" wx:if="{{currentQuestionIndex < currentIndicators.length - 1}}">下一题</button>
+      <button class="btn-primary" bindtap="submitAssessment" wx:if="{{currentQuestionIndex === currentIndicators.length - 1}}">提交评估</button>
+    </view>
+  </view>
+
+  <!-- 结果页面 -->
+  <view class="section" wx:if="{{step === 'result'}}">
+    <view class="result-header">
+      <text class="result-title">评估结果</text>
+      <view class="overall-score">
+        <text class="score-number">{{overallPercentage}}</text>
+        <text class="score-unit">%</text>
+      </view>
+      <text class="score-label">综合发展指数</text>
+    </view>
+
+    <view class="dimension-results">
+      <view class="dimension-item" wx:for="{{dimensionResults}}" wx:key="id">
+        <view class="dimension-info">
+          <text class="dimension-icon">{{item.icon}}</text>
+          <view class="dimension-text">
+            <text class="dimension-name">{{item.name}}</text>
+            <text class="dimension-desc">{{item.description}}</text>
+          </view>
+        </view>
+        <view class="dimension-bar">
+          <view class="dimension-fill" style="width: {{item.percentage}}%; background: {{item.color}};"></view>
+        </view>
+        <text class="dimension-percentage">{{item.percentage}}%</text>
+      </view>
+    </view>
+
+    <view class="suggestion-section" wx:if="{{suggestions.length > 0}}">
+      <text class="suggestion-title">💡 发展建议</text>
+      <view class="suggestion-list">
+        <view class="suggestion-item" wx:for="{{suggestions}}" wx:key="index">
+          <text class="suggestion-icon">{{item.icon}}</text>
+          <text class="suggestion-text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="result-actions">
+      <button class="btn-primary" bindtap="restartAssessment">重新评估</button>
+      <button class="btn-secondary" bindtap="goToHistory">查看历史</button>
+    </view>
+  </view>
+</view>

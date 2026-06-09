@@ -1,0 +1,34 @@
+<view class="page-container">
+  <view class="header">
+    <text class="title">评估历史</text>
+    <text class="subtitle">查看孩子的成长轨迹</text>
+  </view>
+
+  <view class="history-list" wx:if="{{history.length > 0}}">
+    <view class="history-item" wx:for="{{history}}" wx:key="id" bindtap="viewDetail" data-id="{{item.id}}">
+      <view class="history-header">
+        <text class="history-age">{{item.age_range}}</text>
+        <text class="history-date">{{item.created_at}}</text>
+      </view>
+      <view class="history-score">
+        <text class="score-value">{{item.overall_percentage}}%</text>
+        <view class="score-bar">
+          <view class="score-fill" style="width: {{item.overall_percentage}}%"></view>
+        </view>
+      </view>
+      <view class="history-detail">
+        <text class="detail-text">{{item.total_score}}/{{item.total_items}} 项达标</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{history.length === 0}}">
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">暂无评估记录</text>
+    <text class="empty-hint">完成一次评估后，这里会显示历史记录</text>
+  </view>
+
+  <view class="action-bar">
+    <button class="btn-primary" bindtap="startNewAssessment">开始新评估</button>
+  </view>
+</view>
