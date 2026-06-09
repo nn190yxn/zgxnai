@@ -6,12 +6,12 @@ Use this checklist after production environment variables and WeChat platform se
 
 ## Environment Gate
 
-- [ ] Confirm `miniprogram/config/env.js` points production API traffic to `https://api.supercalf.com/api/v1`.
+- [ ] Confirm `miniprogram/config/env.js` points production API traffic to `https://api.woyai.cn/api/v1`.
 - [ ] Confirm WeChat mini-program AppID is `wxb22908624ec860fe`.
-- [ ] Confirm WeChat public platform request domain includes `https://api.supercalf.com`.
+- [ ] Confirm WeChat public platform request domain includes `https://api.woyai.cn`.
 - [ ] Confirm backend production has a strong `JWT_SECRET`.
 - [ ] Confirm backend production has `WECHAT_APPID` and `WECHAT_APP_SECRET`.
-- [ ] Confirm HTTPS certificate and API gateway are healthy for `https://api.supercalf.com`.
+- [ ] Confirm HTTPS certificate and API gateway are healthy for `https://api.woyai.cn`.
 
 ## Backend Smoke Gate
 
@@ -19,10 +19,10 @@ Run these checks against the production-like backend before opening WeChat DevTo
 
 ```bash
 # Health check
-curl -i https://api.supercalf.com/health
+curl -i https://api.woyai.cn/health
 
 # API health check
-curl -i https://api.supercalf.com/api/v1/health
+curl -i https://api.woyai.cn/api/v1/health
 ```
 
 - [ ] Health endpoint returns HTTP 200.

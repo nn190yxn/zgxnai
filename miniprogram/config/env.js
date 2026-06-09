@@ -21,8 +21,8 @@ var ENV_CONFIG = {
     enableWechatPay: false
   },
   production: {
-    apiBaseUrl: 'https://api.supercalf.com/api/v1',
-    baseUrl: 'https://api.supercalf.com',
+    apiBaseUrl: 'https://api.woyai.cn/api/v1',
+    baseUrl: 'https://api.woyai.cn',
     allowHttp: false,
     requestTimeoutMs: 10000,
     apiStrictMode: true,

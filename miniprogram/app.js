@@ -106,6 +106,7 @@ onError: function(error) {
   // 初始化 API 基址（允许开发环境通过 storage 覆盖）
   initApiBaseUrl: function() {
     var allowHosts = {
+      'api.woyai.cn': true,
       'api.supercalf.com': true,
       'supercalf.com': true,
       'www.supercalf.com': true,

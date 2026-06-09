@@ -31,6 +31,14 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
 
 ## 条目
 
+[生产 API 域名]
+- Date: 2026-06-09
+- Context: 用户说明当前微信小程序合法 request 域名已更换
+- Category: 环境配置
+- Instructions:
+  - 当前生产 API 域名使用 `https://api.woyai.cn`。
+  - 小程序生产 API 基址使用 `https://api.woyai.cn/api/v1`。
+
 [修复执行必须备份、回测和全局审查]
 - Date: 2026-06-08
 - Context: 用户要求制定小程序深度代码问题修复计划时提出
