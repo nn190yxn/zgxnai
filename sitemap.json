@@ -1,0 +1,9 @@
+{
+  "desc": "根目录导入兼容配置，真实小程序代码位于 miniprogram/。",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

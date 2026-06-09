@@ -1,0 +1,63 @@
+{
+  "pages": [
+    "miniprogram/pages/index/index",
+    "miniprogram/pages/chat/chat",
+    "miniprogram/pages/profile/profile",
+    "miniprogram/pages/profile/children/children",
+    "miniprogram/pages/profile/child-edit/child-edit",
+    "miniprogram/pages/profile/privacy/privacy",
+    "miniprogram/pages/profile/agreement/agreement",
+    "miniprogram/pages/profile/account-deletion/account-deletion",
+    "miniprogram/pages/assessment/assessment",
+    "miniprogram/pages/assessment/do/do",
+    "miniprogram/pages/assessment/result/result",
+    "miniprogram/pages/assessment/history/history",
+    "miniprogram/pages/nutrition/nutrition",
+    "miniprogram/pages/nutrition/recipe-list/recipe-list",
+    "miniprogram/pages/nutrition/recipe-detail/recipe-detail",
+    "miniprogram/pages/parenting/parenting",
+    "miniprogram/pages/parenting/article-list/article-list",
+    "miniprogram/pages/parenting/article-detail/article-detail",
+    "miniprogram/pages/parenting/search/search",
+    "miniprogram/pages/textbook/textbook",
+    "miniprogram/pages/textbook/knowledge-list/knowledge-list",
+    "miniprogram/pages/textbook/knowledge-detail/knowledge-detail",
+    "miniprogram/pages/share/preview/preview",
+    "miniprogram/pages/membership/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "小牛育儿AI助理",
+    "navigationBarBackgroundColor": "#FF6B35",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#A08C86",
+    "selectedColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "miniprogram/pages/index/index",
+        "text": "首页",
+        "iconPath": "miniprogram/images/tab-home.png",
+        "selectedIconPath": "miniprogram/images/tab-home-active.png"
+      },
+      {
+        "pagePath": "miniprogram/pages/chat/chat",
+        "text": "AI问答",
+        "iconPath": "miniprogram/images/tab-chat.png",
+        "selectedIconPath": "miniprogram/images/tab-chat-active.png"
+      },
+      {
+        "pagePath": "miniprogram/pages/profile/profile",
+        "text": "我的",
+        "iconPath": "miniprogram/images/tab-profile.png",
+        "selectedIconPath": "miniprogram/images/tab-profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
