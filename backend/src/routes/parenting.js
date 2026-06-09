@@ -6,6 +6,32 @@ const { authenticateToken } = require('../middleware/auth');
 
 const ARTICLE_TYPE = 'parenting_article';
 
+// 分类占位图颜色映射
+const categoryPlaceholders = {
+  '情绪管理': { color: '#FF6B6B', icon: '😊' },
+  '行为习惯': { color: '#4ECDC4', icon: '✨' },
+  '认知发展': { color: '#45B7D1', icon: '🧠' },
+  '语言发展': { color: '#96CEB4', icon: '💬' },
+  '社交能力': { color: '#DDA0DD', icon: '🤝' },
+  '运动发展': { color: '#FFD93D', icon: '🏃' },
+  '营养健康': { color: '#6BCB77', icon: '🥗' },
+  '睡眠指导': { color: '#8D6E63', icon: '😴' },
+  '安全教育': { color: '#FF8C42', icon: '🔒' },
+  'default': { color: '#9E9E9E', icon: '📖' }
+};
+
+// 生成 SVG 占位图 URL
+function generatePlaceholderImage(category) {
+  const cat = categoryPlaceholders[category] || categoryPlaceholders['default'];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+    <rect width="400" height="300" fill="${cat.color}" opacity="0.15"/>
+    <rect x="50" y="50" width="300" height="200" rx="20" fill="${cat.color}" opacity="0.1"/>
+    <text x="200" y="140" font-size="80" text-anchor="middle" dominant-baseline="central">${cat.icon}</text>
+    <text x="200" y="220" font-size="24" fill="#666" text-anchor="middle" font-family="sans-serif">${category || '育儿锦囊'}</text>
+  </svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
 function getUserId(req) {
   return req.user && (req.user.userId || req.user.id);
 }
@@ -26,6 +52,7 @@ function normalizeArticle(article, userId) {
   const favorited = isFavorited(userId, article.id);
   return {
     ...article,
+    cover: article.cover || article.cover_image || article.icon_url || generatePlaceholderImage(article.category),
     is_favorited: favorited,
     isFavorite: favorited
   };

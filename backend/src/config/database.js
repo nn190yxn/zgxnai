@@ -829,7 +829,8 @@ function seedData() {
       age_group: '3-6岁',
       tags: '情绪,表达,引导',
       author: '小牛育儿专家团',
-      evidence_level: 'A'
+      evidence_level: 'A',
+      cover: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=300&fit=crop'
     },
     {
       title: '建立睡前流程：让孩子更快入睡',
@@ -852,19 +853,21 @@ function seedData() {
       age_group: '0-6岁',
       tags: '睡眠,习惯,流程',
       author: '小牛育儿专家团',
-      evidence_level: 'A'
+      evidence_level: 'A',
+      cover: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05a55?w=400&h=300&fit=crop'
     }
   ];
 
   const insertArticle = db.prepare(`
-    INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   for (const article of articles) {
     insertArticle.run(
       article.title, article.summary, article.content, article.category,
-      article.sub_category, article.age_group, article.tags, article.author, article.evidence_level
+      article.sub_category, article.age_group, article.tags, article.author, article.evidence_level,
+      article.cover || null
     );
   }
 
