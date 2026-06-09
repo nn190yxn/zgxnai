@@ -86,15 +86,9 @@
         style="animation-delay: {{index * 50}}ms"
       >
         <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}">
-          <image
-            class="article-cover image-fade-in {{item.imageLoaded ? 'loaded' : ''}}"
-            src="{{item.cover || '/images/default-article.png'}}"
-            mode="aspectFill"
-            lazy-load="{{true}}"
-            bindload="onImageLoad"
-            data-index="{{index}}"
-          />
-          <view class="article-content">
+          <view class="article-content no-image">
+            <text class="article-title">{{item.title}}</text>
+            <text class="article-summary">{{item.summary}}</text>
             <text class="article-title">{{item.title}}</text>
             <text class="article-summary">{{item.summary}}</text>
             <view class="article-tags">

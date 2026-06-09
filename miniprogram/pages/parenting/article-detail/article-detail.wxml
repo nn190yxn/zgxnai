@@ -17,16 +17,6 @@
     <view class="offline-tip" wx:if="{{offlineFallback}}">当前为离线示例内容，可能与真实数据不一致</view>
     <!-- 文章头部 -->
     <view class="article-header">
-      <!-- 封面图 -->
-      <image
-        class="article-cover image-fade-in {{imageLoaded ? 'loaded' : ''}}"
-        src="{{article.cover || '/images/default-article.png'}}"
-        mode="aspectFill"
-        lazy-load="{{true}}"
-        bindload="onImageLoad"
-        bindtap="onImagePreview"
-        data-url="{{article.cover}}"
-      />
       
       <!-- 标题 -->
       <view class="article-title-wrap">

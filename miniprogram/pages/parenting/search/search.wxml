@@ -41,12 +41,7 @@
         wx:key="id"
       >
         <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}">
-          <image 
-            class="article-cover" 
-            src="{{item.cover || '/images/default-article.png'}}" 
-            mode="aspectFill"
-          />
-          <view class="article-content">
+          <view class="article-content no-image">
             <text class="article-title">{{item.title}}</text>
             <text class="article-summary">{{item.summary}}</text>
             <view class="article-tags">

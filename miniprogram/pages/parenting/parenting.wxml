@@ -54,11 +54,6 @@
     >
       <swiper-item wx:for="{{hotArticles}}" wx:key="id">
         <view class="swiper-card" bindtap="onSwiperTap" data-index="{{index}}">
-          <image 
-            class="swiper-image" 
-            src="{{item.cover || '/images/default-article.png'}}" 
-            mode="aspectFill"
-          />
           <view class="swiper-content">
             <text class="swiper-title">{{item.title}}</text>
             <view class="swiper-info">
@@ -108,12 +103,9 @@
         wx:key="id"
       >
         <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}">
-          <image 
-            class="article-cover" 
-            src="{{item.cover || '/images/default-article.png'}}" 
-            mode="aspectFill"
-          />
-          <view class="article-content">
+          <view class="article-content no-image">
+            <text class="article-title">{{item.title}}</text>
+            <text class="article-summary">{{item.summary}}</text>
             <text class="article-title">{{item.title}}</text>
             <text class="article-summary">{{item.summary}}</text>
             <view class="article-tags">
