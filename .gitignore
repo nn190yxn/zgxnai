@@ -18,6 +18,7 @@ data/
 
 # Backup
 backup/
+backups/
 
 # Environment variables
 .env
