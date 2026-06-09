@@ -26,7 +26,7 @@ var ENV_CONFIG = {
     apiBaseUrl: 'https://api.woyai.cn/api/v1',
     baseUrl: 'https://api.woyai.cn',
     allowHttp: false,
-    requestTimeoutMs: 10000,
+    requestTimeoutMs: 15000,
     apiStrictMode: true,
     allowMockFallback: false,
     enableDevLoginFallback: false,

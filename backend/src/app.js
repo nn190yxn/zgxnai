@@ -19,7 +19,7 @@ app.use(helmet({
 // 跨域配置 - 使用白名单，生产环境严格限制
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['https://supercalf.com', 'https://www.supercalf.com', 'http://localhost:3000'];
+  : ['https://api.woyai.cn', 'https://woyai.cn', 'https://www.woyai.cn', 'https://supercalf.com', 'https://www.supercalf.com', 'http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -68,6 +68,7 @@ app.use(rateLimit);
 // 数据库健康检查
 app.use(dbHealthCheck);
 const healthRoutes = require('./routes/health');
+const runtimeRoutes = require('./routes/runtime');
 const assessmentRoutes = require('./routes/assessments');
 const chatRoutes = require('./routes/chat');
 const educationRoutes = require('./routes/education');
@@ -84,6 +85,7 @@ const nutritionRoutes = require('./routes/nutrition');
 
 // 公开路由（无需认证）
 app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/runtime', runtimeRoutes);
 app.use('/api/v1/auth', authRoutes);
 
 // 需要认证的路由

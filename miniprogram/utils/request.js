@@ -140,7 +140,7 @@ function request(app, options) {
       method: method,
       data: data,
       header: header,
-      timeout: options.timeout || app.globalData.requestTimeoutMs || 10000,
+      timeout: options.timeout || app.globalData.requestTimeoutMs || 15000,
       success: function(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(unwrapResponse(res.data));
