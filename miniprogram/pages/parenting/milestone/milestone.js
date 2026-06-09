@@ -1,26 +1,12 @@
 const app = getApp();
-const { request } = require('../../../utils/request');
+const milestoneData = require('./milestoneData');
 
 Page({
   data: {
     step: 'age',
     selectedAge: null,
-    ageRanges: [
-      { id: '0-1', name: '0-1岁', months: '0-12个月' },
-      { id: '1-2', name: '1-2岁', months: '12-24个月' },
-      { id: '2-3', name: '2-3岁', months: '24-36个月' },
-      { id: '3-4', name: '3-4岁', months: '36-48个月' },
-      { id: '4-5', name: '4-5岁', months: '48-60个月' },
-      { id: '5-6', name: '5-6岁', months: '60-72个月' }
-    ],
-    dimensions: [
-      { id: 'gross_motor', name: '大运动', icon: '🏃', color: '#4A90D9', description: '跑、跳、攀爬等大肌肉活动能力' },
-      { id: 'fine_motor', name: '精细动作', icon: '✋', color: '#E89A4C', description: '抓握、捏取、涂鸦等小肌肉活动能力' },
-      { id: 'language', name: '语言能力', icon: '💬', color: '#5DBA8B', description: '听、说、理解等语言沟通能力' },
-      { id: 'cognitive', name: '认知发展', icon: '🧠', color: '#9B7ED9', description: '思维、记忆、解决问题等认知能力' },
-      { id: 'social', name: '社交能力', icon: '🤝', color: '#E8737A', description: '与他人互动、表达情感等社交能力' },
-      { id: 'self_care', name: '自理能力', icon: '👶', color: '#4ECDC4', description: '穿衣、吃饭、如厕等日常生活能力' }
-    ],
+    ageRanges: milestoneData.ageRanges,
+    dimensions: milestoneData.dimensions,
     currentIndicators: [],
     currentQuestionIndex: 0,
     currentIndicator: null,
@@ -50,34 +36,28 @@ Page({
       return;
     }
 
-    // 获取评估指标
     this.loadIndicators();
   },
 
   loadIndicators() {
     wx.showLoading({ title: '加载中...' });
     
-    request({
-      url: `/parenting/milestone/indicators/${this.data.selectedAge}`,
-      method: 'GET'
-    }).then(res => {
-      wx.hideLoading();
-      if (res.success && res.data) {
-        this.setData({
-          currentIndicators: res.data,
-          currentQuestionIndex: 0,
-          answers: {},
-          step: 'assess'
-        });
-        this.updateQuestion();
-      } else {
-        wx.showToast({ title: '加载指标失败', icon: 'none' });
-      }
-    }).catch(err => {
-      wx.hideLoading();
-      console.error('加载指标失败:', err);
-      wx.showToast({ title: '加载失败，请重试', icon: 'none' });
-    });
+    // 纯前端实现：直接从本地数据获取
+    const indicators = milestoneData.getIndicators(this.data.selectedAge);
+    
+    if (indicators && indicators.length > 0) {
+      this.setData({
+        currentIndicators: indicators,
+        currentQuestionIndex: 0,
+        answers: {},
+        step: 'assess'
+      });
+      this.updateQuestion();
+    } else {
+      wx.showToast({ title: '该年龄段暂无评估指标', icon: 'none' });
+    }
+    
+    wx.hideLoading();
   },
 
   updateQuestion() {
@@ -104,7 +84,7 @@ Page({
   },
 
   setAnswer(value) {
-    const { currentIndicator, answers } = this.data;
+    const { currentIndicator } = this.data;
     if (!currentIndicator) return;
 
     this.setData({
@@ -134,50 +114,40 @@ Page({
     // 检查是否所有问题都已回答
     const answeredCount = Object.keys(answers).length;
     if (answeredCount < currentIndicators.length) {
-      wx.showToast({ title: `还有${currentIndicators.length - answeredCount}题未回答`, icon: 'none' });
+      wx.showToast({ 
+        title: `还有${currentIndicators.length - answeredCount}题未回答`, 
+        icon: 'none' 
+      });
       return;
     }
 
-    // 准备提交数据
-    const results = currentIndicators.map(indicator => ({
-      indicatorId: indicator.id,
-      value: answers[indicator.id] || false
-    }));
+    wx.showLoading({ title: '计算中...' });
 
-    wx.showLoading({ title: '提交中...' });
-
-    request({
-      url: '/parenting/milestone/assess',
-      method: 'POST',
-      data: { ageRange: selectedAge, results }
-    }).then(res => {
-      wx.hideLoading();
-      if (res.success && res.data) {
-        this.showResults(res.data);
-      } else {
-        wx.showToast({ title: '提交失败', icon: 'none' });
-      }
-    }).catch(err => {
-      wx.hideLoading();
-      console.error('提交评估失败:', err);
-      wx.showToast({ title: '提交失败，请重试', icon: 'none' });
-    });
-  },
-
-  showResults(data) {
-    const { dimensions } = this.data;
-    const dimensionResults = data.dimensionResults.map(item => {
-      const dim = dimensions.find(d => d.id === item.id);
-      return { ...item, ...dim };
-    });
-
+    // 纯前端计算评估结果
+    const results = milestoneData.calculateResults(selectedAge, answers);
+    
     // 生成建议
-    const suggestions = this.generateSuggestions(dimensionResults);
+    const suggestions = this.generateSuggestions(results.dimensionResults);
 
+    // 保存到本地存储
+    const assessmentRecord = {
+      ageRange: selectedAge,
+      overallPercentage: results.overallPercentage,
+      totalScore: results.totalScore,
+      totalItems: results.totalItems,
+      dimensionResults: results.dimensionResults,
+      createdAt: new Date().toISOString()
+    };
+    
+    milestoneData.saveHistory(assessmentRecord);
+
+    wx.hideLoading();
+
+    // 显示结果
     this.setData({
       step: 'result',
-      overallPercentage: data.overallPercentage,
-      dimensionResults,
+      overallPercentage: results.overallPercentage,
+      dimensionResults: results.dimensionResults,
       suggestions
     });
   },
