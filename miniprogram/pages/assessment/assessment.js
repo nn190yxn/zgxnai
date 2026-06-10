@@ -201,50 +201,11 @@ Page({
   loadAssessmentListFromServer: function() {
     var that = this;
     that.setData({
-      loading: true,
+      loading: false,
       loadError: ''
     });
-
-    if (app.shouldUseMockFallback()) {
-      that.applyAgeFilter();
-      that.setData({
-        loading: false,
-        loadError: ''
-      });
-      return Promise.resolve();
-    }
-
-    return app.request({
-      url: '/assessments',
-      method: 'GET'
-    }).then(function(res) {
-      if (!Array.isArray(res) || res.length === 0) {
-        return;
-      }
-      var serverList = res.map(function(item, index) {
-        return that.normalizeServerAssessment(item, index);
-      }).filter(function(item) {
-        return !!item.code;
-      });
-      if (serverList.length > 0) {
-        that.setData({
-          assessmentList: serverList,
-          loadError: ''
-        });
-        that.applyAgeFilter();
-      }
-    }).catch(function(err) {
-      if (!app.shouldUseMockFallback()) {
-        that.setData({
-          loadError: app.getApiErrorMessage(err, '成长观察列表加载失败')
-        });
-      }
-      that.applyAgeFilter();
-    }).finally(function() {
-      that.setData({
-        loading: false
-      });
-    });
+    that.applyAgeFilter();
+    return Promise.resolve();
   },
 
   retryLoadAssessmentList: function() {
@@ -297,36 +258,7 @@ Page({
       historyCount: records.length
     });
     
-    // 尝试从服务器获取
-    that.loadHistoryFromServer();
-  },
-
-  // 从服务器加载历史记录
-  loadHistoryFromServer: function() {
-    var that = this;
-    if (app.shouldUseMockFallback()) {
-      return Promise.resolve();
-    }
-    // 仅在已登录时请求服务器，避免未登录时无意义的请求超时
-    if (!app.globalData.isLoggedIn) {
-      return Promise.resolve();
-    }
-    return app.request({
-      url: '/assessments/history/count',
-      method: 'GET'
-    }).then(function(res) {
-      if (res && res.count !== undefined) {
-      that.setData({
-        historyCount: res.count
-      });
-    } else if (res && res.length !== undefined) {
-      that.setData({
-        historyCount: res.length
-      });
-      }
-    }).catch(function(err) {
-      // 使用本地缓存数据，静默处理
-    });
+    return Promise.resolve(records.length);
   },
 
   // 检查是否有未完成的答题进度
