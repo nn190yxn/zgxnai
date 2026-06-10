@@ -129,34 +129,6 @@ function initDatabase() {
     )
   `);
 
-  // 发展里程碑评估记录表
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS milestone_assessments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      age_range TEXT NOT NULL,
-      total_score INTEGER DEFAULT 0,
-      total_items INTEGER DEFAULT 0,
-      overall_percentage INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `);
-
-  // 发展里程碑评估维度得分表
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS milestone_assessment_dimensions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      assessment_id INTEGER NOT NULL,
-      dimension_id TEXT NOT NULL,
-      score INTEGER DEFAULT 0,
-      total INTEGER DEFAULT 0,
-      percentage INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (assessment_id) REFERENCES milestone_assessments(id) ON DELETE CASCADE
-    )
-  `);
-
   // 聊天消息表
   db.exec(`
     CREATE TABLE IF NOT EXISTS chat_messages (

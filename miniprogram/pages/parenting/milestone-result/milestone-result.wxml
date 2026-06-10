@@ -7,17 +7,18 @@
   <view class="history-list" wx:if="{{history.length > 0}}">
     <view class="history-item" wx:for="{{history}}" wx:key="id" bindtap="viewDetail" data-id="{{item.id}}">
       <view class="history-header">
-        <text class="history-age">{{item.age_range}}</text>
-        <text class="history-date">{{item.created_at}}</text>
+        <text class="history-age">{{item.ageLabel}}</text>
+        <text class="history-date">{{item.createdAtText}}</text>
       </view>
       <view class="history-score">
-        <text class="score-value">{{item.overall_percentage}}%</text>
+        <text class="score-value">{{item.overallPercentage}}%</text>
         <view class="score-bar">
-          <view class="score-fill" style="width: {{item.overall_percentage}}%"></view>
+          <view class="score-fill" style="width: {{item.overallPercentage}}%"></view>
         </view>
       </view>
       <view class="history-detail">
-        <text class="detail-text">{{item.total_score}}/{{item.total_items}} 项达标</text>
+        <text class="detail-text">{{item.totalScore}}/{{item.totalItems}} 项达标</text>
+        <text class="trend-text {{item.trendClass}}">{{item.trendText}}</text>
       </view>
     </view>
   </view>

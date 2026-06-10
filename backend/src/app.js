@@ -73,7 +73,6 @@ const assessmentRoutes = require('./routes/assessments');
 const chatRoutes = require('./routes/chat');
 const educationRoutes = require('./routes/education');
 const parentingRoutes = require('./routes/parenting');
-const milestoneRoutes = require('./routes/milestone');
 const knowledgeRoutes = require('./routes/knowledge');
 const eventsRoutes = require('./routes/events');
 const recommendationRoutes = require('./routes/recommendations');
@@ -94,7 +93,6 @@ app.use('/api/v1/assessments', authenticateToken, assessmentRoutes);
 app.use('/api/v1/chat', authenticateToken, chatRoutes);
 app.use('/api/v1/education', authenticateToken, educationRoutes);
 app.use('/api/v1/parenting', optionalAuth, parentingRoutes); // 育儿文章可公开浏览
-app.use('/api/v1/parenting/milestone', optionalAuth, milestoneRoutes); // 里程碑评估
 app.use('/api/v1/knowledge', optionalAuth, knowledgeRoutes); // 知识库可公开搜索
 app.use('/api/v1/kb/events', authenticateToken, eventsRoutes);
 app.use('/api/v1/recommendations', authenticateToken, recommendationRoutes);

@@ -14,11 +14,21 @@ Page({
     answers: {},
     overallPercentage: 0,
     dimensionResults: [],
+    resultLevel: null,
+    strengths: [],
+    focusAreas: [],
+    practiceSuggestions: [],
+    professionalNotes: [],
     suggestions: [],
     progressPercent: 0
   },
 
   onLoad(options) {
+    if (options.historyId) {
+      this.loadHistoryDetail(options.historyId);
+      return;
+    }
+
     // 如果从parenting页面传入age参数，直接开始评估
     if (options.age) {
       this.setData({ selectedAge: options.age });
@@ -125,6 +135,7 @@ Page({
 
     // 纯前端计算评估结果
     const results = milestoneData.calculateResults(selectedAge, answers);
+    const report = milestoneData.generateReport(results);
     
     // 生成建议
     const suggestions = this.generateSuggestions(results.dimensionResults);
@@ -136,6 +147,11 @@ Page({
       totalScore: results.totalScore,
       totalItems: results.totalItems,
       dimensionResults: results.dimensionResults,
+      resultLevel: report.resultLevel,
+      strengths: report.strengths,
+      focusAreas: report.focusAreas,
+      practiceSuggestions: report.practiceSuggestions,
+      professionalNotes: report.professionalNotes,
       createdAt: new Date().toISOString()
     };
     
@@ -148,7 +164,40 @@ Page({
       step: 'result',
       overallPercentage: results.overallPercentage,
       dimensionResults: results.dimensionResults,
+      resultLevel: report.resultLevel,
+      strengths: report.strengths,
+      focusAreas: report.focusAreas,
+      practiceSuggestions: report.practiceSuggestions,
+      professionalNotes: report.professionalNotes,
       suggestions
+    });
+  },
+
+  loadHistoryDetail(historyId) {
+    const history = milestoneData.getHistory();
+    const record = history.find(item => String(item.id) === String(historyId));
+
+    if (!record) {
+      wx.showToast({ title: '未找到评估记录', icon: 'none' });
+      return;
+    }
+
+    const report = record.resultLevel ? record : milestoneData.generateReport({
+      overallPercentage: record.overallPercentage,
+      dimensionResults: record.dimensionResults || []
+    });
+
+    this.setData({
+      step: 'result',
+      selectedAge: record.ageRange,
+      overallPercentage: record.overallPercentage,
+      dimensionResults: record.dimensionResults || [],
+      resultLevel: report.resultLevel,
+      strengths: report.strengths || [],
+      focusAreas: report.focusAreas || [],
+      practiceSuggestions: report.practiceSuggestions || [],
+      professionalNotes: report.professionalNotes || milestoneData.getProfessionalNotes(),
+      suggestions: this.generateSuggestions(record.dimensionResults || [])
     });
   },
 
@@ -188,6 +237,11 @@ Page({
       answers: {},
       overallPercentage: 0,
       dimensionResults: [],
+      resultLevel: null,
+      strengths: [],
+      focusAreas: [],
+      practiceSuggestions: [],
+      professionalNotes: [],
       suggestions: []
     });
   },

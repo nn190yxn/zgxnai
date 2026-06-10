@@ -82,11 +82,30 @@
 }
 
 .history-detail {
-  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .detail-text {
   font-size: 24rpx;
+  color: #999;
+}
+
+.trend-text {
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.trend-text.up {
+  color: #4CAF50;
+}
+
+.trend-text.down {
+  color: #E8737A;
+}
+
+.trend-text.neutral {
   color: #999;
 }
 

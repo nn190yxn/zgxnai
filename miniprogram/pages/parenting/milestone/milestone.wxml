@@ -64,6 +64,29 @@
         <text class="score-unit">%</text>
       </view>
       <text class="score-label">综合发展指数</text>
+      <view class="level-badge {{resultLevel.tone}}" wx:if="{{resultLevel}}">{{resultLevel.name}}</view>
+    </view>
+
+    <view class="report-card" wx:if="{{resultLevel}}">
+      <text class="report-title">专业解读</text>
+      <text class="report-desc">{{resultLevel.description}}</text>
+    </view>
+
+    <view class="summary-grid">
+      <view class="summary-card">
+        <text class="summary-title">优势能力</text>
+        <view class="summary-item" wx:for="{{strengths}}" wx:key="id">
+          <text class="summary-name" style="color: {{item.color}};">{{item.name}}</text>
+          <text class="summary-score">{{item.percentage}}%</text>
+        </view>
+      </view>
+      <view class="summary-card focus">
+        <text class="summary-title">关注方向</text>
+        <view class="summary-item" wx:for="{{focusAreas}}" wx:key="id">
+          <text class="summary-name" style="color: {{item.color}};">{{item.name}}</text>
+          <text class="summary-score">{{item.percentage}}%</text>
+        </view>
+      </view>
     </view>
 
     <view class="dimension-results">
@@ -89,6 +112,25 @@
           <text class="suggestion-icon">{{item.icon}}</text>
           <text class="suggestion-text">{{item.text}}</text>
         </view>
+      </view>
+    </view>
+
+    <view class="practice-section" wx:if="{{practiceSuggestions.length > 0}}">
+      <text class="suggestion-title">家庭训练小游戏</text>
+      <view class="practice-card" wx:for="{{practiceSuggestions}}" wx:key="dimensionId">
+        <text class="practice-dimension" style="color: {{item.color}};">{{item.name}}</text>
+        <view class="practice-item" wx:for="{{item.items}}" wx:for-item="practice" wx:key="index">
+          <text class="practice-dot" style="background: {{item.color}};"></text>
+          <text class="practice-text">{{practice}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="notice-section" wx:if="{{professionalNotes.length > 0}}">
+      <text class="notice-title">专业边界说明</text>
+      <view class="notice-item" wx:for="{{professionalNotes}}" wx:key="index">
+        <text class="notice-dot"></text>
+        <text class="notice-text">{{item}}</text>
       </view>
     </view>
 

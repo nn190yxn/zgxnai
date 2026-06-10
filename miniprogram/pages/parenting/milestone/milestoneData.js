@@ -304,6 +304,95 @@ const milestoneData = {
     };
   },
 
+  getResultLevel(overallPercentage) {
+    if (overallPercentage >= 85) {
+      return {
+        name: '发展表现突出',
+        tone: 'strong',
+        description: '多数能力已达到当前年龄段常见发展表现，可以在兴趣探索和综合任务中继续拓展。'
+      };
+    }
+
+    if (overallPercentage >= 70) {
+      return {
+        name: '发展整体良好',
+        tone: 'steady',
+        description: '整体发展处于较稳定状态，建议结合孩子兴趣持续观察并加强薄弱维度。'
+      };
+    }
+
+    if (overallPercentage >= 55) {
+      return {
+        name: '建议持续关注',
+        tone: 'attention',
+        description: '部分维度需要更多家庭支持，建议通过日常游戏和亲子互动逐步练习。'
+      };
+    }
+
+    return {
+      name: '建议重点关注',
+      tone: 'focus',
+      description: '多个维度需要进一步观察，建议结合日常表现记录，并咨询儿保医生或专业机构。'
+    };
+  },
+
+  getDimensionSummary(dimensionResults) {
+    const sortedByHigh = [...dimensionResults].sort((a, b) => b.percentage - a.percentage);
+    const sortedByLow = [...dimensionResults].sort((a, b) => a.percentage - b.percentage);
+    const strengths = sortedByHigh.filter(item => item.percentage >= 80).slice(0, 2);
+    const focusAreas = sortedByLow.filter(item => item.percentage < 75).slice(0, 2);
+
+    return {
+      strengths: strengths.length > 0 ? strengths : sortedByHigh.slice(0, 1),
+      focusAreas: focusAreas.length > 0 ? focusAreas : sortedByLow.slice(0, 1)
+    };
+  },
+
+  getPracticeSuggestions(dimensionResults) {
+    const adviceMap = {
+      gross_motor: ['每天安排10分钟追逐、跳跃或平衡游戏', '在安全环境中练习上下台阶和跨越障碍', '用球类游戏练习投掷、接球和身体协调'],
+      fine_motor: ['准备积木、穿珠、夹夹子等手部游戏', '鼓励孩子涂鸦、描线、撕贴和折纸', '让孩子参与扣扣子、拉拉链等生活动作'],
+      language: ['每天固定亲子共读并请孩子复述画面', '用开放式问题引导孩子说完整句子', '在吃饭、洗澡、外出时多做物品命名和描述'],
+      cognitive: ['用分类、配对、排序游戏训练观察和推理', '让孩子参与简单家务并说出步骤顺序', '通过拼图、找不同、数数游戏建立问题解决经验'],
+      social: ['安排轮流、等待、合作类亲子游戏', '用角色扮演练习表达需求和解决冲突', '在真实场景中示范分享、道歉和感谢'],
+      self_care: ['把穿衣、洗手、收玩具拆成小步骤练习', '给孩子固定的家庭小任务建立责任感', '用图示流程帮助孩子独立完成日常事务']
+    };
+
+    const targets = [...dimensionResults]
+      .sort((a, b) => a.percentage - b.percentage)
+      .filter(item => item.percentage < 85)
+      .slice(0, 3);
+
+    const selected = targets.length > 0 ? targets : [...dimensionResults].sort((a, b) => a.percentage - b.percentage).slice(0, 2);
+
+    return selected.map(item => ({
+      dimensionId: item.id,
+      name: item.name,
+      color: item.color,
+      items: adviceMap[item.id] || []
+    }));
+  },
+
+  getProfessionalNotes() {
+    return [
+      '本评估用于家庭日常观察参考，不能替代医学诊断或专业测评。',
+      '如果孩子出现能力倒退、语言明显停滞、长期回避眼神交流等情况，建议及时咨询儿保医生。',
+      '单次结果受状态、环境和家长观察角度影响，建议间隔4-8周后再次观察。'
+    ];
+  },
+
+  generateReport(results) {
+    const dimensionSummary = this.getDimensionSummary(results.dimensionResults);
+
+    return {
+      resultLevel: this.getResultLevel(results.overallPercentage),
+      strengths: dimensionSummary.strengths,
+      focusAreas: dimensionSummary.focusAreas,
+      practiceSuggestions: this.getPracticeSuggestions(results.dimensionResults),
+      professionalNotes: this.getProfessionalNotes()
+    };
+  },
+
   // 保存评估历史到本地存储
   saveHistory(assessment) {
     try {
