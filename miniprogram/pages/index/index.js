@@ -322,7 +322,8 @@ Page({
     var source = draft.type || 'index_default';
     return {
       title: app.buildShareTemplate(draft),
-      path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=index'
+      path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=index',
+      imageUrl: '/images/share-app-intro.png'
     };
   }
 });

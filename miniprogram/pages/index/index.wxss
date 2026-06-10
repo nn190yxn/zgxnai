@@ -58,10 +58,21 @@
 
 .hero-content {
   margin: 0 32rpx;
-  min-height: 288rpx;
+  min-height: 248rpx;
   padding: 36rpx 0;
   position: relative;
-  z-index: 1;
+  z-index: 2;
+}
+
+.hero-image {
+  display: block;
+  width: calc(100% - 64rpx);
+  height: 300rpx;
+  margin: 0 32rpx 24rpx;
+  border-radius: 28rpx;
+  box-shadow: 0 16rpx 36rpx rgba(120, 54, 18, 0.18);
+  position: relative;
+  z-index: 2;
 }
 
 .hero-badge {

@@ -43,6 +43,7 @@
     <view class="section-header">
       <text class="section-title">成长评估</text>
     </view>
+    <image class="milestone-cover" src="/images/milestone-report.png" mode="aspectFill" bindtap="goToMilestone" />
     <view class="milestone-entry" bindtap="goToMilestone">
       <view class="milestone-content">
         <text class="milestone-icon">🎯</text>

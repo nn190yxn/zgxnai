@@ -263,7 +263,8 @@ Page({
     var source = draft.type || 'share_preview';
     return {
       title: (this.data.shareCard && this.data.shareCard.headline) || '孩子的问题，先别靠猜',
-      path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=preview'
+      path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=preview',
+      imageUrl: '/images/share-app-intro.png'
     };
   }
 });

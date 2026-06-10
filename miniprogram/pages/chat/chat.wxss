@@ -188,6 +188,11 @@
   font-weight: 600;
 }
 
+.avatar-image {
+  background: #FFF7ED;
+  border: 2rpx solid #FED7AA;
+}
+
 .ai-input-notice {
   position: fixed;
   left: 0;

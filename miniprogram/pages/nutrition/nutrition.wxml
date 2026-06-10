@@ -21,6 +21,10 @@
     </view>
   </view>
 
+  <view class="nutrition-cover-wrap">
+    <image class="nutrition-cover" src="/images/nutrition-cover.png" mode="aspectFill" />
+  </view>
+
   <!-- 分类入口 -->
   <view class="section">
     <view class="section-header">
