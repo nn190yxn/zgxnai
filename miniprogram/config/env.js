@@ -33,7 +33,7 @@ var ENV_CONFIG = {
     enableNativeApiDiagnostics: false,
     enableNetworkProbe: true,
     enableBootIsolation: false,
-    enableRuntimeConfigFetch: true,
+    enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
     showMembership: true,
     enableWechatPay: false,

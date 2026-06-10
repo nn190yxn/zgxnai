@@ -67,9 +67,10 @@
 .hero-image {
   display: block;
   width: calc(100% - 64rpx);
-  height: 300rpx;
-  margin: 0 32rpx 24rpx;
+  height: 330rpx;
+  margin: 8rpx 32rpx 24rpx;
   border-radius: 28rpx;
+  background: #FFF7EA;
   box-shadow: 0 16rpx 36rpx rgba(120, 54, 18, 0.18);
   position: relative;
   z-index: 2;
