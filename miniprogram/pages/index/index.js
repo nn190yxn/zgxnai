@@ -14,12 +14,12 @@ Page({
     startupSafeMode: false,
     growthStatus: {
       weekCompletion: 68,
-      currentFocus: '阅读力提升',
-      todaySuggestion: '完成10分钟阅读任务'
+      currentFocus: '先判断孩子卡在哪',
+      todaySuggestion: '从成长观察或AI问答开始'
     },
     todayTask: {
-      title: '阅读力提升：短文理解 + 3题',
-      duration: '预计10分钟'
+      title: '今日建议：先做一次成长观察',
+      duration: '3分钟了解孩子近期表现'
     },
     weeklyProgress: {
       understandingFrom: 62,
@@ -28,22 +28,22 @@ Page({
     },
     bannerList: [
       {
-        title: '3分钟看清孩子问题在哪',
-        desc: '阅读理解、专注习惯、表达能力，一测就明白',
-        cta: '立即查看',
+        title: '孩子的问题，先别靠猜',
+        desc: '专注、表达、阅读、吃饭睡眠，3分钟帮妈妈找到切入口',
+        cta: '立即观察',
         action: 'assessment'
       },
       {
-        title: '每天10分钟，21天看变化',
-        desc: '家庭可执行任务，不再知道但做不到',
-        cta: '开始任务',
-        action: 'task'
+        title: '育儿问题随时问',
+        desc: '把孩子的具体情况说清楚，获得可执行的家庭建议',
+        cta: '问问AI助理',
+        action: 'chat'
       },
       {
-        title: '不是上了课，而是有进步',
-        desc: '周报自动生成，成长轨迹清晰可见',
-        cta: '查看周报',
-        action: 'report'
+        title: '每天一点点，妈妈更有底',
+        desc: '观察、练习、饮食、知识都放在一个育儿助手里',
+        cta: '查看工具',
+        action: 'assessment'
       }
     ]
   },
@@ -133,12 +133,12 @@ Page({
 
     var streakDays = metrics.streakDays || this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项阅读力任务') : '完成10分钟阅读力任务';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项阅读力任务') : '从成长观察或AI问答开始';
 
     this.setData({
       growthStatus: {
         weekCompletion: completionRate || this.data.growthStatus.weekCompletion,
-        currentFocus: '阅读力提升',
+        currentFocus: '先判断孩子卡在哪',
         todaySuggestion: suggestion
       },
       weeklyProgress: {
@@ -244,15 +244,19 @@ Page({
       this.goToTodayTask();
       return;
     }
+    if (action === 'chat') {
+      this.goToChat();
+      return;
+    }
     this.goToWeeklyReport();
   },
 
   onShareTaskCard() {
     var stats = app.getReadingTaskStats();
     var draft = {
-      type: 'task_checkin',
-      title: this.data.todayTask.title || '阅读力提升任务',
-      summary: '我正在进行阅读打卡，欢迎一起坚持！',
+      type: 'app_intro',
+      title: this.data.todayTask.title || '成长观察建议',
+      summary: '我正在用小牛育儿AI助理观察孩子的成长状态。',
       metrics: {
         completed: stats.completed || 0,
         total: stats.total || 0,
@@ -260,10 +264,10 @@ Page({
         streakDays: this.data.weeklyProgress.streakDays || 0,
         recordingCount: wx.getStorageSync('readingRecordingCount') || 0
       },
-      source: 'index_today_task',
+      source: 'index_app_intro',
       createdAt: Date.now(),
       payload: {
-        scene: 'home_today_task'
+        scene: 'home_intro_card'
       }
     };
     wx.setStorageSync('readingShareDraft', draft);

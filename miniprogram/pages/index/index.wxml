@@ -8,12 +8,12 @@
   <block wx:if="{{!startupSafeMode}}">
   <view class="hero">
     <view class="hero-content">
-      <text class="hero-badge">成长陪跑计划</text>
+      <text class="hero-badge">小牛育儿AI助理</text>
       <text class="hero-title">{{bannerList[0].title}}</text>
       <text class="hero-desc">{{bannerList[0].desc}}</text>
       <view class="hero-actions">
         <view class="hero-btn hero-btn-primary" data-action="{{bannerList[0].action}}" bindtap="onTapBannerCta">{{bannerList[0].cta}}</view>
-        <view class="hero-btn hero-btn-secondary" bindtap="goToTodayTask">查看今日任务</view>
+        <view class="hero-btn hero-btn-secondary" bindtap="goToChat">问问AI助理</view>
       </view>
     </view>
   </view>
@@ -21,8 +21,8 @@
   <view class="section status-section">
     <view class="status-card">
       <view class="status-row">
-        <text class="status-title">本周成长状态</text>
-        <text class="status-rate">{{growthStatus.weekCompletion}}%</text>
+        <text class="status-title">妈妈今日切入口</text>
+        <text class="status-rate">3分钟</text>
       </view>
       <text class="status-item">当前重点：{{growthStatus.currentFocus}}</text>
       <text class="status-item">今日建议：{{growthStatus.todaySuggestion}}</text>
@@ -31,33 +31,33 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">功能入口</text>
+      <text class="section-title">遇到这些问题，直接点</text>
     </view>
 
     <view class="module-grid">
       <view class="module-card" bindtap="goToAssessment">
         <text class="module-name">成长观察</text>
-        <text class="module-desc">先看再练</text>
+        <text class="module-desc">专注表达</text>
       </view>
 
       <view class="module-card" bindtap="goToTextbook">
         <text class="module-name">阅读力提升</text>
-        <text class="module-desc">每日10分钟</text>
+        <text class="module-desc">读懂说清</text>
       </view>
 
       <view class="module-card" bindtap="goToNutrition">
         <text class="module-name">营养食谱</text>
-        <text class="module-desc">分龄推荐</text>
+        <text class="module-desc">挑食长高</text>
       </view>
 
       <view class="module-card" bindtap="goToParenting">
         <text class="module-name">育儿知识</text>
-        <text class="module-desc">问题解法</text>
+        <text class="module-desc">妈妈锦囊</text>
       </view>
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
         <text class="module-name">家长助手</text>
-        <text class="module-desc">AI答疑</text>
+        <text class="module-desc">随时提问</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
         <text class="module-name">家长助手</text>
@@ -65,15 +65,15 @@
       </view>
 
       <view class="module-card" bindtap="goToWeeklyReport">
-        <text class="module-name">进步报告</text>
-        <text class="module-desc">趋势追踪</text>
+        <text class="module-name">成长记录</text>
+        <text class="module-desc">持续追踪</text>
       </view>
     </view>
   </view>
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">今日任务</text>
+      <text class="section-title">今日建议</text>
     </view>
 
     <view class="quick-action" bindtap="goToTodayTask">
@@ -82,15 +82,15 @@
         <text class="quick-desc">{{todayTask.duration}}</text>
       </view>
       <view class="quick-side">
-        <text class="quick-arrow">开始</text>
-        <text class="quick-share" catchtap="onShareTaskCard">分享</text>
+        <text class="quick-arrow">开始观察</text>
+        <text class="quick-share" catchtap="onShareTaskCard">生成介绍卡</text>
       </view>
     </view>
   </view>
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">本周进步</text>
+      <text class="section-title">本周成长</text>
     </view>
 
     <view class="progress-card" bindtap="goToWeeklyReport">

@@ -1,7 +1,7 @@
 <view class="page">
   <view class="header">
-    <text class="title">生成朋友圈成长卡</text>
-    <text class="subtitle">少字、像海报，适合截图发布</text>
+    <text class="title">生成分享介绍卡</text>
+    <text class="subtitle">一句话讲清小牛育儿AI助理，适合发给宝妈朋友</text>
   </view>
 
   <view class="card">
@@ -35,11 +35,11 @@
   </view>
 
   <view class="actions">
-    <view class="btn btn-secondary" bindtap="goToReadingTask">继续打卡</view>
+    <view class="btn btn-secondary" bindtap="goToHome">回到首页</view>
     <view class="btn btn-primary" bindtap="copyShareText">复制分享文案</view>
   </view>
 
-  <view class="tip">截图发朋友圈更像成长海报。</view>
+  <view class="tip">截图发朋友圈或复制文案转发给宝妈群都可以。</view>
 
   <view class="stats-panel" wx:if="{{showLogs}}">
       <text class="stats-title">分享统计面板（简版）</text>

@@ -227,7 +227,11 @@ var allowHosts = {
       return '这周坚持了' + streakDays + '天，完成' + completed + '/' + total + '个阅读力任务。每天10分钟，孩子的变化看得见。';
     }
 
-    return '孩子今天完成阅读力打卡了。每天10分钟，慢慢读懂、说清楚。一起坚持吗？';
+    if (data.type === 'app_intro' || data.type === 'home_intro') {
+      return '孩子专注、表达、阅读、吃饭睡眠有困惑？小牛育儿AI助理，帮妈妈先找到切入口。';
+    }
+
+    return '小牛育儿AI助理：成长观察、AI答疑、育儿知识、营养食谱，帮妈妈把问题拆成可执行的小建议。';
   },
 
   appendShareEventLog: function(event) {

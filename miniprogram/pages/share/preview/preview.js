@@ -3,9 +3,9 @@ var app = getApp();
 Page({
   data: {
     draft: {
-      type: 'task_checkin',
-      title: '阅读力提升任务',
-      summary: '',
+      type: 'app_intro',
+      title: '小牛育儿AI助理',
+      summary: '成长观察、AI答疑、育儿知识、营养食谱都在这里。',
       metrics: {
         completed: 0,
         total: 0,
@@ -15,13 +15,13 @@ Page({
     },
     previewText: '',
     shareCard: {
-      badge: '阅读力打卡',
-      headline: '今天完成一次阅读力打卡',
-      subline: '每天10分钟，让孩子读得懂、说得出',
-      heroMetric: '+1',
-      heroLabel: '今日任务',
+      badge: '宝妈育儿工具箱',
+      headline: '孩子的问题，先别靠猜',
+      subline: '成长观察、AI答疑、育儿知识、营养食谱，帮妈妈找到切入口',
+      heroMetric: '3分钟',
+      heroLabel: '快速了解孩子近期表现',
       chips: [],
-      cta: '一起每天10分钟'
+      cta: '一起用小牛育儿AI助理'
     },
     sourceInfo: {
       source: '',
@@ -91,6 +91,23 @@ Page({
     var streakDays = metrics.streakDays || 0;
     var recordingCount = metrics.recordingCount || 0;
     var isWeekly = data.type === 'weekly_report';
+
+    if (data.type === 'app_intro' || data.type === 'home_intro') {
+      return {
+        badge: '宝妈育儿工具箱',
+        headline: '孩子的问题，先别靠猜',
+        subline: '专注、表达、阅读、吃饭睡眠，先找到孩子真正卡住的地方',
+        heroMetric: '4合1',
+        heroLabel: '成长观察 + AI答疑 + 育儿知识 + 营养食谱',
+        chips: [
+          { value: '3分钟', label: '快速观察' },
+          { value: '随时问', label: 'AI答疑' },
+          { value: '分龄看', label: '育儿营养' }
+        ],
+        cta: '一起用小牛育儿AI助理',
+        copyText: '孩子专注、表达、阅读、吃饭睡眠有困惑？我在用小牛育儿AI助理，先观察再行动，给妈妈一个清晰切入口。'
+      };
+    }
 
     if (isWeekly) {
       return {
@@ -232,9 +249,9 @@ Page({
     this.loadShareStatsSummary();
   },
 
-  goToReadingTask: function() {
-    wx.navigateTo({
-      url: '/pages/textbook/textbook',
+  goToHome: function() {
+    wx.switchTab({
+      url: '/pages/index/index',
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -245,7 +262,7 @@ Page({
     var draft = this.data.draft || {};
     var source = draft.type || 'share_preview';
     return {
-      title: (this.data.shareCard && this.data.shareCard.headline) || '每天10分钟，提升孩子阅读力',
+      title: (this.data.shareCard && this.data.shareCard.headline) || '孩子的问题，先别靠猜',
       path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=preview'
     };
   }
