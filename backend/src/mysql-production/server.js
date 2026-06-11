@@ -136,7 +136,13 @@ async function loginHandler(req, res) {
     return;
   }
   const session = await getWechatSession(code);
-  const user = await findOrCreateUser(session.openid, req.body.userInfo || {});
+  const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {});
+
+  // 处理邀请码（新用户注册时）
+  if (isNewUser && req.body.invite_code) {
+    await handleReferralSignup(user.id, req.body.invite_code);
+  }
+
   const payload = { userId: user.id, openid: user.openid, username: user.nickname || '微信用户' };
   res.json({
     success: true,
@@ -209,14 +215,67 @@ function requestJson(url) {
 async function findOrCreateUser(openid, profile) {
   const [existing] = await pool.execute('SELECT id, openid, nickname, avatar_url, created_at, updated_at FROM users WHERE openid = ?', [openid]);
   if (existing.length) {
-    return existing[0];
+    return { user: existing[0], isNew: false };
   }
   const [result] = await pool.execute(
     'INSERT INTO users (openid, nickname, avatar_url) VALUES (?, ?, ?)',
     [openid, profile.nickName || profile.nickname || '微信用户', profile.avatarUrl || profile.avatar_url || '']
   );
   const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
-  return rows[0];
+  return { user: rows[0], isNew: true };
+}
+
+async function handleReferralSignup(inviteeId, inviteCode) {
+  try {
+    // 根据邀请码查找邀请人
+    const [inviters] = await pool.execute(
+      'SELECT id FROM users WHERE id = ?',
+      [inviteCode.replace(/^NN/, '')]
+    );
+    if (!inviters.length) return;
+    const inviterId = inviters[0].id;
+
+    // 不能邀请自己
+    if (inviterId === inviteeId) return;
+
+    // 检查是否已被邀请过
+    const [existing] = await pool.execute(
+      'SELECT id FROM referrals WHERE invitee_id = ?',
+      [inviteeId]
+    );
+    if (existing.length) return;
+
+    // 记录邀请关系
+    await pool.execute(
+      'INSERT INTO referrals (inviter_id, invitee_id, reward_days, status) VALUES (?, ?, 7, \'completed\')',
+      [inviterId, inviteeId]
+    );
+
+    // 给邀请人增加7天会员
+    const [memberships] = await pool.execute(
+      'SELECT current_end_date FROM user_memberships WHERE user_id = ?',
+      [inviterId]
+    );
+
+    const now = new Date();
+    let endDate;
+    if (memberships.length && memberships[0].current_end_date) {
+      endDate = new Date(memberships[0].current_end_date);
+      if (endDate < now) endDate = now;
+    } else {
+      endDate = now;
+    }
+    endDate.setDate(endDate.getDate() + 7);
+
+    await pool.execute(
+      `INSERT INTO user_memberships (user_id, current_end_date, membership_type, status, auto_renew)
+       VALUES (?, ?, 'referral', 'active', 1)
+       ON DUPLICATE KEY UPDATE current_end_date = ?, membership_type = 'referral', status = 'active'`,
+      [inviterId, endDate, endDate]
+    );
+  } catch (err) {
+    console.error('[Referral] Handle signup error:', err.message);
+  }
 }
 
 async function membershipInfoHandler(req, res) {

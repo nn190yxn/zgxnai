@@ -110,9 +110,9 @@ CREATE TABLE IF NOT EXISTS payment_orders (
 
 INSERT INTO plans (code, name, duration_days, price_yuan, original_price, description, sort_order, is_active) VALUES
   ('trial', '免费试用', 15, 0, 0, '新用户15天全功能试用', 0, 1),
-  ('month', '月卡', 30, 1990, 2990, '每天不到1元，畅享会员权益', 1, 1),
-  ('quarter', '季卡', 90, 4990, 6990, '省30%，更划算', 2, 1),
-  ('year', '年卡', 365, 9900, 11990, '省60%，最超值', 3, 1)
+  ('month', '月卡', 30, 3900, 5900, '每天不到2元，畅享会员权益', 1, 1),
+  ('quarter', '季卡', 90, 6900, 9900, '省40%，更划算', 2, 1),
+  ('year', '年卡', 365, 16900, 19900, '省60%，最超值', 3, 1)
 ON DUPLICATE KEY UPDATE
   name = VALUES(name),
   duration_days = VALUES(duration_days),

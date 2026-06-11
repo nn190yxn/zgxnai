@@ -273,10 +273,12 @@ var allowHosts = {
     }
 
     function finishLoginWithCode(code, resolve, reject) {
+      // 获取邀请码（如果有）
+      var inviteCode = wx.getStorageSync('inviteCode') || '';
       that.request({
         url: '/auth/login',
         method: 'POST',
-        data: { code: code },
+        data: { code: code, invite_code: inviteCode },
         _skipAuthRetry: true
       }).then(function(data) {
         that.globalData.userInfo = data.user;

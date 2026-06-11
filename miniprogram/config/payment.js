@@ -18,21 +18,21 @@ const WX_CONFIG = {
     {
       code: 'month',
       name: '月卡',
-      price: 19.9,
+      price: 39,
       duration: '30天',
-      description: '每天不到1元'
+      description: '每天不到2元'
     },
     {
       code: 'quarter',
       name: '季卡',
-      price: 49.9,
+      price: 69,
       duration: '90天',
-      description: '省30%'
+      description: '省40%'
     },
     {
       code: 'year',
       name: '年卡',
-      price: 99,
+      price: 169,
       duration: '365天',
       description: '省60%'
     }

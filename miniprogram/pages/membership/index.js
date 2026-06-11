@@ -21,9 +21,9 @@ Page({
     
     // 套餐列表
     plans: [
-      { code: 'month', name: '月卡', price: '19.9', duration: '30天', description: '每天不到1元' },
-      { code: 'quarter', name: '季卡', price: '49.9', duration: '90天', description: '省30%' },
-      { code: 'year', name: '年卡', price: '99', duration: '365天', description: '省60%' }
+      { code: 'month', name: '月卡', price: '39', duration: '30天', description: '每天不到2元' },
+      { code: 'quarter', name: '季卡', price: '69', duration: '90天', description: '省40%' },
+      { code: 'year', name: '年卡', price: '169', duration: '365天', description: '省60%' }
     ],
     
     // 兑换码
@@ -209,8 +209,18 @@ Page({
       if (data.success && data.invite_code) {
         wx.showModal({
           title: '邀请好友',
-          content: '邀请码: ' + data.invite_code,
-          showCancel: false
+          content: '邀请好友注册，双方各得7天会员！',
+          confirmText: '复制邀请码',
+          success: (res) => {
+            if (res.confirm) {
+              wx.setClipboardData({
+                data: data.invite_code,
+                success: () => {
+                  wx.showToast({ title: '邀请码已复制', icon: 'success' });
+                }
+              });
+            }
+          }
         });
       }
     }).catch(err => {
