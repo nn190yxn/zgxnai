@@ -19,6 +19,9 @@ function loadRuntimeConfig(options) {
   var that = this;
   var opts = options || {};
   if (!that.globalData.enableRuntimeConfigFetch && !opts.force) {
+    if (that.globalData.runtimeConfig) {
+      that.globalData.runtimeConfig.configLoaded = true;
+    }
     return Promise.resolve(that.globalData.runtimeConfig);
   }
   var force = !!opts.force;

@@ -12,6 +12,7 @@ Page({
       configLoaded: false
     },
     startupSafeMode: false,
+    heroImageReady: false,
     growthStatus: {
       weekCompletion: 68,
       currentFocus: '先判断孩子卡在哪',
@@ -58,6 +59,7 @@ Page({
     this.checkLogin();
     this.loadReadingStatus();
     this.captureShareSource();
+    this.deferHeroImage();
   },
 
   onShow() {
@@ -67,14 +69,25 @@ Page({
     this.syncFeatureFlags();
     this.checkLogin();
     this.loadReadingStatus();
+    this.deferHeroImage();
+  },
+
+  deferHeroImage() {
+    if (this.data.heroImageReady) {
+      return;
+    }
+    setTimeout(() => {
+      this.setData({ heroImageReady: true });
+    }, 300);
   },
 
   syncFeatureFlags() {
     var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
+    var shouldFetchRuntimeConfig = !!(app.globalData && app.globalData.enableRuntimeConfigFetch);
     this.setData({
       featureFlags: runtimeConfig
     });
-    if (app.loadRuntimeConfig && !this._runtimeConfigLoading && !runtimeConfig.configLoaded) {
+    if (shouldFetchRuntimeConfig && app.loadRuntimeConfig && !this._runtimeConfigLoading && !runtimeConfig.configLoaded) {
       this._runtimeConfigLoading = true;
       app.loadRuntimeConfig().then(() => {
         this.setData({

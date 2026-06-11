@@ -16,7 +16,7 @@
         <view class="hero-btn hero-btn-secondary" bindtap="goToChat">问问AI助理</view>
       </view>
     </view>
-    <image class="hero-image" src="/images/home-hero.png" mode="aspectFit" />
+    <image wx:if="{{heroImageReady}}" class="hero-image" src="/images/home-hero.png" mode="aspectFit" />
   </view>
 
   <view class="section status-section">

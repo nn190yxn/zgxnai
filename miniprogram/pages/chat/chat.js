@@ -65,6 +65,7 @@ Page({
   syncFeatureFlags: function() {
     var that = this;
     var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
+    var shouldFetchRuntimeConfig = !!(app.globalData && app.globalData.enableRuntimeConfigFetch);
     that.setData({
       featureFlags: {
         aiChatEnabled: runtimeConfig.aiChatEnabled !== undefined ? !!runtimeConfig.aiChatEnabled : true,
@@ -72,7 +73,7 @@ Page({
       }
     });
 
-    if (app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
+    if (shouldFetchRuntimeConfig && app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
       app.loadRuntimeConfig().then(function() {
         var config = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
         that.setData({
