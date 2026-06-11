@@ -33,7 +33,8 @@ Page({
     referralStats: {},
     
     // 选中套餐
-    selectedPlan: ''
+    selectedPlan: '',
+    isPaying: false
   },
 
   onLoad() {
@@ -100,6 +101,72 @@ Page({
     if (!this.data.showPayment) {
       wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
     }
+  },
+
+  paySelectedPlan() {
+    if (!this.data.showPayment) {
+      wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
+      return;
+    }
+    if (!this.data.selectedPlan) {
+      wx.showToast({ title: '请先选择套餐', icon: 'none' });
+      return;
+    }
+    if (this.data.isPaying) {
+      return;
+    }
+
+    const that = this;
+    app.ensureLogin().then(function() {
+      that.setData({ isPaying: true });
+      return app.request({
+        url: '/payment/create',
+        method: 'POST',
+        data: {
+          plan_code: that.data.selectedPlan,
+          auto_renew: true
+        }
+      });
+    }).then(function(order) {
+      if (!order || !order.success) {
+        throw new Error((order && order.message) || '创建订单失败');
+      }
+      return app.request({
+        url: '/payment/unified-order',
+        method: 'POST',
+        data: {
+          order_no: order.order_no
+        }
+      });
+    }).then(function(payParams) {
+      if (!payParams || !payParams.success) {
+        throw new Error((payParams && payParams.message) || '获取支付参数失败');
+      }
+      return new Promise(function(resolve, reject) {
+        wx.requestPayment({
+          timeStamp: payParams.timeStamp,
+          nonceStr: payParams.nonceStr,
+          package: payParams.package,
+          signType: payParams.signType || 'RSA',
+          paySign: payParams.paySign,
+          success: resolve,
+          fail: reject
+        });
+      });
+    }).then(function() {
+      wx.showToast({ title: '支付成功', icon: 'success' });
+      that.loadMembershipInfo();
+    }).catch(function(err) {
+      const message = err && err.errMsg && err.errMsg.indexOf('cancel') !== -1
+        ? '已取消支付'
+        : app.getApiErrorMessage(err, '支付失败，请稍后重试');
+      wx.showToast({ title: message, icon: 'none' });
+      if (app.globalData.isDebug) {
+        console.error('支付失败', err);
+      }
+    }).finally(function() {
+      that.setData({ isPaying: false });
+    });
   },
 
   // 输入兑换码

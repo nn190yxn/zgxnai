@@ -1,5 +1,6 @@
-// 微信支付服务层 - 生产环境完整版
 const crypto = require('crypto');
+const fs = require('fs');
+const https = require('https');
 const { db } = require('../config/database');
 const { activateSubscription } = require('./membership');
 
@@ -10,10 +11,32 @@ const WX_PAY_CONFIG = {
   apiKey: process.env.WECHAT_PAY_API_KEY || process.env.WX_API_KEY || '',
   notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || process.env.WX_NOTIFY_URL || '',
   certPath: process.env.WECHAT_PAY_CERT_PATH || process.env.WX_CERT_PATH || '',
-  keyPath: process.env.WECHAT_PAY_KEY_PATH || process.env.WX_KEY_PATH || ''
+  keyPath: process.env.WECHAT_PAY_KEY_PATH || process.env.WX_KEY_PATH || '',
+  platformCertPath: process.env.WECHAT_PAY_PLATFORM_CERT_PATH || process.env.WX_PLATFORM_CERT_PATH || ''
 };
 
 const PAYMENT_NOT_CONFIGURED = 'WECHAT_PAY_NOT_CONFIGURED';
+const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
+
+function readPrivateKey() {
+  return fs.readFileSync(WX_PAY_CONFIG.keyPath, 'utf8');
+}
+
+function getWechatPayMissingFiles() {
+  const files = [
+    ['WECHAT_PAY_KEY_PATH', WX_PAY_CONFIG.keyPath]
+  ];
+  if (WX_PAY_CONFIG.platformCertPath) {
+    files.push(['WECHAT_PAY_PLATFORM_CERT_PATH', WX_PAY_CONFIG.platformCertPath]);
+  }
+  return files.filter(([, filePath]) => filePath && !fs.existsSync(filePath)).map(([name]) => name);
+}
+
+function getWechatPayMissingRequiredFiles() {
+  return [
+    ['WECHAT_PAY_KEY_PATH', WX_PAY_CONFIG.keyPath]
+  ].filter(([, filePath]) => filePath && !fs.existsSync(filePath)).map(([name]) => name);
+}
 
 function getWechatPayMissingConfig() {
   const required = [
@@ -22,10 +45,11 @@ function getWechatPayMissingConfig() {
     ['WECHAT_PAY_API_KEY', WX_PAY_CONFIG.apiKey],
     ['WECHAT_PAY_NOTIFY_URL', WX_PAY_CONFIG.notifyUrl],
     ['WECHAT_PAY_CERT_PATH', WX_PAY_CONFIG.certPath],
-    ['WECHAT_PAY_KEY_PATH', WX_PAY_CONFIG.keyPath]
+    ['WECHAT_PAY_KEY_PATH', WX_PAY_CONFIG.keyPath],
+    ['WECHAT_PAY_CERT_SERIAL_NO', process.env.WECHAT_PAY_CERT_SERIAL_NO || process.env.WX_CERT_SERIAL_NO || '']
   ];
 
-  return required.filter(([, value]) => !value).map(([name]) => name);
+  return required.filter(([, value]) => !value).map(([name]) => name).concat(getWechatPayMissingRequiredFiles());
 }
 
 function isWechatPayConfigured() {
@@ -39,6 +63,115 @@ function paymentConfigError() {
     message: '微信支付配置中，请使用试用或兑换码功能',
     missing_config: getWechatPayMissingConfig()
   };
+}
+
+function requestWechatPay(method, path, body) {
+  const payload = body ? JSON.stringify(body) : '';
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonceStr = crypto.randomBytes(16).toString('hex');
+  const message = [method, path, timestamp, nonceStr, payload].join('\n') + '\n';
+  const signature = crypto.createSign('RSA-SHA256').update(message).sign(readPrivateKey(), 'base64');
+  const authorization = 'WECHATPAY2-SHA256-RSA2048 '
+    + `mchid="${WX_PAY_CONFIG.mchid}",`
+    + `nonce_str="${nonceStr}",`
+    + `signature="${signature}",`
+    + `timestamp="${timestamp}",`
+    + `serial_no="${process.env.WECHAT_PAY_CERT_SERIAL_NO || process.env.WX_CERT_SERIAL_NO || ''}"`;
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: WECHAT_PAY_HOST,
+      path,
+      method,
+      headers: {
+        Authorization: authorization,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload),
+        'User-Agent': 'niuniu-parenting-backend/1.0'
+      },
+      timeout: 10000
+    }, (res) => {
+      let responseBody = '';
+      res.on('data', (chunk) => {
+        responseBody += chunk;
+      });
+      res.on('end', () => {
+        let parsed = {};
+        if (responseBody) {
+          try {
+            parsed = JSON.parse(responseBody);
+          } catch (err) {
+            reject(new Error('微信支付响应解析失败'));
+            return;
+          }
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(parsed);
+          return;
+        }
+        reject(new Error(parsed.message || parsed.detail || '微信支付请求失败'));
+      });
+    });
+
+    req.on('timeout', () => {
+      req.destroy(new Error('微信支付请求超时'));
+    });
+    req.on('error', reject);
+    if (payload) {
+      req.write(payload);
+    }
+    req.end();
+  });
+}
+
+function buildMiniProgramPayParams(prepayId) {
+  const timeStamp = Math.floor(Date.now() / 1000).toString();
+  const nonceStr = crypto.randomBytes(16).toString('hex');
+  const packageValue = 'prepay_id=' + prepayId;
+  const message = `${WX_PAY_CONFIG.appid}\n${timeStamp}\n${nonceStr}\n${packageValue}\n`;
+  const paySign = crypto.createSign('RSA-SHA256').update(message).sign(readPrivateKey(), 'base64');
+
+  return {
+    appId: WX_PAY_CONFIG.appid,
+    timeStamp,
+    nonceStr,
+    package: packageValue,
+    signType: 'RSA',
+    paySign
+  };
+}
+
+function decryptWechatResource(resource) {
+  if (!resource || resource.algorithm !== 'AEAD_AES_256_GCM') {
+    throw new Error('不支持的微信支付回调加密算法');
+  }
+  const ciphertext = Buffer.from(resource.ciphertext, 'base64');
+  const authTag = ciphertext.subarray(ciphertext.length - 16);
+  const encryptedData = ciphertext.subarray(0, ciphertext.length - 16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', WX_PAY_CONFIG.apiKey, resource.nonce);
+  decipher.setAuthTag(authTag);
+  if (resource.associated_data) {
+    decipher.setAAD(Buffer.from(resource.associated_data));
+  }
+  const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
+  return JSON.parse(decrypted.toString('utf8'));
+}
+
+function verifyWechatNotifySignature(headers, rawBody) {
+  if (!WX_PAY_CONFIG.platformCertPath) {
+    // 微信回调资源使用 API v3 密钥进行 AEAD 解密；配置平台证书后会额外执行签名校验。
+    return true;
+  }
+  const signature = headers['wechatpay-signature'];
+  const timestamp = headers['wechatpay-timestamp'];
+  const nonce = headers['wechatpay-nonce'];
+  if (!signature || !timestamp || !nonce || !rawBody) {
+    return false;
+  }
+  const message = `${timestamp}\n${nonce}\n${rawBody}\n`;
+  const certificate = fs.readFileSync(WX_PAY_CONFIG.platformCertPath, 'utf8');
+  return crypto.createVerify('RSA-SHA256').update(message).verify(certificate, signature, 'base64');
 }
 
 /**
@@ -82,51 +215,72 @@ function createPaymentOrder(userId, planCode, options = {}) {
 /**
  * 微信支付统一下单（生产环境调用微信真实接口）
  */
-function unifiedOrder(orderNo, planCode, openid) {
+async function unifiedOrder(orderNo, planCode, openid, userId) {
   if (!isWechatPayConfigured()) {
     return paymentConfigError();
+  }
+
+  if (!openid) {
+    return { success: false, message: '缺少微信用户openid' };
   }
 
   const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(orderNo);
   if (!order) {
     return { success: false, message: '订单不存在' };
   }
+  if (userId && order.user_id !== userId) {
+    return { success: false, message: '无权操作该订单' };
+  }
 
-  // 生产环境调用微信统一下单接口
-  // TODO: 接入微信支付SDK
-  // const wxResult = await callWxUnifiedOrder({...});
+  const plan = db.prepare('SELECT * FROM plans WHERE code = ? AND is_active = 1').get(order.plan_code);
+  const wxResult = await requestWechatPay('POST', '/v3/pay/transactions/jsapi', {
+    appid: WX_PAY_CONFIG.appid,
+    mchid: WX_PAY_CONFIG.mchid,
+    description: plan ? `小牛育儿${plan.name}` : '小牛育儿会员',
+    out_trade_no: orderNo,
+    notify_url: WX_PAY_CONFIG.notifyUrl,
+    amount: {
+      total: order.amount,
+      currency: 'CNY'
+    },
+    payer: {
+      openid
+    }
+  });
 
-  // 模拟返回预支付参数
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-  const nonceStr = crypto.randomBytes(16).toString('hex');
-  const prepayId = 'wx' + Date.now();
+  if (!wxResult.prepay_id) {
+    return { success: false, message: '微信支付预下单失败' };
+  }
 
-  // 更新订单
   db.prepare(`
     UPDATE payment_orders SET wx_prepay_id = ? WHERE order_no = ?
-  `).run(prepayId, orderNo);
+  `).run(wxResult.prepay_id, orderNo);
 
   return {
     success: true,
-    appid: WX_PAY_CONFIG.appid,
-    timeStamp: timestamp,
-    nonceStr: nonceStr,
-    package: 'prepay_id=' + prepayId,
-    signType: 'RSA',
-    paySign: 'sign_placeholder' // 生产环境用真实签名
+    ...buildMiniProgramPayParams(wxResult.prepay_id)
   };
 }
 
 /**
  * 处理支付回调
  */
-function handlePaymentNotify(notifyData) {
+function handlePaymentNotify(notifyData, headers = {}, rawBody = '') {
   if (!isWechatPayConfigured()) {
     return paymentConfigError();
   }
 
-  // 解析微信支付回调数据
-  const { out_trade_no, transaction_id, result_code } = notifyData;
+  const paymentData = notifyData.resource
+    ? null
+    : notifyData;
+
+  if (notifyData.resource && !verifyWechatNotifySignature(headers, rawBody)) {
+    return { success: false, message: '微信支付回调签名无效' };
+  }
+
+  const finalPaymentData = paymentData || decryptWechatResource(notifyData.resource);
+
+  const { out_trade_no, transaction_id, trade_state, result_code } = finalPaymentData;
 
   const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(out_trade_no);
   if (!order) {
@@ -137,15 +291,13 @@ function handlePaymentNotify(notifyData) {
     return { success: true, message: '订单已处理' };
   }
 
-  if (result_code === 'SUCCESS') {
-    // 更新订单状态
+  if (trade_state === 'SUCCESS' || result_code === 'SUCCESS') {
     db.prepare(`
       UPDATE payment_orders
       SET status = 'paid', wx_transaction_id = ?, paid_at = datetime('now')
       WHERE order_no = ?
     `).run(transaction_id, out_trade_no);
 
-    // 激活会员
     const subscriptionResult = activateSubscription(order.user_id, order.plan_code, {
       pay_method: 'wxpay',
       order_no: out_trade_no,
@@ -225,6 +377,7 @@ module.exports = {
   cancelAutoRenew,
   isWechatPayConfigured,
   getWechatPayMissingConfig,
+  getWechatPayMissingFiles,
   PAYMENT_NOT_CONFIGURED,
   WX_PAY_CONFIG
 };

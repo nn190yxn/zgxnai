@@ -18,7 +18,7 @@ var ENV_CONFIG = {
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
     showMembership: true,
-    enableWechatPay: false,
+    enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false
   },
@@ -36,7 +36,7 @@ var ENV_CONFIG = {
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
     showMembership: true,
-    enableWechatPay: false,
+    enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false
   }

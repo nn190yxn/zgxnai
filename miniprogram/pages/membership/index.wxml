@@ -39,7 +39,7 @@
         <view class="plan-desc">{{item.description}}</view>
       </view>
     </view>
-    <button wx:if="{{showPayment}}" class="btn-pay">立即开通</button>
+    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '支付处理中' : '立即开通'}}</button>
     <button wx:else class="btn-pay btn-pay-disabled" disabled="true">微信支付暂未开放</button>
   </view>
 

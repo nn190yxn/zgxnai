@@ -47,7 +47,14 @@ app.use(cors({
 app.use(morgan('dev'));
 
 // JSON解析
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    if (req.originalUrl === '/api/v1/payment/notify') {
+      req.rawBody = buf.toString('utf8');
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 初始化数据库

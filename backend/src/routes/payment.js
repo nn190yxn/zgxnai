@@ -38,15 +38,22 @@ router.post('/create', authenticateToken, (req, res) => {
  * POST /api/v1/payment/unified-order
  * 微信支付统一下单
  */
-router.post('/unified-order', authenticateToken, (req, res) => {
+router.post('/unified-order', authenticateToken, async (req, res) => {
   const { order_no, openid } = req.body;
 
   if (!order_no) {
     return res.status(400).json({ success: false, message: '订单号不能为空' });
   }
 
-  const result = unifiedOrder(order_no, null, openid);
-  sendPaymentResult(res, result);
+  try {
+    const result = await unifiedOrder(order_no, null, openid || req.user.openid, req.user.userId);
+    sendPaymentResult(res, result);
+  } catch (err) {
+    res.status(502).json({
+      success: false,
+      message: err.message || '微信支付下单失败'
+    });
+  }
 });
 
 /**
@@ -56,15 +63,16 @@ router.post('/unified-order', authenticateToken, (req, res) => {
 router.post('/notify', (req, res) => {
   try {
     const notifyData = req.body;
-    const result = handlePaymentNotify(notifyData);
-    res.json({
-      return_code: result.success ? 'SUCCESS' : 'FAIL',
-      return_msg: result.message
-    });
+    const result = handlePaymentNotify(notifyData, req.headers, req.rawBody || '');
+    if (result.success) {
+      res.json({ code: 'SUCCESS', message: '成功' });
+      return;
+    }
+    res.status(400).json({ code: 'FAIL', message: result.message });
   } catch (err) {
     res.status(500).json({
-      return_code: 'FAIL',
-      return_msg: err.message
+      code: 'FAIL',
+      message: err.message
     });
   }
 });
