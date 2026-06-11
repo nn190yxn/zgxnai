@@ -48,12 +48,15 @@ Page({
 
   // 加载会员信息
   loadMembershipInfo() {
+    console.log('[Membership] Loading membership info...');
     app.request({
       url: '/membership/info',
       method: 'GET'
     }).then(data => {
+      console.log('[Membership] Membership info loaded:', data);
       this.setData({ membershipInfo: data });
     }).catch(err => {
+      console.error('[Membership] Failed to load membership info:', err);
       if (app.globalData.isDebug) {
         console.error('获取会员信息失败', err);
       }
