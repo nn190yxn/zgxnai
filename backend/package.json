@@ -11,6 +11,7 @@
     "lint": "eslint src/",
     "backup": "node src/scripts/backup.js",
     "restore": "node src/scripts/restore.js",
+    "start:mysql": "node src/mysql-production/server.js",
     "backup:schedule": "node -e \"require('./src/scripts/backup.js').backup(); console.log('备份完成');\""
   },
   "keywords": [
@@ -26,6 +27,7 @@
     "express": "^4.19.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.15.3",
     "morgan": "^1.10.0",
     "uuid": "^14.0.0"
   },
