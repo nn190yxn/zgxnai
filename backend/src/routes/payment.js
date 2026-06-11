@@ -64,16 +64,14 @@ router.post('/notify', (req, res) => {
   try {
     const notifyData = req.body;
     const result = handlePaymentNotify(notifyData, req.headers, req.rawBody || '');
-    if (result.success) {
-      res.json({ code: 'SUCCESS', message: '成功' });
-      return;
+    if (!result.success) {
+      console.error('[Payment Notify] Error:', result.message);
     }
-    res.status(400).json({ code: 'FAIL', message: result.message });
+    // 微信要求无论成功失败都返回200和特定格式，防止微信重试
+    res.status(200).json({ code: 'SUCCESS', message: 'OK' });
   } catch (err) {
-    res.status(500).json({
-      code: 'FAIL',
-      message: err.message
-    });
+    console.error('[Payment Notify] Exception:', err.message);
+    res.status(200).json({ code: 'SUCCESS', message: 'OK' });
   }
 });
 

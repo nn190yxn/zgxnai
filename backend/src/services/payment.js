@@ -146,22 +146,25 @@ function decryptWechatResource(resource) {
   if (!resource || resource.algorithm !== 'AEAD_AES_256_GCM') {
     throw new Error('不支持的微信支付回调加密算法');
   }
-  const ciphertext = Buffer.from(resource.ciphertext, 'base64');
-  const authTag = ciphertext.subarray(ciphertext.length - 16);
-  const encryptedData = ciphertext.subarray(0, ciphertext.length - 16);
-  const decipher = crypto.createDecipheriv('aes-256-gcm', WX_PAY_CONFIG.apiKey, resource.nonce);
+  // 微信支付v3: ciphertext字段格式为 base64(密文 + auth_tag)
+  const encryptedData = Buffer.from(resource.ciphertext, 'base64');
+  // AES-GCM: 最后16字节是auth_tag
+  const authTag = encryptedData.subarray(encryptedData.length - 16);
+  const ciphertext = encryptedData.subarray(0, encryptedData.length - 16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', WX_PAY_CONFIG.apiKey, Buffer.from(resource.nonce));
   decipher.setAuthTag(authTag);
   if (resource.associated_data) {
     decipher.setAAD(Buffer.from(resource.associated_data));
   }
-  const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   return JSON.parse(decrypted.toString('utf8'));
 }
 
 function verifyWechatNotifySignature(headers, rawBody) {
   if (!WX_PAY_CONFIG.platformCertPath) {
-    // 微信回调资源使用 API v3 密钥进行 AEAD 解密；配置平台证书后会额外执行签名校验。
-    return true;
+    // 生产环境必须配置平台证书，否则记录警告但不直接跳过验签
+    console.warn('[Security] WECHAT_PAY_PLATFORM_CERT_PATH not configured, skipping notify signature verification. This is insecure in production.');
+    return process.env.NODE_ENV !== 'production';
   }
   const signature = headers['wechatpay-signature'];
   const timestamp = headers['wechatpay-timestamp'];
@@ -282,40 +285,45 @@ function handlePaymentNotify(notifyData, headers = {}, rawBody = '') {
 
   const { out_trade_no, transaction_id, trade_state, result_code } = finalPaymentData;
 
-  const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(out_trade_no);
-  if (!order) {
-    return { success: false, message: '订单不存在' };
-  }
+  // 使用事务确保幂等性
+  const transaction = db.transaction(() => {
+    const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(out_trade_no);
+    if (!order) {
+      return { success: false, message: '订单不存在' };
+    }
 
-  if (order.status === 'paid') {
-    return { success: true, message: '订单已处理' };
-  }
+    if (order.status === 'paid') {
+      return { success: true, message: '订单已处理' };
+    }
 
-  if (trade_state === 'SUCCESS' || result_code === 'SUCCESS') {
-    db.prepare(`
-      UPDATE payment_orders
-      SET status = 'paid', wx_transaction_id = ?, paid_at = datetime('now')
-      WHERE order_no = ?
-    `).run(transaction_id, out_trade_no);
+    if (trade_state === 'SUCCESS' || result_code === 'SUCCESS') {
+      db.prepare(`
+        UPDATE payment_orders
+        SET status = 'paid', wx_transaction_id = ?, paid_at = datetime('now')
+        WHERE order_no = ?
+      `).run(transaction_id, out_trade_no);
 
-    const subscriptionResult = activateSubscription(order.user_id, order.plan_code, {
-      pay_method: 'wxpay',
-      order_no: out_trade_no,
-      auto_renew: order.auto_renew === 1
-    });
+      const subscriptionResult = activateSubscription(order.user_id, order.plan_code, {
+        pay_method: 'wxpay',
+        order_no: out_trade_no,
+        auto_renew: order.auto_renew === 1
+      });
 
-    return {
-      success: true,
-      message: '支付成功',
-      subscription: subscriptionResult
-    };
-  } else {
-    db.prepare(`
-      UPDATE payment_orders SET status = 'failed' WHERE order_no = ?
-    `).run(out_trade_no);
+      return {
+        success: true,
+        message: '支付成功',
+        subscription: subscriptionResult
+      };
+    } else {
+      db.prepare(`
+        UPDATE payment_orders SET status = 'failed' WHERE order_no = ?
+      `).run(out_trade_no);
 
-    return { success: false, message: '支付失败' };
-  }
+      return { success: false, message: '支付失败' };
+    }
+  });
+
+  return transaction();
 }
 
 /**
