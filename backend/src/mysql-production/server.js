@@ -11,6 +11,7 @@ loadEnv('/home/ubuntu/niuniu-parenting/.env');
 
 const app = express();
 const API_PREFIX = process.env.API_PREFIX || '/api/v1';
+const API_PREFIXES = Array.from(new Set([API_PREFIX, '/api/v1']));
 const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -51,19 +52,21 @@ app.use(express.json({
 }));
 
 app.get('/health', healthHandler);
-app.get(`${API_PREFIX}/health`, healthHandler);
-app.post(`${API_PREFIX}/auth/login`, asyncHandler(loginHandler));
-app.post(`${API_PREFIX}/auth/refresh`, asyncHandler(refreshHandler));
-app.get(`${API_PREFIX}/auth/me`, authenticateToken, asyncHandler(meHandler));
-app.get(`${API_PREFIX}/membership/info`, authenticateToken, asyncHandler(membershipInfoHandler));
-app.post(`${API_PREFIX}/membership/trial/activate`, authenticateToken, asyncHandler(trialHandler));
-app.post(`${API_PREFIX}/membership/promo/redeem`, authenticateToken, asyncHandler(promoHandler));
-app.get(`${API_PREFIX}/referral/stats`, authenticateToken, asyncHandler(referralStatsHandler));
-app.get(`${API_PREFIX}/referral/code`, authenticateToken, asyncHandler(referralCodeHandler));
-app.post(`${API_PREFIX}/payment/create`, authenticateToken, asyncHandler(createPaymentOrderHandler));
-app.post(`${API_PREFIX}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
-app.get(`${API_PREFIX}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
-app.post(`${API_PREFIX}/payment/notify`, asyncHandler(paymentNotifyHandler));
+for (const prefix of API_PREFIXES) {
+  app.get(`${prefix}/health`, healthHandler);
+  app.post(`${prefix}/auth/login`, asyncHandler(loginHandler));
+  app.post(`${prefix}/auth/refresh`, asyncHandler(refreshHandler));
+  app.get(`${prefix}/auth/me`, authenticateToken, asyncHandler(meHandler));
+  app.get(`${prefix}/membership/info`, authenticateToken, asyncHandler(membershipInfoHandler));
+  app.post(`${prefix}/membership/trial/activate`, authenticateToken, asyncHandler(trialHandler));
+  app.post(`${prefix}/membership/promo/redeem`, authenticateToken, asyncHandler(promoHandler));
+  app.get(`${prefix}/referral/stats`, authenticateToken, asyncHandler(referralStatsHandler));
+  app.get(`${prefix}/referral/code`, authenticateToken, asyncHandler(referralCodeHandler));
+  app.post(`${prefix}/payment/create`, authenticateToken, asyncHandler(createPaymentOrderHandler));
+  app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
+  app.get(`${prefix}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
+  app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
+}
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
