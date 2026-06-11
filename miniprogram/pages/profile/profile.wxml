@@ -10,7 +10,23 @@
     <button class="login-btn" wx:if="{{!isLoggedIn}}" bindtap="login">登录</button>
   </view>
 
-  <!-- 孩子档案入口 -->
+  <!-- 会员状态卡片 -->
+  <view class="section" wx:if="{{isLoggedIn}}">
+    <view class="membership-entry" bindtap="goToMembership">
+      <view class="membership-entry-left">
+        <view class="membership-entry-icon">VIP</view>
+        <view class="membership-entry-info">
+          <text class="membership-entry-title">会员中心</text>
+          <text class="membership-entry-desc" wx:if="{{membershipInfo.is_active}}">{{membershipInfo.membership_type === 'trial' ? '试用期会员' : '正式会员'}} 剩余 {{membershipInfo.days_left}} 天</text>
+          <text class="membership-entry-desc" wx:else>开通会员，享受更多权益</text>
+        </view>
+      </view>
+      <view class="membership-entry-right">
+        <text class="membership-status {{membershipInfo.is_active ? 'active' : ''}}">{{membershipInfo.is_active ? '已开通' : '未开通'}}</text>
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+  </view>
   <view class="section">
     <view class="child-entry" bindtap="goToChildren">
       <view class="child-entry-left">

@@ -6,7 +6,13 @@ Page({
     userInfo: null,
     isLoggedIn: false,
     currentChild: null,
-    childrenCount: 0
+    childrenCount: 0,
+    membershipInfo: {
+      status: 'free',
+      membership_type: 'free',
+      is_active: false,
+      days_left: 0
+    }
   },
 
   onLoad: function() {
@@ -16,6 +22,7 @@ Page({
   onShow: function() {
     this.loadUserData();
     this.loadChildrenData();
+    this.loadMembershipInfo();
   },
 
   // 加载用户数据
@@ -67,6 +74,41 @@ Page({
     }).catch(function(error) {
       wx.hideLoading();
       wx.showToast({ title: '登录失败', icon: 'none' });
+    });
+  },
+
+  // 加载会员信息
+  loadMembershipInfo: function() {
+    var that = this;
+    if (!app.globalData.isLoggedIn) {
+      return;
+    }
+    app.request({
+      url: '/membership/info',
+      method: 'GET'
+    }).then(function(data) {
+      that.setData({
+        membershipInfo: data || {
+          status: 'free',
+          membership_type: 'free',
+          is_active: false,
+          days_left: 0
+        }
+      });
+    }).catch(function(err) {
+      if (app.globalData.isDebug) {
+        console.error('获取会员信息失败', err);
+      }
+    });
+  },
+
+  // 进入会员中心
+  goToMembership: function() {
+    wx.navigateTo({
+      url: '/pages/membership/index',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
     });
   },
 
