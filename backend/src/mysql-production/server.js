@@ -16,6 +16,8 @@ const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
+const REFERRAL_REWARD_DAYS = 7;
+const REFERRAL_MAX_DAYS = 60;
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production');
@@ -66,6 +68,10 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
   app.get(`${prefix}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
   app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
+  app.all(`${prefix}/assessments*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
+  app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
+  app.all(`${prefix}/education*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
+  app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
 }
 
 app.use((req, res) => {
@@ -127,6 +133,23 @@ function authenticateToken(req, res, next) {
   } catch (err) {
     res.status(403).json({ success: false, message: '访问令牌无效或已过期' });
   }
+}
+
+async function requireActiveMembership(req, res, next) {
+  const active = await isActiveMember(req.user.userId);
+  if (!active) {
+    res.status(403).json({
+      success: false,
+      code: 'MEMBERSHIP_REQUIRED',
+      message: '会员已到期或尚未开通，请先开通会员'
+    });
+    return;
+  }
+  next();
+}
+
+function paidFeaturePlaceholderHandler(req, res) {
+  res.status(404).json({ success: false, message: '接口暂未在生产服务开放', path: req.path });
 }
 
 async function loginHandler(req, res) {
@@ -226,56 +249,63 @@ async function findOrCreateUser(openid, profile) {
 }
 
 async function handleReferralSignup(inviteeId, inviteCode) {
+  const inviterId = parseInviteCode(inviteCode);
+  if (!inviterId || inviterId === inviteeId) {
+    return;
+  }
+  const connection = await pool.getConnection();
   try {
-    // 根据邀请码查找邀请人
-    const [inviters] = await pool.execute(
-      'SELECT id FROM users WHERE id = ?',
-      [inviteCode.replace(/^NN/, '')]
-    );
-    if (!inviters.length) return;
-    const inviterId = inviters[0].id;
-
-    // 不能邀请自己
-    if (inviterId === inviteeId) return;
-
-    // 检查是否已被邀请过
-    const [existing] = await pool.execute(
-      'SELECT id FROM referrals WHERE invitee_id = ?',
+    await connection.beginTransaction();
+    const [inviters] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [inviterId]);
+    if (!inviters.length) {
+      await connection.rollback();
+      return;
+    }
+    const [existing] = await connection.execute(
+      'SELECT id FROM referrals WHERE invitee_id = ? FOR UPDATE',
       [inviteeId]
     );
-    if (existing.length) return;
-
-    // 记录邀请关系
-    await pool.execute(
-      'INSERT INTO referrals (inviter_id, invitee_id, reward_days, status) VALUES (?, ?, 7, \'completed\')',
-      [inviterId, inviteeId]
-    );
-
-    // 给邀请人增加7天会员
-    const [memberships] = await pool.execute(
-      'SELECT current_end_date FROM user_memberships WHERE user_id = ?',
-      [inviterId]
-    );
-
-    const now = new Date();
-    let endDate;
-    if (memberships.length && memberships[0].current_end_date) {
-      endDate = new Date(memberships[0].current_end_date);
-      if (endDate < now) endDate = now;
-    } else {
-      endDate = now;
+    if (existing.length) {
+      await connection.rollback();
+      return;
     }
-    endDate.setDate(endDate.getDate() + 7);
-
-    await pool.execute(
-      `INSERT INTO user_memberships (user_id, current_end_date, membership_type, status, auto_renew)
-       VALUES (?, ?, 'referral', 'active', 1)
-       ON DUPLICATE KEY UPDATE current_end_date = ?, membership_type = 'referral', status = 'active'`,
-      [inviterId, endDate, endDate]
+    const rewardDays = await getAvailableReferralRewardDays(connection, inviterId);
+    await connection.execute(
+      'INSERT INTO referrals (inviter_id, invitee_id, reward_days, status) VALUES (?, ?, ?, ?)',
+      [inviterId, inviteeId, rewardDays, 'completed']
     );
+    if (rewardDays > 0) {
+      await extendMembership(connection, inviterId, rewardDays, 'referral_reward');
+    }
+    await extendMembership(connection, inviteeId, REFERRAL_REWARD_DAYS, 'invitee_reward');
+    await connection.commit();
   } catch (err) {
+    await connection.rollback();
     console.error('[Referral] Handle signup error:', err.message);
+  } finally {
+    connection.release();
   }
+}
+
+function parseInviteCode(inviteCode) {
+  if (!inviteCode || typeof inviteCode !== 'string') {
+    return 0;
+  }
+  const match = inviteCode.trim().toUpperCase().match(/^NN(\d+)$/);
+  return match ? Number(match[1]) : 0;
+}
+
+async function getAvailableReferralRewardDays(connection, inviterId) {
+  const [rows] = await connection.execute(
+    `SELECT COALESCE(SUM(reward_days), 0) AS total_days
+     FROM referrals
+     WHERE inviter_id = ?
+       AND status = 'completed'
+       AND DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')`,
+    [inviterId]
+  );
+  const usedDays = Number(rows[0] && rows[0].total_days) || 0;
+  return Math.max(0, Math.min(REFERRAL_REWARD_DAYS, REFERRAL_MAX_DAYS - usedDays));
 }
 
 async function membershipInfoHandler(req, res) {
@@ -302,6 +332,38 @@ async function getMembership(userId) {
   return rows[0] || { status: 'free', membership_type: 'free', is_trial_used: 0, auto_renew: 1 };
 }
 
+async function isActiveMember(userId) {
+  const membership = await getMembership(userId);
+  const endTime = membership.current_end_date ? new Date(membership.current_end_date).getTime() : 0;
+  return membership.status === 'active' && endTime > Date.now();
+}
+
+async function extendMembership(connection, userId, days, payMethod) {
+  const [memberships] = await connection.execute(
+    'SELECT current_end_date, status FROM user_memberships WHERE user_id = ? FOR UPDATE',
+    [userId]
+  );
+  const now = new Date();
+  let endDate = now;
+  if (memberships.length && memberships[0].status === 'active' && memberships[0].current_end_date) {
+    const currentEndDate = new Date(memberships[0].current_end_date);
+    if (currentEndDate > now) {
+      endDate = currentEndDate;
+    }
+  }
+  endDate.setDate(endDate.getDate() + days);
+  await connection.execute(
+    'INSERT INTO subscriptions (user_id, plan_code, status, start_date, end_date, pay_method) VALUES (?, ?, ?, NOW(), ?, ?)',
+    [userId, 'reward', 'active', endDate, payMethod]
+  );
+  await connection.execute(
+    `INSERT INTO user_memberships (user_id, current_plan, current_end_date, membership_type, status, auto_renew)
+     VALUES (?, 'reward', ?, 'reward', 'active', 1)
+     ON DUPLICATE KEY UPDATE current_plan = 'reward', current_end_date = VALUES(current_end_date), membership_type = 'reward', status = 'active'`,
+    [userId, endDate]
+  );
+}
+
 async function trialHandler(req, res) {
   const membership = await getMembership(req.user.userId);
   if (membership.is_trial_used) {
@@ -324,7 +386,28 @@ async function promoHandler(req, res) {
 }
 
 async function referralStatsHandler(req, res) {
-  res.json({ success: true, data: { total_invites: 0, monthly_reward_days: 0, monthly_max_days: 60, remaining_days: 60 } });
+  const [totalRows] = await pool.execute('SELECT COUNT(*) AS count FROM referrals WHERE inviter_id = ?', [req.user.userId]);
+  const [monthlyRows] = await pool.execute(
+    `SELECT COUNT(*) AS count, COALESCE(SUM(reward_days), 0) AS total_days
+     FROM referrals
+     WHERE inviter_id = ?
+       AND status = 'completed'
+       AND DATE_FORMAT(created_at, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')`,
+    [req.user.userId]
+  );
+  const monthlyRewardDays = Number(monthlyRows[0] && monthlyRows[0].total_days) || 0;
+  res.json({
+    success: true,
+    data: {
+      total_invites: Number(totalRows[0] && totalRows[0].count) || 0,
+      monthly_invites: Number(monthlyRows[0] && monthlyRows[0].count) || 0,
+      monthly_reward_days: monthlyRewardDays,
+      monthly_max_days: REFERRAL_MAX_DAYS,
+      remaining_days: Math.max(0, REFERRAL_MAX_DAYS - monthlyRewardDays),
+      can_earn_more: monthlyRewardDays < REFERRAL_MAX_DAYS,
+      invite_code: `NN${String(req.user.userId).padStart(6, '0')}`
+    }
+  });
 }
 
 async function referralCodeHandler(req, res) {

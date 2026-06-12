@@ -64,6 +64,6 @@
         <text class="stat-label">已邀请</text>
       </view>
     </view>
-    <button class="btn-share" bindtap="shareInvite">邀请好友</button>
+    <button class="btn-share" open-type="share">邀请好友</button>
   </view>
 </view>

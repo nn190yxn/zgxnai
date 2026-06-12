@@ -7,9 +7,15 @@ const { REFERRAL_MAX_DAYS, REFERRAL_REWARD_DAYS } = require('./membership');
  * 生成邀请码
  */
 function generateInviteCode(userId) {
-  // 使用用户ID和时间戳生成唯一邀请码
-  const base64 = Buffer.from(userId + '_' + Date.now()).toString('base64');
-  return base64.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase();
+  return `NN${String(userId).padStart(6, '0')}`;
+}
+
+function parseInviteCode(inviteCode) {
+  if (!inviteCode || typeof inviteCode !== 'string') {
+    return 0;
+  }
+  const match = inviteCode.trim().toUpperCase().match(/^NN(\d+)$/);
+  return match ? Number(match[1]) : 0;
 }
 
 /**
@@ -101,6 +107,43 @@ function completeReferral(inviteeId, orderId) {
   };
 }
 
+function handleReferralSignup(inviteeId, inviteCode) {
+  const inviterId = parseInviteCode(inviteCode);
+  if (!inviterId || inviterId === inviteeId) {
+    return { success: false, message: '邀请码无效' };
+  }
+
+  const inviter = db.prepare('SELECT id FROM users WHERE id = ?').get(inviterId);
+  if (!inviter) {
+    return { success: false, message: '邀请人不存在' };
+  }
+
+  const existing = db.prepare('SELECT id FROM referrals WHERE invitee_id = ?').get(inviteeId);
+  if (existing) {
+    return { success: false, message: '该用户已被邀请' };
+  }
+
+  const stats = getReferralStats(inviterId);
+  const inviterRewardDays = Math.min(REFERRAL_REWARD_DAYS, stats.remaining_days);
+  const transaction = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO referrals (inviter_id, invitee_id, reward_days, status)
+      VALUES (?, ?, ?, 'completed')
+    `).run(inviterId, inviteeId, inviterRewardDays);
+    if (inviterRewardDays > 0) {
+      extendMembership(inviterId, inviterRewardDays, 'referral_reward');
+    }
+    extendMembership(inviteeId, REFERRAL_REWARD_DAYS, 'invitee_reward');
+  });
+  transaction();
+
+  return {
+    success: true,
+    reward_days: inviterRewardDays,
+    invitee_reward_days: REFERRAL_REWARD_DAYS
+  };
+}
+
 /**
  * 获取邀请统计数据
  */
@@ -168,8 +211,10 @@ function getReferralList(userId) {
 
 module.exports = {
   generateInviteCode,
+  parseInviteCode,
   recordReferral,
   completeReferral,
+  handleReferralSignup,
   getReferralStats,
   getReferralList
 };

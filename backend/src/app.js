@@ -64,6 +64,7 @@ seedData();
 // 监控中间件
 const { detailedLogger, errorHandler, dbHealthCheck, responseTimeStats, rateLimit } = require('./middleware/monitoring');
 const { authenticateToken, optionalAuth } = require('./middleware/auth');
+const { requireActiveMembership } = require('./middleware/membership');
 
 // 请求日志和性能统计
 app.use(detailedLogger);
@@ -96,13 +97,13 @@ app.use('/api/v1/runtime', runtimeRoutes);
 app.use('/api/v1/auth', authRoutes);
 
 // 需要认证的路由
-app.use('/api/v1/assessments', authenticateToken, assessmentRoutes);
-app.use('/api/v1/chat', authenticateToken, chatRoutes);
-app.use('/api/v1/education', authenticateToken, educationRoutes);
+app.use('/api/v1/assessments', authenticateToken, requireActiveMembership, assessmentRoutes);
+app.use('/api/v1/chat', authenticateToken, requireActiveMembership, chatRoutes);
+app.use('/api/v1/education', authenticateToken, requireActiveMembership, educationRoutes);
 app.use('/api/v1/parenting', optionalAuth, parentingRoutes); // 育儿文章可公开浏览
 app.use('/api/v1/knowledge', optionalAuth, knowledgeRoutes); // 知识库可公开搜索
 app.use('/api/v1/kb/events', authenticateToken, eventsRoutes);
-app.use('/api/v1/recommendations', authenticateToken, recommendationRoutes);
+app.use('/api/v1/recommendations', authenticateToken, requireActiveMembership, recommendationRoutes);
 app.use('/api/v1/membership', authenticateToken, membershipRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/referral', authenticateToken, referralRoutes);

@@ -2,6 +2,7 @@ const express = require('express');
 const https = require('https');
 const { db } = require('../config/database');
 const { authenticateToken, generateToken, verifyToken } = require('../middleware/auth');
+const { handleReferralSignup } = require('../services/referral');
 
 const router = express.Router();
 
@@ -99,7 +100,7 @@ function issueTokens(user) {
 
 router.post('/login', async (req, res) => {
   try {
-    const { code, userInfo } = req.body || {};
+    const { code, userInfo, invite_code } = req.body || {};
     if (!code || typeof code !== 'string') {
       return res.status(400).json({
         success: false,
@@ -112,6 +113,9 @@ router.post('/login', async (req, res) => {
       nickname: userInfo && userInfo.nickName,
       avatar_url: userInfo && userInfo.avatarUrl
     });
+    if (isNew && invite_code) {
+      handleReferralSignup(user.id, invite_code);
+    }
     const tokens = issueTokens(user);
 
     return res.json({

@@ -104,6 +104,9 @@ Page({
       var pages = getCurrentPages();
       var current = pages[pages.length - 1];
       var options = (current && current.options) || {};
+      if (options.invite_code || options.inviteCode) {
+        wx.setStorageSync('inviteCode', options.invite_code || options.inviteCode);
+      }
       if (options.shareSource) {
         var sourceInfo = {
           source: options.shareSource,

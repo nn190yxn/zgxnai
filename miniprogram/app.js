@@ -68,7 +68,7 @@ App({
     isOnline: true,
   },
 
-  onLaunch: function() {
+  onLaunch: function(options) {
     if (this.globalData.enableBootIsolation) {
       return;
     }
@@ -76,6 +76,7 @@ App({
       console.warn('Startup safe mode enabled: skip all wx native calls in App.onLaunch.');
       return;
     }
+    this.captureInviteCode(options);
     this.initApiBaseUrl();
     diagnostics.installNativeApiDiagnostics(this);
     authUtil.checkLoginStatus(this);
@@ -101,6 +102,18 @@ onError: function(error) {
         }
       }
     }
+  },
+
+  captureInviteCode: function(options) {
+    var query = (options && options.query) || {};
+    var inviteCode = query.invite_code || query.inviteCode || '';
+    if (inviteCode) {
+      wx.setStorageSync('inviteCode', inviteCode);
+    }
+  },
+
+  onShow: function(options) {
+    this.captureInviteCode(options);
   },
 
   // 初始化 API 基址（允许开发环境通过 storage 覆盖）
@@ -135,10 +148,10 @@ var allowHosts = {
     var requestTimeoutOverride = wx.getStorageSync('requestTimeoutMs');
     var strictModeOverride = wx.getStorageSync('apiStrictMode');
     var mockFallbackOverride = wx.getStorageSync('allowMockFallback');
-    if (customApiBaseUrl && /^https?:\/\//.test(customApiBaseUrl) && isAllowed(customApiBaseUrl)) {
+    if (this.globalData.isDebug && customApiBaseUrl && /^https?:\/\//.test(customApiBaseUrl) && isAllowed(customApiBaseUrl)) {
       this.globalData.apiBaseUrl = customApiBaseUrl;
     }
-    if (customBaseUrl && /^https?:\/\//.test(customBaseUrl) && isAllowed(customBaseUrl)) {
+    if (this.globalData.isDebug && customBaseUrl && /^https?:\/\//.test(customBaseUrl) && isAllowed(customBaseUrl)) {
       this.globalData.baseUrl = customBaseUrl;
     }
     if (typeof requestTimeoutOverride === 'number' && requestTimeoutOverride >= 3000) {
@@ -288,6 +301,9 @@ var allowHosts = {
         wx.setStorageSync('refreshToken', data.refresh_token);
         that.globalData.refreshToken = data.refresh_token;
         that.globalData._loginRetryCount = 0;
+        if (inviteCode) {
+          wx.removeStorageSync('inviteCode');
+        }
         resolve(data);
       }).catch(function(err) {
         reject(err);

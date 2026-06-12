@@ -31,6 +31,7 @@ Page({
     
     // 邀请统计
     referralStats: {},
+    inviteCode: '',
     
     // 选中套餐
     selectedPlan: '',
@@ -38,8 +39,12 @@ Page({
   },
 
   onLoad() {
-    this.loadMembershipInfo();
-    this.loadReferralStats();
+    app.ensureLogin().then(() => {
+      this.loadMembershipInfo();
+      this.loadReferralStats();
+    }).catch(() => {
+      this.loadMembershipInfo();
+    });
   },
 
   onShow() {
@@ -69,7 +74,10 @@ Page({
       url: '/referral/stats',
       method: 'GET'
     }).then(data => {
-      this.setData({ referralStats: data });
+      this.setData({
+        referralStats: data,
+        inviteCode: data.invite_code || this.getFallbackInviteCode()
+      });
     }).catch(err => {
       if (app.globalData.isDebug) {
         console.error('获取邀请统计失败', err);
@@ -231,6 +239,29 @@ Page({
         console.error('获取邀请码失败', err);
       }
     });
+  },
+
+  getFallbackInviteCode() {
+    const user = app.globalData.userInfo || wx.getStorageSync('userInfo') || {};
+    return user.id ? 'NN' + String(user.id).padStart(6, '0') : '';
+  },
+
+  onShareAppMessage() {
+    const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
+    return {
+      title: '小牛育儿AI助理，邀请你领取7天会员',
+      path: '/pages/index/index?invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_invite',
+      imageUrl: '/images/share-app-intro.png'
+    };
+  },
+
+  onShareTimeline() {
+    const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
+    return {
+      title: '小牛育儿AI助理，邀请你领取7天会员',
+      query: 'invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_timeline',
+      imageUrl: '/images/share-app-intro.png'
+    };
   },
 
   // 格式化日期
