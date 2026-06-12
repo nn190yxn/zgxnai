@@ -450,7 +450,8 @@ function filterNutritionRecipes(query) {
 }
 
 function nutritionRecommendationsHandler(req, res) {
-  res.json({ success: true, data: NUTRITION_RECIPES.map(normalizeNutritionRecipe) });
+  const shuffled = [...NUTRITION_RECIPES].sort(() => 0.5 - Math.random());
+  res.json({ success: true, data: shuffled.slice(0, 6).map(normalizeNutritionRecipe) });
 }
 
 function nutritionRecipesHandler(req, res) {
