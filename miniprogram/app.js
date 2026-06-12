@@ -330,13 +330,14 @@ var allowHosts = {
       }
 
       var settled = false;
+      var loginTimeoutMs = that.globalData.requestTimeoutMs || 15000;
       var loginTimer = setTimeout(function() {
         if (settled) {
           return;
         }
         settled = true;
-        useDevLoginFallback(new Error('wx.login timeout after 5000ms'), resolve, reject);
-      }, 5000);
+        useDevLoginFallback(new Error('wx.login timeout after ' + loginTimeoutMs + 'ms'), resolve, reject);
+      }, loginTimeoutMs);
 
       wx.login({
         success: function(res) {
