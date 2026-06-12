@@ -164,7 +164,7 @@
           src="{{recipe.steps[currentStep].image}}" 
           mode="aspectFill"
         />
-        <text class="step-content">{{recipe.steps[currentStep].content}}</text>
+        <text class="step-content">{{recipe.steps[currentStep].content || recipe.steps[currentStep]}}</text>
         <text class="step-tip" wx:if="{{recipe.steps[currentStep].tip}}">
           <text class="tip-label">小贴士：</text>{{recipe.steps[currentStep].tip}}
         </text>
