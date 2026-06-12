@@ -18,6 +18,59 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
 const REFERRAL_REWARD_DAYS = 7;
 const REFERRAL_MAX_DAYS = 60;
+const NUTRITION_RECIPES = [
+  {
+    id: 'nutrition_001',
+    title: '小米南瓜粥',
+    name: '小米南瓜粥',
+    description: '南瓜香甜、小米软糯，适合早餐或晚餐，口感温和好入口。',
+    category: '早餐',
+    tags: ['早餐', '3-6岁'],
+    ageRange: '3-6岁',
+    cookTime: '35分钟',
+    calories: '180卡',
+    difficulty: '简单',
+    ingredients: [{ name: '小米', amount: '50g' }, { name: '南瓜', amount: '100g' }, { name: '清水', amount: '500ml' }],
+    steps: ['小米洗净浸泡', '南瓜切块', '先煮小米后加南瓜', '小火煮至软糯'],
+    nutrition: { highlight: '易消化，适合早餐', protein: '4g', carbs: '32g', fat: '2g', fiber: '3g' },
+    tips: '口味清淡，适合低龄儿童。',
+    viewCount: 128
+  },
+  {
+    id: 'nutrition_002',
+    title: '豆腐鱼头汤',
+    name: '豆腐鱼头汤',
+    description: '豆腐软嫩，汤味清淡，适合作为家庭正餐的蛋白质补充。',
+    category: '汤品',
+    tags: ['汤品', '3-6岁'],
+    ageRange: '3-6岁',
+    cookTime: '40分钟',
+    calories: '220卡',
+    difficulty: '中等',
+    ingredients: [{ name: '鱼头', amount: '半个' }, { name: '豆腐', amount: '100g' }, { name: '姜片', amount: '3片' }],
+    steps: ['鱼头煎香', '加开水煮汤', '放入豆腐炖煮', '少盐调味'],
+    nutrition: { highlight: '高蛋白，补钙', protein: '18g', carbs: '5g', fat: '10g', fiber: '1g' },
+    tips: '注意鱼刺处理，避免儿童误食。',
+    viewCount: 96
+  },
+  {
+    id: 'nutrition_003',
+    title: '糯玉米蒸蛋',
+    name: '糯玉米蒸蛋',
+    description: '蒸蛋细腻，加入玉米粒提升咀嚼兴趣，适合加餐或早餐。',
+    category: '早餐',
+    tags: ['早餐', '3-6岁'],
+    ageRange: '3-6岁',
+    cookTime: '15分钟',
+    calories: '160卡',
+    difficulty: '简单',
+    ingredients: [{ name: '鸡蛋', amount: '1个' }, { name: '糯玉米粒', amount: '30g' }, { name: '温水', amount: '100ml' }],
+    steps: ['蛋液加温水打匀', '加入玉米粒', '中火蒸约10分钟'],
+    nutrition: { highlight: '优质蛋白，口感软嫩', protein: '9g', carbs: '12g', fat: '7g', fiber: '2g' },
+    tips: '蒸制时间不宜过长，避免口感变老。',
+    viewCount: 86
+  }
+];
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production');
@@ -68,6 +121,10 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
   app.get(`${prefix}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
   app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
+  app.get(`${prefix}/nutrition/recommendations`, nutritionRecommendationsHandler);
+  app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
+  app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
+  app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
   app.all(`${prefix}/assessments*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/education*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
@@ -412,6 +469,78 @@ async function referralStatsHandler(req, res) {
 
 async function referralCodeHandler(req, res) {
   res.json({ success: true, data: { invite_code: `NN${String(req.user.userId).padStart(6, '0')}` } });
+}
+
+function normalizeNutritionRecipe(recipe) {
+  return Object.assign({
+    desc: recipe.description,
+    content: recipe.steps.join('\n'),
+    visualIcon: '',
+    is_favorited: false,
+    isFavorite: false,
+    created_at: new Date().toISOString()
+  }, recipe);
+}
+
+function filterNutritionRecipes(query) {
+  const keyword = String((query && query.keyword) || '').trim();
+  const category = String((query && query.category) || '').trim();
+  const age = String((query && query.age) || '').trim();
+  return NUTRITION_RECIPES.filter((recipe) => {
+    const text = `${recipe.title} ${recipe.description} ${recipe.category} ${recipe.tags.join(' ')}`;
+    if (keyword && !text.includes(keyword)) {
+      return false;
+    }
+    if (category && recipe.category !== category) {
+      return false;
+    }
+    if (age && age !== '全部年龄' && recipe.ageRange !== age) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function nutritionRecommendationsHandler(req, res) {
+  res.json({ success: true, data: NUTRITION_RECIPES.map(normalizeNutritionRecipe) });
+}
+
+function nutritionRecipesHandler(req, res) {
+  const page = Math.max(Number(req.query.page || 1), 1);
+  const pageSize = Math.min(Math.max(Number(req.query.page_size || req.query.pageSize || 10), 1), 30);
+  const filtered = filterNutritionRecipes(req.query);
+  const offset = (page - 1) * pageSize;
+  const recipes = filtered.slice(offset, offset + pageSize).map(normalizeNutritionRecipe);
+  res.json({
+    success: true,
+    data: {
+      recipes,
+      pagination: {
+        page,
+        page_size: pageSize,
+        total: filtered.length,
+        has_more: offset + pageSize < filtered.length
+      }
+    }
+  });
+}
+
+function nutritionRecipeDetailHandler(req, res) {
+  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
+  if (!recipe) {
+    res.status(404).json({ success: false, message: '食谱不存在' });
+    return;
+  }
+  res.json({ success: true, data: normalizeNutritionRecipe(recipe) });
+}
+
+function nutritionRecipeFavoriteHandler(req, res) {
+  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
+  if (!recipe) {
+    res.status(404).json({ success: false, message: '食谱不存在' });
+    return;
+  }
+  res.json({ success: true, data: { is_favorited: true, isFavorite: true } });
 }
 
 function paymentConfigError() {
