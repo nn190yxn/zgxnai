@@ -87,6 +87,14 @@
       <view class="section-header">
         <text class="section-title">营养分析</text>
       </view>
+      
+      <!-- 营养亮点 -->
+      <view class="nutrition-highlight" wx:if="{{recipe.nutrition.highlight}}">
+        <text class="highlight-icon">💡</text>
+        <text class="highlight-text">{{recipe.nutrition.highlight}}</text>
+      </view>
+      
+      <!-- 主要营养成分 -->
       <view class="nutrition-card">
         <view class="nutrition-item" wx:if="{{recipe.nutrition.protein}}">
           <text class="nutrition-name">蛋白质</text>
@@ -117,6 +125,45 @@
           <text class="nutrition-value">{{recipe.nutrition.fiber}}</text>
         </view>
       </view>
+      
+      <!-- 维生素和矿物质 -->
+      <view class="nutrition-micronutrients" wx:if="{{recipe.nutrition.calcium || recipe.nutrition.iron || recipe.nutrition.zinc || recipe.nutrition.vitaminC || recipe.nutrition.vitaminA}}">
+        <view class="micronutrient-title">维生素与矿物质</view>
+        <view class="micronutrient-grid">
+          <view class="micronutrient-item" wx:if="{{recipe.nutrition.calcium}}">
+            <text class="micronutrient-name">钙</text>
+            <text class="micronutrient-value">{{recipe.nutrition.calcium}}</text>
+          </view>
+          <view class="micronutrient-item" wx:if="{{recipe.nutrition.iron}}">
+            <text class="micronutrient-name">铁</text>
+            <text class="micronutrient-value">{{recipe.nutrition.iron}}</text>
+          </view>
+          <view class="micronutrient-item" wx:if="{{recipe.nutrition.zinc}}">
+            <text class="micronutrient-name">锌</text>
+            <text class="micronutrient-value">{{recipe.nutrition.zinc}}</text>
+          </view>
+          <view class="micronutrient-item" wx:if="{{recipe.nutrition.vitaminC}}">
+            <text class="micronutrient-name">维生素C</text>
+            <text class="micronutrient-value">{{recipe.nutrition.vitaminC}}</text>
+          </view>
+          <view class="micronutrient-item" wx:if="{{recipe.nutrition.vitaminA}}">
+            <text class="micronutrient-name">维生素A</text>
+            <text class="micronutrient-value">{{recipe.nutrition.vitaminA}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 营养搭配建议 -->
+      <view class="nutrition-combination" wx:if="{{recipe.nutrientCombination}}">
+        <view class="combination-title">营养搭配建议</view>
+        <text class="combination-text">{{recipe.nutrientCombination}}</text>
+      </view>
+      
+      <!-- 每日营养占比 -->
+      <view class="daily-nutrition" wx:if="{{recipe.dailyNutritionPercent}}">
+        <view class="daily-title">每日营养占比</view>
+        <text class="daily-text">{{recipe.dailyNutritionPercent}}</text>
+      </view>
     </view>
 
     <!-- 食材清单 -->
@@ -133,53 +180,7 @@
       </view>
     </view>
 
-    <!-- 详细步骤 -->
-    <view class="section" wx:if="{{recipe.steps && recipe.steps.length > 0}}">
-      <view class="section-header">
-        <text class="section-title">烹饪步骤</text>
-        <text class="section-count">共{{recipe.steps.length}}步</text>
-      </view>
-      
-      <!-- 步骤进度 -->
-      <view class="step-progress">
-        <view 
-          class="step-dot {{index <= currentStep ? 'active' : ''}}" 
-          wx:for="{{recipe.steps}}" 
-          wx:key="index"
-          bindtap="onStepChange"
-          data-index="{{index}}"
-        >
-          <text>{{index + 1}}</text>
-        </view>
-      </view>
-
-      <!-- 当前步骤详情 -->
-      <view class="step-detail">
-        <view class="step-header">
-          <text class="step-number">第{{currentStep + 1}}步</text>
-        </view>
-        <image 
-          class="step-image" 
-          wx:if="{{recipe.steps[currentStep].image}}"
-          src="{{recipe.steps[currentStep].image}}" 
-          mode="aspectFill"
-        />
-        <text class="step-content">{{recipe.steps[currentStep].content || recipe.steps[currentStep]}}</text>
-        <text class="step-tip" wx:if="{{recipe.steps[currentStep].tip}}">
-          <text class="tip-label">小贴士：</text>{{recipe.steps[currentStep].tip}}
-        </text>
-      </view>
-
-      <!-- 步骤导航 -->
-      <view class="step-nav">
-        <view class="nav-btn {{currentStep === 0 ? 'disabled' : ''}}" bindtap="prevStep">
-          <text>上一步</text>
-        </view>
-        <view class="nav-btn primary {{currentStep === recipe.steps.length - 1 ? 'disabled' : ''}}" bindtap="nextStep">
-          <text>下一步</text>
-        </view>
-      </view>
-    </view>
+    
 
     <!-- 小贴士 -->
     <view class="section" wx:if="{{recipe.tips}}">
