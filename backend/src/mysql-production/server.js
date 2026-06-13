@@ -5,6 +5,7 @@ const path = require('path');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
+const { generateAIAnswer, getAIStatus } = require('../services/ai');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -164,6 +165,7 @@ function healthHandler(req, res) {
 }
 
 function runtimeConfigHandler(req, res) {
+  const aiStatus = getAIStatus();
   res.json({
     env_name: process.env.NODE_ENV || 'production',
     debug: process.env.NODE_ENV !== 'production',
@@ -174,7 +176,9 @@ function runtimeConfigHandler(req, res) {
     multimodal_enabled: false,
     payment_enabled: false,
     ai_mock_fallback: false,
-    ai_service_ready: false,
+    ai_service_ready: aiStatus.configured,
+    ai_provider: aiStatus.provider,
+    ai_model: aiStatus.model,
     config_loaded: true
   });
 }
@@ -240,7 +244,14 @@ async function chatHandler(req, res) {
   const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
   const intent = analyzeChatIntent(message);
   const references = collectChatReferences(intent, message);
-  const answer = buildChatAnswer(message, intent, references);
+  const fallbackAnswer = buildChatAnswer(message, intent, references);
+  const aiResult = await generateAIAnswer(buildChatPrompt(message, intent, references), {
+    systemPrompt: getChatSystemPrompt(intent),
+    temperature: 0.6,
+    maxTokens: 900
+  });
+  const answer = aiResult.success ? aiResult.answer : fallbackAnswer;
+  const aiStatus = getAIStatus();
 
   res.json({
     success: true,
@@ -249,9 +260,41 @@ async function chatHandler(req, res) {
       sources: references.map((item) => item.title).slice(0, 5),
       session_id: sessionId,
       intent,
-      answer_source: 'seed_knowledge'
+      answer_source: aiResult.success ? 'ai' : 'seed_knowledge',
+      ai_status: aiStatus,
+      fallback_reason: aiResult.success ? null : aiResult.code || null
     }
   });
+}
+
+function getChatSystemPrompt(intent) {
+  const prompts = {
+    nutrition: '你是小牛育儿AI助理中的儿童营养与喂养顾问。回答要结合年龄、家庭执行成本和连续观察方法，优先给家长能当场执行的建议。',
+    reading: '你是小牛育儿AI助理中的能力成长顾问。回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练，优先给短时高频的训练建议。',
+    emotion: '你是小牛育儿AI助理中的儿童情绪支持顾问。回答要先稳定家庭回应，再给可执行的情绪引导步骤。',
+    focus: '你是小牛育儿AI助理中的专注力支持顾问。回答要关注场景拆解、家长提示语和任务节奏控制。',
+    assessment: '你是小牛育儿AI助理中的成长观察解读顾问。回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。',
+    general: '你是小牛育儿AI助理。回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。'
+  };
+  return prompts[intent] || prompts.general;
+}
+
+function buildChatPrompt(message, intent, references) {
+  const referenceBlock = references.length
+    ? references.map((item, index) => `${index + 1}. ${item.title}\n${String(item.content || '').slice(0, 220)}`).join('\n\n')
+    : '当前没有直接匹配的知识库条目，请基于儿童发展与家庭养育常识给出稳妥建议。';
+
+  return [
+    `用户问题：${message}`,
+    `问题类型：${intent}`,
+    '回答要求：',
+    '1. 先给判断，再给家庭可执行方案。',
+    '2. 优先使用清晰短句和分步骤建议。',
+    '3. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。',
+    '4. 不编造产品能力，不输出无法执行的空泛表述。',
+    '参考资料：',
+    referenceBlock
+  ].join('\n\n');
 }
 
 function analyzeChatIntent(message) {
