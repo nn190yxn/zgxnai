@@ -64,6 +64,26 @@
       {
         "value": "__pycache__",
         "type": "folder"
+      },
+      {
+        "value": "images/nutrition-cover.png",
+        "type": "file"
+      },
+      {
+        "value": "images/milestone-report.png",
+        "type": "file"
+      },
+      {
+        "value": "images/home-hero.png",
+        "type": "file"
+      },
+      {
+        "value": "images/share-app-intro.png",
+        "type": "file"
+      },
+      {
+        "value": "images/ai-assistant.png",
+        "type": "file"
       }
     ],
     "include": []

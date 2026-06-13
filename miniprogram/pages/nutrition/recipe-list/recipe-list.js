@@ -109,11 +109,65 @@ Page({
     return item;
   },
 
+  buildRecipeCardData: function(recipe) {
+    var item = this.normalizeRecipeForDisplay(recipe);
+    return {
+      id: item.id,
+      title: item.title,
+      name: item.name,
+      description: item.description,
+      desc: item.desc,
+      category: item.category,
+      tags: item.tags,
+      cookTime: item.cookTime,
+      calories: item.calories,
+      difficulty: item.difficulty,
+      visualIcon: item.visualIcon,
+      image: item.image,
+      hasImage: item.hasImage,
+      imageLoaded: false,
+      nutrition: item.nutrition ? { highlight: item.nutrition.highlight || '' } : { highlight: '' },
+      is_favorited: item.is_favorited,
+      isFavorite: item.isFavorite,
+      viewCount: item.viewCount || 0,
+      ageRange: item.ageRange
+    };
+  },
+
+  buildRecipeSnapshot: function(recipe) {
+    if (!recipe) {
+      return null;
+    }
+    return {
+      id: recipe.id,
+      title: recipe.title,
+      name: recipe.name,
+      description: recipe.description,
+      desc: recipe.desc,
+      category: recipe.category,
+      tags: recipe.tags,
+      ageRange: recipe.ageRange,
+      cookTime: recipe.cookTime,
+      calories: recipe.calories,
+      difficulty: recipe.difficulty,
+      visualIcon: recipe.visualIcon,
+      image: recipe.image,
+      nutrition: recipe.nutrition,
+      ingredients: recipe.ingredients,
+      tips: recipe.tips,
+      nutrientCombination: recipe.nutrientCombination,
+      dailyNutritionPercent: recipe.dailyNutritionPercent,
+      is_favorited: recipe.is_favorited,
+      isFavorite: recipe.isFavorite,
+      viewCount: recipe.viewCount
+    };
+  },
+
   cacheRecipeSnapshot: function(recipe) {
     if (!recipe || !recipe.id) {
       return;
     }
-    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, recipe);
+    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, this.buildRecipeSnapshot(recipe));
   },
 
   onLoad: function(options) {
@@ -164,7 +218,7 @@ Page({
 
     if (app.shouldUseMockFallback()) {
       var list = that.getLocalRecipes().map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       that.setData({
         recipeList: that.data.page === 1 ? list : that.data.recipeList,
@@ -191,7 +245,7 @@ Page({
         list = that.getLocalRecipes();
       }
       list = list.map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       var newList = that.data.page === 1 ? list : that.data.recipeList.concat(list);
       that.setData({
@@ -203,7 +257,7 @@ Page({
       if (that.data.page === 1) {
         that.setData({
           recipeList: that.getLocalRecipes().map(function(item) {
-            return that.normalizeRecipeForDisplay(item);
+            return that.buildRecipeCardData(item);
           }),
           hasMore: false,
           page: 2
@@ -238,7 +292,7 @@ Page({
     if (app.shouldUseMockFallback()) {
       that.setData({
         recipeList: that.getLocalRecipes().map(function(item) {
-          return that.normalizeRecipeForDisplay(item);
+          return that.buildRecipeCardData(item);
         }),
         hasMore: false,
         loading: false
@@ -258,7 +312,7 @@ Page({
         list = that.getLocalRecipes();
       }
       list = list.map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       that.setData({
         recipeList: list,
@@ -267,7 +321,7 @@ Page({
     }).catch(function(err) {
       that.setData({
         recipeList: that.getLocalRecipes().map(function(item) {
-          return that.normalizeRecipeForDisplay(item);
+          return that.buildRecipeCardData(item);
         }),
         hasMore: false
       });

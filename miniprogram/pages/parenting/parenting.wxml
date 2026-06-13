@@ -43,7 +43,11 @@
     <view class="section-header">
       <text class="section-title">成长评估</text>
     </view>
-    <image class="milestone-cover" src="/images/milestone-report.png" mode="aspectFill" bindtap="goToMilestone" />
+    <view class="milestone-cover milestone-cover-placeholder" bindtap="goToMilestone">
+      <text class="milestone-cover-emoji">🎯</text>
+      <text class="milestone-cover-title">里程碑追踪</text>
+      <text class="milestone-cover-desc">按年龄查看发展重点与家庭训练建议</text>
+    </view>
     <view class="milestone-entry" bindtap="goToMilestone">
       <view class="milestone-content">
         <text class="milestone-icon">🎯</text>

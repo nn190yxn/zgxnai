@@ -99,6 +99,31 @@
   box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.14);
 }
 
+.nutrition-cover-placeholder {
+  background: linear-gradient(135deg, #FFF3ED 0%, #FFF8E1 54%, #E8F5E9 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nutrition-cover-emoji {
+  font-size: 72rpx;
+  margin-bottom: 16rpx;
+}
+
+.nutrition-cover-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #6B3417;
+}
+
+.nutrition-cover-desc {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #8A5A44;
+}
+
 /* 区块 */
 .section {
   padding: 24rpx 32rpx;

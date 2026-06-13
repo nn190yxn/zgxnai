@@ -2,7 +2,11 @@
   <view class="header">
     <text class="title">发展里程碑评估</text>
     <text class="subtitle">了解孩子在各年龄段的发展情况</text>
-    <image class="header-cover" src="/images/milestone-report.png" mode="aspectFill" />
+    <view class="header-cover header-cover-placeholder">
+      <text class="header-cover-emoji">📈</text>
+      <text class="header-cover-title">分阶段观察</text>
+      <text class="header-cover-desc">用简单问题了解孩子当前发展状态</text>
+    </view>
   </view>
 
   <!-- 年龄段选择 -->

@@ -419,15 +419,45 @@ async function referralCodeHandler(req, res) {
   res.json({ success: true, data: { invite_code: `NN${String(req.user.userId).padStart(6, '0')}` } });
 }
 
-function normalizeNutritionRecipe(recipe) {
-  return Object.assign({
+function buildNutritionRecipeBase(recipe) {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    name: recipe.name || recipe.title,
+    description: recipe.description,
     desc: recipe.description,
-    content: recipe.steps.join('\n'),
-    visualIcon: '',
+    category: recipe.category,
+    tags: recipe.tags,
+    ageRange: recipe.ageRange,
+    cookTime: recipe.cookTime,
+    calories: recipe.calories,
+    difficulty: recipe.difficulty,
+    visualIcon: recipe.visualIcon || '',
+    image: recipe.image || '',
+    viewCount: recipe.viewCount || 0,
     is_favorited: false,
     isFavorite: false,
     created_at: new Date().toISOString()
-  }, recipe);
+  };
+}
+
+function normalizeNutritionRecipeSummary(recipe) {
+  const base = buildNutritionRecipeBase(recipe);
+  return Object.assign({}, base, {
+    nutrition: {
+      highlight: recipe.nutrition && recipe.nutrition.highlight ? recipe.nutrition.highlight : ''
+    }
+  });
+}
+
+function normalizeNutritionRecipeDetail(recipe) {
+  return Object.assign({}, buildNutritionRecipeBase(recipe), {
+    ingredients: recipe.ingredients || [],
+    nutrition: recipe.nutrition || {},
+    tips: recipe.tips || '',
+    nutrientCombination: recipe.nutrientCombination || '',
+    dailyNutritionPercent: recipe.dailyNutritionPercent || ''
+  });
 }
 
 function filterNutritionRecipes(query) {
@@ -451,7 +481,7 @@ function filterNutritionRecipes(query) {
 
 function nutritionRecommendationsHandler(req, res) {
   const shuffled = [...NUTRITION_RECIPES].sort(() => 0.5 - Math.random());
-  res.json({ success: true, data: shuffled.slice(0, 6).map(normalizeNutritionRecipe) });
+  res.json({ success: true, data: shuffled.slice(0, 6).map(normalizeNutritionRecipeSummary) });
 }
 
 function nutritionRecipesHandler(req, res) {
@@ -459,7 +489,7 @@ function nutritionRecipesHandler(req, res) {
   const pageSize = Math.min(Math.max(Number(req.query.page_size || req.query.pageSize || 10), 1), 30);
   const filtered = filterNutritionRecipes(req.query);
   const offset = (page - 1) * pageSize;
-  const recipes = filtered.slice(offset, offset + pageSize).map(normalizeNutritionRecipe);
+  const recipes = filtered.slice(offset, offset + pageSize).map(normalizeNutritionRecipeSummary);
   res.json({
     success: true,
     data: {
@@ -480,7 +510,7 @@ function nutritionRecipeDetailHandler(req, res) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
   }
-  res.json({ success: true, data: normalizeNutritionRecipe(recipe) });
+  res.json({ success: true, data: normalizeNutritionRecipeDetail(recipe) });
 }
 
 function nutritionRecipeFavoriteHandler(req, res) {

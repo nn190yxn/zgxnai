@@ -119,11 +119,64 @@ Page({
     return item;
   },
 
+  buildRecipeCardData: function(recipe) {
+    var item = this.normalizeRecipeForDisplay(recipe);
+    return {
+      id: item.id,
+      title: item.title,
+      name: item.name,
+      description: item.description,
+      desc: item.desc,
+      category: item.category,
+      tags: item.tags,
+      cookTime: item.cookTime,
+      calories: item.calories,
+      visualIcon: item.visualIcon,
+      image: item.image,
+      hasImage: item.hasImage,
+      nutrition: item.nutrition ? { highlight: item.nutrition.highlight || '' } : { highlight: '' },
+      is_favorited: item.is_favorited,
+      isFavorite: item.isFavorite,
+      viewCount: item.viewCount || 0,
+      ageRange: item.ageRange,
+      difficulty: item.difficulty
+    };
+  },
+
+  buildRecipeSnapshot: function(recipe) {
+    if (!recipe) {
+      return null;
+    }
+    return {
+      id: recipe.id,
+      title: recipe.title,
+      name: recipe.name,
+      description: recipe.description,
+      desc: recipe.desc,
+      category: recipe.category,
+      tags: recipe.tags,
+      ageRange: recipe.ageRange,
+      cookTime: recipe.cookTime,
+      calories: recipe.calories,
+      difficulty: recipe.difficulty,
+      visualIcon: recipe.visualIcon,
+      image: recipe.image,
+      nutrition: recipe.nutrition,
+      ingredients: recipe.ingredients,
+      tips: recipe.tips,
+      nutrientCombination: recipe.nutrientCombination,
+      dailyNutritionPercent: recipe.dailyNutritionPercent,
+      is_favorited: recipe.is_favorited,
+      isFavorite: recipe.isFavorite,
+      viewCount: recipe.viewCount
+    };
+  },
+
   cacheRecipeSnapshot: function(recipe) {
     if (!recipe || !recipe.id) {
       return;
     }
-    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, recipe);
+    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, this.buildRecipeSnapshot(recipe));
   },
 
   onLoad: function() {
@@ -149,7 +202,7 @@ Page({
     if (app.shouldUseMockFallback()) {
       var fallback = that.getLocalRecipes();
       fallback = fallback.map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       that.setData({
         todayRecommend: fallback[0] || null,
@@ -176,7 +229,7 @@ Page({
         list = that.getLocalRecipes();
       }
       list = list.map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       that.setData({
         todayRecommend: list[0] || null,
@@ -194,7 +247,7 @@ Page({
         return;
       }
       var fallback = that.getLocalRecipes().map(function(item) {
-        return that.normalizeRecipeForDisplay(item);
+        return that.buildRecipeCardData(item);
       });
       that.setData({
         todayRecommend: fallback[0] || null,

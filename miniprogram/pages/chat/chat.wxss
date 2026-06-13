@@ -193,6 +193,15 @@
   border: 2rpx solid #FED7AA;
 }
 
+.avatar-ai {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #C2410C;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
 .ai-input-notice {
   position: fixed;
   left: 0;

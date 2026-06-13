@@ -251,7 +251,7 @@ Page({
     return {
       title: '小牛育儿AI助理，邀请你领取7天会员',
       path: '/pages/index/index?invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_invite',
-      imageUrl: '/images/share-app-intro.png'
+      imageUrl: '/images/default-article.png'
     };
   },
 
@@ -260,7 +260,7 @@ Page({
     return {
       title: '小牛育儿AI助理，邀请你领取7天会员',
       query: 'invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_timeline',
-      imageUrl: '/images/share-app-intro.png'
+      imageUrl: '/images/default-article.png'
     };
   },
 

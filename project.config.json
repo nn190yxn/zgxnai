@@ -72,6 +72,26 @@
       {
         "value": "backups",
         "type": "folder"
+      },
+      {
+        "value": "miniprogram/images/nutrition-cover.png",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram/images/milestone-report.png",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram/images/home-hero.png",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram/images/share-app-intro.png",
+        "type": "file"
+      },
+      {
+        "value": "miniprogram/images/ai-assistant.png",
+        "type": "file"
       }
     ],
     "include": []

@@ -42,7 +42,7 @@
 
     <!-- 欢迎消息 -->
     <view class="message bot" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}">
-      <image class="avatar avatar-image" src="/images/ai-assistant.png" mode="aspectFill" />
+      <view class="avatar avatar-image avatar-ai">AI</view>
       <view class="bubble">
         <text class="ai-label">AI生成</text>
         <text>您好！我是小牛育儿AI助理</text>
@@ -59,7 +59,7 @@
     <view wx:for="{{messages}}" wx:key="id" id="msg-{{index}}">
       <view class="message {{item.role}} {{item.isError ? 'error' : ''}}">
         <view wx:if="{{item.role === 'user'}}" class="avatar">家</view>
-        <image wx:else class="avatar avatar-image" src="/images/ai-assistant.png" mode="aspectFill" />
+        <view wx:else class="avatar avatar-image avatar-ai">AI</view>
         <view class="bubble">
           <text class="ai-label" wx:if="{{item.role !== 'user'}}">AI生成</text>
           <text>{{item.content}}</text>

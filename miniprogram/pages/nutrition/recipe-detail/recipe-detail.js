@@ -139,6 +139,10 @@ Page({
     return wx.getStorageSync('nutritionRecipeSnapshot:' + id) || null;
   },
 
+  hasCompleteRecipeDetail: function(recipe) {
+    return !!(recipe && recipe.ingredients && recipe.ingredients.length && recipe.nutrition);
+  },
+
   onLoad: function(options) {
     if (options.id) {
       this.setData({
@@ -153,6 +157,9 @@ Page({
           offlineFallback: false,
           loading: false
         });
+        if (!this.hasCompleteRecipeDetail(cachedRecipe)) {
+          this.loadRecipeDetail({ silent: true });
+        }
         return;
       }
       var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
@@ -163,15 +170,26 @@ Page({
         offlineFallback: true,
         loading: false
       });
+      if (!String(options.id).startsWith('local_')) {
+        this.loadRecipeDetail({ silent: true });
+      }
     }
   },
 
   // 加载食谱详情
-  loadRecipeDetail: function(fromPullDown) {
+  loadRecipeDetail: function(options) {
     var that = this;
-    that.setData({
-      loading: true
-    });
+    var fromPullDown = !!options;
+    var silent = false;
+    if (typeof options === 'object' && options !== null) {
+      fromPullDown = !!options.fromPullDown;
+      silent = !!options.silent;
+    }
+    if (!silent) {
+      that.setData({
+        loading: true
+      });
+    }
 
     if (app.shouldUseMockFallback()) {
       var fallbackRecipe = that.normalizeRecipeForDisplay(that.getLocalRecipeDetail(that.data.recipeId));
@@ -202,12 +220,14 @@ Page({
       });
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('食谱详情加载失败');
-        that.setData({
-          recipe: null,
-          isFavorite: false,
-          offlineFallback: false
-        });
+        if (!silent) {
+          app.showApiError('食谱详情加载失败');
+          that.setData({
+            recipe: null,
+            isFavorite: false,
+            offlineFallback: false
+          });
+        }
         return;
       }
       var recipe = that.normalizeRecipeForDisplay(that.getLocalRecipeDetail(that.data.recipeId));
@@ -218,9 +238,11 @@ Page({
         offlineFallback: true
       });
     }).finally(function() {
-      that.setData({
-        loading: false
-      });
+      if (!silent) {
+        that.setData({
+          loading: false
+        });
+      }
       if (fromPullDown) {
         wx.stopPullDownRefresh();
       }
@@ -380,7 +402,7 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
-    this.loadRecipeDetail(true);
+    this.loadRecipeDetail({ fromPullDown: true });
   },
 
   // 图片加载完成

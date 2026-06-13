@@ -16,7 +16,11 @@
         <view class="hero-btn hero-btn-secondary" bindtap="goToChat">问问AI助理</view>
       </view>
     </view>
-    <image wx:if="{{heroImageReady}}" class="hero-image" src="/images/home-hero.png" mode="aspectFit" />
+    <view class="hero-image hero-image-placeholder">
+      <text class="hero-emoji">🌱</text>
+      <text class="hero-image-title">成长支持</text>
+      <text class="hero-image-desc">观察、营养、阅读、沟通，围绕家庭场景提供帮助</text>
+    </view>
   </view>
 
   <view class="section status-section">
