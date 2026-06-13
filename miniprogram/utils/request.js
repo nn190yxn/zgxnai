@@ -134,6 +134,25 @@ function isAuthExpiredResponse(statusCode, payload) {
   );
 }
 
+function requiresAuthForPath(path) {
+  if (!path || typeof path !== 'string') {
+    return false;
+  }
+
+  return [
+    '/assessments',
+    '/children',
+    '/education',
+    '/membership',
+    '/referral',
+    '/payment',
+    '/chat',
+    '/kb/events'
+  ].some(function(prefix) {
+    return path.indexOf(prefix) === 0;
+  });
+}
+
 function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
   var refreshToken = wx.getStorageSync('refreshToken') || app.globalData.refreshToken;
   var authPromise = refreshToken
@@ -152,6 +171,7 @@ function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
 function request(app, options) {
   return new Promise(function(resolve, reject) {
     var url = options.url;
+    var originalPath = options.url;
     var method = options.method || 'GET';
     var data = options.data || {};
     var header = options.header || {};
@@ -165,6 +185,14 @@ function request(app, options) {
     }
 
     var token = wx.getStorageSync('token');
+    if (!token && !skipAuthRetry && requiresAuthForPath(originalPath)) {
+      app.ensureLogin().then(function() {
+        request(app, Object.assign({}, options, { _skipPreAuth: true })).then(resolve).catch(reject);
+      }).catch(function(err) {
+        reject(err || new Error('登录失败'));
+      });
+      return;
+    }
     if (token) {
       header['Authorization'] = 'Bearer ' + token;
     }
