@@ -134,6 +134,21 @@ function isAuthExpiredResponse(statusCode, payload) {
   );
 }
 
+function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
+  var refreshToken = wx.getStorageSync('refreshToken') || app.globalData.refreshToken;
+  var authPromise = refreshToken
+    ? app.refreshAccessToken().catch(function() {
+      return app.login();
+    })
+    : app.login();
+
+  authPromise.then(function() {
+    request(app, options).then(resolve).catch(reject);
+  }).catch(function(err) {
+    reject(err || fallbackError || new Error('请求失败'));
+  });
+}
+
 function request(app, options) {
   return new Promise(function(resolve, reject) {
     var url = options.url;
@@ -168,12 +183,7 @@ function request(app, options) {
           wx.navigateTo({ url: '/pages/membership/index' });
           reject(res.data);
         } else if (isAuthExpiredResponse(res.statusCode, res.data) && !skipAuthRetry) {
-          // 尝试刷新token后重试
-          app.refreshAccessToken().then(function() {
-            request(app, options).then(resolve).catch(reject);
-          }).catch(function() {
-            reject(res.data || new Error('请求失败'));
-          });
+          retryWithFreshAuth(app, options, resolve, reject, res.data || new Error('请求失败'));
         } else {
           reject(res.data || new Error('请求失败'));
         }
