@@ -104,6 +104,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/assessments/history`, authenticateToken, requireActiveMembership, asyncHandler(assessmentHistoryHandler));
   app.get(`${prefix}/assessments/history/count`, authenticateToken, requireActiveMembership, asyncHandler(assessmentHistoryCountHandler));
   app.delete(`${prefix}/assessments/records/:id`, authenticateToken, requireActiveMembership, asyncHandler(assessmentDeleteHandler));
+  app.post(`${prefix}/chat`, authenticateToken, requireActiveMembership, asyncHandler(chatHandler));
   app.get(`${prefix}/nutrition/recommendations`, nutritionRecommendationsHandler);
   app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
@@ -204,6 +205,171 @@ async function requireActiveMembership(req, res, next) {
 
 function paidFeaturePlaceholderHandler(req, res) {
   res.status(404).json({ success: false, message: '接口暂未在生产服务开放', path: req.path });
+}
+
+async function chatHandler(req, res) {
+  const message = String((req.body && req.body.message) || '').trim();
+  if (!message) {
+    res.status(400).json({ success: false, message: '缺少提问内容' });
+    return;
+  }
+
+  const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
+  const intent = analyzeChatIntent(message);
+  const references = collectChatReferences(intent, message);
+  const answer = buildChatAnswer(message, intent, references);
+
+  res.json({
+    success: true,
+    data: {
+      answer,
+      sources: references.map((item) => item.title).slice(0, 5),
+      session_id: sessionId,
+      intent,
+      answer_source: 'seed_knowledge'
+    }
+  });
+}
+
+function analyzeChatIntent(message) {
+  const text = String(message || '').toLowerCase();
+  if (/(早餐|午餐|晚餐|挑食|营养|吃什么|食谱)/.test(text)) {
+    return 'nutrition';
+  }
+  if (/(阅读|绘本|复述|识字|共读)/.test(text)) {
+    return 'reading';
+  }
+  if (/(情绪|脾气|哭闹|发火|生气)/.test(text)) {
+    return 'emotion';
+  }
+  if (/(专注|注意力|走神|拖拉)/.test(text)) {
+    return 'focus';
+  }
+  if (/(评估|测评|观察|感统|学习适应|多元智能|adhd)/.test(text)) {
+    return 'assessment';
+  }
+  return 'general';
+}
+
+function collectChatReferences(intent, message) {
+  const keywords = String(message || '').split(/[\s，。！？、,.!?]+/).filter(Boolean);
+  const lowerKeywords = keywords.map((item) => item.toLowerCase());
+
+  function scoreText(text) {
+    const source = String(text || '').toLowerCase();
+    return lowerKeywords.reduce((total, keyword) => total + (source.includes(keyword) ? 1 : 0), 0);
+  }
+
+  const references = [];
+
+  if (intent === 'nutrition') {
+    for (const recipe of NUTRITION_RECIPES.slice(0, 120)) {
+      const score = scoreText([recipe.title, recipe.description, (recipe.ingredients || []).join(' ')].join(' '));
+      if (score > 0) {
+        references.push({
+          title: recipe.title,
+          score,
+          content: recipe.description || '',
+          extra: recipe
+        });
+      }
+    }
+  }
+
+  for (const article of PARENTING_ARTICLES) {
+    const score = scoreText([article.title, article.summary, article.content, article.tags].join(' '));
+    if (score > 0 || (intent === 'emotion' && article.category === '情绪管理') || (intent === 'focus' && article.sub_category === '专注训练')) {
+      references.push({
+        title: article.title,
+        score: Math.max(score, 1),
+        content: article.content,
+        extra: article
+      });
+    }
+  }
+
+  if (intent === 'reading') {
+    for (const task of READING_TASKS) {
+      const score = scoreText([task.title, task.objective, task.content, task.parent_prompt].join(' '));
+      references.push({
+        title: task.title,
+        score: Math.max(score, 1),
+        content: task.content,
+        extra: task
+      });
+    }
+  }
+
+  if (intent === 'assessment') {
+    for (const [code, meta] of Object.entries(ASSESSMENT_META)) {
+      const score = scoreText([code, meta.name, (meta.age_groups || []).join(' ')].join(' '));
+      references.push({
+        title: meta.name,
+        score: Math.max(score, 1),
+        content: `${meta.name}，约${meta.duration}分钟，${meta.total_questions}题，适用年龄${(meta.age_groups || []).join('、')}`,
+        extra: { code, meta }
+      });
+    }
+  }
+
+  references.sort((a, b) => b.score - a.score);
+  return references.slice(0, 5);
+}
+
+function buildChatAnswer(message, intent, references) {
+  if (intent === 'nutrition') {
+    const recipe = references[0] && references[0].extra;
+    const article = references.find((item) => item.extra && item.extra.summary);
+    return [
+      `关于“${message}”，我建议先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
+      recipe ? `优先参考 ${recipe.title}：${recipe.description || '这道搭配更适合孩子接受，能同时补充主食、蛋白质和蔬菜。'}` : '每餐优先保证主食、蛋白质、蔬菜三类食物同时出现。',
+      recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `这类搭配可以从 ${recipe.ingredients.slice(0, 4).join('、')} 开始，先做孩子熟悉的口味。` : '先保留一种孩子愿意吃的安全食物，再增加一种少量新食物。',
+      article ? `家庭执行要点：${article.extra.summary}` : '家长负责提供，孩子负责决定吃多少，连续多次接触比一次吃很多更有效。',
+      '连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。'
+    ].join('\n\n');
+  }
+
+  if (intent === 'reading') {
+    const task = references[0] && references[0].extra;
+    return [
+      `关于“${message}”，我建议先做短时、高频、能马上开始的阅读训练。`,
+      task ? `可以先用“${task.title}”这类任务：${task.objective}` : '先从看图说信息、复述一句话这类低门槛任务开始。',
+      task ? `家庭操作步骤：${String(task.steps || '').split('\n').slice(0, 3).join('；')}` : '每次10分钟以内，先看图，再追问，再让孩子自己说。',
+      task ? `家长提示语可以直接用：${task.parent_prompt}` : '家长的问题越具体，孩子越容易回答。',
+      '连续练2周后，再逐步增加复述长度和表达难度。'
+    ].join('\n\n');
+  }
+
+  if (intent === 'assessment') {
+    const assessment = references[0] && references[0].extra;
+    const meta = assessment && assessment.meta;
+    return [
+      `关于“${message}”，我建议先用观察工具把问题具体化，再决定训练重点。`,
+      meta ? `当前最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，${meta.total_questions} 题，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的成长观察开始。',
+      '做评估前先回想孩子最近2周在家庭、外出、任务场景中的稳定表现，按常态作答。',
+      '拿到结果后先看最需要支持的1到2个维度，再把训练拆成每天能执行的小动作。',
+      '如果你愿意继续描述孩子年龄和主要困扰，我建议你优先做更匹配的一类观察。'
+    ].join('\n\n');
+  }
+
+  if (intent === 'emotion' || intent === 'focus') {
+    const article = references[0] && references[0].extra;
+    return [
+      `关于“${message}”，我建议先从家庭回应方式入手，再看训练安排。`,
+      article ? article.summary : '先降低对抗，再把家长提示语缩短，孩子会更容易进入配合状态。',
+      article ? article.content.split('\n\n').slice(0, 2).join('\n\n') : '先命名情绪或任务，再给出一个清晰的小步骤。',
+      '先连续执行7天，记录问题最常出现的时间、场景和触发点。',
+      '如果问题已经明显影响睡眠、社交或学习，再考虑配合专业评估。'
+    ].join('\n\n');
+  }
+
+  const article = references[0] && references[0].extra;
+  return [
+    `关于“${message}”，我建议先把问题落到一个具体场景里处理。`,
+    article ? article.summary : '先描述孩子的年龄、典型场景和你最困扰的表现，建议会更准确。',
+    article ? article.content.split('\n\n').slice(0, 2).join('\n\n') : '先观察频率、触发点和持续时间，再决定是调环境、调回应还是做训练。',
+    '先稳定执行1周，再看变化决定下一步。'
+  ].join('\n\n');
 }
 
 async function loginHandler(req, res) {

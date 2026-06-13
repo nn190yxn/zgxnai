@@ -22,7 +22,7 @@ var ENV_CONFIG = {
     enableParenting: true,
     showMembership: true,
     enableWechatPay: true,
-    enableAiChat: false,
+    enableAiChat: true,
     enableMultimodal: false
   },
   production: {
@@ -43,7 +43,7 @@ var ENV_CONFIG = {
     enableParenting: true,
     showMembership: true,
     enableWechatPay: true,
-    enableAiChat: false,
+    enableAiChat: true,
     enableMultimodal: false
   }
 };
