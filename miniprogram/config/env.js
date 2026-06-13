@@ -31,7 +31,7 @@ var ENV_CONFIG = {
     allowMockFallback: false,
     enableDevLoginFallback: false,
     enableNativeApiDiagnostics: true,
-    enableNetworkProbe: true,
+    enableNetworkProbe: false,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,

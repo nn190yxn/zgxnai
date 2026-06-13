@@ -34,6 +34,17 @@ function installNativeApiDiagnostics(app) {
           url: nextOptions.url || '',
           timeout: nextOptions.timeout || ''
         });
+        if (!wx.__gantuPendingModalShown && typeof wx.showModal === 'function') {
+          wx.__gantuPendingModalShown = true;
+          wx.showModal({
+            title: 'Timeout Diagnostics',
+            content: 'api=' + apiName + '\nurl=' + (nextOptions.url || '-') + '\nelapsed=' + (Date.now() - startedAt) + 'ms',
+            showCancel: false,
+            complete: function() {
+              wx.__gantuPendingModalShown = false;
+            }
+          });
+        }
       }, 8000);
 
       console.log('[wx-api:start]', {

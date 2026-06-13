@@ -116,6 +116,19 @@ Page({
     item.visualIcon = item.visualIcon || this.getRecipeVisualIcon(item);
     item.hasImage = !!item.image;
     item.isFavorite = !!(item.is_favorited || item.isFavorite);
+    if (item.dailyNutritionPercent && typeof item.dailyNutritionPercent === 'object') {
+      var parts = [];
+      if (item.dailyNutritionPercent.protein !== undefined) {
+        parts.push('蛋白质约' + item.dailyNutritionPercent.protein + '%');
+      }
+      if (item.dailyNutritionPercent.calcium !== undefined) {
+        parts.push('钙约' + item.dailyNutritionPercent.calcium + '%');
+      }
+      if (item.dailyNutritionPercent.iron !== undefined) {
+        parts.push('铁约' + item.dailyNutritionPercent.iron + '%');
+      }
+      item.dailyNutritionPercent = parts.join('，');
+    }
     return item;
   },
 
