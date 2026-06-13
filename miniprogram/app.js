@@ -87,8 +87,8 @@ App({
 onError: function(error) {
     console.error('App runtime error', error);
     
-    // 仅开发环境输出详细调试信息
-    if (this.globalData.isDebug) {
+    // 超时诊断在显式开启时始终生效，避免 production 环境无法定位问题
+    if (this.globalData.isDebug || this.globalData.enableNativeApiDiagnostics) {
       var message = typeof error === 'string' ? error : (error && (error.message || error.errMsg)) || '';
       if (message.indexOf('timeout') !== -1) {
         console.warn('[DEBUG] === TIMEOUT ERROR DETECTED ===');
