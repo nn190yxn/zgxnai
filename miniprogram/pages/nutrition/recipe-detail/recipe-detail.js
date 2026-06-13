@@ -142,7 +142,14 @@ Page({
         });
         return;
       }
-      this.loadRecipeDetail();
+      var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
+      this.setData({
+        recipe: fallbackRecipe,
+        isFavorite: !!fallbackRecipe.isFavorite,
+        imageLoaded: false,
+        offlineFallback: true,
+        loading: false
+      });
     }
   },
 
