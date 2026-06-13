@@ -97,6 +97,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/education/knowledge/chapters`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeChaptersHandler));
   app.get(`${prefix}/education/knowledge/detail`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeDetailHandler));
   app.post(`${prefix}/education/progress`, authenticateToken, requireActiveMembership, asyncHandler(educationUpdateProgressHandler));
+  app.post(`${prefix}/kb/events/track`, authenticateToken, asyncHandler(kbEventTrackHandler));
   app.get(`${prefix}/assessments`, authenticateToken, requireActiveMembership, asyncHandler(assessmentsListHandler));
   app.get(`${prefix}/assessments/:code/questions`, authenticateToken, requireActiveMembership, asyncHandler(assessmentQuestionsHandler));
   app.post(`${prefix}/assessments/:code/submit`, authenticateToken, requireActiveMembership, asyncHandler(assessmentSubmitHandler));
@@ -1098,6 +1099,18 @@ async function ensureProductionTables() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
+    CREATE TABLE IF NOT EXISTS event_tracks (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      event_type VARCHAR(128) NOT NULL,
+      event_data JSON NULL,
+      session_id VARCHAR(255) DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_event_tracks_user (user_id),
+      INDEX idx_event_tracks_type (event_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
     CREATE TABLE IF NOT EXISTS articles (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
       title VARCHAR(255) NOT NULL,
@@ -2006,6 +2019,33 @@ async function educationUpdateProgressHandler(req, res) {
     [childId, taskRows[0].id, normalizedStatus, progress, normalizedStatus]
   );
   res.json({ success: true, data: { child_id: childId, knowledge_point_id: pointId, status: req.body.status || 'in_progress', mapped_status: normalizedStatus, mastery_level: progress } });
+}
+
+async function kbEventTrackHandler(req, res) {
+  const eventType = String((req.body && req.body.event_type) || '').trim();
+  if (!eventType) {
+    res.status(400).json({ success: false, message: 'event_type不能为空' });
+    return;
+  }
+
+  const payload = {
+    child_id: req.body.child_id || null,
+    task_id: req.body.task_id || null,
+    path_id: req.body.path_id || null,
+    share_source: req.body.share_source || null,
+    day_index: req.body.day_index || null,
+    score: req.body.score || null,
+    duration_sec: req.body.duration_sec || null,
+    has_recording: !!req.body.has_recording,
+    event_meta: req.body.event_meta || {}
+  };
+
+  const [result] = await pool.execute(
+    'INSERT INTO event_tracks (user_id, event_type, event_data, session_id) VALUES (?, ?, ?, ?)',
+    [req.user.userId, eventType, JSON.stringify(payload), req.headers.authorization || 'authenticated']
+  );
+
+  res.json({ success: true, data: { id: result.insertId } });
 }
 
 async function assessmentsListHandler(req, res) {
