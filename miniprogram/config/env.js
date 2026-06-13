@@ -5,13 +5,13 @@ var CURRENT_ENV = 'development';
 
 var ENV_CONFIG = {
   development: {
-    apiBaseUrl: 'http://127.0.0.1:8010/api/v1',
-    baseUrl: 'http://127.0.0.1:8010',
-    allowHttp: true,
+    apiBaseUrl: 'https://api.woyai.cn/api/v1',
+    baseUrl: 'https://api.woyai.cn',
+    allowHttp: false,
     requestTimeoutMs: 15000,
-    apiStrictMode: false,
-    allowMockFallback: true,
-    enableDevLoginFallback: true,
+    apiStrictMode: true,
+    allowMockFallback: false,
+    enableDevLoginFallback: false,
     enableNativeApiDiagnostics: true,
     enableNetworkProbe: false,
     enableBootIsolation: false,
@@ -22,7 +22,7 @@ var ENV_CONFIG = {
     enableParenting: true,
     showMembership: true,
     enableWechatPay: true,
-    enableAiChat: true,
+    enableAiChat: false,
     enableMultimodal: false
   },
   production: {
