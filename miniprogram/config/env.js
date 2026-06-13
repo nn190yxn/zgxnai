@@ -1,7 +1,7 @@
 // 小程序环境配置
 // auto: 开发版使用本地接口，体验版/正式版使用 production。
 // 生产发布前必须替换 production 域名，并在微信后台配置合法域名。
-var CURRENT_ENV = 'development';
+var CURRENT_ENV = 'production';
 
 var ENV_CONFIG = {
   development: {
