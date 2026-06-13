@@ -16,7 +16,7 @@ var ENV_CONFIG = {
     enableNetworkProbe: false,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
-    enableStartupSafeMode: true,
+    enableStartupSafeMode: false,
     enableAssessments: true,
     enableEducation: true,
     enableParenting: true,
