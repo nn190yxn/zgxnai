@@ -1736,7 +1736,7 @@ async function educationTasksTodayHandler(req, res) {
   }
   const grade = normalizeEducationGrade(req.query.grade, child);
   const likeGrade = `%${grade || inferAgeRangeFromChild(child) || '3-4岁'}%`;
-  const [rows] = await pool.execute(
+  let [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
      LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
@@ -1745,6 +1745,16 @@ async function educationTasksTodayHandler(req, res) {
      LIMIT 4`,
     [childId, likeGrade]
   );
+  if (!rows.length) {
+    [rows] = await pool.execute(
+      `SELECT t.*, tp.status, tp.progress
+       FROM reading_tasks t
+       LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+       ORDER BY t.difficulty ASC, t.id ASC
+       LIMIT 4`,
+      [childId]
+    );
+  }
   res.json({ success: true, data: { list: rows.map(normalizeReadingTask) } });
 }
 
@@ -1798,7 +1808,7 @@ async function educationKnowledgeChaptersHandler(req, res) {
   }
   const subjectCode = req.query.subjectCode || null;
   const effectiveGrade = normalizeEducationGrade(req.query.grade, child) || inferAgeRangeFromChild(child) || null;
-  const [rows] = await pool.execute(
+  let [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
      LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
@@ -1807,6 +1817,16 @@ async function educationKnowledgeChaptersHandler(req, res) {
      ORDER BY t.difficulty ASC, t.id ASC`,
     [childId, subjectCode, subjectCode, effectiveGrade, effectiveGrade ? `%${effectiveGrade}%` : null]
   );
+  if (!rows.length) {
+    [rows] = await pool.execute(
+      `SELECT t.*, tp.status, tp.progress
+       FROM reading_tasks t
+       LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+       WHERE (? IS NULL OR t.subject_code = ?)
+       ORDER BY t.difficulty ASC, t.id ASC`,
+      [childId, subjectCode, subjectCode]
+    );
+  }
   const chaptersMap = new Map();
   for (const row of rows) {
     const chapterId = `${row.subject_code || 'general'}-${row.difficulty || 1}`;
@@ -1937,20 +1957,20 @@ function normalizeEducationGrade(rawGrade, child) {
 
   const gradeIndex = Number(value);
   const gradeMap = {
-    1: '0-1岁',
-    2: '1-2岁',
-    3: '2-3岁',
+    1: '3-4岁',
+    2: '3-4岁',
+    3: '3-4岁',
     4: '3-4岁',
     5: '4-5岁',
     6: '5-6岁',
-    7: '6-7岁',
-    8: '7-8岁',
-    9: '8-9岁',
-    10: '9-10岁',
-    11: '10-11岁',
-    12: '11-12岁',
-    13: '12-13岁',
-    14: '13-14岁'
+    7: '6-9岁',
+    8: '6-9岁',
+    9: '6-9岁',
+    10: '9-12岁',
+    11: '9-12岁',
+    12: '9-12岁',
+    13: '9-12岁',
+    14: '9-12岁'
   };
 
   if (gradeMap[gradeIndex]) {
