@@ -249,7 +249,7 @@ var allowHosts = {
     var streakDays = metrics.streakDays || 0;
 
     if (data.type === 'weekly_report') {
-      return '这周坚持了' + streakDays + '天，完成' + completed + '/' + total + '个阅读力任务。每天10分钟，孩子的变化看得见。';
+      return '这周坚持了' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟，孩子的变化看得见。';
     }
 
     if (data.type === 'app_intro' || data.type === 'home_intro') {
@@ -515,7 +515,43 @@ var allowHosts = {
     var item = Object.assign({}, child || {});
     item.avatar = this.normalizeAssetUrl(item.avatar || '');
     item.birthday = item.birthday || item.birth_date || '';
+    item.tags = this.normalizeStringArray(item.tags);
+    item.allergies = this.normalizeStringArray(item.allergies);
     return item;
+  },
+
+  normalizeStringArray: function(value) {
+    if (Array.isArray(value)) {
+      return value.filter(function(item) {
+        return typeof item === 'string' && item.trim();
+      }).map(function(item) {
+        return item.trim();
+      });
+    }
+    if (typeof value === 'string') {
+      var text = value.trim();
+      if (!text) {
+        return [];
+      }
+      try {
+        var parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(function(item) {
+            return typeof item === 'string' && item.trim();
+          }).map(function(item) {
+            return item.trim();
+          });
+        }
+      } catch (err) {
+        // Ignore parse error and fall back to delimiter splitting.
+      }
+      return text.split(/[、,，\s]+/).filter(function(item) {
+        return item && item.trim();
+      }).map(function(item) {
+        return item.trim();
+      });
+    }
+    return [];
   },
 
   normalizeChildren: function(children) {

@@ -19,7 +19,7 @@ Page({
     growthStatus: {
       weekCompletion: 68,
       currentFocus: '先判断孩子卡在哪',
-      todaySuggestion: '从成长观察或阅读训练开始'
+      todaySuggestion: '从成长观察或能力训练开始'
     },
     todayTask: {
       title: '今日建议：先做一次成长观察',
@@ -152,7 +152,7 @@ Page({
 
     var streakDays = metrics.streakDays || this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项阅读力任务') : '从成长观察或阅读训练开始';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项能力成长任务') : '从成长观察或能力训练开始';
 
     this.setData({
       growthStatus: {
@@ -227,7 +227,7 @@ Page({
 
   // 跳转到能力成长
   goToTextbook() {
-    if (!this.ensureFeatureEnabled('education', '阅读力提升暂未开放')) {
+    if (!this.ensureFeatureEnabled('education', '能力成长暂未开放')) {
       return;
     }
     wx.navigateTo({

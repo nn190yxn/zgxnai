@@ -39,14 +39,14 @@ Page({
       {
         icon: '📖',
         title: '能力成长',
-        desc: '提供阅读力提升、口头复述录音、每日打卡和成长周报。',
+        desc: '提供理解表达训练、口头复述录音、每日打卡和成长周报。',
         type: 'textbook'
       }
     ],
     sampleQuestions: [
       '孩子早餐怎么搭配更营养？',
       '孩子发脾气时家长怎么沟通？',
-      '如何在家做阅读力训练？'
+      '如何在家做能力成长训练？'
     ]
   },
 
@@ -258,7 +258,7 @@ Page({
   // 分享
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理 - 儿童成长智能问答',
+      title: '小牛育儿AI助理 - 儿童成长与家庭养育支持',
       path: '/pages/index/index'
     };
   }

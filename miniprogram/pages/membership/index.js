@@ -17,7 +17,7 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_WECHAT_PAY,
-    paymentNotice: ENABLE_WECHAT_PAY ? '选择套餐后可发起微信支付' : '微信支付暂未开放，可先使用试用或兑换码',
+    paymentNotice: ENABLE_WECHAT_PAY ? '选择套餐后可发起微信支付' : '微信支付暂未开放，可先使用试用和邀请奖励',
     
     // 套餐列表
     plans: [
@@ -28,6 +28,7 @@ Page({
     
     // 兑换码
     promoCode: '',
+    promoEnabled: false,
     
     // 邀请统计
     referralStats: {},
@@ -53,12 +54,10 @@ Page({
 
   // 加载会员信息
   loadMembershipInfo() {
-    console.log('[Membership] Loading membership info...');
     app.request({
       url: '/membership/info',
       method: 'GET'
     }).then(data => {
-      console.log('[Membership] Membership info loaded:', data);
       this.setData({ membershipInfo: data });
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);
@@ -94,6 +93,8 @@ Page({
       if (data.activated !== false) {
         wx.showToast({ title: '试用已激活', icon: 'success' });
         this.loadMembershipInfo();
+      } else if (data.reason === 'active_membership_exists') {
+        wx.showToast({ title: '当前会员有效期内无需试用', icon: 'none' });
       } else {
         wx.showToast({ title: '试用期已使用过', icon: 'none' });
       }
@@ -187,6 +188,10 @@ Page({
 
   // 兑换码兑换
   redeemPromoCode() {
+    if (!this.data.promoEnabled) {
+      wx.showToast({ title: '兑换码功能暂未开放', icon: 'none' });
+      return;
+    }
     if (!this.data.promoCode) {
       wx.showToast({ title: '请输入兑换码', icon: 'none' });
       return;

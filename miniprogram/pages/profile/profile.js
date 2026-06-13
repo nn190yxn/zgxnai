@@ -125,7 +125,7 @@ Page({
   // 查看历史
   viewHistory: function() {
     wx.navigateTo({
-      url: '/pages/assessment/history/history',
+      url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -155,7 +155,7 @@ Page({
   aboutUs: function() {
     wx.showModal({
       title: '关于小牛育儿',
-      content: '小牛育儿\n专注儿童运动发展\n\nAI助手版本：v4.0\n架构：知识库+AI双轨',
+      content: '小牛育儿\n聚焦儿童成长观察、能力发展与家庭养育支持\n\nAI助手版本：v4.0\n能力：成长观察、能力成长、育儿知识、营养建议',
       showCancel: false
     });
   },

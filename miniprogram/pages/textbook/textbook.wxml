@@ -6,10 +6,10 @@
     <text class="page-subtitle">每天10分钟任务，帮助孩子读得懂、坐得住、说得出</text>
   </view>
 
-  <!-- 阅读力提升任务 -->
+  <!-- 能力成长任务 -->
   <view class="reading-task-section" wx:if="{{readingTasks.length > 0}}">
     <view class="section-header">
-      <text class="section-title">阅读力提升</text>
+      <text class="section-title">能力成长任务</text>
       <text class="task-count">{{readingTasks.length}}项</text>
     </view>
     <view class="reading-task-list">
@@ -77,10 +77,10 @@
     </view>
   </view>
 
-  <!-- 阅读周报（最小版） -->
+  <!-- 成长周报（最小版） -->
   <view class="reading-report-section">
     <view class="section-header">
-      <text class="section-title">本周阅读力周报</text>
+      <text class="section-title">本周能力成长周报</text>
       <text class="section-more" bindtap="shareWeeklyReport">分享成果卡</text>
     </view>
     <view class="reading-report-card">

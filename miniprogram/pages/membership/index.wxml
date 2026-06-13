@@ -7,11 +7,11 @@
     </view>
     <view class="membership-body">
       <view class="membership-info">
-        <text class="membership-type">{{membershipInfo.membership_type === 'trial' ? '试用期会员' : '免费用户'}}</text>
+        <text class="membership-type">{{membershipInfo.is_active ? (membershipInfo.membership_type === 'trial' ? '试用期会员' : '正式会员') : '免费用户'}}</text>
         <text class="membership-days" wx:if="{{membershipInfo.days_left > 0}}">剩余 {{membershipInfo.days_left}} 天</text>
       </view>
       <view class="membership-actions">
-        <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used}}">激活15天免费试用</button>
+        <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used && !membershipInfo.is_active}}">激活15天免费试用</button>
       </view>
     </view>
   </view>
@@ -21,7 +21,7 @@
     <view class="notice-icon">VIP</view>
     <text class="notice-title">会员功能即将上线</text>
     <text class="notice-desc">{{paymentNotice}}</text>
-    <text class="notice-desc">当前可使用免费试用、兑换码和邀请奖励</text>
+    <text class="notice-desc">当前可使用免费试用和邀请奖励</text>
   </view>
 
   <!-- 会员套餐 -->
@@ -44,7 +44,7 @@
   </view>
 
   <!-- 兑换码 -->
-  <view class="promo-section">
+  <view class="promo-section" wx:if="{{promoEnabled}}">
     <view class="section-title">兑换码</view>
     <view class="promo-input">
       <input type="text" placeholder="输入兑换码" value="{{promoCode}}" bindinput="inputPromoCode" />

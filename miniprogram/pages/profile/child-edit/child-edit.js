@@ -58,6 +58,8 @@ Page({
     });
 
     if (cachedChild) {
+      var cachedTags = app.normalizeStringArray(cachedChild.tags);
+      var cachedAllergies = app.normalizeStringArray(cachedChild.allergies);
       that.setData({
         formData: {
           name: cachedChild.name || '',
@@ -67,11 +69,11 @@ Page({
           avatar: cachedChild.avatar || '',
           height: cachedChild.current_height || cachedChild.height || '',
           weight: cachedChild.current_weight || cachedChild.weight || '',
-          allergies: (cachedChild.allergies || []).join ? (cachedChild.allergies || []).join('、') : (cachedChild.allergies || ''),
+          allergies: cachedAllergies.join('、'),
           specialConditions: cachedChild.special_notes || cachedChild.specialConditions || '',
-          tags: cachedChild.tags || []
+          tags: cachedTags
         },
-        selectedTags: cachedChild.tags || [],
+        selectedTags: cachedTags,
         loading: false
       });
     }
@@ -93,6 +95,8 @@ Page({
       method: 'GET'
     }).then(function(res) {
       var child = app.normalizeChild(res || {});
+      var childTags = app.normalizeStringArray(child.tags);
+      var childAllergies = app.normalizeStringArray(child.allergies);
       that.setData({
         formData: {
           name: child.name || '',
@@ -102,11 +106,11 @@ Page({
           avatar: child.avatar || '',
           height: child.current_height || child.height || '',
           weight: child.current_weight || child.weight || '',
-          allergies: (child.allergies || []).join ? (child.allergies || []).join('、') : (child.allergies || ''),
+          allergies: childAllergies.join('、'),
           specialConditions: child.special_notes || child.specialConditions || '',
-          tags: child.tags || []
+          tags: childTags
         },
-        selectedTags: child.tags || [],
+        selectedTags: childTags,
         loading: false
       });
     }).catch(function(err) {
@@ -163,11 +167,7 @@ Page({
       });
       return;
     }
-    console.log('Tag tapped', {
-      index: Number(indexValue),
-      tag: tag
-    });
-    var selectedTags = that.data.selectedTags.slice();
+    var selectedTags = app.normalizeStringArray(that.data.selectedTags);
     var nextFormData = Object.assign({}, that.data.formData);
 
     var index = selectedTags.indexOf(tag);

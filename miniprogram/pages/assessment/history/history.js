@@ -164,6 +164,11 @@ Page({
   },
 
   normalizeLevel: function(level) {
+    if (level === 'excellent') return '优秀';
+    if (level === 'good') return '良好';
+    if (level === 'medium') return '正常';
+    if (level === 'attention') return '轻度失调';
+    if (level === 'intervention') return '中度失调';
     if (level === '中等') return '正常';
     if (level === '需关注') return '轻度失调';
     if (level === '需干预') return '中度失调';

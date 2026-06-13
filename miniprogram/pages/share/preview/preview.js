@@ -112,7 +112,7 @@ Page({
     if (isWeekly) {
       return {
         badge: '本周成果',
-        headline: streakDays > 0 ? ('坚持 ' + streakDays + ' 天') : '开始积累阅读力',
+        headline: streakDays > 0 ? ('坚持 ' + streakDays + ' 天') : '开始积累成长力',
         subline: '每天10分钟，变化会留下痕迹',
         heroMetric: completionRate + '%',
         heroLabel: '任务完成率',
@@ -122,7 +122,7 @@ Page({
           { value: recordingCount + '次', label: '复述练习' }
         ],
         cta: '一起坚持10分钟',
-        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个阅读力任务。每天10分钟，变化看得见。'
+        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟，变化看得见。'
       };
     }
 
@@ -131,14 +131,14 @@ Page({
       headline: '今天读懂一点点',
       subline: '每天10分钟，把阅读变成成长',
       heroMetric: '+1',
-      heroLabel: data.title || '阅读力提升任务',
+      heroLabel: data.title || '能力成长任务',
       chips: [
         { value: completed + '/' + total, label: '累计完成' },
         { value: streakDays + '天', label: '连续坚持' },
         { value: recordingCount + '次', label: '复述录音' }
       ],
       cta: '一起读懂世界',
-      copyText: '今天完成阅读力打卡。每天10分钟，慢慢读懂、说清楚。'
+      copyText: '今天完成能力成长打卡。每天10分钟，慢慢读懂、说清楚。'
     };
   },
 

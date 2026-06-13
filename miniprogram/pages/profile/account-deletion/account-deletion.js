@@ -60,8 +60,7 @@ Page({
     }).then(function(res) {
       wx.hideLoading();
 
-      // 兼容后端 success_response 与简化返回
-      var success = !!(res && (res.success === true || res.code === 0 || res.message));
+      var success = !!(res && (res.success === true || res.code === 0));
       if (success) {
         // 清除本地数据
         app.logout();

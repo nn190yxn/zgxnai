@@ -1012,7 +1012,7 @@ Page({
     // 预埋分享卡草稿数据（第4阶段用于生成卡片）
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
-      title: e.currentTarget.dataset.title || '阅读力提升任务',
+      title: e.currentTarget.dataset.title || '能力成长任务',
       summary: '我完成了今日阅读力打卡，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
@@ -1025,7 +1025,7 @@ Page({
       createdAt: Date.now(),
       payload: {
         taskId: taskId,
-        taskTitle: e.currentTarget.dataset.title || '阅读力提升任务'
+        taskTitle: e.currentTarget.dataset.title || '能力成长任务'
       }
     });
 
@@ -1078,7 +1078,7 @@ Page({
   },
 
   shareReadingTask: function(e) {
-    var title = e.currentTarget.dataset.title || '阅读力提升任务';
+    var title = e.currentTarget.dataset.title || '能力成长任务';
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
       title: title,

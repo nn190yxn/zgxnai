@@ -26,6 +26,8 @@ const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
 const REFERRAL_REWARD_DAYS = 7;
 const REFERRAL_MAX_DAYS = 60;
 const NUTRITION_RECIPES = require('../nutrition-recipes.json');
+const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
+const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars');
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production');
@@ -60,13 +62,16 @@ app.use(express.json({
     }
   }
 }));
+app.use('/uploads', express.static(UPLOAD_ROOT));
 
 app.get('/health', healthHandler);
 for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/health`, healthHandler);
+  app.get(`${prefix}/runtime/config`, runtimeConfigHandler);
   app.post(`${prefix}/auth/login`, asyncHandler(loginHandler));
   app.post(`${prefix}/auth/refresh`, asyncHandler(refreshHandler));
   app.get(`${prefix}/auth/me`, authenticateToken, asyncHandler(meHandler));
+  app.post(`${prefix}/auth/account-deletion`, authenticateToken, asyncHandler(accountDeletionHandler));
   app.get(`${prefix}/membership/info`, authenticateToken, asyncHandler(membershipInfoHandler));
   app.post(`${prefix}/membership/trial/activate`, authenticateToken, asyncHandler(trialHandler));
   app.post(`${prefix}/membership/promo/redeem`, authenticateToken, asyncHandler(promoHandler));
@@ -78,6 +83,7 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
   app.get(`${prefix}/children`, authenticateToken, asyncHandler(childrenListHandler));
   app.post(`${prefix}/children`, authenticateToken, asyncHandler(childrenCreateHandler));
+  app.post(`${prefix}/children/upload-avatar`, authenticateToken, asyncHandler(childAvatarUploadHandler));
   app.get(`${prefix}/children/:id`, authenticateToken, asyncHandler(childDetailHandler));
   app.put(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenUpdateHandler));
   app.put(`${prefix}/children/:id/set-default`, authenticateToken, asyncHandler(childrenSetDefaultHandler));
@@ -155,6 +161,22 @@ function asyncHandler(handler) {
 
 function healthHandler(req, res) {
   res.json({ status: 'ok', service: 'niuniu-backend', timestamp: new Date().toISOString() });
+}
+
+function runtimeConfigHandler(req, res) {
+  res.json({
+    env_name: process.env.NODE_ENV || 'production',
+    debug: process.env.NODE_ENV !== 'production',
+    ai_chat_enabled: true,
+    assessments_enabled: true,
+    education_enabled: true,
+    parenting_enabled: true,
+    multimodal_enabled: false,
+    payment_enabled: false,
+    ai_mock_fallback: false,
+    ai_service_ready: false,
+    config_loaded: true
+  });
 }
 
 function signToken(payload) {
@@ -591,6 +613,13 @@ async function trialHandler(req, res) {
     res.json({ success: true, data: { activated: false, reason: 'trial_already_used' } });
     return;
   }
+  const isActive = membership.status === 'active'
+    && membership.current_end_date
+    && new Date(membership.current_end_date).getTime() > Date.now();
+  if (isActive) {
+    res.json({ success: true, data: { activated: false, reason: 'active_membership_exists' } });
+    return;
+  }
   const endDate = new Date(Date.now() + 15 * 86400000);
   await pool.execute('INSERT INTO subscriptions (user_id, plan_code, status, start_date, end_date, pay_method) VALUES (?, ?, ?, NOW(), ?, ?)', [req.user.userId, 'trial', 'active', endDate, 'trial']);
   await pool.execute(
@@ -971,9 +1000,169 @@ function verifyWechatNotifySignature(headers, rawBody) {
 
 async function bootstrap() {
   await ensureProductionTables();
+  await fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
   app.listen(PORT, HOST, () => {
     console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
   });
+}
+
+function getSubjectDisplayName(subjectCode) {
+  const map = {
+    logical_thinking: '逻辑思维',
+    reading_comprehension: '阅读理解',
+    expression_communication: '表达沟通',
+    learning_metacognition: '学习元认知',
+    inquiry_creativity: '探究创造'
+  };
+  return map[subjectCode] || '综合能力';
+}
+
+async function tableExists(connection, tableName) {
+  const [rows] = await connection.execute(
+    `SELECT 1
+     FROM information_schema.tables
+     WHERE table_schema = DATABASE() AND table_name = ?
+     LIMIT 1`,
+    [tableName]
+  );
+  return rows.length > 0;
+}
+
+async function executeIfTableExists(connection, tableName, sql, params) {
+  if (await tableExists(connection, tableName)) {
+    await connection.execute(sql, params);
+  }
+}
+
+function getMultipartBoundary(contentType) {
+  const match = String(contentType || '').match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  return match ? (match[1] || match[2] || '').trim() : '';
+}
+
+function readRequestBuffer(req, limitBytes) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let total = 0;
+    req.on('data', (chunk) => {
+      total += chunk.length;
+      if (total > limitBytes) {
+        reject(new Error('上传文件过大'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function parseMultipartFile(req) {
+  const boundary = getMultipartBoundary(req.headers['content-type']);
+  if (!boundary) {
+    throw new Error('缺少上传边界');
+  }
+  const buffer = await readRequestBuffer(req, 2 * 1024 * 1024);
+  const bodyText = buffer.toString('latin1');
+  const delimiter = `--${boundary}`;
+  const headerStart = bodyText.indexOf(delimiter);
+  const headersEnd = bodyText.indexOf('\r\n\r\n', headerStart);
+  if (headerStart === -1 || headersEnd === -1) {
+    throw new Error('上传内容格式无效');
+  }
+  const headerText = bodyText.slice(headerStart + delimiter.length + 2, headersEnd);
+  const filenameMatch = headerText.match(/filename="([^"]+)"/i);
+  const contentTypeMatch = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
+  const fileStart = headersEnd + 4;
+  const fileEnd = bodyText.indexOf(`\r\n${delimiter}`, fileStart);
+  if (!filenameMatch || fileEnd === -1) {
+    throw new Error('未找到上传文件');
+  }
+  return {
+    filename: path.basename(filenameMatch[1]),
+    mimeType: (contentTypeMatch && contentTypeMatch[1] ? contentTypeMatch[1] : 'application/octet-stream').trim(),
+    buffer: buffer.subarray(fileStart, fileEnd)
+  };
+}
+
+function inferUploadExtension(filename, mimeType) {
+  const extension = path.extname(filename || '').toLowerCase();
+  if (extension && ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(extension)) {
+    return extension === '.jpeg' ? '.jpg' : extension;
+  }
+  const mimeMap = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif'
+  };
+  return mimeMap[String(mimeType || '').toLowerCase()] || '';
+}
+
+function getSubjectVisualIcon(subjectCode) {
+  const map = {
+    logical_thinking: '🧠',
+    reading_comprehension: '📖',
+    expression_communication: '💬',
+    learning_metacognition: '🎯',
+    inquiry_creativity: '🔬'
+  };
+  return map[subjectCode] || '🌱';
+}
+
+function getDifficultyLabel(level) {
+  const map = {
+    1: '启蒙练习',
+    2: '基础训练',
+    3: '进阶训练',
+    4: '拓展挑战'
+  };
+  return map[level] || '成长任务';
+}
+
+function buildReadingTaskExplainContent(row) {
+  const steps = String(row.steps || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
+  const sections = [
+    `【能力方向】${getSubjectDisplayName(row.subject_code)}`,
+    `【适龄阶段】${row.age_range || '通用'}`,
+    `【训练目标】${row.objective || row.title}`,
+    `【材料准备】${row.material || '准备当日阅读或生活场景材料'}`,
+    `【家长提问】${row.parent_prompt || '围绕“谁、做什么、为什么”展开追问'}`
+  ];
+  if (steps.length) {
+    sections.push(`【操作步骤】\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}`);
+  }
+  if (row.content) {
+    sections.push(`【训练说明】${row.content}`);
+  }
+  if (row.tips) {
+    sections.push(`【使用提醒】${row.tips}`);
+  }
+  return sections.join('\n\n');
+}
+
+function buildReadingTaskPractices(row, keyPoints) {
+  const subjectName = getSubjectDisplayName(row.subject_code);
+  const firstPoint = keyPoints[0] ? keyPoints[0].content : (row.objective || row.title);
+  const secondPoint = keyPoints[1] ? keyPoints[1].content : (row.parent_prompt || row.title);
+  return [
+    {
+      id: 1,
+      type: 'choice',
+      question: `这节${subjectName}任务最先要抓住什么？`,
+      options: [firstPoint, '先追求标准答案', '先把任务做快', '先跳过观察阶段'],
+      answer: 0,
+      analysis: '先抓住当前任务的核心目标，孩子更容易进入有效练习。'
+    },
+    {
+      id: 2,
+      type: 'choice',
+      question: '家长陪练时更适合怎么做？',
+      options: [secondPoint, '连续追问不给停顿', '直接替孩子回答', '只纠正错误不示范'],
+      answer: 0,
+      analysis: '家长的主要作用是搭脚手架，让孩子在提示下完成表达和思考。'
+    }
+  ];
 }
 
 async function ensureProductionTables() {
@@ -1191,35 +1380,45 @@ async function seedContentIfNeeded() {
     }
   }
 
-  const [taskCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM reading_tasks');
-  if (Number(taskCountRows[0].count) === 0) {
-    for (const task of READING_TASKS) {
-      await pool.execute(
-        `INSERT INTO reading_tasks
-         (task_code, title, subject_code, age_range, difficulty, duration, material, objective, steps, parent_prompt, content, image_url, icon_url, cover_image, audio_url, video_url, tips, example_answer)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          task.task_code,
-          task.title,
-          task.subject_code,
-          task.age_range,
-          task.difficulty,
-          task.duration,
-          task.material,
-          task.objective,
-          task.steps,
-          task.parent_prompt,
-          task.content,
-          '',
-          '',
-          '',
-          '',
-          '',
-          task.tips,
-          task.example_answer
-        ]
-      );
-    }
+  for (const task of READING_TASKS) {
+    await pool.execute(
+      `INSERT INTO reading_tasks
+       (task_code, title, subject_code, age_range, difficulty, duration, material, objective, steps, parent_prompt, content, image_url, icon_url, cover_image, audio_url, video_url, tips, example_answer)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         title = VALUES(title),
+         subject_code = VALUES(subject_code),
+         age_range = VALUES(age_range),
+         difficulty = VALUES(difficulty),
+         duration = VALUES(duration),
+         material = VALUES(material),
+         objective = VALUES(objective),
+         steps = VALUES(steps),
+         parent_prompt = VALUES(parent_prompt),
+         content = VALUES(content),
+         tips = VALUES(tips),
+         example_answer = VALUES(example_answer)`,
+      [
+        task.task_code,
+        task.title,
+        task.subject_code,
+        task.age_range,
+        task.difficulty,
+        task.duration,
+        task.material,
+        task.objective,
+        task.steps,
+        task.parent_prompt,
+        task.content,
+        '',
+        '',
+        '',
+        '',
+        '',
+        task.tips,
+        task.example_answer
+      ]
+    );
   }
 
   const [interpretationCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM assessment_interpretations');
@@ -1427,6 +1626,24 @@ async function childrenCreateHandler(req, res) {
   } finally {
     connection.release();
   }
+}
+
+async function childAvatarUploadHandler(req, res) {
+  const file = await parseMultipartFile(req);
+  const extension = inferUploadExtension(file.filename, file.mimeType);
+  if (!extension) {
+    res.status(400).json({ success: false, message: '仅支持 jpg、png、webp、gif 图片' });
+    return;
+  }
+  const fileName = `${Date.now()}_${req.user.userId}_${crypto.randomBytes(6).toString('hex')}${extension}`;
+  const targetPath = path.join(AVATAR_UPLOAD_DIR, fileName);
+  await fs.promises.writeFile(targetPath, file.buffer);
+  res.json({
+    success: true,
+    data: {
+      url: `/uploads/avatars/${fileName}`
+    }
+  });
 }
 
 async function childDetailHandler(req, res) {
@@ -1846,7 +2063,7 @@ async function educationKnowledgeChaptersHandler(req, res) {
     if (!chaptersMap.has(chapterId)) {
       chaptersMap.set(chapterId, {
         id: chapterId,
-        name: `${row.subject_code || 'general'} Lv.${row.difficulty || 1}`,
+        name: `${getSubjectDisplayName(row.subject_code)} Lv.${row.difficulty || 1}`,
         progress: 0,
         points: []
       });
@@ -1898,6 +2115,9 @@ async function educationKnowledgeDetailHandler(req, res) {
   }
   const row = rows[0];
   const keyPoints = String(row.steps || '').split(/\n+/).filter(Boolean).map((content, index) => ({ id: index + 1, content }));
+  const subjectName = getSubjectDisplayName(row.subject_code);
+  const explainContent = buildReadingTaskExplainContent(row);
+  const practices = buildReadingTaskPractices(row, keyPoints);
   res.json({
     success: true,
     data: {
@@ -1909,18 +2129,18 @@ async function educationKnowledgeDetailHandler(req, res) {
       difficulty: row.difficulty || 1,
       progress: row.progress || 0,
       visual: {
-        icon: row.icon_url || '',
-        title: row.title,
+        icon: row.icon_url || getSubjectVisualIcon(row.subject_code),
+        title: `${subjectName} · ${getDifficultyLabel(row.difficulty || 1)}`,
         desc: row.objective || row.material || ''
       },
       explain: {
         title: row.title,
-        content: row.content || row.objective || ''
+        content: explainContent
       },
       keyPoints,
       difficulties: row.tips ? [{ id: 1, content: row.tips }] : [],
-      examples: row.example_answer ? [{ id: 1, title: '参考答案', question: row.parent_prompt || row.objective || row.title, answer: row.example_answer, analysis: row.tips || '' }] : [],
-      practices: [],
+      examples: row.example_answer ? [{ id: 1, title: '参考答案', question: row.parent_prompt || row.objective || row.title, answer: row.example_answer, analysis: row.content || row.tips || '' }] : [],
+      practices,
       material: row.material || '',
       objective: row.objective || '',
       parent_prompt: row.parent_prompt || '',
@@ -1931,6 +2151,49 @@ async function educationKnowledgeDetailHandler(req, res) {
       cover_image: row.cover_image || ''
     }
   });
+}
+
+async function accountDeletionHandler(req, res) {
+  const userId = getUserId(req);
+  const [users] = await pool.execute('SELECT id FROM users WHERE id = ? LIMIT 1', [userId]);
+  if (!users.length) {
+    res.status(404).json({ success: false, message: '用户不存在' });
+    return;
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [children] = await connection.execute('SELECT id FROM children WHERE user_id = ?', [userId]);
+    for (const child of children) {
+      const [records] = await connection.execute('SELECT id FROM assessment_records WHERE child_id = ?', [child.id]);
+      for (const record of records) {
+        await connection.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [record.id]);
+      }
+      await connection.execute('DELETE FROM assessment_records WHERE child_id = ?', [child.id]);
+      await connection.execute('DELETE FROM task_progress WHERE child_id = ?', [child.id]);
+    }
+
+    await connection.execute('DELETE FROM children WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'chat_messages', 'DELETE FROM chat_messages WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'event_tracks', 'DELETE FROM event_tracks WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'subscriptions', 'DELETE FROM subscriptions WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'user_memberships', 'DELETE FROM user_memberships WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'promo_codes', 'UPDATE promo_codes SET user_id = NULL, status = ? WHERE user_id = ?', ['unused', userId]);
+    await executeIfTableExists(connection, 'payment_orders', 'DELETE FROM payment_orders WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'referrals', 'DELETE FROM referrals WHERE inviter_id = ? OR invitee_id = ?', [userId, userId]);
+    await executeIfTableExists(connection, 'user_favorites', 'DELETE FROM user_favorites WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'article_likes', 'DELETE FROM article_likes WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'article_comments', 'DELETE FROM article_comments WHERE user_id = ?', [userId]);
+    await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
+    await connection.commit();
+    res.json({ success: true, message: '账号已注销' });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
 function inferAgeRangeFromChild(child) {

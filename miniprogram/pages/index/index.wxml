@@ -51,11 +51,11 @@
       </view>
 
       <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
-        <text class="module-name">阅读力提升</text>
+        <text class="module-name">能力成长</text>
         <text class="module-desc">读懂说清</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
-        <text class="module-name">阅读力提升</text>
+        <text class="module-name">能力成长</text>
         <text class="module-desc">暂未开放</text>
       </view>
 

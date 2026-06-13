@@ -10,7 +10,7 @@
   >
     <view class="service-closed" wx:if="{{!featureFlags.aiChatEnabled}}">
       <text class="service-closed-title">小牛育儿AI问答</text>
-      <text class="service-closed-desc">本页面提供儿童成长、营养食谱、亲子沟通、阅读力训练等育儿咨询服务。当前版本的在线AI生成服务正在合规配置中，审核人员可先查看下方正式运营内容与功能入口。</text>
+      <text class="service-closed-desc">本页面提供儿童成长、营养食谱、亲子沟通、能力成长训练等育儿咨询服务。当前版本的在线AI生成服务正在合规配置中，审核人员可先查看下方正式运营内容与功能入口。</text>
       <view class="service-actions">
         <button class="service-action" size="mini" bindtap="goToAssessment">成长观察</button>
         <button class="service-action secondary" size="mini" bindtap="goToParenting">育儿知识</button>
@@ -47,10 +47,10 @@
         <text class="ai-label">AI生成</text>
         <text>您好！我是小牛育儿AI助理</text>
         <text class="mt20">我可以帮您解答：</text>
-        <text>🧠 感统训练相关问题</text>
+        <text>🧠 成长观察与训练问题</text>
         <text>🥗 儿童营养与饮食</text>
         <text>👨‍👩‍👧 育儿方法与技巧</text>
-        <text>📚 能力成长与阅读力提升</text>
+        <text>📚 能力成长与表达训练</text>
         <text class="mt20">请直接输入您的问题，我会尽力为您解答！</text>
       </view>
     </view>
