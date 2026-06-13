@@ -395,9 +395,11 @@ describe('后端API测试', () => {
     });
 
     it('不能更新其他用户孩子的知识点进度', async () => {
+      const ownerCode = 'education-owner-code-' + Date.now() + '-' + Math.random();
+      const attackerCode = 'education-attacker-code-' + Date.now() + '-' + Math.random();
       const ownerLoginRes = await request(app)
         .post('/api/v1/auth/login')
-        .send({ code: 'education-owner-code' });
+        .send({ code: ownerCode });
       const ownerToken = ownerLoginRes.body.data.token;
 
       const childRes = await request(app)
@@ -408,10 +410,12 @@ describe('后端API测试', () => {
           gender: 'unknown',
           birthday: '2021-01-01'
         });
+      expect(childRes.status).toBe(201);
+      expect(childRes.body.success).toBe(true);
 
       const attackerLoginRes = await request(app)
         .post('/api/v1/auth/login')
-        .send({ code: 'education-attacker-code' });
+        .send({ code: attackerCode });
 
       const res = await request(app)
         .post('/api/v1/education/progress')
