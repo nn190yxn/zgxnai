@@ -7,6 +7,9 @@ function normalizeRuntimeConfig(payload) {
     envName: data.env_name || data.envName || (envConfig.envName || 'development'),
     debug: !!data.debug,
     aiChatEnabled: data.ai_chat_enabled !== undefined ? !!data.ai_chat_enabled : (envConfig.enableAiChat !== false),
+    assessmentsEnabled: data.assessments_enabled !== undefined ? !!data.assessments_enabled : (envConfig.enableAssessments !== false),
+    educationEnabled: data.education_enabled !== undefined ? !!data.education_enabled : (envConfig.enableEducation !== false),
+    parentingEnabled: data.parenting_enabled !== undefined ? !!data.parenting_enabled : (envConfig.enableParenting !== false),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
     paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : false,
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
@@ -72,6 +75,15 @@ function isFeatureEnabled(app, featureName) {
   }
   if (featureName === 'payment') {
     return !!config.paymentEnabled;
+  }
+  if (featureName === 'assessments') {
+    return !!config.assessmentsEnabled;
+  }
+  if (featureName === 'education') {
+    return !!config.educationEnabled;
+  }
+  if (featureName === 'parenting') {
+    return !!config.parentingEnabled;
   }
   return true;
 }

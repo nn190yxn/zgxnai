@@ -622,13 +622,22 @@ loadQuestionsFromServer: function(code) {
       method: 'POST',
       data: submitData
     }).then(function(res) {
+      var payload = res && res.result ? res.result : res;
+      var totalScore = Number(payload && payload.overall_score);
+      var maxScore = Number(payload && payload.max_score);
+      if (isNaN(totalScore)) {
+        totalScore = 0;
+      }
+      if (isNaN(maxScore) || maxScore <= 0) {
+        maxScore = Math.max(3, (that.data.questions || []).length * 3);
+      }
       wx.hideLoading();
       that._submittingAssessment = false;
       
       app.trackKbEvent({
         event_type: 'output_submit',
         task_id: 'assessment_' + that.data.assessmentCode,
-        score: (res && res.result && res.result.overall_score) ? res.result.overall_score / 3 : 0,
+        score: maxScore > 0 ? totalScore / maxScore : 0,
         event_meta: { type: 'assessment', source: 'server' }
       });
 
@@ -684,10 +693,19 @@ loadQuestionsFromServer: function(code) {
     var payload = res && res.result ? res.result : res;
     var dimensionScores = payload.dimension_scores || {};
     var dimensions = [];
-    var totalScore = typeof payload.overall_score === 'number' ? payload.overall_score : 0;
+    var totalScore = Number(payload.overall_score);
+    if (isNaN(totalScore)) {
+      totalScore = 0;
+    }
     var isSensory = normalizeAssessmentCode(payload.assessment_type || this.data.assessmentCode) === 'sensory';
-    var maxScore = isSensory ? 50 : 3;
-    var percentage = Math.round((totalScore / maxScore) * 100);
+    var maxScore = Number(payload.max_score);
+    if (isNaN(maxScore) || maxScore <= 0) {
+      maxScore = isSensory ? 50 : Math.max(3, (this.data.questions || []).length * 3);
+    }
+    var percentage = Number(payload.percentage);
+    if (isNaN(percentage)) {
+      percentage = Math.round((totalScore / maxScore) * 100);
+    }
 
     if (Array.isArray(dimensionScores)) {
       dimensions = dimensionScores;

@@ -127,9 +127,11 @@ Page({
   normalizeServerResult: function(record) {
     var dimensionScores = record.dimension_scores || {};
     var dimensions = [];
-    var totalScore = typeof record.overall_score === 'number' ? record.overall_score : 0;
+    var totalScore = Number(record.overall_score);
+    if (isNaN(totalScore)) {
+      totalScore = 0;
+    }
     var assessmentCode = normalizeAssessmentCode(record.assessment_type);
-    var maxScore = assessmentCode === 'sensory' ? 50 : 3;
 
     if (Array.isArray(dimensionScores)) {
       dimensions = dimensionScores;
@@ -151,6 +153,15 @@ Page({
       dimensions[i] = item;
     }
 
+    var maxScore = Number(record.max_score);
+    if (isNaN(maxScore) || maxScore <= 0) {
+      maxScore = assessmentCode === 'sensory' ? 50 : Math.max(3, dimensions.length * 3);
+    }
+    var percentage = Number(record.percentage);
+    if (isNaN(percentage)) {
+      percentage = Math.round((totalScore / maxScore) * 100);
+    }
+
     return {
       recordId: record.id || record.record_id,
       assessmentCode: assessmentCode,
@@ -159,7 +170,7 @@ Page({
       childName: record.child_name || '未知',
       totalScore: totalScore,
       maxScore: maxScore,
-      percentage: Math.round((totalScore / maxScore) * 100),
+      percentage: percentage,
       level: this.normalizeLevel(record.overall_level),
       completedAt: record.completed_at,
       dimensions: dimensions,

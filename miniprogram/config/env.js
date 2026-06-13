@@ -1,7 +1,7 @@
 // 小程序环境配置
 // auto: 开发版使用本地接口，体验版/正式版使用 production。
 // 生产发布前必须替换 production 域名，并在微信后台配置合法域名。
-var CURRENT_ENV = 'production';
+var CURRENT_ENV = 'development';
 
 var ENV_CONFIG = {
   development: {
@@ -16,7 +16,10 @@ var ENV_CONFIG = {
     enableNetworkProbe: false,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
-    enableStartupSafeMode: false,
+    enableStartupSafeMode: true,
+    enableAssessments: true,
+    enableEducation: true,
+    enableParenting: true,
     showMembership: true,
     enableWechatPay: true,
     enableAiChat: true,
@@ -30,14 +33,17 @@ var ENV_CONFIG = {
     apiStrictMode: true,
     allowMockFallback: false,
     enableDevLoginFallback: false,
-    enableNativeApiDiagnostics: true,
+    enableNativeApiDiagnostics: false,
     enableNetworkProbe: false,
     enableBootIsolation: false,
     enableRuntimeConfigFetch: false,
     enableStartupSafeMode: false,
+    enableAssessments: true,
+    enableEducation: true,
+    enableParenting: true,
     showMembership: true,
     enableWechatPay: true,
-    enableAiChat: true,
+    enableAiChat: false,
     enableMultimodal: false
   }
 };

@@ -132,12 +132,25 @@ Page({
     var normalized = [];
     for (var i = 0; i < records.length; i++) {
       var item = records[i] || {};
+      var totalScore = Number(item.overall_score);
+      if (isNaN(totalScore)) {
+        totalScore = 0;
+      }
+      var maxScore = Number(item.max_score);
+      if (isNaN(maxScore) || maxScore <= 0) {
+        var dimensions = Array.isArray(item.dimension_scores) ? item.dimension_scores : [];
+        maxScore = normalizeAssessmentCode(item.assessment_type) === 'sensory' ? 50 : Math.max(3, dimensions.length * 3);
+      }
+      var percentage = Number(item.percentage);
+      if (isNaN(percentage)) {
+        percentage = Math.round((totalScore / maxScore) * 100);
+      }
       normalized.push({
         recordId: item.id,
         assessmentCode: item.assessment_type,
         childId: item.child_id,
-        totalScore: item.overall_score,
-        percentage: item.overall_score !== undefined ? Math.round((item.overall_score / 3) * 100) : 0,
+        totalScore: totalScore,
+        percentage: percentage,
         level: this.normalizeLevel(item.overall_level),
         completedAt: item.completed_at,
         completed_at: item.completed_at,

@@ -7,6 +7,9 @@ Page({
     isLoggedIn: false,
     featureFlags: {
       aiChatEnabled: true,
+      assessmentsEnabled: true,
+      educationEnabled: true,
+      parentingEnabled: true,
       multimodalEnabled: true,
       paymentEnabled: false,
       configLoaded: false
@@ -16,7 +19,7 @@ Page({
     growthStatus: {
       weekCompletion: 68,
       currentFocus: '先判断孩子卡在哪',
-      todaySuggestion: '从成长观察或AI问答开始'
+      todaySuggestion: '从成长观察或阅读训练开始'
     },
     todayTask: {
       title: '今日建议：先做一次成长观察',
@@ -149,7 +152,7 @@ Page({
 
     var streakDays = metrics.streakDays || this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项阅读力任务') : '从成长观察或AI问答开始';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项阅读力任务') : '从成长观察或阅读训练开始';
 
     this.setData({
       growthStatus: {
@@ -175,11 +178,7 @@ Page({
 
   // 跳转到AI问答
   goToChat() {
-    if (app.isFeatureEnabled && !app.isFeatureEnabled('aiChat')) {
-      wx.showToast({
-        title: 'AI问答暂未开放',
-        icon: 'none'
-      });
+    if (!this.ensureFeatureEnabled('aiChat', 'AI问答暂未开放')) {
       return;
     }
     wx.switchTab({
@@ -192,6 +191,9 @@ Page({
 
   // 跳转到成长观察
   goToAssessment() {
+    if (!this.ensureFeatureEnabled('assessments', '成长观察暂未开放')) {
+      return;
+    }
     wx.navigateTo({
       url: '/pages/assessment/assessment',
       fail: function() {
@@ -212,6 +214,9 @@ Page({
 
   // 跳转到育儿
   goToParenting() {
+    if (!this.ensureFeatureEnabled('parenting', '育儿知识暂未开放')) {
+      return;
+    }
     wx.navigateTo({
       url: '/pages/parenting/parenting',
       fail: function() {
@@ -222,6 +227,9 @@ Page({
 
   // 跳转到能力成长
   goToTextbook() {
+    if (!this.ensureFeatureEnabled('education', '阅读力提升暂未开放')) {
+      return;
+    }
     wx.navigateTo({
       url: '/pages/textbook/textbook',
       fail: function() {
@@ -232,6 +240,9 @@ Page({
 
   // 查看今日任务
   goToTodayTask() {
+    if (!this.ensureFeatureEnabled('education', '今日任务暂未开放')) {
+      return;
+    }
     wx.navigateTo({
       url: '/pages/textbook/textbook',
       fail: function() {
@@ -242,6 +253,9 @@ Page({
 
   // 查看进步报告
   goToWeeklyReport() {
+    if (!this.ensureFeatureEnabled('assessments', '成长记录暂未开放')) {
+      return;
+    }
     wx.navigateTo({
       url: '/pages/assessment/history/history',
       fail: function() {
@@ -265,6 +279,17 @@ Page({
       return;
     }
     this.goToWeeklyReport();
+  },
+
+  ensureFeatureEnabled(featureName, message) {
+    if (app.isFeatureEnabled && app.isFeatureEnabled(featureName)) {
+      return true;
+    }
+    wx.showToast({
+      title: message,
+      icon: 'none'
+    });
+    return false;
   },
 
   onShareTaskCard() {

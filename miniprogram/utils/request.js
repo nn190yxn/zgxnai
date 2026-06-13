@@ -115,6 +115,25 @@ function showApiError(app, message) {
   });
 }
 
+function isAuthExpiredResponse(statusCode, payload) {
+  var message = '';
+  var code = '';
+  if (payload) {
+    message = payload.message || (payload.detail && payload.detail.message) || '';
+    code = payload.code || (payload.detail && payload.detail.code) || '';
+  }
+
+  if (statusCode === 401) {
+    return true;
+  }
+
+  return statusCode === 403 && (
+    code === 'TOKEN_EXPIRED' ||
+    message.indexOf('访问令牌无效或已过期') !== -1 ||
+    message.indexOf('登录状态已过期') !== -1
+  );
+}
+
 function request(app, options) {
   return new Promise(function(resolve, reject) {
     var url = options.url;
@@ -148,7 +167,7 @@ function request(app, options) {
           wx.showToast({ title: res.data.message || '请先开通会员', icon: 'none' });
           wx.navigateTo({ url: '/pages/membership/index' });
           reject(res.data);
-        } else if (res.statusCode === 401 && !skipAuthRetry) {
+        } else if (isAuthExpiredResponse(res.statusCode, res.data) && !skipAuthRetry) {
           // 尝试刷新token后重试
           app.refreshAccessToken().then(function() {
             request(app, options).then(resolve).catch(reject);

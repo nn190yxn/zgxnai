@@ -13,7 +13,8 @@
       <text class="hero-desc">{{bannerList[0].desc}}</text>
       <view class="hero-actions">
         <view class="hero-btn hero-btn-primary" data-action="{{bannerList[0].action}}" bindtap="onTapBannerCta">{{bannerList[0].cta}}</view>
-        <view class="hero-btn hero-btn-secondary" bindtap="goToChat">问问AI助理</view>
+        <view wx:if="{{featureFlags.aiChatEnabled}}" class="hero-btn hero-btn-secondary" bindtap="goToChat">问问AI助理</view>
+        <view wx:else class="hero-btn hero-btn-secondary">AI问答维护中</view>
       </view>
     </view>
     <view class="hero-image hero-image-placeholder">
@@ -40,14 +41,22 @@
     </view>
 
     <view class="module-grid">
-      <view class="module-card" bindtap="goToAssessment">
+      <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card" bindtap="goToAssessment">
         <text class="module-name">成长观察</text>
         <text class="module-desc">专注表达</text>
       </view>
+      <view wx:else class="module-card module-card-disabled" bindtap="goToAssessment">
+        <text class="module-name">成长观察</text>
+        <text class="module-desc">暂未开放</text>
+      </view>
 
-      <view class="module-card" bindtap="goToTextbook">
+      <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
         <text class="module-name">阅读力提升</text>
         <text class="module-desc">读懂说清</text>
+      </view>
+      <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
+        <text class="module-name">阅读力提升</text>
+        <text class="module-desc">暂未开放</text>
       </view>
 
       <view class="module-card" bindtap="goToNutrition">
@@ -55,9 +64,13 @@
         <text class="module-desc">挑食长高</text>
       </view>
 
-      <view class="module-card" bindtap="goToParenting">
+      <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card" bindtap="goToParenting">
         <text class="module-name">育儿知识</text>
         <text class="module-desc">妈妈锦囊</text>
+      </view>
+      <view wx:else class="module-card module-card-disabled" bindtap="goToParenting">
+        <text class="module-name">育儿知识</text>
+        <text class="module-desc">暂未开放</text>
       </view>
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">

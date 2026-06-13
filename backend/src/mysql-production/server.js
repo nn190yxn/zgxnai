@@ -5,6 +5,13 @@ const path = require('path');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
+const {
+  HOT_KEYWORDS,
+  PARENTING_ARTICLES,
+  READING_TASKS,
+  ASSESSMENT_META,
+  buildAssessmentQuestions
+} = require('./content-seeds');
 
 loadEnv(path.resolve(__dirname, '../../../.env'));
 loadEnv('/home/ubuntu/niuniu-parenting/.env');
@@ -69,13 +76,39 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
   app.get(`${prefix}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
   app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
+  app.get(`${prefix}/children`, authenticateToken, asyncHandler(childrenListHandler));
+  app.post(`${prefix}/children`, authenticateToken, asyncHandler(childrenCreateHandler));
+  app.get(`${prefix}/children/:id`, authenticateToken, asyncHandler(childDetailHandler));
+  app.put(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenUpdateHandler));
+  app.put(`${prefix}/children/:id/set-default`, authenticateToken, asyncHandler(childrenSetDefaultHandler));
+  app.delete(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenDeleteHandler));
+  app.get(`${prefix}/parenting/articles`, optionalAuthenticateToken, asyncHandler(parentingArticlesHandler));
+  app.get(`${prefix}/parenting/articles/:id`, optionalAuthenticateToken, asyncHandler(parentingArticleDetailHandler));
+  app.get(`${prefix}/parenting/articles/:id/related`, optionalAuthenticateToken, asyncHandler(parentingRelatedArticlesHandler));
+  app.post(`${prefix}/parenting/articles/:id/favorite`, authenticateToken, asyncHandler(parentingFavoriteHandler));
+  app.get(`${prefix}/parenting/articles/:id/comments`, asyncHandler(parentingCommentsHandler));
+  app.post(`${prefix}/parenting/articles/:id/comments`, authenticateToken, asyncHandler(parentingCreateCommentHandler));
+  app.post(`${prefix}/parenting/articles/:id/like`, authenticateToken, asyncHandler(parentingLikeHandler));
+  app.get(`${prefix}/parenting/hot-keywords`, asyncHandler(parentingHotKeywordsHandler));
+  app.get(`${prefix}/parenting/search`, optionalAuthenticateToken, asyncHandler(parentingSearchHandler));
+  app.get(`${prefix}/education/tasks/today`, authenticateToken, requireActiveMembership, asyncHandler(educationTasksTodayHandler));
+  app.post(`${prefix}/education/tasks/:id/complete`, authenticateToken, requireActiveMembership, asyncHandler(educationCompleteTaskHandler));
+  app.get(`${prefix}/education/progress/overview`, authenticateToken, requireActiveMembership, asyncHandler(educationProgressOverviewHandler));
+  app.get(`${prefix}/education/knowledge/chapters`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeChaptersHandler));
+  app.get(`${prefix}/education/knowledge/detail`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeDetailHandler));
+  app.post(`${prefix}/education/progress`, authenticateToken, requireActiveMembership, asyncHandler(educationUpdateProgressHandler));
+  app.get(`${prefix}/assessments`, authenticateToken, requireActiveMembership, asyncHandler(assessmentsListHandler));
+  app.get(`${prefix}/assessments/:code/questions`, authenticateToken, requireActiveMembership, asyncHandler(assessmentQuestionsHandler));
+  app.post(`${prefix}/assessments/:code/submit`, authenticateToken, requireActiveMembership, asyncHandler(assessmentSubmitHandler));
+  app.get(`${prefix}/assessments/results/:id`, authenticateToken, requireActiveMembership, asyncHandler(assessmentResultHandler));
+  app.get(`${prefix}/assessments/history`, authenticateToken, requireActiveMembership, asyncHandler(assessmentHistoryHandler));
+  app.get(`${prefix}/assessments/history/count`, authenticateToken, requireActiveMembership, asyncHandler(assessmentHistoryCountHandler));
+  app.delete(`${prefix}/assessments/records/:id`, authenticateToken, requireActiveMembership, asyncHandler(assessmentDeleteHandler));
   app.get(`${prefix}/nutrition/recommendations`, nutritionRecommendationsHandler);
   app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
   app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
-  app.all(`${prefix}/assessments*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
-  app.all(`${prefix}/education*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
 }
 
@@ -88,8 +121,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: err.message || '服务异常' });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
+bootstrap().catch((err) => {
+  console.error('[niuniu-backend] bootstrap failed:', err.message);
+  process.exit(1);
 });
 
 function loadEnv(envPath) {
@@ -136,8 +170,23 @@ function authenticateToken(req, res, next) {
     req.user = jwt.verify(token, JWT_SECRET || 'dev-niuniu-secret');
     next();
   } catch (err) {
-    res.status(403).json({ success: false, message: '访问令牌无效或已过期' });
+    res.status(401).json({ success: false, code: 'TOKEN_EXPIRED', message: '访问令牌无效或已过期' });
   }
+}
+
+function optionalAuthenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) {
+    next();
+    return;
+  }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET || 'dev-niuniu-secret');
+  } catch (err) {
+    req.user = null;
+  }
+  next();
 }
 
 async function requireActiveMembership(req, res, next) {
@@ -751,4 +800,1202 @@ function verifyWechatNotifySignature(headers, rawBody) {
   }
   const certificate = fs.readFileSync(wxPayConfig.platformCertPath, 'utf8');
   return crypto.createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(certificate, signature, 'base64');
+}
+
+async function bootstrap() {
+  await ensureProductionTables();
+  app.listen(PORT, HOST, () => {
+    console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
+  });
+}
+
+async function ensureProductionTables() {
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS children (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      name VARCHAR(64) NOT NULL,
+      nickname VARCHAR(64) DEFAULT '',
+      gender VARCHAR(16) DEFAULT 'unknown',
+      birthday DATE NULL,
+      avatar TEXT,
+      is_default TINYINT DEFAULT 0,
+      current_height DECIMAL(6,2) NULL,
+      current_weight DECIMAL(6,2) NULL,
+      allergies TEXT,
+      special_notes TEXT,
+      tags TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_children_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS assessment_records (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      child_id BIGINT NOT NULL,
+      assessment_code VARCHAR(64) NOT NULL,
+      assessment_name VARCHAR(255),
+      age_group VARCHAR(32),
+      total_score DECIMAL(8,2) DEFAULT 0,
+      max_score DECIMAL(8,2) DEFAULT 0,
+      percentage DECIMAL(8,2) DEFAULT 0,
+      overall_level VARCHAR(32),
+      elapsed_time INT DEFAULT 0,
+      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_assessment_child (child_id),
+      INDEX idx_assessment_code (assessment_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS assessment_dimensions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      record_id BIGINT NOT NULL,
+      dimension_name VARCHAR(128) NOT NULL,
+      score DECIMAL(8,2) DEFAULT 0,
+      score_rate DECIMAL(8,2) DEFAULT 0,
+      standard_score DECIMAL(8,2) DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_assessment_dimensions_record (record_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS assessment_interpretations (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      assessment_code VARCHAR(64) NOT NULL,
+      dimension_name VARCHAR(128),
+      score_min DECIMAL(8,2) DEFAULT 0,
+      score_max DECIMAL(8,2) DEFAULT 100,
+      level VARCHAR(32),
+      interpretation TEXT,
+      behavior_description TEXT,
+      scene_advice TEXT,
+      expected_goal TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_assessment_interpretations_code (assessment_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS assessment_suggestions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      assessment_code VARCHAR(64) NOT NULL,
+      dimension_name VARCHAR(128),
+      level VARCHAR(32),
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      steps TEXT,
+      duration VARCHAR(64),
+      frequency VARCHAR(64),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_assessment_suggestions_code (assessment_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS reading_tasks (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      task_code VARCHAR(128) NOT NULL UNIQUE,
+      title VARCHAR(255) NOT NULL,
+      subject_code VARCHAR(128) NOT NULL,
+      age_range VARCHAR(64),
+      difficulty INT DEFAULT 1,
+      duration INT DEFAULT 10,
+      material TEXT,
+      objective TEXT,
+      steps TEXT,
+      parent_prompt TEXT,
+      content TEXT,
+      image_url TEXT,
+      icon_url TEXT,
+      cover_image TEXT,
+      audio_url TEXT,
+      video_url TEXT,
+      tips TEXT,
+      example_answer TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_reading_tasks_subject (subject_code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS task_progress (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      child_id BIGINT NOT NULL,
+      task_id BIGINT NOT NULL,
+      status VARCHAR(32) DEFAULT 'pending',
+      progress INT DEFAULT 0,
+      completed_at DATETIME NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_task_progress (child_id, task_id),
+      INDEX idx_task_progress_child (child_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS articles (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      content LONGTEXT,
+      category VARCHAR(128),
+      sub_category VARCHAR(128),
+      age_group VARCHAR(64),
+      tags TEXT,
+      author VARCHAR(128),
+      evidence_level VARCHAR(32),
+      read_count INT DEFAULT 0,
+      is_published TINYINT DEFAULT 1,
+      cover TEXT,
+      cover_image TEXT,
+      icon_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_articles_category (category),
+      INDEX idx_articles_published (is_published)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      item_type VARCHAR(64) NOT NULL,
+      item_id VARCHAR(128) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_user_favorites (user_id, item_type, item_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS article_likes (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      article_id BIGINT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_article_likes (user_id, article_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS article_comments (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      article_id BIGINT NOT NULL,
+      content TEXT NOT NULL,
+      parent_id BIGINT DEFAULT 0,
+      likes INT DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_article_comments_article (article_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await seedContentIfNeeded();
+}
+
+async function seedContentIfNeeded() {
+  const [articleCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM articles');
+  if (Number(articleCountRows[0].count) === 0) {
+    for (const article of PARENTING_ARTICLES) {
+      await pool.execute(
+        `INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+        [
+          article.title,
+          article.summary,
+          article.content,
+          article.category,
+          article.sub_category,
+          article.age_group,
+          article.tags,
+          article.author,
+          article.evidence_level,
+          ''
+        ]
+      );
+    }
+  }
+
+  const [taskCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM reading_tasks');
+  if (Number(taskCountRows[0].count) === 0) {
+    for (const task of READING_TASKS) {
+      await pool.execute(
+        `INSERT INTO reading_tasks
+         (task_code, title, subject_code, age_range, difficulty, duration, material, objective, steps, parent_prompt, content, image_url, icon_url, cover_image, audio_url, video_url, tips, example_answer)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          task.task_code,
+          task.title,
+          task.subject_code,
+          task.age_range,
+          task.difficulty,
+          task.duration,
+          task.material,
+          task.objective,
+          task.steps,
+          task.parent_prompt,
+          task.content,
+          '',
+          '',
+          '',
+          '',
+          '',
+          task.tips,
+          task.example_answer
+        ]
+      );
+    }
+  }
+
+  const [interpretationCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM assessment_interpretations');
+  if (Number(interpretationCountRows[0].count) === 0) {
+    const rows = [
+      ['focus', '集中注意', 0, 40, 'intervention', '专注维持时间较短，容易受环境影响。', '经常东张西望，任务启动后容易离开。', '先优化环境，再把任务拆成5分钟小段。', '连续两周后，开始出现更稳定的专注时段。'],
+      ['focus', '集中注意', 40, 70, 'attention', '专注表现处于发展中，部分场景需要更多支持。', '熟悉任务时较稳定，陌生任务时容易退缩。', '从孩子熟悉的内容开始，逐步增加挑战。', '四周内可看到持续时间提升。'],
+      ['focus', '集中注意', 70, 100, 'good', '专注表现整体稳定。', '能够在提醒后回到任务。', '继续保持高质量阅读和安静环境。', '稳定巩固现有专注能力。'],
+      ['emotion', '情绪识别', 0, 40, 'intervention', '情绪识别和表达需要更多家庭支持。', '情绪来时更容易用行为代替表达。', '用情绪命名和共情短句帮助孩子表达。', '两到四周内情绪表达会更清晰。'],
+      ['learning', '学习适应', 0, 40, 'intervention', '学习准备与任务坚持需要重点支持。', '开始慢、拖延多、完成度波动。', '用固定流程和明确开始动作帮助启动。', '逐步建立稳定的学习节奏。']
+    ];
+    for (const row of rows) {
+      await pool.execute(
+        `INSERT INTO assessment_interpretations
+         (assessment_code, dimension_name, score_min, score_max, level, interpretation, behavior_description, scene_advice, expected_goal)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        row
+      );
+    }
+  }
+
+  const [suggestionCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM assessment_suggestions');
+  if (Number(suggestionCountRows[0].count) === 0) {
+    const rows = [
+      ['focus', '集中注意', 'intervention', '家庭专注环境优化', '减少干扰、拆小任务、建立稳定节奏。', '先清桌面\n再做5分钟任务\n完成后立刻反馈', '2周', '每天'],
+      ['emotion', '情绪识别', 'intervention', '情绪表达训练', '帮助孩子先识别再表达情绪。', '每天命名一次情绪\n家长示范表达\n复盘替代表达', '4周', '每天'],
+      ['learning', '学习适应', 'intervention', '任务启动支持', '用固定流程帮助孩子开始任务。', '开始前预告\n第一步写出来\n完成后及时强化', '4周', '每天']
+    ];
+    for (const row of rows) {
+      await pool.execute(
+        `INSERT INTO assessment_suggestions
+         (assessment_code, dimension_name, level, title, description, steps, duration, frequency)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        row
+      );
+    }
+  }
+}
+
+function parseJsonArray(value) {
+  if (!value) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value;
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return String(value).split(/[、,，\s]+/).filter(Boolean);
+  }
+}
+
+function serializeJsonArray(value) {
+  if (!value) {
+    return JSON.stringify([]);
+  }
+  if (Array.isArray(value)) {
+    return JSON.stringify(value.filter(Boolean));
+  }
+  return JSON.stringify(String(value).split(/[、,，\s]+/).filter(Boolean));
+}
+
+function normalizeChild(row) {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    name: row.name,
+    nickname: row.nickname || '',
+    gender: row.gender || 'unknown',
+    birthday: row.birthday ? formatDateValue(row.birthday) : '',
+    birth_date: row.birthday ? formatDateValue(row.birthday) : '',
+    avatar: row.avatar || '',
+    is_default: row.is_default ? 1 : 0,
+    isDefault: !!row.is_default,
+    current_height: row.current_height,
+    height: row.current_height,
+    current_weight: row.current_weight,
+    weight: row.current_weight,
+    allergies: parseJsonArray(row.allergies),
+    special_notes: row.special_notes || '',
+    specialConditions: row.special_notes || '',
+    tags: parseJsonArray(row.tags),
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+function formatDateValue(value) {
+  if (!value) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value.slice(0, 10);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function getUserId(req) {
+  return req.user && req.user.userId;
+}
+
+async function getOwnedChild(userId, childId) {
+  const [rows] = await pool.execute(`${buildChildSelectSql()} WHERE id = ? AND user_id = ? LIMIT 1`, [childId, userId]);
+  return rows[0] || null;
+}
+
+function buildChildSelectSql() {
+  return `SELECT id, user_id, name, nickname, gender, DATE_FORMAT(birthday, '%Y-%m-%d') AS birthday, avatar, is_default, current_height, current_weight, allergies, special_notes, tags, created_at, updated_at FROM children`;
+}
+
+async function requireOwnedChildForRead(req, res, childId) {
+  if (!childId) {
+    res.status(400).json({ success: false, message: 'childId不能为空' });
+    return null;
+  }
+  const child = await getOwnedChild(getUserId(req), childId);
+  if (!child) {
+    res.status(403).json({ success: false, message: '无权访问该孩子的数据' });
+    return null;
+  }
+  return child;
+}
+
+function validateChildPayload(payload, isUpdate) {
+  const data = payload || {};
+  if (!isUpdate && (!data.name || !String(data.name).trim())) {
+    return '孩子姓名不能为空';
+  }
+  if (data.gender && !['male', 'female', 'unknown'].includes(data.gender)) {
+    return '性别参数无效';
+  }
+  return null;
+}
+
+function buildChildPayload(payload, existing) {
+  const data = payload || {};
+  return {
+    name: data.name !== undefined ? String(data.name).trim().slice(0, 50) : existing.name,
+    nickname: data.nickname !== undefined ? String(data.nickname).trim().slice(0, 50) : existing.nickname,
+    gender: data.gender !== undefined ? data.gender : existing.gender,
+    birthday: data.birth_date !== undefined ? data.birth_date : (data.birthday !== undefined ? data.birthday : existing.birthday),
+    avatar: data.avatar !== undefined ? String(data.avatar).slice(0, 500) : existing.avatar,
+    current_height: data.current_height !== undefined ? data.current_height : existing.current_height,
+    current_weight: data.current_weight !== undefined ? data.current_weight : existing.current_weight,
+    allergies: data.allergies !== undefined ? serializeJsonArray(data.allergies) : existing.allergies,
+    special_notes: data.special_notes !== undefined ? String(data.special_notes).slice(0, 500) : existing.special_notes,
+    tags: data.tags !== undefined ? serializeJsonArray(data.tags) : existing.tags
+  };
+}
+
+async function childrenListHandler(req, res) {
+  const [rows] = await pool.execute(`${buildChildSelectSql()} WHERE user_id = ? ORDER BY is_default DESC, created_at ASC`, [getUserId(req)]);
+  res.json({ success: true, data: rows.map(normalizeChild) });
+}
+
+async function childrenCreateHandler(req, res) {
+  const error = validateChildPayload(req.body, false);
+  if (error) {
+    res.status(400).json({ success: false, message: error });
+    return;
+  }
+  const userId = getUserId(req);
+  const [countRows] = await pool.execute('SELECT COUNT(*) AS count FROM children WHERE user_id = ?', [userId]);
+  if (Number(countRows[0].count) >= 5) {
+    res.status(400).json({ success: false, message: '最多添加5个孩子档案' });
+    return;
+  }
+  const isDefault = Number(countRows[0].count) === 0 || req.body.is_default || req.body.isDefault ? 1 : 0;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    if (isDefault) {
+      await connection.execute('UPDATE children SET is_default = 0 WHERE user_id = ?', [userId]);
+    }
+    const [result] = await connection.execute(
+      `INSERT INTO children (user_id, name, nickname, gender, birthday, avatar, is_default, current_height, current_weight, allergies, special_notes, tags)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        String(req.body.name).trim().slice(0, 50),
+        req.body.nickname ? String(req.body.nickname).trim().slice(0, 50) : '',
+        req.body.gender || 'unknown',
+        req.body.birth_date || req.body.birthday || null,
+        req.body.avatar ? String(req.body.avatar).slice(0, 500) : '',
+        isDefault,
+        req.body.current_height || null,
+        req.body.current_weight || null,
+        serializeJsonArray(req.body.allergies),
+        req.body.special_notes ? String(req.body.special_notes).slice(0, 500) : '',
+        serializeJsonArray(req.body.tags)
+      ]
+    );
+    const [rows] = await connection.execute(`${buildChildSelectSql()} WHERE id = ?`, [result.insertId]);
+    await connection.commit();
+    res.status(201).json({ success: true, data: normalizeChild(rows[0]) });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function childDetailHandler(req, res) {
+  const child = await getOwnedChild(getUserId(req), req.params.id);
+  if (!child) {
+    res.status(404).json({ success: false, message: '孩子档案不存在' });
+    return;
+  }
+  res.json({ success: true, data: normalizeChild(child) });
+}
+
+async function childrenUpdateHandler(req, res) {
+  const existing = await getOwnedChild(getUserId(req), req.params.id);
+  if (!existing) {
+    res.status(404).json({ success: false, message: '孩子档案不存在' });
+    return;
+  }
+  const error = validateChildPayload(req.body, true);
+  if (error) {
+    res.status(400).json({ success: false, message: error });
+    return;
+  }
+  const nextPayload = buildChildPayload(req.body, existing);
+  await pool.execute(
+    `UPDATE children
+     SET name = ?, nickname = ?, gender = ?, birthday = ?, avatar = ?, current_height = ?, current_weight = ?, allergies = ?, special_notes = ?, tags = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND user_id = ?`,
+    [
+      nextPayload.name,
+      nextPayload.nickname,
+      nextPayload.gender,
+      nextPayload.birthday || null,
+      nextPayload.avatar || '',
+      nextPayload.current_height || null,
+      nextPayload.current_weight || null,
+      nextPayload.allergies,
+      nextPayload.special_notes || '',
+      nextPayload.tags,
+      req.params.id,
+      getUserId(req)
+    ]
+  );
+  const updated = await getOwnedChild(getUserId(req), req.params.id);
+  res.json({ success: true, data: normalizeChild(updated) });
+}
+
+async function childrenSetDefaultHandler(req, res) {
+  const child = await getOwnedChild(getUserId(req), req.params.id);
+  if (!child) {
+    res.status(404).json({ success: false, message: '孩子档案不存在' });
+    return;
+  }
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute('UPDATE children SET is_default = 0 WHERE user_id = ?', [getUserId(req)]);
+    await connection.execute('UPDATE children SET is_default = 1 WHERE id = ? AND user_id = ?', [req.params.id, getUserId(req)]);
+    await connection.commit();
+    const updated = await getOwnedChild(getUserId(req), req.params.id);
+    res.json({ success: true, data: normalizeChild(updated) });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function childrenDeleteHandler(req, res) {
+  const child = await getOwnedChild(getUserId(req), req.params.id);
+  if (!child) {
+    res.status(404).json({ success: false, message: '孩子档案不存在' });
+    return;
+  }
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [recordRows] = await connection.execute('SELECT id FROM assessment_records WHERE child_id = ?', [req.params.id]);
+    for (const row of recordRows) {
+      await connection.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [row.id]);
+    }
+    await connection.execute('DELETE FROM assessment_records WHERE child_id = ?', [req.params.id]);
+    await connection.execute('DELETE FROM task_progress WHERE child_id = ?', [req.params.id]);
+    await connection.execute('DELETE FROM children WHERE id = ? AND user_id = ?', [req.params.id, getUserId(req)]);
+    if (child.is_default) {
+      const [nextRows] = await connection.execute('SELECT id FROM children WHERE user_id = ? ORDER BY created_at ASC LIMIT 1', [getUserId(req)]);
+      if (nextRows.length) {
+        await connection.execute('UPDATE children SET is_default = 1 WHERE id = ?', [nextRows[0].id]);
+      }
+    }
+    await connection.commit();
+    res.json({ success: true, message: '孩子档案已删除' });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+function buildArticleCover(category) {
+  const colors = {
+    '情绪管理': '#4A90D9',
+    '行为习惯': '#5DBA8B',
+    '认知发展': '#9B7ED9',
+    '社交能力': '#E89A4C',
+    '营养健康': '#E8737A'
+  };
+  const color = colors[category] || '#9AA4B2';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-size="36">${category}</text></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+async function isArticleFavorited(userId, articleId) {
+  if (!userId) {
+    return false;
+  }
+  const [rows] = await pool.execute('SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ? LIMIT 1', [userId, 'parenting_article', String(articleId)]);
+  return rows.length > 0;
+}
+
+async function normalizeArticle(row, userId) {
+  const favorited = await isArticleFavorited(userId, row.id);
+  return {
+    id: row.id,
+    title: row.title,
+    summary: row.summary || '',
+    content: row.content || '',
+    category: row.category || '',
+    sub_category: row.sub_category || '',
+    age_group: row.age_group || '',
+    tags: row.tags || '',
+    author: row.author || '',
+    evidence_level: row.evidence_level || '',
+    read_count: row.read_count || 0,
+    cover: row.cover || row.cover_image || row.icon_url || buildArticleCover(row.category),
+    is_favorited: favorited,
+    isFavorite: favorited,
+    keyPoints: buildKeyPointsFromContent(row.content || row.summary || ''),
+    images: []
+  };
+}
+
+function buildKeyPointsFromContent(content) {
+  return String(content || '')
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+async function parentingArticlesHandler(req, res) {
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(20, Number(req.query.page_size || 10)));
+  const offset = (page - 1) * pageSize;
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
+  const params = [];
+  let whereClause = 'WHERE is_published = 1';
+  if (req.query.category) {
+    whereClause += ' AND category = ?';
+    params.push(req.query.category);
+  }
+  const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
+  const data = [];
+  for (const row of rows) {
+    data.push(await normalizeArticle(row, getUserId(req)));
+  }
+  res.json({ success: true, data });
+}
+
+async function parentingArticleDetailHandler(req, res) {
+  const [rows] = await pool.execute('SELECT * FROM articles WHERE id = ? AND is_published = 1 LIMIT 1', [req.params.id]);
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '文章不存在' });
+    return;
+  }
+  await pool.execute('UPDATE articles SET read_count = read_count + 1 WHERE id = ?', [req.params.id]);
+  res.json({ success: true, data: await normalizeArticle(rows[0], getUserId(req)) });
+}
+
+async function parentingRelatedArticlesHandler(req, res) {
+  const [rows] = await pool.execute('SELECT * FROM articles WHERE id = ? AND is_published = 1 LIMIT 1', [req.params.id]);
+  if (!rows.length) {
+    res.json({ success: true, data: [] });
+    return;
+  }
+  const article = rows[0];
+  const [relatedRows] = await pool.execute(
+    `SELECT * FROM articles
+     WHERE is_published = 1 AND id != ? AND (category = ? OR sub_category = ?)
+     ORDER BY read_count DESC, created_at DESC LIMIT 5`,
+    [req.params.id, article.category, article.sub_category]
+  );
+  const data = [];
+  for (const row of relatedRows) {
+    data.push(await normalizeArticle(row, getUserId(req)));
+  }
+  res.json({ success: true, data });
+}
+
+async function parentingFavoriteHandler(req, res) {
+  const [articleRows] = await pool.execute('SELECT id FROM articles WHERE id = ? AND is_published = 1 LIMIT 1', [req.params.id]);
+  if (!articleRows.length) {
+    res.status(404).json({ success: false, message: '文章不存在' });
+    return;
+  }
+  const userId = getUserId(req);
+  const [existingRows] = await pool.execute('SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ? LIMIT 1', [userId, 'parenting_article', String(req.params.id)]);
+  if (existingRows.length) {
+    await pool.execute('DELETE FROM user_favorites WHERE id = ?', [existingRows[0].id]);
+    res.json({ success: true, data: { is_favorited: false, isFavorite: false } });
+    return;
+  }
+  await pool.execute('INSERT INTO user_favorites (user_id, item_type, item_id) VALUES (?, ?, ?)', [userId, 'parenting_article', String(req.params.id)]);
+  res.json({ success: true, data: { is_favorited: true, isFavorite: true } });
+}
+
+async function parentingHotKeywordsHandler(req, res) {
+  res.json({ success: true, data: HOT_KEYWORDS });
+}
+
+async function parentingSearchHandler(req, res) {
+  const keyword = String(req.query.keyword || req.query.q || '').trim();
+  if (!keyword) {
+    res.json({ success: true, data: [] });
+    return;
+  }
+  const searchTerm = `%${keyword}%`;
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(20, Number(req.query.page_size || 10)));
+  const offset = (page - 1) * pageSize;
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
+  const [rows] = await pool.execute(
+    `SELECT * FROM articles
+     WHERE is_published = 1
+       AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+     ORDER BY read_count DESC, created_at DESC
+     ${paginationClause}`,
+    [searchTerm, searchTerm, searchTerm, searchTerm]
+  );
+  const data = [];
+  for (const row of rows) {
+    data.push(await normalizeArticle(row, getUserId(req)));
+  }
+  res.json({ success: true, data });
+}
+
+async function parentingCommentsHandler(req, res) {
+  const page = Math.max(1, Number(req.query.page || 1));
+  const pageSize = Math.max(1, Math.min(50, Number(req.query.page_size || 20)));
+  const offset = (page - 1) * pageSize;
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
+  const [rows] = await pool.execute(
+    `SELECT c.*, u.nickname AS user_nickname, u.avatar_url AS user_avatar
+     FROM article_comments c
+     LEFT JOIN users u ON c.user_id = u.id
+     WHERE c.article_id = ? AND c.parent_id = 0
+     ORDER BY c.created_at DESC
+     ${paginationClause}`,
+    [req.params.id]
+  );
+  res.json({ success: true, data: rows });
+}
+
+async function parentingCreateCommentHandler(req, res) {
+  const content = String((req.body && req.body.content) || '').trim();
+  if (!content) {
+    res.status(400).json({ success: false, message: '评论内容不能为空' });
+    return;
+  }
+  await pool.execute('INSERT INTO article_comments (user_id, article_id, content, parent_id) VALUES (?, ?, ?, ?)', [getUserId(req), req.params.id, content, Number(req.body.parent_id || 0)]);
+  res.json({ success: true, message: '评论成功' });
+}
+
+async function parentingLikeHandler(req, res) {
+  const userId = getUserId(req);
+  const [existingRows] = await pool.execute('SELECT id FROM article_likes WHERE user_id = ? AND article_id = ? LIMIT 1', [userId, req.params.id]);
+  if (existingRows.length) {
+    await pool.execute('DELETE FROM article_likes WHERE id = ?', [existingRows[0].id]);
+    const [countRows] = await pool.execute('SELECT COUNT(*) AS count FROM article_likes WHERE article_id = ?', [req.params.id]);
+    res.json({ success: true, data: { is_liked: false, isLiked: false, like_count: Number(countRows[0].count) } });
+    return;
+  }
+  await pool.execute('INSERT INTO article_likes (user_id, article_id) VALUES (?, ?)', [userId, req.params.id]);
+  const [countRows] = await pool.execute('SELECT COUNT(*) AS count FROM article_likes WHERE article_id = ?', [req.params.id]);
+  res.json({ success: true, data: { is_liked: true, isLiked: true, like_count: Number(countRows[0].count) } });
+}
+
+function normalizeReadingTask(row) {
+  return {
+    id: row.id,
+    task_code: row.task_code,
+    title: row.title,
+    subject_code: row.subject_code,
+    age_range: row.age_range,
+    difficulty: row.difficulty,
+    duration: row.duration,
+    material: row.material,
+    objective: row.objective,
+    steps: row.steps ? String(row.steps).split(/\n+/).filter(Boolean) : [],
+    parent_prompt: row.parent_prompt || '',
+    content: row.content || '',
+    image_url: row.image_url || '',
+    icon_url: row.icon_url || '',
+    cover_image: row.cover_image || '',
+    audio_url: row.audio_url || '',
+    video_url: row.video_url || '',
+    tips: row.tips || '',
+    example_answer: row.example_answer || '',
+    status: row.status || 'pending',
+    progress: row.progress || 0
+  };
+}
+
+async function educationTasksTodayHandler(req, res) {
+  const childId = Number(req.query.childId || 0);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const grade = String(req.query.grade || '').trim();
+  const likeGrade = `%${grade || inferAgeRangeFromChild(child) || '3-4'}%`;
+  const [rows] = await pool.execute(
+    `SELECT t.*, tp.status, tp.progress
+     FROM reading_tasks t
+     LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+     WHERE t.age_range LIKE ?
+     ORDER BY t.difficulty ASC, t.id ASC
+     LIMIT 4`,
+    [childId, likeGrade]
+  );
+  res.json({ success: true, data: { list: rows.map(normalizeReadingTask) } });
+}
+
+async function educationCompleteTaskHandler(req, res) {
+  const childId = Number((req.body && req.body.child_id) || 0);
+  if (!childId) {
+    res.status(400).json({ success: false, message: 'child_id不能为空' });
+    return;
+  }
+  const child = await getOwnedChild(getUserId(req), childId);
+  if (!child) {
+    res.status(403).json({ success: false, message: '无权操作该孩子的任务' });
+    return;
+  }
+  await pool.execute(
+    `INSERT INTO task_progress (child_id, task_id, status, progress, completed_at)
+     VALUES (?, ?, 'completed', 100, CURRENT_TIMESTAMP)
+     ON DUPLICATE KEY UPDATE status = 'completed', progress = 100, completed_at = CURRENT_TIMESTAMP`,
+    [childId, req.params.id]
+  );
+  res.json({ success: true, data: { message: '任务已完成' } });
+}
+
+async function educationProgressOverviewHandler(req, res) {
+  const childId = Number(req.query.childId || 0);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const [totalRows] = await pool.execute('SELECT COUNT(*) AS count FROM reading_tasks');
+  const [completedRows] = await pool.execute('SELECT COUNT(*) AS count FROM task_progress WHERE child_id = ? AND status = ?', [childId, 'completed']);
+  const totalTasks = Number(totalRows[0].count) || 0;
+  const completedTasks = Number(completedRows[0].count) || 0;
+  const masteryRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  res.json({
+    success: true,
+    data: {
+      totalPoints: totalTasks * 10,
+      masteredPoints: completedTasks * 10,
+      learningPoints: Math.max(0, totalTasks - completedTasks) * 10,
+      masteryRate
+    }
+  });
+}
+
+async function educationKnowledgeChaptersHandler(req, res) {
+  const childId = Number(req.query.childId || 0);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const subjectCode = req.query.subjectCode || null;
+  const grade = req.query.grade || null;
+  const effectiveGrade = grade || inferAgeRangeFromChild(child) || null;
+  const [rows] = await pool.execute(
+    `SELECT t.*, tp.status, tp.progress
+     FROM reading_tasks t
+     LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+     WHERE (? IS NULL OR t.subject_code = ?)
+       AND (? IS NULL OR t.age_range LIKE ?)
+     ORDER BY t.difficulty ASC, t.id ASC`,
+    [childId, subjectCode, subjectCode, effectiveGrade, effectiveGrade ? `%${effectiveGrade}%` : null]
+  );
+  const chaptersMap = new Map();
+  for (const row of rows) {
+    const chapterId = `${row.subject_code || 'general'}-${row.difficulty || 1}`;
+    if (!chaptersMap.has(chapterId)) {
+      chaptersMap.set(chapterId, {
+        id: chapterId,
+        name: `${row.subject_code || 'general'} Lv.${row.difficulty || 1}`,
+        progress: 0,
+        points: []
+      });
+    }
+    chaptersMap.get(chapterId).points.push({
+      id: row.task_code || String(row.id),
+      task_id: row.id,
+      name: row.title,
+      title: row.title,
+      status: row.status || 'pending',
+      difficulty: row.difficulty || 1,
+      progress: row.progress || 0,
+      duration: row.duration,
+      objective: row.objective
+    });
+  }
+  const list = Array.from(chaptersMap.values()).map((chapter) => {
+    const total = chapter.points.reduce((sum, point) => sum + (point.progress || 0), 0);
+    chapter.progress = chapter.points.length ? Math.round(total / chapter.points.length) : 0;
+    return chapter;
+  });
+  res.json({ success: true, data: { list } });
+}
+
+async function educationKnowledgeDetailHandler(req, res) {
+  const pointId = String(req.query.pointId || '').trim();
+  const subjectCode = req.query.subjectCode || null;
+  const childId = Number(req.query.childId || 0);
+  if (!pointId) {
+    res.status(400).json({ success: false, message: 'pointId不能为空' });
+    return;
+  }
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const [rows] = await pool.execute(
+    `SELECT t.*, tp.status, tp.progress
+     FROM reading_tasks t
+     LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+     WHERE (t.task_code = ? OR CAST(t.id AS CHAR) = ?)
+       AND (? IS NULL OR t.subject_code = ?)
+     LIMIT 1`,
+    [childId, pointId, pointId, subjectCode, subjectCode]
+  );
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '知识点不存在' });
+    return;
+  }
+  const row = rows[0];
+  const keyPoints = String(row.steps || '').split(/\n+/).filter(Boolean).map((content, index) => ({ id: index + 1, content }));
+  res.json({
+    success: true,
+    data: {
+      id: row.task_code || String(row.id),
+      task_id: row.id,
+      name: row.title,
+      title: row.title,
+      status: row.status || 'pending',
+      difficulty: row.difficulty || 1,
+      progress: row.progress || 0,
+      visual: {
+        icon: row.icon_url || '',
+        title: row.title,
+        desc: row.objective || row.material || ''
+      },
+      explain: {
+        title: row.title,
+        content: row.content || row.objective || ''
+      },
+      keyPoints,
+      difficulties: row.tips ? [{ id: 1, content: row.tips }] : [],
+      examples: row.example_answer ? [{ id: 1, title: '参考答案', question: row.parent_prompt || row.objective || row.title, answer: row.example_answer, analysis: row.tips || '' }] : [],
+      practices: [],
+      material: row.material || '',
+      objective: row.objective || '',
+      parent_prompt: row.parent_prompt || '',
+      duration: row.duration || 10,
+      audio_url: row.audio_url || '',
+      video_url: row.video_url || '',
+      image_url: row.image_url || '',
+      cover_image: row.cover_image || ''
+    }
+  });
+}
+
+function inferAgeRangeFromChild(child) {
+  const birthday = child && child.birthday;
+  if (!birthday) {
+    return '';
+  }
+  const birthDate = new Date(`${birthday}T00:00:00Z`);
+  if (Number.isNaN(birthDate.getTime())) {
+    return '';
+  }
+  const ageYears = Math.max(0, Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
+  if (ageYears <= 3) {
+    return '3-4岁';
+  }
+  if (ageYears === 4) {
+    return '4-5岁';
+  }
+  if (ageYears === 5) {
+    return '5-6岁';
+  }
+  if (ageYears <= 8) {
+    return '6-9岁';
+  }
+  return '9-12岁';
+}
+
+async function educationUpdateProgressHandler(req, res) {
+  const childId = Number(req.body.child_id || 0);
+  const pointId = String(req.body.knowledge_point_id || '').trim();
+  if (!childId || !pointId) {
+    res.status(400).json({ success: false, message: 'child_id和knowledge_point_id不能为空' });
+    return;
+  }
+  const child = await getOwnedChild(getUserId(req), childId);
+  if (!child) {
+    res.status(403).json({ success: false, message: '无权更新该孩子的学习进度' });
+    return;
+  }
+  const [taskRows] = await pool.execute('SELECT id FROM reading_tasks WHERE task_code = ? OR CAST(id AS CHAR) = ? LIMIT 1', [pointId, pointId]);
+  if (!taskRows.length) {
+    res.status(404).json({ success: false, message: '知识点不存在' });
+    return;
+  }
+  const normalizedStatus = req.body.status === 'mastered' ? 'completed' : (req.body.status || 'in_progress');
+  const progress = Math.max(0, Math.min(100, Number(req.body.mastery_level) || 0));
+  await pool.execute(
+    `INSERT INTO task_progress (child_id, task_id, status, progress, completed_at)
+     VALUES (?, ?, ?, ?, CASE WHEN ? = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END)
+     ON DUPLICATE KEY UPDATE status = VALUES(status), progress = VALUES(progress), completed_at = CASE WHEN VALUES(status) = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END`,
+    [childId, taskRows[0].id, normalizedStatus, progress, normalizedStatus]
+  );
+  res.json({ success: true, data: { child_id: childId, knowledge_point_id: pointId, status: req.body.status || 'in_progress', mapped_status: normalizedStatus, mastery_level: progress } });
+}
+
+async function assessmentsListHandler(req, res) {
+  const data = Object.keys(ASSESSMENT_META).map((code, index) => ({ id: index + 1, code, name: ASSESSMENT_META[code].name, description: `${ASSESSMENT_META[code].name}，用于家庭观察与训练建议。`, total_questions: ASSESSMENT_META[code].total_questions, duration: ASSESSMENT_META[code].duration, age_groups: ASSESSMENT_META[code].age_groups }));
+  res.json({ success: true, data });
+}
+
+async function assessmentQuestionsHandler(req, res) {
+  const code = req.params.code;
+  const meta = ASSESSMENT_META[code];
+  if (!meta) {
+    res.status(404).json({ success: false, message: '观察工具不存在' });
+    return;
+  }
+  res.json({ success: true, data: { assessment_code: code, age_group: req.query.age_group || '', questions: buildAssessmentQuestions(code) } });
+}
+
+function normalizeAssessmentLevel(percentage) {
+  if (percentage >= 85) {
+    return 'excellent';
+  }
+  if (percentage >= 70) {
+    return 'good';
+  }
+  if (percentage >= 55) {
+    return 'medium';
+  }
+  if (percentage >= 40) {
+    return 'attention';
+  }
+  return 'intervention';
+}
+
+function normalizeLevelText(level) {
+  const map = { excellent: '优秀', good: '良好', medium: '中等', attention: '需关注', intervention: '需干预' };
+  return map[level] || level || '';
+}
+
+async function assessmentSubmitHandler(req, res) {
+  const code = req.params.code;
+  const childId = Number(req.body.child_id || 0);
+  const answers = Array.isArray(req.body.answers) ? req.body.answers : [];
+  if (!childId || !answers.length) {
+    res.status(400).json({ success: false, message: '参数错误：缺少必要字段' });
+    return;
+  }
+  const child = await getOwnedChild(getUserId(req), childId);
+  if (!child) {
+    res.status(403).json({ success: false, message: '无权提交该孩子的评估记录' });
+    return;
+  }
+  let totalScore = 0;
+  const grouped = new Map();
+  for (const answer of answers) {
+    const value = Number(answer.value || 0);
+    totalScore += value;
+    const dimension = answer.dimension || 'general';
+    if (!grouped.has(dimension)) {
+      grouped.set(dimension, { score: 0, count: 0 });
+    }
+    grouped.get(dimension).score += value;
+    grouped.get(dimension).count += 1;
+  }
+  const maxScore = answers.length * 3;
+  const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  const level = normalizeAssessmentLevel(percentage);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [result] = await connection.execute(
+      `INSERT INTO assessment_records (child_id, assessment_code, assessment_name, age_group, total_score, max_score, percentage, overall_level, elapsed_time)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [childId, code, (ASSESSMENT_META[code] && ASSESSMENT_META[code].name) || code, req.body.age_group || '', totalScore, maxScore, percentage, level, Number(req.body.elapsed_time || 0)]
+    );
+    for (const [dimension, info] of grouped.entries()) {
+      const scoreRate = info.count > 0 ? Math.round((info.score / (info.count * 3)) * 100) : 0;
+      await connection.execute(
+        `INSERT INTO assessment_dimensions (record_id, dimension_name, score, score_rate, standard_score)
+         VALUES (?, ?, ?, ?, ?)`,
+        [result.insertId, dimension, info.score, scoreRate, scoreRate]
+      );
+    }
+    await connection.commit();
+    const [interpretationRows] = await pool.execute(
+      `SELECT * FROM assessment_interpretations
+       WHERE assessment_code = ? AND ? BETWEEN score_min AND score_max`,
+      [code, percentage]
+    );
+    const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [code, level]);
+    res.json({
+      success: true,
+      data: {
+        record_id: result.insertId,
+        id: result.insertId,
+        assessment_code: code,
+        assessment_type: code,
+        assessment_name: (ASSESSMENT_META[code] && ASSESSMENT_META[code].name) || code,
+        total_score: totalScore,
+        overall_score: totalScore,
+        max_score: maxScore,
+        percentage,
+        overall_level: level,
+        overall_level_text: normalizeLevelText(level),
+        dimension_scores: [],
+        report_data: {
+          interpretations: interpretationRows,
+          suggestions: suggestionRows
+        },
+        interpretations: interpretationRows,
+        suggestions: suggestionRows
+      }
+    });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function buildAssessmentRecord(record) {
+  const [childRows] = await pool.execute('SELECT name FROM children WHERE id = ? LIMIT 1', [record.child_id]);
+  const [dimensionRows] = await pool.execute('SELECT * FROM assessment_dimensions WHERE record_id = ?', [record.id]);
+  const [interpretationRows] = await pool.execute(
+    `SELECT * FROM assessment_interpretations
+     WHERE assessment_code = ? AND ? BETWEEN score_min AND score_max`,
+    [record.assessment_code, record.percentage || 0]
+  );
+  const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [record.assessment_code, record.overall_level]);
+  return {
+    ...record,
+    assessment_type: record.assessment_code,
+    assessment_name: record.assessment_name || ((ASSESSMENT_META[record.assessment_code] && ASSESSMENT_META[record.assessment_code].name) || record.assessment_code),
+    child_name: childRows[0] ? childRows[0].name : '',
+    overall_score: record.total_score,
+    dimension_scores: dimensionRows.map((item) => ({ dimension_id: item.dimension_name, dimension_name: item.dimension_name, name: item.dimension_name, score: item.score, score_rate: item.score_rate, standard_score: item.standard_score })),
+    report_data: { interpretations: interpretationRows, suggestions: suggestionRows },
+    overall_level_text: normalizeLevelText(record.overall_level)
+  };
+}
+
+async function assessmentResultHandler(req, res) {
+  const [rows] = await pool.execute(
+    `SELECT ar.* FROM assessment_records ar
+     JOIN children c ON c.id = ar.child_id
+     WHERE ar.id = ? AND c.user_id = ?
+     LIMIT 1`,
+    [req.params.id, getUserId(req)]
+  );
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '评估记录不存在' });
+    return;
+  }
+  res.json({ success: true, data: await buildAssessmentRecord(rows[0]) });
+}
+
+async function assessmentHistoryHandler(req, res) {
+  const limit = Math.max(1, Math.min(50, Number(req.query.limit || 20)));
+  const offset = Math.max(0, Number(req.query.offset || 0));
+  const paginationClause = ` LIMIT ${limit} OFFSET ${offset}`;
+  const params = [getUserId(req)];
+  let whereClause = 'WHERE c.user_id = ?';
+  if (req.query.child_id) {
+    whereClause += ' AND ar.child_id = ?';
+    params.push(req.query.child_id);
+  }
+  const [rows] = await pool.execute(
+    `SELECT ar.* FROM assessment_records ar
+     JOIN children c ON c.id = ar.child_id
+     ${whereClause}
+     ORDER BY ar.completed_at DESC
+     ${paginationClause}`,
+    params
+  );
+  const data = [];
+  for (const row of rows) {
+    data.push(await buildAssessmentRecord(row));
+  }
+  res.json({ success: true, data });
+}
+
+async function assessmentHistoryCountHandler(req, res) {
+  const params = [getUserId(req)];
+  let whereClause = 'WHERE c.user_id = ?';
+  if (req.query.child_id) {
+    whereClause += ' AND ar.child_id = ?';
+    params.push(req.query.child_id);
+  }
+  const [rows] = await pool.execute(
+    `SELECT COUNT(*) AS count FROM assessment_records ar
+     JOIN children c ON c.id = ar.child_id
+     ${whereClause}`,
+    params
+  );
+  res.json({ success: true, data: { count: Number(rows[0].count) || 0 } });
+}
+
+async function assessmentDeleteHandler(req, res) {
+  const [rows] = await pool.execute(
+    `SELECT ar.id FROM assessment_records ar
+     JOIN children c ON c.id = ar.child_id
+     WHERE ar.id = ? AND c.user_id = ?
+     LIMIT 1`,
+    [req.params.id, getUserId(req)]
+  );
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '评估记录不存在' });
+    return;
+  }
+  await pool.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [req.params.id]);
+  await pool.execute('DELETE FROM assessment_records WHERE id = ?', [req.params.id]);
+  res.json({ success: true, message: '评估记录已删除' });
 }
