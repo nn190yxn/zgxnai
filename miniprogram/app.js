@@ -100,6 +100,15 @@ onError: function(error) {
         if (wx.__gantuPendingApiCalls) {
           console.warn('[DEBUG] Pending API calls:', JSON.stringify(wx.__gantuPendingApiCalls));
         }
+
+        var pendingApi = wx.__gantuLastPendingApi;
+        if (pendingApi && typeof wx.showModal === 'function') {
+          wx.showModal({
+            title: 'Timeout Diagnostics',
+            content: 'api=' + pendingApi.api + '\nurl=' + (pendingApi.url || '-') + '\nelapsed=' + pendingApi.elapsedMs + 'ms',
+            showCancel: false
+          });
+        }
       }
     }
   },

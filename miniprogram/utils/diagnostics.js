@@ -5,6 +5,7 @@ function installNativeApiDiagnostics(app) {
   }
   wx.__gantuNativeApiDiagnosticsInstalled = true;
   wx.__gantuPendingApiCalls = {};
+  wx.__gantuLastPendingApi = null;
 
   ['login', 'chooseMedia', 'uploadFile', 'navigateTo', 'redirectTo', 'switchTab', 'navigateBack', 'request'].forEach(function(apiName) {
     var original = wx[apiName];
@@ -19,6 +20,13 @@ function installNativeApiDiagnostics(app) {
       var nextOptions = hasOptions ? Object.assign({}, options) : {};
       wx.__gantuPendingApiCalls[callId] = { api: apiName, startedAt: startedAt, url: nextOptions.url || '' };
       var pendingTimer = setTimeout(function() {
+        wx.__gantuLastPendingApi = {
+          api: apiName,
+          callId: callId,
+          elapsedMs: Date.now() - startedAt,
+          url: nextOptions.url || '',
+          timeout: nextOptions.timeout || ''
+        };
         console.warn('[wx-api:pending]', {
           api: apiName,
           callId: callId,
@@ -40,6 +48,9 @@ function installNativeApiDiagnostics(app) {
         nextOptions[callbackName] = function(res) {
           clearTimeout(pendingTimer);
           delete wx.__gantuPendingApiCalls[callId];
+          if (wx.__gantuLastPendingApi && wx.__gantuLastPendingApi.callId === callId) {
+            wx.__gantuLastPendingApi = null;
+          }
           console.log('[wx-api:' + callbackName + ']', {
             api: apiName,
             callId: callId,
@@ -57,6 +68,9 @@ function installNativeApiDiagnostics(app) {
       } catch (err) {
         clearTimeout(pendingTimer);
         delete wx.__gantuPendingApiCalls[callId];
+        if (wx.__gantuLastPendingApi && wx.__gantuLastPendingApi.callId === callId) {
+          wx.__gantuLastPendingApi = null;
+        }
         console.error('[wx-api:throw]', {
           api: apiName,
           callId: callId,
