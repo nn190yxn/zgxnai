@@ -7,6 +7,31 @@ function parseSteps(value) {
   return value ? value.split('\n').filter(item => item.trim()) : [];
 }
 
+function getSubjectDisplayName(subjectCode) {
+  const map = {
+    logical_thinking: '逻辑思维',
+    reading_comprehension: '阅读理解',
+    expression_communication: '表达沟通',
+    learning_metacognition: '学习元认知',
+    inquiry_creativity: '探究创造'
+  };
+  return map[subjectCode] || '综合能力';
+}
+
+function getDifficultyLabel(level) {
+  const map = {
+    1: '启蒙练习',
+    2: '基础训练',
+    3: '进阶训练',
+    4: '拓展挑战'
+  };
+  return map[level] || '成长任务';
+}
+
+function getChapterDisplayName(subjectCode, level) {
+  return `${getSubjectDisplayName(subjectCode)}·${getDifficultyLabel(level || 1)}`;
+}
+
 function mapKnowledgePoint(task) {
   return {
     id: task.task_code || String(task.id),
@@ -174,7 +199,7 @@ router.get('/knowledge/chapters', (req, res) => {
       if (!chapters[chapterId]) {
         chapters[chapterId] = {
           id: chapterId,
-          name: `${task.subject_code || '通用'} Lv.${task.difficulty || 1}`,
+          name: getChapterDisplayName(task.subject_code, task.difficulty),
           progress: 0,
           points: []
         };

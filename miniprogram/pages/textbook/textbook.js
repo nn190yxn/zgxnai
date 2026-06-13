@@ -82,7 +82,7 @@ Page({
     // 今日成长任务
     todayTasks: [],
 
-    // 阅读力提升任务（阶段2最小闭环）
+    // 能力成长任务（阶段2最小闭环）
     readingTasks: [],
 
     // 阅读周报（阶段3最小版）
@@ -1013,7 +1013,7 @@ Page({
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
       title: e.currentTarget.dataset.title || '能力成长任务',
-      summary: '我完成了今日阅读力打卡，欢迎一起坚持！',
+      summary: '我完成了今日能力成长打卡，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,
@@ -1059,10 +1059,10 @@ Page({
 
   shareWeeklyReport: function() {
     var report = this.data.readingWeeklyReport || {};
-    var text = '本周阅读力打卡 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
+    var text = '本周能力成长打卡 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
     wx.setStorageSync('readingShareDraft', {
       type: 'weekly_report',
-      title: '本周阅读力成果卡',
+      title: '本周能力成长成果卡',
       summary: text,
       metrics: {
         completed: report.completed || 0,
@@ -1082,7 +1082,7 @@ Page({
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
       title: title,
-      summary: '我正在进行阅读力打卡，欢迎一起坚持！',
+      summary: '我正在进行能力成长打卡，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,

@@ -33,7 +33,7 @@
         <text class="tab-text">讲解</text>
       </view>
       <view class="tab-item {{currentTab === 'key' ? 'active' : ''}}" bindtap="switchTab" data-tab="key">
-        <text class="tab-text">重难点</text>
+        <text class="tab-text">步骤提醒</text>
       </view>
       <view class="tab-item {{currentTab === 'example' ? 'active' : ''}}" bindtap="switchTab" data-tab="example">
         <text class="tab-text">例题</text>
@@ -57,6 +57,49 @@
             <text class="detail-visual-desc">{{knowledgeDetail.visual.desc}}</text>
           </view>
         </view>
+        <view class="coach-toolkit-card">
+          <view class="coach-toolkit-head">
+            <text class="coach-toolkit-title">家长即用卡</text>
+            <text class="coach-toolkit-duration">约 {{knowledgeDetail.duration}} 分钟</text>
+          </view>
+          <view class="coach-toolkit-list">
+            <view class="coach-toolkit-item">
+              <text class="coach-toolkit-label">今日目标</text>
+              <text class="coach-toolkit-value">{{knowledgeDetail.objective || '带孩子完成一次能力成长互动'}}</text>
+            </view>
+            <view class="coach-toolkit-item">
+              <text class="coach-toolkit-label">准备材料</text>
+              <text class="coach-toolkit-value">{{knowledgeDetail.material || '准备当日阅读或生活场景材料'}}</text>
+            </view>
+            <view class="coach-toolkit-item">
+              <text class="coach-toolkit-label">家长提问</text>
+              <text class="coach-toolkit-value">{{knowledgeDetail.parent_prompt || '围绕谁、做什么、为什么做追问'}}</text>
+            </view>
+          </view>
+          <view class="coach-toolkit-actions">
+            <view class="coach-toolkit-btn" bindtap="copyParentPrompt">
+              <text>复制提问</text>
+            </view>
+            <view class="coach-toolkit-btn" bindtap="copySessionPlan">
+              <text>复制带练卡</text>
+            </view>
+            <view class="coach-toolkit-btn primary" bindtap="goPracticeTab">
+              <text>开始互动练习</text>
+            </view>
+          </view>
+        </view>
+        <view class="step-checklist-card" wx:if="{{stepChecklist.length > 0}}">
+          <view class="step-checklist-head">
+            <text class="step-checklist-title">今天先做这几步</text>
+            <text class="step-checklist-progress">{{stepChecklist.length}} 步可勾选</text>
+          </view>
+          <view class="step-checklist-list">
+            <view class="step-checklist-item {{item.done ? 'done' : ''}}" wx:for="{{stepChecklist}}" wx:key="id" data-index="{{index}}" bindtap="toggleChecklistItem">
+              <text class="step-checklist-mark">{{item.done ? '✓' : index + 1}}</text>
+              <text class="step-checklist-text">{{item.content}}</text>
+            </view>
+          </view>
+        </view>
         <view class="explain-section">
           <text class="section-title">{{knowledgeDetail.explain.title}}</text>
           <view class="explain-content">
@@ -68,7 +111,7 @@
       <!-- 重点难点 -->
       <view class="tab-content" wx:if="{{currentTab === 'key'}}">
         <view class="key-section">
-          <text class="section-title">重点内容</text>
+          <text class="section-title">操作步骤</text>
           <view class="key-list">
             <view class="key-item" wx:for="{{knowledgeDetail.keyPoints}}" wx:key="id">
               <text class="key-icon">★</text>
@@ -77,7 +120,7 @@
           </view>
         </view>
         <view class="key-section">
-          <text class="section-title">难点内容</text>
+          <text class="section-title">家长提醒</text>
           <view class="key-list difficulty-list">
             <view class="key-item difficulty-item" wx:for="{{knowledgeDetail.difficulties}}" wx:key="id">
               <text class="key-icon">!</text>
@@ -154,6 +197,9 @@
           <!-- 提交按钮 -->
           <view class="submit-btn" bindtap="submitPractice">
             <text>提交答案</text>
+          </view>
+          <view class="practice-reset-btn" bindtap="resetPractice">
+            <text>重新开始本轮练习</text>
           </view>
         </view>
       </view>

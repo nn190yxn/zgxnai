@@ -1120,6 +1120,10 @@ function getDifficultyLabel(level) {
   return map[level] || '成长任务';
 }
 
+function getChapterDisplayName(subjectCode, level) {
+  return `${getSubjectDisplayName(subjectCode)}·${getDifficultyLabel(level || 1)}`;
+}
+
 function buildReadingTaskExplainContent(row) {
   const steps = String(row.steps || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
   const sections = [
@@ -1145,6 +1149,7 @@ function buildReadingTaskPractices(row, keyPoints) {
   const subjectName = getSubjectDisplayName(row.subject_code);
   const firstPoint = keyPoints[0] ? keyPoints[0].content : (row.objective || row.title);
   const secondPoint = keyPoints[1] ? keyPoints[1].content : (row.parent_prompt || row.title);
+  const thirdPoint = keyPoints[2] ? keyPoints[2].content : (row.material || row.tips || row.title);
   return [
     {
       id: 1,
@@ -1161,6 +1166,14 @@ function buildReadingTaskPractices(row, keyPoints) {
       options: [secondPoint, '连续追问不给停顿', '直接替孩子回答', '只纠正错误不示范'],
       answer: 0,
       analysis: '家长的主要作用是搭脚手架，让孩子在提示下完成表达和思考。'
+    },
+    {
+      id: 3,
+      type: 'choice',
+      question: '这次开始前，最适合先准备什么？',
+      options: [thirdPoint, '先催孩子快点开始', '先把步骤全部跳过', '先直接公布标准答案'],
+      answer: 0,
+      analysis: '先把材料、线索或关键步骤准备好，家长带练会更稳。'
     }
   ];
 }
@@ -2063,7 +2076,7 @@ async function educationKnowledgeChaptersHandler(req, res) {
     if (!chaptersMap.has(chapterId)) {
       chaptersMap.set(chapterId, {
         id: chapterId,
-        name: `${getSubjectDisplayName(row.subject_code)} Lv.${row.difficulty || 1}`,
+        name: getChapterDisplayName(row.subject_code, row.difficulty),
         progress: 0,
         points: []
       });

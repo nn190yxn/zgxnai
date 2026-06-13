@@ -19,6 +19,9 @@ Page({
     // 学习笔记
     noteContent: '',
 
+    // 家长陪练步骤勾选
+    stepChecklist: [],
+
     // 练习题列表
     practiceList: [],
     currentPracticeIndex: 0,
@@ -90,8 +93,8 @@ Page({
     });
 
     if (app.shouldUseMockFallback()) {
+      that.applyKnowledgeDetail(that.getMockDetail());
       that.setData({
-        knowledgeDetail: that.getMockDetail(),
         loading: false
       });
       if (fromPullDown) {
@@ -110,9 +113,7 @@ Page({
       }
     }).then(function(res) {
       if (res) {
-        that.setData({
-          knowledgeDetail: res
-        });
+        that.applyKnowledgeDetail(res);
       }
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
@@ -123,9 +124,7 @@ Page({
         return;
       }
       // 使用模拟数据
-      that.setData({
-        knowledgeDetail: that.getMockDetail()
-      });
+      that.applyKnowledgeDetail(that.getMockDetail());
     }).finally(function() {
       that.setData({
         loading: false
@@ -134,6 +133,65 @@ Page({
         wx.stopPullDownRefresh();
       }
     });
+  },
+
+  applyKnowledgeDetail: function(detail) {
+    var normalizedDetail = this.normalizeKnowledgeDetail(detail || {});
+    var noteContent = this.loadSavedNote(this.data.pointId);
+    var stepChecklist = this.buildStepChecklist(normalizedDetail);
+    this.setData({
+      knowledgeDetail: normalizedDetail,
+      practiceList: normalizedDetail.practices || [],
+      currentPracticeIndex: 0,
+      practiceAnswers: {},
+      showPracticeResult: false,
+      practiceResult: null,
+      noteContent: noteContent,
+      stepChecklist: stepChecklist
+    });
+  },
+
+  normalizeKnowledgeDetail: function(detail) {
+    var normalized = Object.assign({}, detail || {});
+    normalized.visual = normalized.visual || { icon: '📘', title: '能力成长', desc: '' };
+    normalized.explain = normalized.explain || { title: normalized.title || normalized.name || '能力成长讲解', content: '' };
+    normalized.keyPoints = Array.isArray(normalized.keyPoints) ? normalized.keyPoints : [];
+    normalized.difficulties = Array.isArray(normalized.difficulties) ? normalized.difficulties : [];
+    normalized.examples = Array.isArray(normalized.examples) ? normalized.examples : [];
+    normalized.practices = Array.isArray(normalized.practices) ? normalized.practices : [];
+    normalized.parent_prompt = normalized.parent_prompt || '';
+    normalized.objective = normalized.objective || '';
+    normalized.material = normalized.material || '';
+    normalized.duration = normalized.duration || 10;
+    return normalized;
+  },
+
+  loadSavedNote: function(pointId) {
+    var notes = wx.getStorageSync('knowledgeNotes') || {};
+    return (notes[pointId] && notes[pointId].content) || '';
+  },
+
+  buildStepChecklist: function(detail) {
+    var checklistStore = wx.getStorageSync('knowledgeStepChecklist') || {};
+    var savedMap = checklistStore[this.data.pointId] || {};
+    var sourceList = (detail && detail.keyPoints && detail.keyPoints.length ? detail.keyPoints : []).slice(0, 6);
+    return sourceList.map(function(item, index) {
+      return {
+        id: item.id || (index + 1),
+        content: item.content || '',
+        done: !!savedMap[index]
+      };
+    });
+  },
+
+  persistStepChecklist: function() {
+    var checklistStore = wx.getStorageSync('knowledgeStepChecklist') || {};
+    var pointId = this.data.pointId;
+    checklistStore[pointId] = {};
+    (this.data.stepChecklist || []).forEach(function(item, index) {
+      checklistStore[pointId][index] = !!item.done;
+    });
+    wx.setStorageSync('knowledgeStepChecklist', checklistStore);
   },
 
   // 获取模拟详情数据（支持五大主题）
@@ -382,7 +440,7 @@ Page({
         },
         explain: {
           title: '能力成长讲解',
-          content: '分镜阅读是提升阅读力的有效方法。\n\n【成长目标】\n- 理解故事主线和关键变化\n- 培养图文结合阅读能力\n- 提升信息提取和理解能力\n\n【任务步骤】\n1. 选择适合的绘本（如《小种子》）\n2. 逐页讲解画面内容\n3. 引导关注关键情节变化\n4. 提问帮助理解\n5. 鼓励复述故事\n\n【难度递进】\n- 入门级：找出故事主角与关键变化\n- 标准级：完成3道理解题并口头复述\n- 提升级：用一句话说出段落中心'
+          content: '分镜阅读是能力成长中的核心训练方式之一。\n\n【成长目标】\n- 理解故事主线和关键变化\n- 培养图文结合的信息提取能力\n- 提升口头复述与重点概括能力\n\n【任务步骤】\n1. 选择适合的绘本或短文材料\n2. 逐页观察画面或段落信息\n3. 引导孩子关注关键情节变化\n4. 用具体提问帮助理解\n5. 鼓励孩子复述重点内容\n\n【难度递进】\n- 入门级：找出主角与关键变化\n- 标准级：完成理解题并口头复述\n- 提升级：用一句话说出主要意思'
         },
         keyPoints: [
           { id: 1, content: '理解故事主线和情节发展' },
@@ -736,6 +794,67 @@ Page({
     });
   },
 
+  toggleChecklistItem: function(e) {
+    var index = Number(e.currentTarget.dataset.index || 0);
+    var stepChecklist = (this.data.stepChecklist || []).slice();
+    if (!stepChecklist[index]) {
+      return;
+    }
+    stepChecklist[index].done = !stepChecklist[index].done;
+    this.setData({
+      stepChecklist: stepChecklist
+    });
+    this.persistStepChecklist();
+  },
+
+  copyParentPrompt: function() {
+    var prompt = (this.data.knowledgeDetail && this.data.knowledgeDetail.parent_prompt) || '';
+    if (!prompt) {
+      wx.showToast({ title: '当前没有家长提问', icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: prompt,
+      success: function() {
+        wx.showToast({ title: '提问话术已复制', icon: 'none' });
+      }
+    });
+  },
+
+  copySessionPlan: function() {
+    var detail = this.data.knowledgeDetail || {};
+    var lines = [
+      '今日能力成长带练卡',
+      `任务：${detail.title || detail.name || '能力成长任务'}`,
+      `目标：${detail.objective || '带孩子完成一次短时互动'}`,
+      `材料：${detail.material || '准备当日阅读或生活场景材料'}`,
+      `提问：${detail.parent_prompt || '围绕谁、做什么、为什么追问'}`,
+      `时长：约${detail.duration || 10}分钟`
+    ];
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: function() {
+        wx.showToast({ title: '带练卡已复制', icon: 'none' });
+      }
+    });
+  },
+
+  goPracticeTab: function() {
+    this.setData({
+      currentTab: 'practice'
+    });
+  },
+
+  resetPractice: function() {
+    this.setData({
+      practiceAnswers: {},
+      currentPracticeIndex: 0,
+      showPracticeResult: false,
+      practiceResult: null
+    });
+    wx.showToast({ title: '已重置练习', icon: 'none' });
+  },
+
   // 笔记输入
   onNoteInput: function(e) {
     this.setData({
@@ -839,7 +958,9 @@ Page({
       if (practice.type === 'choice') {
         isCorrect = userAnswer === practice.answer;
       } else if (practice.type === 'fill') {
-        isCorrect = userAnswer === practice.answer;
+        var expectedAnswer = String(practice.answer || '').trim();
+        var actualAnswer = String(userAnswer || '').trim();
+        isCorrect = expectedAnswer ? actualAnswer === expectedAnswer : !!actualAnswer;
       }
       
       if (isCorrect) {

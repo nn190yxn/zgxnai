@@ -53,7 +53,7 @@
   z-index: 1;
 }
 
-/* 阅读力提升任务 */
+/* 能力成长任务 */
 .reading-task-section {
   margin: 0 32rpx 24rpx;
   background: #fff;

@@ -227,6 +227,129 @@
   line-height: 1.5;
 }
 
+.coach-toolkit-card,
+.step-checklist-card {
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  background: #FFF9F5;
+  border: 1rpx solid rgba(255, 107, 53, 0.14);
+}
+
+.coach-toolkit-head,
+.step-checklist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.coach-toolkit-title,
+.step-checklist-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #4B3830;
+}
+
+.coach-toolkit-duration,
+.step-checklist-progress {
+  font-size: 22rpx;
+  color: #A06B54;
+}
+
+.coach-toolkit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.coach-toolkit-item {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 18rpx 20rpx;
+}
+
+.coach-toolkit-label {
+  display: block;
+  font-size: 22rpx;
+  color: #A06B54;
+  margin-bottom: 8rpx;
+}
+
+.coach-toolkit-value {
+  display: block;
+  font-size: 27rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.coach-toolkit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.coach-toolkit-btn {
+  min-width: 180rpx;
+  padding: 16rpx 22rpx;
+  border-radius: 999rpx;
+  background: #FFFFFF;
+  color: #A05A36;
+  font-size: 24rpx;
+  text-align: center;
+  border: 1rpx solid rgba(255, 107, 53, 0.18);
+}
+
+.coach-toolkit-btn.primary {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.step-checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.step-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  background: #FFFFFF;
+}
+
+.step-checklist-item.done {
+  background: #FFF0E8;
+}
+
+.step-checklist-mark {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 20rpx;
+  background: #FFE1D3;
+  color: #FF6B35;
+  text-align: center;
+  line-height: 40rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.step-checklist-item.done .step-checklist-mark {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.step-checklist-text {
+  flex: 1;
+  font-size: 27rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
 /* 知识点讲解 */
 .explain-section {
   padding: 8rpx 0;
@@ -480,6 +603,13 @@
   padding: 24rpx 0;
   background: linear-gradient(135deg, #FF7E4B, #FF6B35);
   border-radius: 16rpx;
+}
+
+.practice-reset-btn {
+  margin-top: 18rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #A06B54;
 }
 
 .submit-btn:active {
