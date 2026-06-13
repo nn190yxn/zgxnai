@@ -51,6 +51,11 @@
     <view class="info-section">
       <text class="recipe-name">{{recipe.name}}</text>
       <text class="recipe-desc">{{recipe.description}}</text>
+      <view class="summary-pills">
+        <text class="summary-pill">{{recipe.category || '营养食谱'}}</text>
+        <text class="summary-pill">{{recipe.ageRange || '儿童适用'}}</text>
+        <text class="summary-pill">{{recipe.calories || '200卡'}}</text>
+      </view>
       
       <!-- 营养标签 -->
       <view class="nutrition-tags" wx:if="{{recipe.tags && recipe.tags.length > 0}}">
@@ -82,10 +87,10 @@
       </view>
     </view>
 
-    <!-- 营养分析 -->
+    <!-- 营养建议 -->
     <view class="section" wx:if="{{recipe.nutrition}}">
       <view class="section-header">
-        <text class="section-title">营养分析</text>
+        <text class="section-title">营养建议</text>
       </view>
       
       <!-- 营养亮点 -->
@@ -164,6 +169,11 @@
         <view class="daily-title">每日营养占比</view>
         <text class="daily-text">{{recipe.dailyNutritionPercent}}</text>
       </view>
+
+      <view class="nutrition-tips" wx:if="{{recipe.tips}}">
+        <view class="combination-title">喂养建议</view>
+        <text class="combination-text">{{recipe.tips}}</text>
+      </view>
     </view>
 
     <!-- 食材清单 -->
@@ -177,18 +187,6 @@
           <text class="ingredient-name">{{item.name}}</text>
           <text class="ingredient-amount">{{item.amount}}</text>
         </view>
-      </view>
-    </view>
-
-    
-
-    <!-- 小贴士 -->
-    <view class="section" wx:if="{{recipe.tips}}">
-      <view class="section-header">
-        <text class="section-title">小贴士</text>
-      </view>
-      <view class="tips-card">
-        <text class="tips-content">{{recipe.tips}}</text>
       </view>
     </view>
 

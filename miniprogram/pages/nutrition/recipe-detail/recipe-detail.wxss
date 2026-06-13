@@ -178,6 +178,24 @@
   margin-bottom: 20rpx;
 }
 
+.summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: #FFF1EA;
+  color: #C85C23;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
 /* 营养标签 */
 .nutrition-tags {
   display: flex;
@@ -198,17 +216,19 @@
 /* 基本信息 */
 .basic-info {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
   padding: 24rpx;
-  background: #F8F9FA;
-  border-radius: 16rpx;
+  background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+  border: 1rpx solid #F9E3D6;
+  border-radius: 24rpx;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  min-height: 108rpx;
 }
 
 .info-icon {
@@ -232,9 +252,9 @@
 .section {
   background: #fff;
   margin: 20rpx 32rpx;
-  padding: 28rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  padding: 30rpx;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.05);
 }
 
 .section-header {
@@ -265,6 +285,29 @@
   display: flex;
   flex-direction: column;
   gap: 20rpx;
+}
+
+.nutrition-highlight {
+  display: flex;
+  gap: 16rpx;
+  align-items: flex-start;
+  padding: 22rpx 24rpx;
+  margin-bottom: 20rpx;
+  background: linear-gradient(135deg, #FFF6E8 0%, #FFFDF7 100%);
+  border-radius: 20rpx;
+}
+
+.highlight-icon {
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+.highlight-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #7A4B2E;
+  line-height: 1.7;
+  font-weight: 500;
 }
 
 .nutrition-item {
@@ -313,6 +356,60 @@
   font-weight: 500;
 }
 
+.nutrition-micronutrients,
+.nutrition-combination,
+.daily-nutrition,
+.nutrition-tips {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  background: #FAFBFC;
+}
+
+.micronutrient-title,
+.combination-title,
+.daily-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 18rpx;
+}
+
+.micronutrient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.micronutrient-item {
+  padding: 18rpx 20rpx;
+  border-radius: 18rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #EEF1F4;
+}
+
+.micronutrient-name {
+  display: block;
+  font-size: 24rpx;
+  color: #8A8F98;
+  margin-bottom: 6rpx;
+}
+
+.micronutrient-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.combination-text,
+.daily-text {
+  display: block;
+  font-size: 28rpx;
+  color: #5C6470;
+  line-height: 1.8;
+}
+
 /* 食材清单 */
 .ingredient-list {
   display: flex;
@@ -338,119 +435,6 @@
 .ingredient-amount {
   font-size: 28rpx;
   color: #666;
-}
-
-/* 步骤进度 */
-.step-progress {
-  display: flex;
-  justify-content: center;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
-
-.step-dot {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  background: #E8E8E8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  color: #999;
-}
-
-.step-dot.active {
-  background: #FF6B35;
-  color: #fff;
-}
-
-/* 步骤详情 */
-.step-detail {
-  background: #F8F9FA;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-}
-
-.step-header {
-  margin-bottom: 16rpx;
-}
-
-.step-number {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #FF6B35;
-}
-
-.step-image {
-  width: 100%;
-  height: 300rpx;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
-}
-
-.step-content {
-  display: block;
-  font-size: 30rpx;
-  color: #333;
-  line-height: 1.8;
-}
-
-.step-tip {
-  display: block;
-  margin-top: 16rpx;
-  padding: 16rpx;
-  background: #FFF8E1;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.6;
-}
-
-.tip-label {
-  color: #FF8F00;
-  font-weight: 500;
-}
-
-/* 步骤导航 */
-.step-nav {
-  display: flex;
-  gap: 20rpx;
-}
-
-.nav-btn {
-  flex: 1;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  color: #666;
-  background: #F0F0F0;
-}
-
-.nav-btn.primary {
-  background: #FF6B35;
-  color: #fff;
-}
-
-.nav-btn.disabled {
-  opacity: 0.5;
-}
-
-/* 小贴士 */
-.tips-card {
-  background: #FFF8E1;
-  border-radius: 16rpx;
-  padding: 24rpx;
-}
-
-.tips-content {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.8;
 }
 
 /* 底部操作栏 */

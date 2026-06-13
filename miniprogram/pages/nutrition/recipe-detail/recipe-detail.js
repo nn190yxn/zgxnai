@@ -11,8 +11,6 @@ Page({
     isFavorite: false,
     // 加载状态
     loading: true,
-    // 当前步骤索引
-    currentStep: 0,
     // 图片加载状态
     imageLoaded: false
     ,
@@ -145,9 +143,6 @@ Page({
         offlineFallback: true,
         loading: false
       });
-      wx.setNavigationBarTitle({
-        title: fallbackRecipe.name || '食谱详情'
-      });
       if (fromPullDown) {
         wx.stopPullDownRefresh();
       }
@@ -162,10 +157,8 @@ Page({
       that.setData({
         recipe: recipe,
         isFavorite: recipe.isFavorite,
+        imageLoaded: false,
         offlineFallback: false
-      });
-      wx.setNavigationBarTitle({
-        title: recipe.name || '食谱详情'
       });
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
@@ -181,10 +174,8 @@ Page({
       that.setData({
         recipe: recipe,
         isFavorite: !!recipe.isFavorite,
+        imageLoaded: false,
         offlineFallback: true
-      });
-      wx.setNavigationBarTitle({
-        title: recipe.name || '食谱详情'
       });
     }).finally(function() {
       that.setData({
