@@ -7,6 +7,7 @@ Page({
     subjectCode: '',
     subjectName: '',
     grade: 1,
+    childId: 0,
 
     // 章节列表
     chapterList: [],
@@ -39,6 +40,11 @@ Page({
     if (options.grade) {
       that.setData({
         grade: parseInt(options.grade)
+      });
+    }
+    if (options.childId) {
+      that.setData({
+        childId: parseInt(options.childId, 10) || 0
       });
     }
 
@@ -75,7 +81,8 @@ Page({
       method: 'GET',
       data: {
         subjectCode: that.data.subjectCode,
-        grade: that.data.grade
+        grade: that.data.grade,
+        childId: that.data.childId || ((app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id) || 0)
       }
     }).then(function(res) {
       if (res && res.list) {
@@ -356,7 +363,7 @@ Page({
 
     // 跳转到知识点详情页面
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&pointName=' + encodeURIComponent(point.name),
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&pointName=' + encodeURIComponent(point.name) + '&childId=' + (that.data.childId || 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -391,7 +398,7 @@ Page({
 
     // 跳转到测试页面
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&mode=test',
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&mode=test&childId=' + (that.data.childId || 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

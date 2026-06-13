@@ -1734,8 +1734,8 @@ async function educationTasksTodayHandler(req, res) {
   if (!child) {
     return;
   }
-  const grade = String(req.query.grade || '').trim();
-  const likeGrade = `%${grade || inferAgeRangeFromChild(child) || '3-4'}%`;
+  const grade = normalizeEducationGrade(req.query.grade, child);
+  const likeGrade = `%${grade || inferAgeRangeFromChild(child) || '3-4岁'}%`;
   const [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
@@ -1797,8 +1797,7 @@ async function educationKnowledgeChaptersHandler(req, res) {
     return;
   }
   const subjectCode = req.query.subjectCode || null;
-  const grade = req.query.grade || null;
-  const effectiveGrade = grade || inferAgeRangeFromChild(child) || null;
+  const effectiveGrade = normalizeEducationGrade(req.query.grade, child) || inferAgeRangeFromChild(child) || null;
   const [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
@@ -1924,6 +1923,41 @@ function inferAgeRangeFromChild(child) {
     return '6-9岁';
   }
   return '9-12岁';
+}
+
+function normalizeEducationGrade(rawGrade, child) {
+  const value = String(rawGrade || '').trim();
+  if (!value) {
+    return inferAgeRangeFromChild(child) || '';
+  }
+
+  if (value.indexOf('岁') !== -1) {
+    return value;
+  }
+
+  const gradeIndex = Number(value);
+  const gradeMap = {
+    1: '0-1岁',
+    2: '1-2岁',
+    3: '2-3岁',
+    4: '3-4岁',
+    5: '4-5岁',
+    6: '5-6岁',
+    7: '6-7岁',
+    8: '7-8岁',
+    9: '8-9岁',
+    10: '9-10岁',
+    11: '10-11岁',
+    12: '11-12岁',
+    13: '12-13岁',
+    14: '13-14岁'
+  };
+
+  if (gradeMap[gradeIndex]) {
+    return gradeMap[gradeIndex];
+  }
+
+  return inferAgeRangeFromChild(child) || '';
 }
 
 async function educationUpdateProgressHandler(req, res) {

@@ -933,7 +933,7 @@ Page({
 
     // 跳转到知识点列表页面
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-list/knowledge-list?subjectCode=' + code + '&subjectName=' + encodeURIComponent(subject.name) + '&grade=' + that.data.currentGrade,
+      url: '/pages/textbook/knowledge-list/knowledge-list?subjectCode=' + code + '&subjectName=' + encodeURIComponent(subject.name) + '&grade=' + that.data.currentGrade + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -951,7 +951,7 @@ Page({
 
     // 跳转到知识点详情页面
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(task.id) + '&subjectCode=' + task.subjectCode + '&pointName=' + encodeURIComponent(task.title || ''),
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(task.id) + '&subjectCode=' + task.subjectCode + '&pointName=' + encodeURIComponent(task.title || '') + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -967,7 +967,7 @@ Page({
       event_meta: { title: taskTitle }
     });
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=reading_comprehension&pointName=' + encodeURIComponent(taskTitle),
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=reading_comprehension&pointName=' + encodeURIComponent(taskTitle) + '&childId=' + (this.data.currentChild ? this.data.currentChild.id : 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

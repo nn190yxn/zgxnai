@@ -7,6 +7,7 @@ Page({
     pointId: null,
     pointName: '',
     subjectCode: '',
+    childId: 0,
     mode: 'learn', // learn 或 test
 
     // 知识点详情
@@ -55,6 +56,11 @@ Page({
         subjectCode: options.subjectCode
       });
     }
+    if (options.childId) {
+      that.setData({
+        childId: parseInt(options.childId, 10) || 0
+      });
+    }
     if (options.mode) {
       that.setData({
         mode: options.mode
@@ -99,7 +105,8 @@ Page({
       method: 'GET',
       data: {
         pointId: that.data.pointId,
-        subjectCode: that.data.subjectCode
+        subjectCode: that.data.subjectCode,
+        childId: that.data.childId || ((app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id) || 0)
       }
     }).then(function(res) {
       if (res) {
