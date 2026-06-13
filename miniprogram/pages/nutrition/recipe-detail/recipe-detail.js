@@ -119,11 +119,29 @@ Page({
     return item;
   },
 
+  getCachedRecipeDetail: function(id) {
+    if (!id) {
+      return null;
+    }
+    return wx.getStorageSync('nutritionRecipeSnapshot:' + id) || null;
+  },
+
   onLoad: function(options) {
     if (options.id) {
       this.setData({
         recipeId: options.id
       });
+      var cachedRecipe = this.getCachedRecipeDetail(options.id);
+      if (cachedRecipe) {
+        this.setData({
+          recipe: this.normalizeRecipeForDisplay(cachedRecipe),
+          isFavorite: !!(cachedRecipe.is_favorited || cachedRecipe.isFavorite),
+          imageLoaded: false,
+          offlineFallback: false,
+          loading: false
+        });
+        return;
+      }
       this.loadRecipeDetail();
     }
   },
@@ -151,9 +169,11 @@ Page({
 
     app.request({
       url: '/nutrition/recipes/' + that.data.recipeId,
-      method: 'GET'
+      method: 'GET',
+      timeout: 30000
     }).then(function(recipe) {
       recipe = that.normalizeRecipeForDisplay(recipe || {});
+      wx.setStorageSync('nutritionRecipeSnapshot:' + that.data.recipeId, recipe);
       that.setData({
         recipe: recipe,
         isFavorite: recipe.isFavorite,

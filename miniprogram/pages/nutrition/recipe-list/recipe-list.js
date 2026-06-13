@@ -109,6 +109,13 @@ Page({
     return item;
   },
 
+  cacheRecipeSnapshot: function(recipe) {
+    if (!recipe || !recipe.id) {
+      return;
+    }
+    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, recipe);
+  },
+
   onLoad: function(options) {
     // 处理传入的参数
     if (options.categoryId) {
@@ -346,6 +353,8 @@ Page({
   // 点击食谱
   onRecipeTap: function(e) {
     var id = e.currentTarget.dataset.id;
+    var index = e.currentTarget.dataset.index;
+    this.cacheRecipeSnapshot(this.data.recipeList[index]);
     wx.navigateTo({
       url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,
       fail: function() {

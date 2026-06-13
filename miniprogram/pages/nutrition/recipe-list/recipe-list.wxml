@@ -85,7 +85,7 @@
         wx:key="id"
         style="animation-delay: {{index * 50}}ms"
       >
-        <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}">
+        <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}" data-index="{{index}}">
           <image 
             wx:if="{{item.hasImage}}"
             class="recipe-image image-fade-in {{item.imageLoaded ? 'loaded' : ''}}" 

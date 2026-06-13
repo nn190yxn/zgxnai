@@ -119,6 +119,13 @@ Page({
     return item;
   },
 
+  cacheRecipeSnapshot: function(recipe) {
+    if (!recipe || !recipe.id) {
+      return;
+    }
+    wx.setStorageSync('nutritionRecipeSnapshot:' + recipe.id, recipe);
+  },
+
   onLoad: function() {
     this.loadData();
   },
@@ -255,6 +262,7 @@ Page({
   onTodayRecommendTap: function() {
     var recipe = this.data.todayRecommend;
     if (recipe && recipe.id) {
+      this.cacheRecipeSnapshot(recipe);
       wx.navigateTo({
         url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id,
         fail: function() {
@@ -267,6 +275,9 @@ Page({
   // 点击热门食谱
   onRecipeTap: function(e) {
     var id = e.currentTarget.dataset.id;
+    var index = e.currentTarget.dataset.index;
+    var recipe = this.data.hotRecipes[index];
+    this.cacheRecipeSnapshot(recipe);
     wx.navigateTo({
       url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,
       fail: function() {

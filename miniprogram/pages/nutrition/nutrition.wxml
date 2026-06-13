@@ -117,7 +117,7 @@
         wx:for="{{hotRecipes}}" 
         wx:key="id"
       >
-        <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}">
+        <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}" data-index="{{index}}">
           <image 
             wx:if="{{item.hasImage}}"
             class="recipe-image" 
