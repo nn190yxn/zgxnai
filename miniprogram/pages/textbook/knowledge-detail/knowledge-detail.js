@@ -114,6 +114,9 @@ Page({
     }).then(function(res) {
       if (res) {
         that.applyKnowledgeDetail(res);
+        app.trackKbEvent(that.buildKnowledgeTrackPayload({
+          event_type: 'knowledge_detail_view'
+        }));
       }
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
@@ -164,6 +167,32 @@ Page({
     normalized.material = normalized.material || '';
     normalized.duration = normalized.duration || 10;
     return normalized;
+  },
+
+  getKnowledgeContentType: function() {
+    if (this.data.subjectCode === 'reading_comprehension') {
+      return 'reading_task';
+    }
+    return 'knowledge_point';
+  },
+
+  buildKnowledgeTrackPayload: function(extra) {
+    var detail = this.data.knowledgeDetail || {};
+    var baseEventMeta = {
+      title: this.data.pointName || detail.name || detail.title || '',
+      subject_code: this.data.subjectCode || '',
+      page: 'knowledge_detail'
+    };
+    var payload = Object.assign({
+      task_id: String(this.data.pointId || detail.id || ''),
+      module_key: this.getKnowledgeContentType() === 'reading_task' ? 'reading_tasks' : 'education',
+      page_key: 'knowledge_detail',
+      content_type: this.getKnowledgeContentType(),
+      content_id: String(this.data.pointId || detail.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
   },
 
   loadSavedNote: function(pointId) {
@@ -977,16 +1006,15 @@ Page({
     var score = Math.round((correctCount / practices.length) * 100);
     
     // 上报输出事件
-    app.trackKbEvent({
+    app.trackKbEvent(that.buildKnowledgeTrackPayload({
       event_type: 'output_submit',
-      task_id: that.data.pointId,
       score: score / 100,
       event_meta: {
         type: 'practice',
         total: practices.length,
         correct: correctCount
       }
-    });
+    }));
 
     that.setData({
       showPracticeResult: true,

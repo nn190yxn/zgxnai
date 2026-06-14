@@ -202,6 +202,24 @@ Page({
     return article;
   },
 
+  buildArticleTrackPayload: function(extra) {
+    var article = this.data.article || {};
+    var baseEventMeta = {
+      title: article.title || '',
+      category: article.category || '',
+      page: 'parenting_article_detail'
+    };
+    var payload = Object.assign({
+      module_key: 'knowledge',
+      page_key: 'parenting_article_detail',
+      content_type: 'article',
+      content_id: String(this.data.articleId || article.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   onLoad: function(options) {
     if (options.id) {
       this.setData({
@@ -269,6 +287,9 @@ Page({
       wx.setNavigationBarTitle({
         title: article.title || '文章详情'
       });
+      app.trackKbEvent(that.buildArticleTrackPayload({
+        event_type: 'article_detail_view'
+      }));
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
         app.showApiError('文章详情加载失败');
@@ -357,9 +378,16 @@ Page({
       url: '/parenting/articles/' + that.data.articleId + '/favorite',
       method: 'POST'
     }).then(function() {
+      var nextFavoriteState = !isFavorite;
       that.setData({
-        isFavorite: !isFavorite
+        isFavorite: nextFavoriteState
       });
+      app.trackKbEvent(that.buildArticleTrackPayload({
+        event_type: nextFavoriteState ? 'article_favorite' : 'article_unfavorite',
+        event_meta: {
+          action: nextFavoriteState ? 'favorite' : 'unfavorite'
+        }
+      }));
       wx.showToast({
         title: isFavorite ? '已取消收藏' : '收藏成功',
         icon: 'success'
@@ -505,10 +533,18 @@ Page({
       method: 'POST'
     }).then(function(res) {
       if (res && res.data) {
+        var nextLikedState = !!(res.data.isLiked || res.data.is_liked);
         that.setData({
-          isLiked: res.data.isLiked || res.data.is_liked,
+          isLiked: nextLikedState,
           likeCount: res.data.like_count || 0
         });
+        app.trackKbEvent(that.buildArticleTrackPayload({
+          event_type: nextLikedState ? 'article_like' : 'article_unlike',
+          event_meta: {
+            action: nextLikedState ? 'like' : 'unlike',
+            like_count: res.data.like_count || 0
+          }
+        }));
         wx.showToast({
           title: that.data.isLiked ? '已点赞' : '已取消',
           icon: 'success'
@@ -543,6 +579,12 @@ Page({
       method: 'POST',
       data: { content: content.trim() }
     }).then(function() {
+      app.trackKbEvent(that.buildArticleTrackPayload({
+        event_type: 'article_comment',
+        event_meta: {
+          action: 'comment'
+        }
+      }));
       wx.showToast({ title: '评论成功', icon: 'success' });
       that.setData({ commentText: '' });
       that.loadComments();

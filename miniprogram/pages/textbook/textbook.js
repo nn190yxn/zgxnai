@@ -194,6 +194,28 @@ Page({
     });
   },
 
+  buildReadingTaskTrackPayload: function(task, extra) {
+    task = task || {};
+    var taskId = task.id || task.taskCode || '';
+    var title = task.title || '';
+    var payload = Object.assign({
+      task_id: taskId,
+      module_key: 'reading_tasks',
+      page_key: 'textbook',
+      content_type: 'reading_task',
+      content_id: String(taskId),
+      event_meta: {
+        title: title,
+        page: 'textbook'
+      }
+    }, extra || {});
+    payload.event_meta = Object.assign({
+      title: title,
+      page: 'textbook'
+    }, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   loadReadingTasks: function() {
     var that = this;
     var completedMap = wx.getStorageSync('readingTaskCompletionMap') || {};
@@ -281,11 +303,9 @@ Page({
 
       // 曝光埋点
       for (var i = 0; i < tasks.length; i++) {
-        app.trackKbEvent({
-          event_type: 'task_exposure',
-          task_id: tasks[i].id,
-          event_meta: { page: 'textbook' }
-        });
+        app.trackKbEvent(that.buildReadingTaskTrackPayload(tasks[i], {
+          event_type: 'task_exposure'
+        }));
       }
 
       that.updateReadingTaskStats(tasks);
@@ -414,11 +434,9 @@ Page({
     });
 
     for (var i = 0; i < tasks.length; i++) {
-      app.trackKbEvent({
-        event_type: 'task_exposure',
-        task_id: tasks[i].id,
-        event_meta: { page: 'textbook' }
-      });
+      app.trackKbEvent(this.buildReadingTaskTrackPayload(tasks[i], {
+        event_type: 'task_exposure'
+      }));
     }
 
     this.updateReadingTaskStats(tasks);
@@ -961,11 +979,9 @@ Page({
   onReadingTaskTap: function(e) {
     var taskId = e.currentTarget.dataset.id;
     var taskTitle = e.currentTarget.dataset.title || '';
-    app.trackKbEvent({
-      event_type: 'task_start',
-      task_id: taskId,
-      event_meta: { title: taskTitle }
-    });
+    app.trackKbEvent(this.buildReadingTaskTrackPayload({ id: taskId, title: taskTitle }, {
+      event_type: 'task_start'
+    }));
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=reading_comprehension&pointName=' + encodeURIComponent(taskTitle) + '&childId=' + (this.data.currentChild ? this.data.currentChild.id : 0),
       fail: function() {
@@ -1034,14 +1050,13 @@ Page({
     var readingTask = (this.data.readingTasks || []).find(function(t) {
       return t.id === taskId;
     }) || {};
-    app.trackKbEvent({
+    app.trackKbEvent(this.buildReadingTaskTrackPayload(readingTask, {
       event_type: 'task_complete',
-      task_id: taskId,
       duration_sec: (readingTask.duration || 10) * 60,
       has_recording: false,
       score: 1,
       event_meta: { source: 'miniprogram_local_checkin' }
-    });
+    }));
 
     var streak = this.data.readingWeeklyReport.streakDays || 1;
     app.trackKbEvent({

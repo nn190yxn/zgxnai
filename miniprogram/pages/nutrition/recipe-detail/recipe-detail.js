@@ -132,6 +132,24 @@ Page({
     return item;
   },
 
+  buildRecipeTrackPayload: function(extra) {
+    var recipe = this.data.recipe || {};
+    var baseEventMeta = {
+      title: recipe.name || recipe.title || '',
+      category: recipe.category || '',
+      page: 'nutrition_recipe_detail'
+    };
+    var payload = Object.assign({
+      module_key: 'nutrition_recipe',
+      page_key: 'nutrition_recipe_detail',
+      content_type: 'recipe',
+      content_id: String(this.data.recipeId || recipe.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   getCachedRecipeDetail: function(id) {
     if (!id) {
       return null;
@@ -157,6 +175,9 @@ Page({
           offlineFallback: false,
           loading: false
         });
+        app.trackKbEvent(this.buildRecipeTrackPayload({
+          event_type: 'recipe_detail_view'
+        }));
         if (!this.hasCompleteRecipeDetail(cachedRecipe)) {
           this.loadRecipeDetail({ silent: true });
         }
@@ -218,6 +239,9 @@ Page({
         imageLoaded: false,
         offlineFallback: false
       });
+      app.trackKbEvent(that.buildRecipeTrackPayload({
+        event_type: 'recipe_detail_view'
+      }));
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
         if (!silent) {
@@ -274,9 +298,16 @@ Page({
       url: '/nutrition/recipes/' + that.data.recipeId + '/favorite',
       method: 'POST'
     }).then(function() {
+      var nextFavoriteState = !isFavorite;
       that.setData({
-        isFavorite: !isFavorite
+        isFavorite: nextFavoriteState
       });
+      app.trackKbEvent(that.buildRecipeTrackPayload({
+        event_type: nextFavoriteState ? 'recipe_favorite' : 'recipe_unfavorite',
+        event_meta: {
+          action: nextFavoriteState ? 'favorite' : 'unfavorite'
+        }
+      }));
       wx.showToast({
         title: isFavorite ? '已取消收藏' : '收藏成功',
         icon: 'success'
