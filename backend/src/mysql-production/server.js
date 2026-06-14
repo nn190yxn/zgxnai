@@ -133,6 +133,7 @@ app.get(`${ADMIN_API_PREFIX}/analytics/users/trends`, authenticateAdmin, asyncHa
 app.get(`${ADMIN_API_PREFIX}/analytics/revenue/trends`, authenticateAdmin, asyncHandler(adminRevenueTrendsHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/features/ranking`, authenticateAdmin, asyncHandler(adminFeatureRankingHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyncHandler(adminContentRankingHandler));
+app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
@@ -679,42 +680,66 @@ function formatAgeFeatureRows(rows) {
 }
 
 function buildUserSegments(row, totalUsers) {
-  const definitions = [
+  const definitions = getUserSegmentDefinitions().map((item) => ({
+    ...item,
+    count: Number(row[item.countField] || 0)
+  }));
+  return definitions.map((item) => ({
+    key: item.key,
+    label: item.label,
+    description: item.description,
+    count: item.count,
+    percentage: calculateRatio(item.count, totalUsers)
+  }));
+}
+
+function getUserSegmentDefinitions() {
+  return [
     {
       key: 'high_value_paid',
       label: '高价值付费用户',
       description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。',
-      count: Number(row.high_value_paid_users || 0)
+      countField: 'high_value_paid_users',
+      sql: "COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 199 OR COALESCE(payments.paid_order_count, 0) >= 2)",
+      orderBy: 'payments.total_paid_amount DESC, payments.paid_order_count DESC, COALESCE(activity.last_active_at, u.created_at) DESC, u.id DESC'
     },
     {
       key: 'churn_risk',
       label: '即将流失会员',
       description: '7 天内到期且未开启自动续费，适合重点召回。',
-      count: Number(row.churn_risk_users || 0)
+      countField: 'churn_risk_users',
+      sql: "memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND memberships.current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) AND COALESCE(memberships.auto_renew, 0) = 0",
+      orderBy: 'memberships.current_end_date ASC, COALESCE(activity.last_active_at, u.created_at) DESC, u.id DESC'
     },
     {
       key: 'paid_low_activity',
       label: '低活跃付费用户',
       description: '已经付费，但近 14 天没有活跃行为，适合做使用唤醒。',
-      count: Number(row.paid_low_activity_users || 0)
+      countField: 'paid_low_activity_users',
+      sql: 'COALESCE(payments.paid_order_count, 0) > 0 AND activity.last_active_at IS NULL',
+      orderBy: 'payments.total_paid_amount DESC, memberships.current_end_date ASC, u.id DESC'
     },
     {
       key: 'active_unpaid',
       label: '高活跃未付费用户',
       description: '近 14 天活跃但还没有付费，适合做转化承接。',
-      count: Number(row.active_unpaid_users || 0)
+      countField: 'active_unpaid_users',
+      sql: 'activity.last_active_at IS NOT NULL AND COALESCE(payments.paid_order_count, 0) = 0',
+      orderBy: 'activity.active_event_count_14d DESC, activity.last_active_at DESC, u.id DESC'
     },
     {
       key: 'active_trial',
       label: '活跃试用用户',
       description: '当前试用中且近 7 天活跃，适合做试用转付费。',
-      count: Number(row.active_trial_users || 0)
+      countField: 'active_trial_users',
+      sql: "memberships.membership_type = 'trial' AND memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND activity.last_active_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+      orderBy: 'memberships.current_end_date ASC, activity.last_active_at DESC, u.id DESC'
     }
   ];
-  return definitions.map((item) => ({
-    ...item,
-    percentage: calculateRatio(item.count, totalUsers)
-  }));
+}
+
+function getUserSegmentDefinition(segmentKey) {
+  return getUserSegmentDefinitions().find((item) => item.key === segmentKey) || null;
 }
 
 function buildFeatureKeySql(alias) {
@@ -813,6 +838,103 @@ async function adminContentRankingHandler(req, res) {
     params
   );
   res.json({ success: true, data: { range, content_type: contentType || null, items: rows } });
+}
+
+async function adminSegmentUsersHandler(req, res) {
+  const definition = getUserSegmentDefinition(String(req.params.segmentKey || '').trim());
+  if (!definition) {
+    res.status(404).json({ success: false, message: '用户分层不存在' });
+    return;
+  }
+
+  const limit = clampAdminLimit(req.query.limit, 20);
+  const [rows] = await pool.execute(
+    `SELECT
+       u.id,
+       u.nickname,
+       u.created_at,
+       child_profile.child_name,
+       child_profile.age_label,
+       child_profile.gender,
+       memberships.membership_type,
+       memberships.current_plan,
+       memberships.current_end_date,
+       memberships.auto_renew,
+       COALESCE(payments.total_paid_amount, 0) AS total_paid_amount,
+       COALESCE(payments.paid_order_count, 0) AS paid_order_count,
+       activity.last_active_at,
+       COALESCE(activity.active_event_count_14d, 0) AS active_event_count_14d
+      FROM users u
+      LEFT JOIN (
+        SELECT user_id,
+               COUNT(*) AS paid_order_count,
+               COALESCE(SUM(amount), 0) AS total_paid_amount
+          FROM payment_orders
+         WHERE status = 'paid'
+         GROUP BY user_id
+      ) payments ON payments.user_id = u.id
+      LEFT JOIN user_memberships memberships ON memberships.user_id = u.id
+      LEFT JOIN (
+        SELECT et.user_id,
+               MAX(et.created_at) AS last_active_at,
+               COUNT(*) AS active_event_count_14d
+          FROM event_tracks et
+         WHERE et.created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+         GROUP BY et.user_id
+      ) activity ON activity.user_id = u.id
+      LEFT JOIN (
+        SELECT source.user_id,
+               source.child_name,
+               source.gender,
+               CASE
+                 WHEN source.birthday IS NULL THEN '年龄待补充'
+                 WHEN TIMESTAMPDIFF(MONTH, source.birthday, CURDATE()) < 12 THEN '0-1岁'
+                 WHEN TIMESTAMPDIFF(MONTH, source.birthday, CURDATE()) < 24 THEN '1-2岁'
+                 WHEN TIMESTAMPDIFF(MONTH, source.birthday, CURDATE()) < 36 THEN '2-3岁'
+                 WHEN TIMESTAMPDIFF(MONTH, source.birthday, CURDATE()) < 48 THEN '3-4岁'
+                 WHEN TIMESTAMPDIFF(MONTH, source.birthday, CURDATE()) < 72 THEN '4-6岁'
+                 ELSE '6岁以上'
+               END AS age_label
+          FROM (
+            SELECT c.user_id,
+                   COALESCE(MAX(CASE WHEN c.is_default = 1 THEN c.name END), MAX(c.name), '') AS child_name,
+                   COALESCE(MAX(CASE WHEN c.is_default = 1 THEN c.gender END), MAX(c.gender), 'unknown') AS gender,
+                   COALESCE(MAX(CASE WHEN c.is_default = 1 THEN c.birthday END), MIN(c.birthday)) AS birthday
+              FROM children c
+             GROUP BY c.user_id
+          ) source
+      ) child_profile ON child_profile.user_id = u.id
+      WHERE ${definition.sql}
+      ORDER BY ${definition.orderBy}
+      LIMIT ${limit}`
+  );
+
+  res.json({
+    success: true,
+    data: {
+      segment: {
+        key: definition.key,
+        label: definition.label,
+        description: definition.description
+      },
+      items: rows.map((row) => ({
+        id: row.id,
+        nickname: row.nickname || `用户${row.id}`,
+        child_name: row.child_name || '',
+        child_age_label: row.age_label || '年龄待补充',
+        child_gender: row.gender || 'unknown',
+        membership_type: row.membership_type || 'free',
+        current_plan: row.current_plan || 'free',
+        current_end_date: row.current_end_date || null,
+        auto_renew: Number(row.auto_renew || 0) === 1,
+        total_paid_amount: Number(row.total_paid_amount || 0),
+        paid_order_count: Number(row.paid_order_count || 0),
+        last_active_at: row.last_active_at || null,
+        active_event_count_14d: Number(row.active_event_count_14d || 0),
+        created_at: row.created_at || null
+      }))
+    }
+  });
 }
 
 function parseAdminDateRange(query, defaultDays) {

@@ -3,7 +3,9 @@ const AUTH_STORAGE_KEY = 'niuniu-admin-token';
 
 const state = {
   token: localStorage.getItem(AUTH_STORAGE_KEY) || '',
-  admin: null
+  admin: null,
+  activeSegmentKey: '',
+  segmentUsersByKey: {}
 };
 
 const authStateText = document.getElementById('authStateText');
@@ -130,6 +132,23 @@ const demoSnapshot = {
     { key: 'active_unpaid', label: '高活跃未付费用户', description: '近 14 天活跃但还没有付费，适合做转化承接。', count: 1628, percentage: 8.73 },
     { key: 'active_trial', label: '活跃试用用户', description: '当前试用中且近 7 天活跃，适合做试用转付费。', count: 208, percentage: 1.12 }
   ],
+  segmentUsersByKey: {
+    active_unpaid: {
+      segment: { key: 'active_unpaid', label: '高活跃未付费用户', description: '近 14 天活跃但还没有付费，适合做转化承接。' },
+      items: [
+        { id: 1001, nickname: '贵阳妈妈A', child_name: '小满', child_age_label: '3-4岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 20:18:00', active_event_count_14d: 18, created_at: '2026-05-20 10:12:00' },
+        { id: 1028, nickname: '云岩爸爸B', child_name: '安安', child_age_label: '4-6岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 18:36:00', active_event_count_14d: 15, created_at: '2026-05-25 14:08:00' },
+        { id: 1086, nickname: '花溪家长C', child_name: '果果', child_age_label: '1-2岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-13 21:42:00', active_event_count_14d: 13, created_at: '2026-06-01 09:22:00' }
+      ]
+    },
+    high_value_paid: {
+      segment: { key: 'high_value_paid', label: '高价值付费用户', description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。' },
+      items: [
+        { id: 821, nickname: '南明妈妈D', child_name: '沐沐', child_age_label: '4-6岁', membership_type: 'year', current_plan: 'year', current_end_date: '2027-03-21 23:59:59', auto_renew: true, total_paid_amount: 698, paid_order_count: 3, last_active_at: '2026-06-14 17:04:00', active_event_count_14d: 12, created_at: '2026-01-18 11:00:00' },
+        { id: 906, nickname: '观山湖爸爸E', child_name: '糖糖', child_age_label: '2-3岁', membership_type: 'quarter', current_plan: 'quarter', current_end_date: '2026-08-30 23:59:59', auto_renew: false, total_paid_amount: 258, paid_order_count: 2, last_active_at: '2026-06-13 19:26:00', active_event_count_14d: 9, created_at: '2026-02-06 08:45:00' }
+      ]
+    }
+  },
   userTrends: {
     items: [
       { stat_date: '2026-06-01', new_users: 108, active_users: 1822, paid_active_users: 352, ai_users: 468 },
@@ -270,6 +289,7 @@ async function loadDashboard() {
 
 function renderDashboard(snapshot) {
   state.admin = snapshot.me;
+  state.segmentUsersByKey = snapshot.segmentUsersByKey || {};
   updateAuthState();
   renderOverview(snapshot.overview);
   renderMembershipStructure(snapshot.membershipStructure || snapshot.overview.membership_structure || [], snapshot.overview);
@@ -492,11 +512,16 @@ function renderUserSegments(items) {
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = '<div class="empty-state">当前暂无用户分层数据。</div>';
+    renderSegmentUsersPanel(null, [], '当前暂无可展示的分层明细。');
     return;
   }
+  const defaultSegmentKey = state.activeSegmentKey && items.some((item) => item.key === state.activeSegmentKey)
+    ? state.activeSegmentKey
+    : (items.find((item) => Number(item.count || 0) > 0) || items[0]).key;
   items.forEach((item) => {
-    const node = document.createElement('div');
-    node.className = 'segment-card';
+    const node = document.createElement('button');
+    node.type = 'button';
+    node.className = `segment-card${item.key === defaultSegmentKey ? ' is-active' : ''}`;
     node.innerHTML = `
       <div class="distribution-topline">
         <span class="distribution-name">${escapeHtml(item.label || item.key || '-')}</span>
@@ -504,6 +529,68 @@ function renderUserSegments(items) {
       </div>
       <span class="distribution-meta">占总用户 ${escapeHtml(formatPercent(item.percentage))}</span>
       <p class="segment-copy">${escapeHtml(item.description || '')}</p>
+    `;
+    node.addEventListener('click', () => {
+      container.querySelectorAll('.segment-card').forEach((card) => card.classList.remove('is-active'));
+      node.classList.add('is-active');
+      loadSegmentUsers(item);
+    });
+    container.appendChild(node);
+  });
+  loadSegmentUsers(items.find((item) => item.key === defaultSegmentKey) || items[0]);
+}
+
+async function loadSegmentUsers(segment) {
+  state.activeSegmentKey = segment.key;
+  const cached = state.segmentUsersByKey[segment.key];
+  if (cached) {
+    renderSegmentUsersPanel(cached.segment || segment, cached.items || []);
+    return;
+  }
+  if (!state.token) {
+    renderSegmentUsersPanel(segment, [], '当前为演示外的未登录状态，登录后可查看真实分层名单。');
+    return;
+  }
+  renderSegmentUsersPanel(segment, [], '正在加载分层用户名单...');
+  try {
+    const data = await request(`/segments/${segment.key}/users?limit=20`);
+    state.segmentUsersByKey[segment.key] = data;
+    renderSegmentUsersPanel(data.segment || segment, data.items || []);
+  } catch (error) {
+    renderSegmentUsersPanel(segment, [], error.message || '分层名单加载失败');
+  }
+}
+
+function renderSegmentUsersPanel(segment, items, emptyMessage) {
+  const title = document.getElementById('segmentUsersTitle');
+  const meta = document.getElementById('segmentUsersMeta');
+  const container = document.getElementById('segmentUsersList');
+  title.textContent = segment ? `${segment.label || segment.key}名单` : '分层用户名单';
+  meta.textContent = segment ? (segment.description || '最近 20 个用户样本') : '选择一个分层查看最近 20 个用户';
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage || '当前分层暂无用户样本。')}</div>`;
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'segment-user-item';
+    node.innerHTML = `
+      <div class="segment-user-topline">
+        <span class="segment-user-name">${escapeHtml(item.nickname || `用户${item.id}`)}</span>
+        <strong>${escapeHtml(formatCurrency(item.total_paid_amount || 0))}</strong>
+      </div>
+      <div class="segment-user-tags">
+        <span class="segment-user-tag">${escapeHtml(item.child_name ? `${item.child_name} / ${item.child_age_label || '年龄待补充'}` : (item.child_age_label || '年龄待补充'))}</span>
+        <span class="segment-user-tag">${escapeHtml(formatMembershipLabel(item.membership_type, item.current_plan))}</span>
+        <span class="segment-user-tag">支付 ${escapeHtml(formatNumber(item.paid_order_count || 0))} 单</span>
+      </div>
+      <div class="segment-user-meta">
+        <span>最近活跃：${escapeHtml(formatDateTime(item.last_active_at))}</span>
+        <span>近14天活跃事件：${escapeHtml(formatNumber(item.active_event_count_14d || 0))}</span>
+        <span>会员到期：${escapeHtml(formatDateTime(item.current_end_date))}</span>
+        <span>自动续费：${item.auto_renew ? '已开启' : '未开启'}</span>
+      </div>
     `;
     container.appendChild(node);
   });
@@ -648,8 +735,27 @@ function formatDecimal(value) {
   return Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return '-';
+  }
+  return String(value).replace('T', ' ').slice(0, 16);
+}
+
+function formatMembershipLabel(membershipType, currentPlan) {
+  const plan = String(currentPlan || membershipType || 'free');
+  const map = {
+    free: '免费用户',
+    trial: '试用会员',
+    month: '月会员',
+    quarter: '季会员',
+    year: '年会员'
+  };
+  return map[plan] || plan;
+}
+
 function escapeHtml(value) {
-  return value
+  return String(value || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
