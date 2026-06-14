@@ -210,7 +210,7 @@ function request(app, options) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(unwrapResponse(res.data));
         } else if (res.statusCode === 403 && res.data && res.data.code === 'MEMBERSHIP_REQUIRED') {
-          wx.showToast({ title: res.data.message || '请先开通会员', icon: 'none' });
+          wx.showToast({ title: res.data.message || '请先查看宝贝成长服务', icon: 'none' });
           wx.navigateTo({ url: '/pages/membership/index' });
           reject(res.data);
         } else if (isAuthExpiredResponse(res.statusCode, res.data) && !skipAuthRetry) {
