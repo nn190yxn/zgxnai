@@ -20,6 +20,7 @@ loadEnv('/home/ubuntu/niuniu-parenting/.env');
 const app = express();
 const API_PREFIX = process.env.API_PREFIX || '/api/v1';
 const API_PREFIXES = Array.from(new Set([API_PREFIX, '/api/v1']));
+const ADMIN_API_PREFIX = process.env.ADMIN_API_PREFIX || '/admin-api/v1';
 const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -121,6 +122,14 @@ for (const prefix of API_PREFIXES) {
   app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
 }
 
+app.post(`${ADMIN_API_PREFIX}/auth/login`, asyncHandler(adminLoginHandler));
+app.get(`${ADMIN_API_PREFIX}/auth/me`, authenticateAdmin, asyncHandler(adminMeHandler));
+app.get(`${ADMIN_API_PREFIX}/dashboard/overview`, authenticateAdmin, asyncHandler(adminDashboardOverviewHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/users/trends`, authenticateAdmin, asyncHandler(adminUserTrendsHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/revenue/trends`, authenticateAdmin, asyncHandler(adminRevenueTrendsHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/features/ranking`, authenticateAdmin, asyncHandler(adminFeatureRankingHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyncHandler(adminContentRankingHandler));
+
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
 });
@@ -187,6 +196,30 @@ function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET || 'dev-niuniu-secret', { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 }
 
+function signAdminToken(payload) {
+  return jwt.sign(payload, process.env.ADMIN_JWT_SECRET || JWT_SECRET || 'dev-niuniu-admin-secret', { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '12h' });
+}
+
+function authenticateAdmin(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) {
+    res.status(401).json({ success: false, message: '未提供后台访问令牌' });
+    return;
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET || JWT_SECRET || 'dev-niuniu-admin-secret');
+    if (!decoded || decoded.tokenType !== 'admin') {
+      res.status(403).json({ success: false, message: '后台访问令牌无效' });
+      return;
+    }
+    req.admin = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, code: 'ADMIN_TOKEN_EXPIRED', message: '后台访问令牌无效或已过期' });
+  }
+}
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
@@ -232,6 +265,202 @@ async function requireActiveMembership(req, res, next) {
 
 function paidFeaturePlaceholderHandler(req, res) {
   res.status(404).json({ success: false, message: '接口暂未在生产服务开放', path: req.path });
+}
+
+async function adminLoginHandler(req, res) {
+  const username = String((req.body && req.body.username) || '').trim();
+  const password = String((req.body && req.body.password) || '').trim();
+  if (!username || !password) {
+    res.status(400).json({ success: false, message: '请输入后台账号和密码' });
+    return;
+  }
+
+  const [rows] = await pool.execute(
+    'SELECT id, username, password_hash, display_name, role, status, last_login_at FROM admin_users WHERE username = ? LIMIT 1',
+    [username]
+  );
+  if (!rows.length || rows[0].status !== 'active' || !verifyAdminPassword(password, rows[0].password_hash)) {
+    res.status(401).json({ success: false, message: '后台账号或密码错误' });
+    return;
+  }
+
+  await pool.execute('UPDATE admin_users SET last_login_at = NOW() WHERE id = ?', [rows[0].id]);
+  res.json({
+    success: true,
+    data: {
+      token: signAdminToken({ adminUserId: rows[0].id, username: rows[0].username, role: rows[0].role, tokenType: 'admin' }),
+      admin: {
+        id: rows[0].id,
+        username: rows[0].username,
+        display_name: rows[0].display_name || rows[0].username,
+        role: rows[0].role,
+        last_login_at: rows[0].last_login_at
+      }
+    }
+  });
+}
+
+async function adminMeHandler(req, res) {
+  const [rows] = await pool.execute(
+    'SELECT id, username, display_name, role, status, last_login_at, created_at FROM admin_users WHERE id = ? LIMIT 1',
+    [req.admin.adminUserId]
+  );
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '后台账号不存在' });
+    return;
+  }
+  res.json({ success: true, data: rows[0] });
+}
+
+async function adminDashboardOverviewHandler(req, res) {
+  const [userRows] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM users) AS total_users,
+       (SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()) AS today_new_users,
+       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = CURDATE()) AS dau,
+       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS wau,
+       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS mau`
+  );
+  const [membershipRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS active_memberships,
+       SUM(CASE WHEN membership_type = 'trial' THEN 1 ELSE 0 END) AS trial_memberships,
+       SUM(CASE WHEN current_plan = 'month' THEN 1 ELSE 0 END) AS month_memberships,
+       SUM(CASE WHEN current_plan = 'quarter' THEN 1 ELSE 0 END) AS quarter_memberships,
+       SUM(CASE WHEN current_plan = 'year' THEN 1 ELSE 0 END) AS year_memberships
+     FROM user_memberships
+     WHERE current_end_date IS NOT NULL AND current_end_date >= NOW()`
+  );
+  const [paymentRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS paid_order_count,
+       COUNT(DISTINCT user_id) AS paid_user_count,
+       COALESCE(SUM(amount), 0) AS total_revenue,
+       COALESCE(SUM(CASE WHEN DATE(paid_at) = CURDATE() THEN amount ELSE 0 END), 0) AS today_revenue,
+       SUM(CASE WHEN DATE(paid_at) = CURDATE() THEN 1 ELSE 0 END) AS today_paid_order_count
+     FROM payment_orders
+     WHERE status = 'paid'`
+  );
+  const [featureRows] = await pool.execute(
+    `SELECT event_type, COUNT(*) AS count
+       FROM event_tracks
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      GROUP BY event_type
+      ORDER BY count DESC
+      LIMIT 10`
+  );
+
+  res.json({
+    success: true,
+    data: {
+      users: userRows[0] || {},
+      memberships: membershipRows[0] || {},
+      revenue: paymentRows[0] || {},
+      top_events_7d: featureRows,
+      ai_status: getAIStatus()
+    }
+  });
+}
+
+async function adminUserTrendsHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(
+    `SELECT stat_date, new_users, active_users, paid_active_users, trial_users, ai_users, content_users
+       FROM admin_daily_user_stats
+      WHERE stat_date BETWEEN ? AND ?
+      ORDER BY stat_date ASC`,
+    [range.startDate, range.endDate]
+  );
+  res.json({ success: true, data: { range, items: rows } });
+}
+
+async function adminRevenueTrendsHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(
+    `SELECT stat_date, paid_users, new_paid_users, order_count, paid_order_count, revenue_amount, month_membership_count, quarter_membership_count, year_membership_count
+       FROM admin_daily_revenue_stats
+      WHERE stat_date BETWEEN ? AND ?
+      ORDER BY stat_date ASC`,
+    [range.startDate, range.endDate]
+  );
+  res.json({ success: true, data: { range, items: rows } });
+}
+
+async function adminFeatureRankingHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const limit = clampAdminLimit(req.query.limit, 20);
+  const [rows] = await pool.execute(
+    `SELECT feature_key,
+            SUM(view_count) AS view_count,
+            SUM(click_count) AS click_count,
+            SUM(start_count) AS start_count,
+            SUM(complete_count) AS complete_count,
+            SUM(paywall_visit_count) AS paywall_visit_count,
+            SUM(membership_conversion_count) AS membership_conversion_count
+       FROM admin_daily_feature_stats
+      WHERE stat_date BETWEEN ? AND ?
+      GROUP BY feature_key
+      ORDER BY view_count DESC, click_count DESC, start_count DESC
+      LIMIT ${limit}`,
+    [range.startDate, range.endDate]
+  );
+  res.json({ success: true, data: { range, items: rows } });
+}
+
+async function adminContentRankingHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const limit = clampAdminLimit(req.query.limit, 20);
+  const contentType = String(req.query.content_type || '').trim();
+  const filters = ['stat_date BETWEEN ? AND ?'];
+  const params = [range.startDate, range.endDate];
+  if (contentType) {
+    filters.push('content_type = ?');
+    params.push(contentType);
+  }
+  const [rows] = await pool.execute(
+    `SELECT content_type,
+            content_id,
+            MAX(title) AS title,
+            SUM(view_count) AS view_count,
+            SUM(favorite_count) AS favorite_count,
+            SUM(like_count) AS like_count,
+            SUM(comment_count) AS comment_count,
+            SUM(completion_count) AS completion_count
+       FROM admin_daily_content_stats
+      WHERE ${filters.join(' AND ')}
+      GROUP BY content_type, content_id
+      ORDER BY view_count DESC, completion_count DESC, favorite_count DESC
+      LIMIT ${limit}`,
+    params
+  );
+  res.json({ success: true, data: { range, content_type: contentType || null, items: rows } });
+}
+
+function parseAdminDateRange(query, defaultDays) {
+  const days = Math.max(1, Math.min(Number(query.days || defaultDays || 14), 90));
+  const endDate = normalizeDateInput(query.end_date || query.endDate) || formatDateOnly(new Date());
+  const startDate = normalizeDateInput(query.start_date || query.startDate) || formatDateOnly(new Date(Date.parse(`${endDate}T00:00:00Z`) - (days - 1) * 86400000));
+  return { startDate, endDate, days };
+}
+
+function normalizeDateInput(value) {
+  const text = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return '';
+  }
+  return text;
+}
+
+function formatDateOnly(date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+function clampAdminLimit(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(1, Math.min(parsed, 100));
 }
 
 async function chatHandler(req, res) {
@@ -1043,10 +1272,46 @@ function verifyWechatNotifySignature(headers, rawBody) {
 
 async function bootstrap() {
   await ensureProductionTables();
+  await ensureAdminBootstrapUser();
   await fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
   app.listen(PORT, HOST, () => {
     console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
   });
+}
+
+async function ensureAdminBootstrapUser() {
+  const username = String(process.env.ADMIN_BOOTSTRAP_USERNAME || '').trim();
+  const password = String(process.env.ADMIN_BOOTSTRAP_PASSWORD || '').trim();
+  if (!username || !password) {
+    return;
+  }
+  const [rows] = await pool.execute('SELECT id FROM admin_users WHERE username = ? LIMIT 1', [username]);
+  if (rows.length) {
+    return;
+  }
+  await pool.execute(
+    'INSERT INTO admin_users (username, password_hash, display_name, role, status) VALUES (?, ?, ?, ?, ?)',
+    [username, hashAdminPassword(password), username, 'super_admin', 'active']
+  );
+}
+
+function hashAdminPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyAdminPassword(password, storedHash) {
+  const value = String(storedHash || '');
+  if (!value || !value.startsWith('scrypt$')) {
+    return false;
+  }
+  const parts = value.split('$');
+  if (parts.length !== 3) {
+    return false;
+  }
+  const actual = crypto.scryptSync(String(password), parts[1], 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(parts[2], 'hex'));
 }
 
 function getSubjectDisplayName(subjectCode) {
@@ -1352,7 +1617,8 @@ async function ensureProductionTables() {
       session_id VARCHAR(255) DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_event_tracks_user (user_id),
-      INDEX idx_event_tracks_type (event_type)
+      INDEX idx_event_tracks_type (event_type),
+      INDEX idx_event_tracks_created (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
@@ -1376,6 +1642,132 @@ async function ensureProductionTables() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX idx_articles_category (category),
       INDEX idx_articles_published (is_published)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      username VARCHAR(64) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      display_name VARCHAR(128) DEFAULT '',
+      role VARCHAR(32) NOT NULL DEFAULT 'operator',
+      status VARCHAR(32) NOT NULL DEFAULT 'active',
+      last_login_at DATETIME NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_admin_users_role (role),
+      INDEX idx_admin_users_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      admin_user_id BIGINT NOT NULL,
+      action_type VARCHAR(64) NOT NULL,
+      target_type VARCHAR(64) NOT NULL,
+      target_id VARCHAR(128) DEFAULT '',
+      before_payload JSON NULL,
+      after_payload JSON NULL,
+      ip_address VARCHAR(64) DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_admin_audit_logs_admin (admin_user_id),
+      INDEX idx_admin_audit_logs_action (action_type),
+      INDEX idx_admin_audit_logs_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_runtime_configs (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      config_key VARCHAR(128) NOT NULL,
+      config_value JSON NULL,
+      version INT NOT NULL DEFAULT 1,
+      status VARCHAR(32) NOT NULL DEFAULT 'draft',
+      updated_by BIGINT DEFAULT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_admin_runtime_configs_version (config_key, version),
+      INDEX idx_admin_runtime_configs_key (config_key),
+      INDEX idx_admin_runtime_configs_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_daily_user_stats (
+      stat_date DATE PRIMARY KEY,
+      new_users INT NOT NULL DEFAULT 0,
+      active_users INT NOT NULL DEFAULT 0,
+      paid_active_users INT NOT NULL DEFAULT 0,
+      trial_users INT NOT NULL DEFAULT 0,
+      ai_users INT NOT NULL DEFAULT 0,
+      content_users INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_daily_revenue_stats (
+      stat_date DATE PRIMARY KEY,
+      paid_users INT NOT NULL DEFAULT 0,
+      new_paid_users INT NOT NULL DEFAULT 0,
+      order_count INT NOT NULL DEFAULT 0,
+      paid_order_count INT NOT NULL DEFAULT 0,
+      revenue_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+      month_membership_count INT NOT NULL DEFAULT 0,
+      quarter_membership_count INT NOT NULL DEFAULT 0,
+      year_membership_count INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_daily_content_stats (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      stat_date DATE NOT NULL,
+      content_type VARCHAR(64) NOT NULL,
+      content_id VARCHAR(128) NOT NULL,
+      title VARCHAR(255) DEFAULT '',
+      view_count INT NOT NULL DEFAULT 0,
+      favorite_count INT NOT NULL DEFAULT 0,
+      like_count INT NOT NULL DEFAULT 0,
+      comment_count INT NOT NULL DEFAULT 0,
+      completion_count INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_admin_daily_content_stats (stat_date, content_type, content_id),
+      INDEX idx_admin_daily_content_stats_type (content_type),
+      INDEX idx_admin_daily_content_stats_date (stat_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_daily_feature_stats (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      stat_date DATE NOT NULL,
+      feature_key VARCHAR(128) NOT NULL,
+      view_count INT NOT NULL DEFAULT 0,
+      click_count INT NOT NULL DEFAULT 0,
+      start_count INT NOT NULL DEFAULT 0,
+      complete_count INT NOT NULL DEFAULT 0,
+      paywall_visit_count INT NOT NULL DEFAULT 0,
+      membership_conversion_count INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_admin_daily_feature_stats (stat_date, feature_key),
+      INDEX idx_admin_daily_feature_stats_date (stat_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS admin_daily_funnel_stats (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      stat_date DATE NOT NULL,
+      funnel_key VARCHAR(128) NOT NULL,
+      step_key VARCHAR(128) NOT NULL,
+      user_count INT NOT NULL DEFAULT 0,
+      event_count INT NOT NULL DEFAULT 0,
+      conversion_rate DECIMAL(8,4) NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_admin_daily_funnel_stats (stat_date, funnel_key, step_key),
+      INDEX idx_admin_daily_funnel_stats_date (stat_date),
+      INDEX idx_admin_daily_funnel_stats_funnel (funnel_key)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
@@ -2348,6 +2740,10 @@ async function kbEventTrackHandler(req, res) {
   }
 
   const payload = {
+    module_key: req.body.module_key || null,
+    page_key: req.body.page_key || null,
+    content_type: req.body.content_type || null,
+    content_id: req.body.content_id || null,
     child_id: req.body.child_id || null,
     task_id: req.body.task_id || null,
     path_id: req.body.path_id || null,

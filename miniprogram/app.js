@@ -577,6 +577,10 @@ var allowHosts = {
     var currentChild = that.getCurrentChild();
     var body = {
       event_type: payload.event_type,
+      module_key: payload.module_key,
+      page_key: payload.page_key,
+      content_type: payload.content_type,
+      content_id: payload.content_id,
       child_id: payload.child_id || (currentChild ? currentChild.id : undefined),
       task_id: payload.task_id,
       path_id: payload.path_id,

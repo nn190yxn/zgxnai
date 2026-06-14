@@ -9,6 +9,7 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "node src/scripts/lint.js",
+    "admin:stats": "node src/scripts/build-admin-daily-stats.js",
     "backup": "node src/scripts/backup.js",
     "restore": "node src/scripts/restore.js",
     "start:mysql": "node src/mysql-production/server.js",
