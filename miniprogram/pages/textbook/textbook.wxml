@@ -13,7 +13,7 @@
       <text class="task-count">{{readingTasks.length}}项</text>
     </view>
     <view class="reading-task-list">
-      <view class="reading-task-card" wx:for="{{readingTasks}}" wx:key="id" bindtap="onReadingTaskTap" data-id="{{item.id}}" data-title="{{item.title}}">
+      <view class="reading-task-card" wx:for="{{readingTasks}}" wx:key="id" bindtap="onReadingTaskTap" data-id="{{item.id}}" data-detail-id="{{item.detailId}}" data-task-code="{{item.taskCode}}" data-subject-code="{{item.subjectCode}}" data-title="{{item.title}}">
         <!-- 任务封面图 -->
         <image class="reading-task-cover" wx:if="{{item.coverImage}}" src="{{item.coverImage}}" mode="aspectFill" />
         <view class="reading-task-visual">

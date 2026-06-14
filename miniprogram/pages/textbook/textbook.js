@@ -196,7 +196,7 @@ Page({
 
   buildReadingTaskTrackPayload: function(task, extra) {
     task = task || {};
-    var taskId = task.id || task.taskCode || '';
+    var taskId = task.taskCode || task.task_code || task.detailId || task.id || '';
     var title = task.title || '';
     var subjectCode = task.subjectCode || task.subject_code || '';
     var isReadingTask = subjectCode === 'reading_comprehension' || !subjectCode;
@@ -218,6 +218,16 @@ Page({
       subject_code: subjectCode
     }, (extra && extra.event_meta) || {});
     return payload;
+  },
+
+  getReadingTaskDetailId: function(task) {
+    task = task || {};
+    return String(task.taskCode || task.task_code || task.detailId || task.id || '');
+  },
+
+  getReadingTaskSubjectCode: function(task) {
+    task = task || {};
+    return task.subjectCode || task.subject_code || '';
   },
 
   loadReadingTasks: function() {
@@ -271,7 +281,9 @@ Page({
 
         return {
           id: task.id || task.task_code,
+          detailId: task.task_code || task.id,
           taskCode: task.task_code,
+          subjectCode: task.subject_code,
           title: task.title,
           duration: task.duration || 10,
           level: levelMap[task.difficulty] || '入门',
@@ -327,6 +339,9 @@ Page({
     var tasks = [
       {
         id: 'r1',
+        detailId: 'r1',
+        taskCode: 'r1',
+        subjectCode: 'reading_comprehension',
         title: currentGrade <= 3 ? '亲子共读：找一找画面里的东西' : '绘本《小种子》分镜阅读',
         duration: 10,
         level: '入门',
@@ -354,6 +369,9 @@ Page({
       },
       {
         id: 'r2',
+        detailId: 'r2',
+        taskCode: 'r2',
+        subjectCode: 'reading_comprehension',
         title: currentGrade <= 6 ? '故事理解：谁在做什么' : '短文理解：春天来了',
         duration: 10,
         level: '标准',
@@ -381,6 +399,9 @@ Page({
       },
       {
         id: 'r3',
+        detailId: 'r3',
+        taskCode: 'r3',
+        subjectCode: 'reading_comprehension',
         title: '表达练习：一句话讲重点',
         duration: 8,
         level: '提升',
@@ -406,6 +427,9 @@ Page({
       },
       {
         id: 'r4',
+        detailId: 'r4',
+        taskCode: 'r4',
+        subjectCode: 'reading_comprehension',
         title: currentGrade <= 6 ? '亲子对话：我喜欢哪一页' : '阅读迁移：联系生活说一说',
         duration: 8,
         level: '拓展',
@@ -980,8 +1004,10 @@ Page({
     }));
 
     // 跳转到知识点详情页面
+    var detailId = that.getReadingTaskDetailId(task);
+    var subjectCode = that.getReadingTaskSubjectCode(task);
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(task.id) + '&subjectCode=' + task.subjectCode + '&pointName=' + encodeURIComponent(task.title || '') + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(detailId) + '&subjectCode=' + encodeURIComponent(subjectCode) + '&pointName=' + encodeURIComponent(task.title || '') + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -989,13 +1015,22 @@ Page({
   },
 
   onReadingTaskTap: function(e) {
-    var taskId = e.currentTarget.dataset.id;
-    var taskTitle = e.currentTarget.dataset.title || '';
-    app.trackKbEvent(this.buildReadingTaskTrackPayload({ id: taskId, title: taskTitle, subjectCode: 'reading_comprehension' }, {
+    var dataset = e.currentTarget.dataset || {};
+    var task = {
+      id: dataset.id,
+      detailId: dataset.detailId,
+      taskCode: dataset.taskCode,
+      title: dataset.title || '',
+      subjectCode: dataset.subjectCode || 'reading_comprehension'
+    };
+    var taskId = this.getReadingTaskDetailId(task);
+    var taskTitle = task.title || '';
+    var subjectCode = this.getReadingTaskSubjectCode(task) || 'reading_comprehension';
+    app.trackKbEvent(this.buildReadingTaskTrackPayload(task, {
       event_type: 'task_start'
     }));
     wx.navigateTo({
-      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=reading_comprehension&pointName=' + encodeURIComponent(taskTitle) + '&childId=' + (this.data.currentChild ? this.data.currentChild.id : 0),
+      url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=' + encodeURIComponent(subjectCode) + '&pointName=' + encodeURIComponent(taskTitle) + '&childId=' + (this.data.currentChild ? this.data.currentChild.id : 0),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
