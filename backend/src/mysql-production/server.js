@@ -133,6 +133,7 @@ app.get(`${ADMIN_API_PREFIX}/analytics/users/trends`, authenticateAdmin, asyncHa
 app.get(`${ADMIN_API_PREFIX}/analytics/revenue/trends`, authenticateAdmin, asyncHandler(adminRevenueTrendsHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/features/ranking`, authenticateAdmin, asyncHandler(adminFeatureRankingHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyncHandler(adminContentRankingHandler));
+app.get(`${ADMIN_API_PREFIX}/insights/weekly`, authenticateAdmin, asyncHandler(adminWeeklyInsightsHandler));
 app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
 
 app.use((req, res) => {
@@ -838,6 +839,133 @@ async function adminContentRankingHandler(req, res) {
     params
   );
   res.json({ success: true, data: { range, content_type: contentType || null, items: rows } });
+}
+
+async function adminWeeklyInsightsHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 7);
+  const [featureRows] = await pool.execute(
+    `SELECT feature_key,
+            SUM(view_count) AS view_count,
+            SUM(click_count) AS click_count,
+            SUM(start_count) AS start_count,
+            SUM(complete_count) AS complete_count,
+            SUM(membership_conversion_count) AS membership_conversion_count
+       FROM admin_daily_feature_stats
+      WHERE stat_date BETWEEN ? AND ?
+      GROUP BY feature_key
+      ORDER BY view_count DESC, click_count DESC, start_count DESC`,
+    [range.startDate, range.endDate]
+  );
+  const [contentRows] = await pool.execute(
+    `SELECT content_type,
+            content_id,
+            MAX(title) AS title,
+            SUM(view_count) AS view_count,
+            SUM(completion_count) AS completion_count,
+            SUM(favorite_count) AS favorite_count
+       FROM admin_daily_content_stats
+      WHERE stat_date BETWEEN ? AND ?
+      GROUP BY content_type, content_id
+      ORDER BY view_count DESC, completion_count ASC, favorite_count DESC`,
+    [range.startDate, range.endDate]
+  );
+  const [lifecycleRows] = await pool.execute(
+    `SELECT
+       SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_trials,
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) AND COALESCE(auto_renew, 0) = 0 THEN 1 ELSE 0 END) AS expiring_no_renew,
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() THEN 1 ELSE 0 END) AS active_memberships
+      FROM user_memberships`
+  );
+
+  const cards = buildWeeklyInsightCards(featureRows, contentRows, lifecycleRows[0] || {}, range);
+  res.json({ success: true, data: { range, cards } });
+}
+
+function buildWeeklyInsightCards(featureRows, contentRows, lifecycle, range) {
+  const cards = [];
+  const featureLabels = {
+    assessment: '成长测评',
+    ai_chat: 'AI 问答',
+    membership: '会员页',
+    nutrition_recipe: '营养食谱',
+    nutrition: '营养模块',
+    parenting: '家长知识',
+    knowledge: '知识卡片',
+    reading_tasks: '阅读任务',
+    education: '能力成长',
+    share: '分享传播'
+  };
+  const featureCandidates = (Array.isArray(featureRows) ? featureRows : [])
+    .map((row) => {
+      const rawFeatureKey = String(row.feature_key || '').trim();
+      const featureKey = rawFeatureKey === 'unknown' ? '' : rawFeatureKey;
+      return {
+        feature_key: featureKey || 'unknown',
+        feature_label: featureLabels[featureKey] || (featureKey ? featureKey : '未标记功能'),
+        is_known_feature: Boolean(featureLabels[featureKey]),
+        view_count: Number(row.view_count || 0),
+        conversion_count: Number(row.membership_conversion_count || 0),
+        conversion_rate: calculateRatio(row.membership_conversion_count, row.view_count)
+      };
+    })
+    .filter((item) => item.view_count >= 20);
+  const labeledFeatureCandidates = featureCandidates.filter((item) => item.is_known_feature);
+
+  const lowConversionFeature = (labeledFeatureCandidates.length ? labeledFeatureCandidates : featureCandidates)
+    .sort((left, right) => right.view_count - left.view_count || left.conversion_rate - right.conversion_rate)[0];
+
+  if (lowConversionFeature) {
+    cards.push({
+      key: 'feature_low_conversion',
+      title: '高流量低转化功能',
+      priority: lowConversionFeature.conversion_rate < 5 ? 'high' : 'medium',
+      summary: `${lowConversionFeature.feature_label} 近一周浏览 ${lowConversionFeature.view_count} 次，会员转化 ${lowConversionFeature.conversion_count} 次。`,
+      metric: `${lowConversionFeature.conversion_rate.toFixed(2)}%`,
+      metric_label: '浏览转会员转化率',
+      recommendation: `优先检查 ${lowConversionFeature.feature_label} 到会员页之间的承接文案、按钮位置和权益说明。`,
+      evidence: `统计区间 ${range.startDate} 至 ${range.endDate}`
+    });
+  }
+
+  const lowCompletionContent = (Array.isArray(contentRows) ? contentRows : [])
+    .map((row) => ({
+      title: row.title || `${row.content_type || 'content'}:${row.content_id || '-'}`,
+      view_count: Number(row.view_count || 0),
+      completion_count: Number(row.completion_count || 0),
+      favorite_count: Number(row.favorite_count || 0),
+      completion_rate: calculateRatio(row.completion_count, row.view_count)
+    }))
+    .filter((item) => item.view_count >= 20)
+    .sort((left, right) => right.view_count - left.view_count || left.completion_rate - right.completion_rate)[0];
+
+  if (lowCompletionContent) {
+    cards.push({
+      key: 'content_low_completion',
+      title: '高浏览低完成内容',
+      priority: lowCompletionContent.completion_rate < 20 ? 'high' : 'medium',
+      summary: `${lowCompletionContent.title} 近一周浏览 ${lowCompletionContent.view_count} 次，完成 ${lowCompletionContent.completion_count} 次。`,
+      metric: `${lowCompletionContent.completion_rate.toFixed(2)}%`,
+      metric_label: '内容完成率',
+      recommendation: '优先缩短首屏内容长度，强化关键结论前置和收藏引导。',
+      evidence: `收藏 ${lowCompletionContent.favorite_count} 次`
+    });
+  }
+
+  const expiringNoRenew = Number(lifecycle.expiring_no_renew || 0);
+  const expiringTrials = Number(lifecycle.expiring_trials || 0);
+  const activeMemberships = Number(lifecycle.active_memberships || 0);
+  cards.push({
+    key: 'membership_recall',
+    title: '会员到期召回提醒',
+    priority: expiringNoRenew > 0 ? 'high' : 'medium',
+    summary: `未来 7 天内有 ${expiringNoRenew} 位有效会员即将到期且未开启自动续费，另有 ${expiringTrials} 位试用用户临近结束。`,
+    metric: `${calculateRatio(expiringNoRenew, activeMemberships).toFixed(2)}%`,
+    metric_label: '近到期会员占比',
+    recommendation: '优先触达到期前 3 天的用户，突出续费权益和已解锁能力内容。',
+    evidence: `当前有效会员 ${activeMemberships} 位`
+  });
+
+  return cards;
 }
 
 async function adminSegmentUsersHandler(req, res) {

@@ -131,6 +131,40 @@ const demoSnapshot = {
     { feature_key: 'ai_chat', feature_users: 1194, paid_users: 186, conversion_rate: 15.58 },
     { feature_key: 'reading_tasks', feature_users: 986, paid_users: 132, conversion_rate: 13.39 }
   ],
+  weeklyInsights: {
+    cards: [
+      {
+        key: 'feature_low_conversion',
+        title: '高流量低转化功能',
+        priority: 'high',
+        summary: 'AI 问答近一周浏览 4124 次，会员转化 186 次。',
+        metric: '4.51%',
+        metric_label: '浏览转会员转化率',
+        recommendation: '优先检查 AI 问答到会员页之间的承接文案、按钮位置和权益说明。',
+        evidence: '统计区间 2026-06-08 至 2026-06-14'
+      },
+      {
+        key: 'content_low_completion',
+        title: '高浏览低完成内容',
+        priority: 'medium',
+        summary: '夏季午休与晚睡调整指南近一周浏览 1586 次，完成 744 次。',
+        metric: '46.91%',
+        metric_label: '内容完成率',
+        recommendation: '优先缩短首屏内容长度，强化关键结论前置和收藏引导。',
+        evidence: '收藏 168 次'
+      },
+      {
+        key: 'membership_recall',
+        title: '会员到期召回提醒',
+        priority: 'high',
+        summary: '未来 7 天内有 186 位有效会员即将到期且未开启自动续费，另有 96 位试用用户临近结束。',
+        metric: '5.74%',
+        metric_label: '近到期会员占比',
+        recommendation: '优先触达到期前 3 天的用户，突出续费权益和已解锁能力内容。',
+        evidence: '当前有效会员 3240 位'
+      }
+    ]
+  },
   userSegments: [
     { key: 'high_value_paid', label: '高价值付费用户', description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。', count: 268, percentage: 1.44 },
     { key: 'churn_risk', label: '即将流失会员', description: '7 天内到期且未开启自动续费，适合重点召回。', count: 132, percentage: 0.71 },
@@ -298,16 +332,17 @@ if (state.token) {
 }
 
 async function loadDashboard() {
-  const [me, overview, userTrends, revenueTrends, featureRanking, contentRanking] = await Promise.all([
+  const [me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights] = await Promise.all([
     request('/auth/me'),
     request('/dashboard/overview'),
     request('/analytics/users/trends?days=14'),
     request('/analytics/revenue/trends?days=14'),
     request('/analytics/features/ranking?days=14&limit=8'),
-    request('/analytics/content/ranking?days=14&limit=8')
+    request('/analytics/content/ranking?days=14&limit=8'),
+    request('/insights/weekly?days=7')
   ]);
 
-  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking });
+  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights });
 }
 
 function renderDashboard(snapshot) {
@@ -325,6 +360,7 @@ function renderDashboard(snapshot) {
   renderMembershipLifecycle(snapshot.membershipLifecycle || snapshot.overview.membership_lifecycle || {});
   renderAgeFeaturePreferences(snapshot.ageFeaturePreferences || snapshot.overview.age_feature_preferences || []);
   renderFeatureConversion(snapshot.featureConversion || snapshot.overview.feature_conversion || []);
+  renderWeeklyInsights((snapshot.weeklyInsights && snapshot.weeklyInsights.cards) || []);
   renderUserSegments(snapshot.userSegments || snapshot.overview.user_segments || []);
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
@@ -528,6 +564,33 @@ function renderFeatureConversion(items) {
     score: formatPercent(item.conversion_rate),
     meta: `触达 ${formatNumber(item.feature_users)} / 支付 ${formatNumber(item.paid_users)}`
   }));
+}
+
+function renderWeeklyInsights(items) {
+  const container = document.getElementById('weeklyInsights');
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无每周经营建议。</div>';
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = `weekly-insight-card${item.priority === 'high' ? ' priority-high' : ''}`;
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.title || '-')}</span>
+        <span class="segment-user-tag ${item.priority === 'high' ? 'priority-high' : ''}">${escapeHtml(formatActionPriority(item.priority))}</span>
+      </div>
+      <p>${escapeHtml(item.summary || '')}</p>
+      <div class="weekly-insight-metric">
+        <span class="distribution-meta">${escapeHtml(item.metric_label || '核心指标')}</span>
+        <strong>${escapeHtml(item.metric || '-')}</strong>
+      </div>
+      <p class="weekly-insight-recommendation">建议动作：${escapeHtml(item.recommendation || '')}</p>
+      <p>${escapeHtml(item.evidence || '')}</p>
+    `;
+    container.appendChild(node);
+  });
 }
 
 function renderUserSegments(items) {
