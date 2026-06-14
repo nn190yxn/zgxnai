@@ -6,6 +6,7 @@ const state = {
   admin: null,
   activeSegmentKey: '',
   activeSegmentMeta: null,
+  currentSegmentUsers: [],
   segmentUsersByKey: {},
   segmentFilters: {
     expiringOnly: false,
@@ -226,6 +227,10 @@ document.getElementById('segmentHighActivityFilter').addEventListener('click', (
   state.segmentFilters.highActivityOnly = !state.segmentFilters.highActivityOnly;
   syncSegmentFilterButtons();
   reloadActiveSegmentUsers();
+});
+
+document.getElementById('segmentExportButton').addEventListener('click', () => {
+  exportCurrentSegmentUsers();
 });
 
 loginForm.addEventListener('submit', async (event) => {
@@ -613,10 +618,76 @@ function syncSegmentFilterButtons() {
   document.getElementById('segmentHighActivityFilter').classList.toggle('is-active', state.segmentFilters.highActivityOnly);
 }
 
+function exportCurrentSegmentUsers() {
+  if (!state.activeSegmentMeta || !state.currentSegmentUsers.length) {
+    setHint('当前没有可导出的分层名单。', 'status-error');
+    return;
+  }
+  const rows = [
+    ['分层', '昵称', '孩子', '年龄段', '会员类型', '累计支付', '支付单数', '最近活跃', '近14天活跃事件', '会员到期', '自动续费', '触达优先级', '建议动作']
+  ];
+  state.currentSegmentUsers.forEach((item) => {
+    rows.push([
+      state.activeSegmentMeta.label || state.activeSegmentMeta.key || '',
+      item.nickname || `用户${item.id}`,
+      item.child_name || '',
+      item.child_age_label || '',
+      formatMembershipLabel(item.membership_type, item.current_plan),
+      String(Number(item.total_paid_amount || 0)),
+      String(Number(item.paid_order_count || 0)),
+      formatDateTime(item.last_active_at),
+      String(Number(item.active_event_count_14d || 0)),
+      formatDateTime(item.current_end_date),
+      item.auto_renew ? '已开启' : '未开启',
+      formatActionPriority(item.action_priority),
+      item.suggested_action || ''
+    ]);
+  });
+  const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = buildSegmentExportFileName();
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  setHint('当前分层名单已导出为 CSV。', 'status-success');
+}
+
+function buildSegmentExportFileName() {
+  const parts = [state.activeSegmentMeta.key || 'segment'];
+  if (state.segmentFilters.expiringOnly) {
+    parts.push('expiring');
+  }
+  if (state.segmentFilters.highActivityOnly) {
+    parts.push('high-activity');
+  }
+  parts.push(formatDateForFileName(new Date()));
+  return `niuniu-${parts.join('-')}.csv`;
+}
+
+function escapeCsvCell(value) {
+  const text = String(value || '');
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function formatDateForFileName(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+}
+
 function renderSegmentUsersPanel(segment, items, emptyMessage) {
   const title = document.getElementById('segmentUsersTitle');
   const meta = document.getElementById('segmentUsersMeta');
   const container = document.getElementById('segmentUsersList');
+  state.currentSegmentUsers = Array.isArray(items) ? items : [];
   title.textContent = segment ? `${segment.label || segment.key}名单` : '分层用户名单';
   meta.textContent = segment ? (segment.description || '最近 20 个用户样本') : '选择一个分层查看最近 20 个用户';
   container.innerHTML = '';
