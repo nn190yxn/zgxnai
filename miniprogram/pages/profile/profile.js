@@ -77,7 +77,7 @@ Page({
     });
   },
 
-  // 加载会员信息
+  // 加载成长服务信息
   loadMembershipInfo: function() {
     var that = this;
     if (!app.globalData.isLoggedIn) {
@@ -97,12 +97,12 @@ Page({
       });
     }).catch(function(err) {
       if (app.globalData.isDebug) {
-        console.error('获取会员信息失败', err);
+        console.error('获取成长服务信息失败', err);
       }
     });
   },
 
-  // 进入会员中心
+  // 进入成长服务页
   goToMembership: function() {
     wx.navigateTo({
       url: '/pages/membership/index',

@@ -21,8 +21,8 @@ Page({
     heroImageReady: false,
     growthStatus: {
       weekCompletion: 68,
-      currentFocus: '先判断孩子卡在哪',
-      todaySuggestion: '从成长观察或能力训练开始'
+      currentFocus: '围绕成长观察、能力训练和成长记录安排今天的育儿重点',
+      todaySuggestion: '从成长观察、能力成长或成长记录中选择一个开始'
     },
     dailyPlanLoading: false,
     dailyPlanCards: [],
@@ -30,36 +30,36 @@ Page({
     dailyPlanCompletedCount: 0,
     dailyPlanEmptyText: '',
     membershipTouchpointVisible: false,
-    membershipTouchpointTitle: '开通会员，持续看每周成长总结',
-    membershipTouchpointDesc: '把每日记录、今日计划和下周建议连起来，妈妈更容易坚持。',
+    membershipTouchpointTitle: '宝贝每周成长总结',
+    membershipTouchpointDesc: '可查看更完整的每周成长总结、趋势提醒和陪伴建议。',
     todayTask: {
-      title: '今日建议：先做一次成长观察',
-      duration: '3分钟了解孩子近期表现'
+      title: '今日建议：开始今天的成长观察',
+      duration: '3分钟了解孩子近期状态'
     },
     weeklyProgress: {
-      headline: '先记录 3 天，周总结会开始成形',
-      summary: '把每日记录、今日计划和下周建议连成一个闭环。',
+      headline: '连续记录几天后，本周成长总结会更完整',
+      summary: '把每天的成长变化记录下来，系统会整理出更清晰的阶段总结。',
       streakDays: 0,
       actionText: '查看完整周报',
       premiumUnlocked: false
     },
     bannerList: [
       {
-        title: '孩子的问题，先别靠猜',
-        desc: '专注、表达、阅读、吃饭睡眠，3分钟帮妈妈找到切入口',
-        cta: '立即观察',
+        title: '宝贝成长观察',
+        desc: '围绕吃饭、睡眠、表达、情绪和习惯，了解孩子近期成长状态',
+        cta: '开始观察',
         action: 'assessment'
       },
       {
-        title: '育儿问题随时问',
-        desc: '把孩子的具体情况说清楚，获得可执行的家庭建议',
+        title: '育儿问题解答',
+        desc: '结合孩子的具体情况，获得更清晰的家庭陪伴建议',
         cta: '问问AI助理',
         action: 'chat'
       },
       {
-        title: '每天一点点，妈妈更有底',
-        desc: '观察、练习、饮食、知识都放在一个育儿助手里',
-        cta: '查看工具',
+        title: '宝贝成长记录',
+        desc: '把观察、练习、饮食和成长变化整理在一起，持续记录成长过程',
+        cta: '查看功能',
         action: 'assessment'
       }
     ]
@@ -171,14 +171,14 @@ Page({
 
     var streakDays = metrics.streakDays || this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项能力成长任务') : '从成长观察或能力训练开始';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项能力成长任务') : '从成长观察、能力成长或成长记录中选择一个开始';
 
     this.setData({
-      growthStatus: {
-        weekCompletion: completionRate || this.data.growthStatus.weekCompletion,
-        currentFocus: '先判断孩子卡在哪',
-        todaySuggestion: suggestion
-      },
+        growthStatus: {
+          weekCompletion: completionRate || this.data.growthStatus.weekCompletion,
+          currentFocus: '围绕成长观察、能力训练和成长记录安排今天的育儿重点',
+          todaySuggestion: suggestion
+        },
       weeklyProgress: {
         headline: this.data.weeklyProgress.headline,
         summary: this.data.weeklyProgress.summary,
@@ -195,8 +195,8 @@ Page({
     if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
       that.setData({
         weeklyProgress: {
-          headline: '本周先把记录稳定到 3 天以上',
-          summary: '有了连续记录后，周总结会更贴近你家当前状态。',
+          headline: '先完成连续记录，本周成长总结会更完整',
+          summary: '连续记录每天的变化后，系统会整理出更清晰的本周成长总结。',
           streakDays: 0,
           actionText: '查看完整周报',
           premiumUnlocked: false
@@ -207,8 +207,8 @@ Page({
     if (!currentChild || !currentChild.id) {
       that.setData({
         weeklyProgress: {
-          headline: '先补孩子档案，周总结会更准确',
-          summary: '完成档案后，再用成长记录和今日计划形成每周总结。',
+          headline: '完善孩子档案后，可以获得更准确的成长总结',
+          summary: '补充年龄和基础情况后，系统会提供更贴合成长阶段的记录和建议。',
           streakDays: 0,
           actionText: '先去完善',
           premiumUnlocked: false
@@ -256,7 +256,7 @@ Page({
       });
       if (weeklySummary && !weeklySummary.premiumUnlocked) {
         that.setData({
-          membershipTouchpointTitle: '开通会员，解锁更完整的每周成长总结',
+          membershipTouchpointTitle: '宝贝每周成长总结',
           membershipTouchpointDesc: weeklySummary.premiumTip || that.data.membershipTouchpointDesc
         });
       }
@@ -314,9 +314,9 @@ Page({
         id: 'guest_1',
         planDate: dateText,
         type: 'onboarding',
-        title: '先补孩子档案，后面的建议会更贴近你家',
-        reason: '告诉我孩子年龄和基本情况后，首页建议会更准。',
-        summary: '补完档案后，我会按年龄和重点给你今日建议。',
+        title: '完善孩子档案，获取更准确的成长建议',
+        reason: '年龄和基础情况越完整，首页推荐内容越准确。',
+        summary: '补完档案后，系统会按年龄和当前重点生成今日育儿建议。',
         actionText: '去完善',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -326,9 +326,9 @@ Page({
         id: 'guest_2',
         planDate: dateText,
         type: 'habit_reminder',
-        title: '今天先做一次成长观察，别急着靠猜',
-        reason: '先判断孩子卡在哪一步，后面的陪伴会更稳。',
-        summary: '观察一次专注、表达或习惯问题，先把切入口找清楚。',
+        title: '开始成长观察，了解孩子近期状态',
+        reason: '先完成一次观察，后面的陪伴建议会更有针对性。',
+        summary: '从专注、表达或习惯中选择一个方向，开始今天的成长观察。',
         actionText: '去观察',
         durationMinutes: 3,
         targetType: 'assessment',
@@ -338,9 +338,9 @@ Page({
         id: 'guest_3',
         planDate: dateText,
         type: 'parenting_article',
-        title: '先去育儿知识里找最像你家的一类问题',
-        reason: '先缩小问题范围，会比盲目翻内容更省心。',
-        summary: '从情绪、习惯、认知、社交、营养五类问题直接进入。',
+        title: '查看育儿知识，找到适合当前问题的内容',
+        reason: '按场景进入，更容易找到对应的育儿方法。',
+        summary: '从情绪、习惯、认知、社交、营养五类内容中开始查找。',
         actionText: '去看看',
         durationMinutes: 5,
         targetType: 'parenting_home',
@@ -354,7 +354,7 @@ Page({
     var completedCount = list.filter(function(item) { return item.completed; }).length;
     var firstCard = list[0] || null;
     var growthStatus = Object.assign({}, this.data.growthStatus, {
-      todaySuggestion: firstCard ? firstCard.title : '从成长观察或能力训练开始'
+      todaySuggestion: firstCard ? firstCard.title : '从成长观察、能力成长或成长记录中选择一个开始'
     });
     var todayTask = Object.assign({}, this.data.todayTask, firstCard ? {
       title: firstCard.title,
@@ -364,7 +364,7 @@ Page({
       dailyPlanCards: list,
       dailyPlanDate: (payload && payload.date) || '',
       dailyPlanCompletedCount: completedCount,
-      dailyPlanEmptyText: list.length ? '' : '今天先从最容易做到的一步开始。',
+      dailyPlanEmptyText: list.length ? '' : '今天先从一个明确的育儿主题开始。',
       growthStatus: growthStatus,
       todayTask: todayTask
     });

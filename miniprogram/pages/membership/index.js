@@ -1,4 +1,4 @@
-// 会员中心页面 - 审核期版本
+// 成长服务页面 - 审核期版本
 const app = getApp();
 const { ENABLE_WECHAT_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
 
@@ -17,7 +17,7 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_WECHAT_PAY,
-    paymentNotice: ENABLE_WECHAT_PAY ? '选择套餐后可发起微信支付' : '微信支付暂未开放，可先使用试用和邀请奖励',
+    paymentNotice: ENABLE_WECHAT_PAY ? '选择方案后可发起微信支付' : '微信支付暂未开放，可先使用试用资格和邀请奖励',
     
     // 套餐列表
     plans: [
@@ -29,11 +29,11 @@ Page({
     // 兑换码
     promoCode: '',
     promoEnabled: false,
-    promoBenefitText: '输入统一兑换码可领取2个月会员',
+    promoBenefitText: '输入统一兑换码可领取2个月成长服务',
     premiumFeatures: [
-      { key: 'weekly_summary', title: '每周成长总结', desc: '持续看记录趋势、计划完成度和下周重点' },
-      { key: 'scene_search', title: '场景化搜索承接', desc: '把“发脾气、挑食、睡前拖延”直接变成行动方案' },
-      { key: 'daily_guidance', title: '持续能力陪伴', desc: '把观察、训练、营养和方法连成闭环' }
+      { key: 'weekly_summary', title: '宝贝每周成长总结', desc: '持续查看记录趋势、计划完成度和下周重点' },
+      { key: 'scene_search', title: '育儿场景内容', desc: '把“发脾气、挑食、睡前拖延”直接变成可参考的方法' },
+      { key: 'daily_guidance', title: '每日成长陪伴', desc: '把观察、训练、营养和方法连成持续陪伴内容' }
     ],
     displayFeatures: [],
     
@@ -82,7 +82,7 @@ Page({
     var isActive = !!(membershipInfo && membershipInfo.is_active);
     return (this.data.premiumFeatures || []).map(function(item) {
       return Object.assign({}, item, {
-        statusText: isActive ? '已解锁' : '待解锁',
+        statusText: isActive ? '当前可查看' : '开通后可查看',
         unlocked: isActive
       });
     });
@@ -97,7 +97,7 @@ Page({
       this.setData({
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
-        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月会员',
+        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月成长服务',
         displayFeatures: this.buildDisplayFeatures(data)
       });
     }).catch(err => {
@@ -136,12 +136,12 @@ Page({
     }).then(data => {
       if (data.activated !== false) {
         this.trackMembershipEvent('membership_trial_activate');
-        wx.showToast({ title: '试用已激活', icon: 'success' });
+        wx.showToast({ title: '试用已开启', icon: 'success' });
         this.loadMembershipInfo();
       } else if (data.reason === 'active_membership_exists') {
-        wx.showToast({ title: '当前会员有效期内无需试用', icon: 'none' });
+        wx.showToast({ title: '当前成长服务有效期内无需试用', icon: 'none' });
       } else {
-        wx.showToast({ title: '试用期已使用过', icon: 'none' });
+        wx.showToast({ title: '试用资格已使用', icon: 'none' });
       }
     }).catch(err => {
       if (app.globalData.isDebug) {
@@ -167,7 +167,7 @@ Page({
       return;
     }
     if (!this.data.selectedPlan) {
-      wx.showToast({ title: '请先选择套餐', icon: 'none' });
+      wx.showToast({ title: '请先选择方案', icon: 'none' });
       return;
     }
     if (this.data.isPaying) {
@@ -257,7 +257,7 @@ Page({
       if (data && data.message) {
         setTimeout(() => {
           wx.showModal({
-            title: '会员已到账',
+            title: '成长服务已到账',
             content: data.message,
             showCancel: false
           });
@@ -279,11 +279,11 @@ Page({
       method: 'GET'
     }).then(data => {
       if (data.success && data.invite_code) {
-        wx.showModal({
-          title: '邀请好友',
-          content: '邀请好友注册，双方各得7天会员！',
-          confirmText: '复制邀请码',
-          success: (res) => {
+          wx.showModal({
+            title: '邀请家人朋友',
+            content: '邀请好友注册，双方各得7天成长服务！',
+            confirmText: '复制邀请码',
+            success: (res) => {
             if (res.confirm) {
               wx.setClipboardData({
                 data: data.invite_code,
@@ -309,8 +309,8 @@ Page({
 
   onShareAppMessage() {
     const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
-    return {
-      title: '小牛育儿AI助理，邀请你领取7天会员',
+      return {
+      title: '小牛育儿AI助理，邀请你领取7天成长服务',
       path: '/pages/index/index?invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_invite',
       imageUrl: '/images/default-article.png'
     };
@@ -319,7 +319,7 @@ Page({
   onShareTimeline() {
     const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
     return {
-      title: '小牛育儿AI助理，邀请你领取7天会员',
+      title: '小牛育儿AI助理，邀请你领取7天成长服务',
       query: 'invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_timeline',
       imageUrl: '/images/default-article.png'
     };

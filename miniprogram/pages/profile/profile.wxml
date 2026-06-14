@@ -10,19 +10,19 @@
     <button class="login-btn" wx:if="{{!isLoggedIn}}" bindtap="login">登录</button>
   </view>
 
-  <!-- 会员状态卡片 -->
+  <!-- 成长服务状态卡片 -->
   <view class="section" wx:if="{{isLoggedIn}}">
     <view class="membership-entry" bindtap="goToMembership">
       <view class="membership-entry-left">
         <view class="membership-entry-icon">VIP</view>
         <view class="membership-entry-info">
-          <text class="membership-entry-title">会员中心</text>
-          <text class="membership-entry-desc" wx:if="{{membershipInfo.is_active}}">{{membershipInfo.membership_type === 'trial' ? '试用期会员' : '正式会员'}} 剩余 {{membershipInfo.days_left}} 天</text>
-          <text class="membership-entry-desc" wx:else>开通会员，享受更多权益</text>
+          <text class="membership-entry-title">宝贝成长服务</text>
+          <text class="membership-entry-desc" wx:if="{{membershipInfo.is_active}}">{{membershipInfo.membership_type === 'trial' ? '成长服务试用中' : '成长服务已开通'}} 剩余 {{membershipInfo.days_left}} 天</text>
+          <text class="membership-entry-desc" wx:else>查看更完整的成长总结和陪伴建议</text>
         </view>
       </view>
       <view class="membership-entry-right">
-        <text class="membership-status {{membershipInfo.is_active ? 'active' : ''}}">{{membershipInfo.is_active ? '已开通' : '未开通'}}</text>
+        <text class="membership-status {{membershipInfo.is_active ? 'active' : ''}}">{{membershipInfo.is_active ? '可查看' : '去查看'}}</text>
         <text class="arrow-icon">›</text>
       </view>
     </view>

@@ -19,15 +19,15 @@
     </view>
     <view class="hero-image hero-image-placeholder">
       <text class="hero-emoji">🌱</text>
-      <text class="hero-image-title">成长支持</text>
-      <text class="hero-image-desc">观察、营养、阅读、沟通，围绕家庭场景提供帮助</text>
+      <text class="hero-image-title">成长观察与育儿支持</text>
+      <text class="hero-image-desc">把观察、记录、饮食和陪伴建议放在一起，帮助家长更快找到适合自己家庭的育儿方式</text>
     </view>
   </view>
 
   <view class="section status-section">
     <view class="status-card">
       <view class="status-row">
-        <text class="status-title">妈妈今日切入口</text>
+        <text class="status-title">今日成长重点</text>
         <text class="status-rate">3分钟</text>
       </view>
       <text class="status-item">当前重点：{{growthStatus.currentFocus}}</text>
@@ -37,54 +37,54 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">遇到这些问题，直接点</text>
+      <text class="section-title">育儿功能入口</text>
     </view>
 
     <view class="module-grid">
       <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card" bindtap="goToAssessment">
-        <text class="module-name">成长观察</text>
-        <text class="module-desc">专注表达</text>
+        <text class="module-name">成长观察评估</text>
+        <text class="module-desc">了解近期状态</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToAssessment">
-        <text class="module-name">成长观察</text>
+        <text class="module-name">成长观察评估</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
       <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
-        <text class="module-name">能力成长</text>
-        <text class="module-desc">读懂说清</text>
+        <text class="module-name">能力成长训练</text>
+        <text class="module-desc">在家开展练习</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
-        <text class="module-name">能力成长</text>
+        <text class="module-name">能力成长训练</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
       <view class="module-card" bindtap="goToNutrition">
         <text class="module-name">营养食谱</text>
-        <text class="module-desc">挑食长高</text>
+        <text class="module-desc">饮食搭配参考</text>
       </view>
 
       <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card" bindtap="goToParenting">
-        <text class="module-name">育儿知识</text>
-        <text class="module-desc">妈妈锦囊</text>
+        <text class="module-name">育儿知识内容</text>
+        <text class="module-desc">查看场景方法</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToParenting">
-        <text class="module-name">育儿知识</text>
+        <text class="module-name">育儿知识内容</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
-        <text class="module-name">家长助手</text>
-        <text class="module-desc">随时提问</text>
+        <text class="module-name">AI育儿问答</text>
+        <text class="module-desc">输入问题获取建议</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
-        <text class="module-name">家长助手</text>
+        <text class="module-name">AI育儿问答</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
       <view class="module-card" bindtap="goToGrowthRecord">
         <text class="module-name">成长记录</text>
-        <text class="module-desc">持续追踪</text>
+        <text class="module-desc">记录每日变化</text>
       </view>
     </view>
   </view>
@@ -137,7 +137,7 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">本周成长</text>
+      <text class="section-title">本周成长总结</text>
     </view>
 
     <view class="progress-card" bindtap="goToWeeklyReport">
@@ -152,13 +152,13 @@
   </view>
 
   <view class="section" wx:if="{{membershipTouchpointVisible}}">
-    <view class="progress-card" bindtap="goToMembership">
-      <text class="progress-line">{{membershipTouchpointTitle}}</text>
-      <text class="progress-line">{{membershipTouchpointDesc}}</text>
-      <view class="progress-actions">
-        <text class="progress-action">查看会员权益</text>
+      <view class="progress-card" bindtap="goToMembership">
+        <text class="progress-line">{{membershipTouchpointTitle}}</text>
+        <text class="progress-line">{{membershipTouchpointDesc}}</text>
+        <view class="progress-actions">
+          <text class="progress-action">查看宝贝成长总结</text>
+        </view>
       </view>
-    </view>
   </view>
 
   <view class="tips-card">

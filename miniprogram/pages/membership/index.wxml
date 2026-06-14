@@ -1,17 +1,17 @@
-<!-- 会员中心页面 - 审核期版本 -->
+<!-- 成长服务页面 - 审核期版本 -->
 <view class="membership-page">
-  <!-- 会员状态卡片 -->
+  <!-- 成长服务状态卡片 -->
   <view class="membership-card">
     <view class="membership-header">
-      <text class="membership-title">会员中心</text>
+      <text class="membership-title">宝贝成长服务</text>
     </view>
     <view class="membership-body">
       <view class="membership-info">
-        <text class="membership-type">{{membershipInfo.is_active ? (membershipInfo.membership_type === 'trial' ? '试用期会员' : '正式会员') : '免费用户'}}</text>
+        <text class="membership-type">{{membershipInfo.is_active ? (membershipInfo.membership_type === 'trial' ? '成长服务试用中' : '成长服务已开通') : '当前为基础服务'}}</text>
         <text class="membership-days" wx:if="{{membershipInfo.days_left > 0}}">剩余 {{membershipInfo.days_left}} 天</text>
       </view>
       <view class="membership-actions">
-        <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used && !membershipInfo.is_active}}">激活15天免费试用</button>
+        <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used && !membershipInfo.is_active}}">领取15天成长服务试用</button>
       </view>
     </view>
   </view>
@@ -19,14 +19,14 @@
   <!-- 支付状态提示 -->
   <view class="audit-notice" wx:if="{{!showPayment}}">
     <view class="notice-icon">VIP</view>
-    <text class="notice-title">会员功能即将上线</text>
+    <text class="notice-title">成长服务即将上线</text>
     <text class="notice-desc">{{paymentNotice}}</text>
-    <text class="notice-desc">当前可使用免费试用和邀请奖励</text>
+    <text class="notice-desc">当前可先使用试用资格和邀请奖励</text>
   </view>
 
-  <!-- 会员套餐 -->
+  <!-- 成长服务方案 -->
   <view class="plans-section" wx:if="{{showMembership}}">
-    <view class="section-title">选择会员套餐</view>
+    <view class="section-title">选择成长服务方案</view>
     <view class="plans-list">
       <view class="plan-item {{selectedPlan === item.code ? 'plan-selected' : ''}}" wx:for="{{plans}}" wx:key="code" data-code="{{item.code}}" bindtap="selectPlan">
         <view class="plan-header">
@@ -39,7 +39,7 @@
         <view class="plan-desc">{{item.description}}</view>
       </view>
     </view>
-    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '支付处理中' : '立即开通'}}</button>
+    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '支付处理中' : '立即开通成长服务'}}</button>
     <button wx:else class="btn-pay btn-pay-disabled" disabled="true">微信支付暂未开放</button>
   </view>
 
@@ -50,13 +50,13 @@
       <text class="referral-desc">{{promoBenefitText}}</text>
     </view>
     <view class="promo-input">
-      <input type="text" placeholder="输入兑换码" value="{{promoCode}}" bindinput="inputPromoCode" />
-      <button class="btn-promo" bindtap="redeemPromoCode">兑换</button>
-    </view>
+        <input type="text" placeholder="输入成长服务兑换码" value="{{promoCode}}" bindinput="inputPromoCode" />
+        <button class="btn-promo" bindtap="redeemPromoCode">兑换</button>
+      </view>
   </view>
 
   <view class="plans-section">
-    <view class="section-title">会员可解锁</view>
+    <view class="section-title">可查看的成长内容</view>
     <view class="benefit-list">
       <view class="benefit-item {{item.unlocked ? 'benefit-item-active' : ''}}" wx:for="{{displayFeatures}}" wx:key="key">
         <view class="benefit-head">
@@ -70,9 +70,9 @@
 
   <!-- 裂变邀请 -->
   <view class="referral-section">
-    <view class="section-title">邀请好友</view>
+    <view class="section-title">邀请家人朋友</view>
     <view class="referral-info">
-      <text class="referral-desc">邀请好友，双方各得7天会员</text>
+      <text class="referral-desc">邀请好友体验，双方各得7天成长服务</text>
     </view>
     <view class="referral-stats">
       <view class="stat-item">
@@ -80,6 +80,6 @@
         <text class="stat-label">已邀请</text>
       </view>
     </view>
-    <button class="btn-share" open-type="share">邀请好友</button>
+    <button class="btn-share" open-type="share">发送邀请</button>
   </view>
 </view>

@@ -1,7 +1,7 @@
 <view class="page">
   <view class="summary-card" wx:if="{{!currentChild}}">
-    <text class="summary-title">先补孩子档案，周总结会更准确</text>
-    <text class="summary-copy">先建立孩子档案，再把成长记录和每周总结连起来。</text>
+    <text class="summary-title">先完善孩子档案，再查看成长总结</text>
+    <text class="summary-copy">先建立孩子档案，再把成长记录和每周成长总结连起来。</text>
     <view class="primary-btn" bindtap="goToChildSetup">去完善档案</view>
   </view>
 
@@ -10,14 +10,14 @@
   </view>
 
   <view class="summary-card" wx:elif="{{!summary}}">
-    <text class="summary-title">本周总结还没准备好</text>
-    <text class="summary-copy">先去补几天成长记录，周总结会更贴近你家的真实状态。</text>
+    <text class="summary-title">本周成长总结还没生成</text>
+    <text class="summary-copy">先补几天成长记录，再来看更贴合孩子状态的成长总结。</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">
     <text class="summary-title">{{summary.childName}} 的本周成长总结</text>
     <text class="summary-range">{{summary.weekStart}} - {{summary.weekEnd}}</text>
-    <text class="summary-badge {{summary.premiumUnlocked ? 'summary-badge-active' : ''}}">{{summary.premiumUnlocked ? '会员完整版本' : '基础版本'}}</text>
+    <text class="summary-badge {{summary.premiumUnlocked ? 'summary-badge-active' : ''}}">{{summary.premiumUnlocked ? '完整成长内容' : '基础成长内容'}}</text>
     <text class="summary-copy">{{summary.overview}}</text>
   </view>
 
@@ -40,7 +40,7 @@
   <view class="summary-card" wx:if="{{currentChild && summary && !summary.premiumUnlocked}}">
     <text class="section-title">重点观察</text>
     <text class="summary-copy" wx:for="{{summary.concerns}}" wx:key="*this">{{item}}</text>
-    <text class="summary-copy">会员可继续查看更细的趋势解释、完整重点观察项和下周执行建议。</text>
+    <text class="summary-copy">继续查看后，可获得更细的趋势解释、完整重点观察项和下周陪伴建议。</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">
@@ -57,8 +57,8 @@
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && !summary.premiumUnlocked}}">
-    <text class="section-title">会员权益</text>
+    <text class="section-title">更多成长内容</text>
     <text class="summary-copy">{{summary.premiumTip}}</text>
-    <view class="primary-btn" bindtap="goToMembership">去看会员权益</view>
+    <view class="primary-btn" bindtap="goToMembership">查看宝贝成长服务</view>
   </view>
 </view>
