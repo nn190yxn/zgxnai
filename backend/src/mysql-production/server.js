@@ -27,6 +27,13 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
 const REFERRAL_REWARD_DAYS = 7;
 const REFERRAL_MAX_DAYS = 60;
+const UNIFIED_PROMO_CODE = String(
+  process.env.MEMBERSHIP_PROMO_CODE || process.env.UNIFIED_MEMBERSHIP_PROMO_CODE || 'zgxn'
+).trim().toUpperCase();
+const UNIFIED_PROMO_DAYS = Math.max(1, Number(process.env.MEMBERSHIP_PROMO_DAYS || 60) || 60);
+const UNIFIED_PROMO_PLAN_CODE = 'promo_2month';
+const UNIFIED_PROMO_MEMBERSHIP_TYPE = 'gift';
+const UNIFIED_PROMO_TYPE = 'unified_membership_2month';
 const NUTRITION_RECIPES = require('../nutrition-recipes.json');
 const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
 const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars');
@@ -1605,7 +1612,10 @@ async function membershipInfoHandler(req, res) {
       membership_type: isActive ? membership.membership_type : 'free',
       is_active: isActive,
       days_left: isActive ? Math.ceil((endTime - now) / 86400000) : 0,
+      current_end_date: isActive && membership.current_end_date ? new Date(membership.current_end_date).toISOString() : null,
       is_trial_used: !!membership.is_trial_used,
+      promo_enabled: !!UNIFIED_PROMO_CODE,
+      promo_benefit_text: `输入统一兑换码可领取${Math.round(UNIFIED_PROMO_DAYS / 30)}个月会员`,
       plans
     }
   });
@@ -1622,30 +1632,49 @@ async function isActiveMember(userId) {
   return membership.status === 'active' && endTime > Date.now();
 }
 
-async function extendMembership(connection, userId, days, payMethod) {
+async function extendMembership(connection, userId, days, payMethod, options) {
+  const config = Object.assign({
+    planCode: 'reward',
+    membershipType: 'reward',
+    autoRenew: 1,
+    preserveAutoRenew: false,
+    preservePlanIfActive: false,
+    orderNo: null
+  }, options || {});
   const [memberships] = await connection.execute(
-    'SELECT current_end_date, status FROM user_memberships WHERE user_id = ? FOR UPDATE',
+    'SELECT current_plan, membership_type, current_end_date, status, auto_renew FROM user_memberships WHERE user_id = ? FOR UPDATE',
     [userId]
   );
   const now = new Date();
   let endDate = now;
+  let autoRenew = Number(config.autoRenew) ? 1 : 0;
+  let planCode = config.planCode;
+  let membershipType = config.membershipType;
   if (memberships.length && memberships[0].status === 'active' && memberships[0].current_end_date) {
     const currentEndDate = new Date(memberships[0].current_end_date);
     if (currentEndDate > now) {
       endDate = currentEndDate;
     }
+    if (config.preservePlanIfActive) {
+      planCode = memberships[0].current_plan || planCode;
+      membershipType = memberships[0].membership_type || membershipType;
+    }
+  }
+  if (config.preserveAutoRenew && memberships.length) {
+    autoRenew = Number(memberships[0].auto_renew) ? 1 : 0;
   }
   endDate.setDate(endDate.getDate() + days);
   await connection.execute(
-    'INSERT INTO subscriptions (user_id, plan_code, status, start_date, end_date, pay_method) VALUES (?, ?, ?, NOW(), ?, ?)',
-    [userId, 'reward', 'active', endDate, payMethod]
+    'INSERT INTO subscriptions (user_id, plan_code, status, start_date, end_date, auto_renew, pay_method, order_no) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)',
+    [userId, planCode, 'active', endDate, autoRenew, payMethod, config.orderNo]
   );
   await connection.execute(
     `INSERT INTO user_memberships (user_id, current_plan, current_end_date, membership_type, status, auto_renew)
-     VALUES (?, 'reward', ?, 'reward', 'active', 1)
-     ON DUPLICATE KEY UPDATE current_plan = 'reward', current_end_date = VALUES(current_end_date), membership_type = 'reward', status = 'active'`,
-    [userId, endDate]
+     VALUES (?, ?, ?, ?, 'active', ?)
+     ON DUPLICATE KEY UPDATE current_plan = VALUES(current_plan), current_end_date = VALUES(current_end_date), membership_type = VALUES(membership_type), status = 'active', auto_renew = VALUES(auto_renew)`,
+    [userId, planCode, endDate, membershipType, autoRenew]
   );
+  return endDate;
 }
 
 async function trialHandler(req, res) {
@@ -1673,7 +1702,66 @@ async function trialHandler(req, res) {
 }
 
 async function promoHandler(req, res) {
-  res.json({ success: false, message: '兑换码暂未开放' });
+  const code = String(req.body.code || '').trim().toUpperCase();
+  if (!code) {
+    res.status(400).json({ success: false, message: '请输入兑换码' });
+    return;
+  }
+  if (!UNIFIED_PROMO_CODE) {
+    res.status(503).json({ success: false, message: '兑换码功能暂未开放' });
+    return;
+  }
+  if (code !== UNIFIED_PROMO_CODE) {
+    res.status(400).json({ success: false, message: '兑换码无效' });
+    return;
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [usedRows] = await connection.execute(
+      `SELECT id
+       FROM promo_code_redemptions
+       WHERE promo_code = ? AND user_id = ?
+       LIMIT 1
+       FOR UPDATE`,
+      [code, req.user.userId]
+    );
+    if (usedRows.length) {
+      await connection.rollback();
+      res.status(409).json({ success: false, message: '当前账号已兑换过该礼包' });
+      return;
+    }
+
+    const endDate = await extendMembership(connection, req.user.userId, UNIFIED_PROMO_DAYS, 'promo_code', {
+      planCode: UNIFIED_PROMO_PLAN_CODE,
+      membershipType: UNIFIED_PROMO_MEMBERSHIP_TYPE,
+      preserveAutoRenew: true,
+      preservePlanIfActive: true,
+      autoRenew: 0,
+      orderNo: `${UNIFIED_PROMO_TYPE}_${req.user.userId}_${Date.now()}`
+    });
+    await connection.execute(
+      `INSERT INTO promo_code_redemptions (promo_code, user_id, promo_type, reward_days, redeemed_at)
+       VALUES (?, ?, ?, ?, NOW())`,
+      [code, req.user.userId, UNIFIED_PROMO_TYPE, UNIFIED_PROMO_DAYS]
+    );
+    await connection.commit();
+    res.json({
+      success: true,
+      data: {
+        activated: true,
+        duration_days: UNIFIED_PROMO_DAYS,
+        current_end_date: endDate.toISOString(),
+        message: `兑换成功，已到账${Math.round(UNIFIED_PROMO_DAYS / 30)}个月会员`
+      }
+    });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
 async function referralStatsHandler(req, res) {
@@ -2537,6 +2625,20 @@ async function ensureProductionTables() {
       UNIQUE KEY uniq_admin_daily_funnel_stats (stat_date, funnel_key, step_key),
       INDEX idx_admin_daily_funnel_stats_date (stat_date),
       INDEX idx_admin_daily_funnel_stats_funnel (funnel_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS promo_code_redemptions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      promo_code VARCHAR(128) NOT NULL,
+      user_id BIGINT NOT NULL,
+      promo_type VARCHAR(64) NOT NULL DEFAULT 'membership',
+      reward_days INT NOT NULL DEFAULT 0,
+      redeemed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_promo_code_redemptions (promo_code, user_id),
+      INDEX idx_promo_code_redemptions_user (user_id),
+      INDEX idx_promo_code_redemptions_code (promo_code)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`

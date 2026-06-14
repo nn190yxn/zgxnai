@@ -46,6 +46,9 @@
   <!-- 兑换码 -->
   <view class="promo-section" wx:if="{{promoEnabled}}">
     <view class="section-title">兑换码</view>
+    <view class="referral-info">
+      <text class="referral-desc">{{promoBenefitText}}</text>
+    </view>
     <view class="promo-input">
       <input type="text" placeholder="输入兑换码" value="{{promoCode}}" bindinput="inputPromoCode" />
       <button class="btn-promo" bindtap="redeemPromoCode">兑换</button>

@@ -29,6 +29,7 @@ Page({
     // 兑换码
     promoCode: '',
     promoEnabled: false,
+    promoBenefitText: '输入统一兑换码可领取2个月会员',
     
     // 邀请统计
     referralStats: {},
@@ -58,7 +59,11 @@ Page({
       url: '/membership/info',
       method: 'GET'
     }).then(data => {
-      this.setData({ membershipInfo: data });
+      this.setData({
+        membershipInfo: data,
+        promoEnabled: !!data.promo_enabled,
+        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月会员'
+      });
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);
       if (app.globalData.isDebug) {
@@ -192,7 +197,8 @@ Page({
       wx.showToast({ title: '兑换码功能暂未开放', icon: 'none' });
       return;
     }
-    if (!this.data.promoCode) {
+    const code = String(this.data.promoCode || '').trim().toUpperCase();
+    if (!code) {
       wx.showToast({ title: '请输入兑换码', icon: 'none' });
       return;
     }
@@ -200,19 +206,25 @@ Page({
     app.request({
       url: '/membership/promo/redeem',
       method: 'POST',
-      data: { code: this.data.promoCode }
+      data: { code }
     }).then(data => {
-      if (data.success) {
-        wx.showToast({ title: '兑换成功', icon: 'success' });
-        this.loadMembershipInfo();
-      } else {
-        wx.showToast({ title: data.message || '兑换失败', icon: 'none' });
+      this.setData({ promoCode: '' });
+      wx.showToast({ title: '兑换成功', icon: 'success' });
+      this.loadMembershipInfo();
+      if (data && data.message) {
+        setTimeout(() => {
+          wx.showModal({
+            title: '会员已到账',
+            content: data.message,
+            showCancel: false
+          });
+        }, 350);
       }
     }).catch(err => {
       if (app.globalData.isDebug) {
         console.error('兑换失败', err);
       }
-      wx.showToast({ title: '兑换失败', icon: 'none' });
+      wx.showToast({ title: app.getApiErrorMessage(err, '兑换失败'), icon: 'none' });
     });
   },
 
