@@ -165,15 +165,15 @@ async function rebuildDailyContentStats(pool, statDate) {
          SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')), '') AS content_type,
                 COALESCE(JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_id')), '') AS content_id,
                 CASE
-                  WHEN JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')) = 'article' THEN a.title
-                  WHEN JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')) = 'reading_task' THEN rt.title
+                  WHEN JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')) = 'article' THEN COALESCE(a.title, JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.event_meta.title')), '')
+                  WHEN JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')) = 'reading_task' THEN COALESCE(rt.title, JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.event_meta.title')), '')
                   ELSE COALESCE(JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.event_meta.title')), '')
                 END AS title,
                 CASE WHEN et.event_type LIKE '%_view' OR et.event_type = 'knowledge_detail_view' THEN 1 ELSE 0 END AS view_count,
                 CASE WHEN et.event_type LIKE '%favorite%' THEN 1 ELSE 0 END AS favorite_count,
                 CASE WHEN et.event_type LIKE '%like%' THEN 1 ELSE 0 END AS like_count,
                 CASE WHEN et.event_type LIKE '%comment%' THEN 1 ELSE 0 END AS comment_count,
-                CASE WHEN et.event_type LIKE '%_complete' OR et.event_type IN ('task_complete', 'retell_complete') THEN 1 ELSE 0 END AS completion_count
+                CASE WHEN et.event_type LIKE '%_complete' OR et.event_type IN ('task_complete', 'retell_complete', 'output_submit') THEN 1 ELSE 0 END AS completion_count
            FROM event_tracks et
            LEFT JOIN articles a
              ON JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.content_type')) = 'article'
