@@ -79,3 +79,23 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 小牛育儿后台的域名、Nginx 路由、PM2 进程、数据库表和部署目录必须与现有我赢AI后台隔离。
   - 不得复用我赢AI现有后台入口、管理路由或管理进程。
   - 后台方案设计和后续实现都要优先采用独立子域名或独立路径，并明确隔离边界。
+
+[小牛育儿生产服务器连接信息]
+- Date: 2026-06-14
+- Context: Agent 在执行后台联调准备时从本机 SSH 配置与历史操作日志中发现
+- Category: 运维部署
+- Instructions:
+  - 当前小牛育儿生产服务器可通过 `ubuntu@124.223.3.175` 访问。
+  - 当前环境曾使用工作区临时私钥 `.monkeycode-tmp-files/33e5da7c-WOYING-1.pem` 连接该服务器。
+  - 小牛育儿生产部署根目录为 `/home/ubuntu/niuniu-parenting`。
+  - 生产服务进程为 `niuniu-backend`，脚本路径为 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`。
+
+[优先读取记忆并保持我赢AI隔离]
+- Date: 2026-06-14
+- Context: 用户要求后续执行时优先复用已知关键信息，减少重复追问
+- Category: 工作流协作
+- Instructions:
+  - 进入该项目后优先读取 `.monkeycode/MEMORY.md` 和已有部署文档，再决定是否需要向用户补问。
+  - 已确认的服务器、部署目录、进程名和隔离边界应持续复用。
+  - 所有服务器操作只允许落在小牛育儿目录和 `niuniu-backend` 进程范围内。
+  - 保持 `我赢AI` 目录、路由、数据库和 `woying-backend` 进程不变。
