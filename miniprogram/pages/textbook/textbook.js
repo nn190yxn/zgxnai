@@ -198,20 +198,24 @@ Page({
     task = task || {};
     var taskId = task.id || task.taskCode || '';
     var title = task.title || '';
+    var subjectCode = task.subjectCode || task.subject_code || '';
+    var isReadingTask = subjectCode === 'reading_comprehension' || !subjectCode;
     var payload = Object.assign({
       task_id: taskId,
-      module_key: 'reading_tasks',
+      module_key: isReadingTask ? 'reading_tasks' : 'education',
       page_key: 'textbook',
-      content_type: 'reading_task',
+      content_type: isReadingTask ? 'reading_task' : 'knowledge_point',
       content_id: String(taskId),
       event_meta: {
         title: title,
-        page: 'textbook'
+        page: 'textbook',
+        subject_code: subjectCode
       }
     }, extra || {});
     payload.event_meta = Object.assign({
       title: title,
-      page: 'textbook'
+      page: 'textbook',
+      subject_code: subjectCode
     }, (extra && extra.event_meta) || {});
     return payload;
   },
@@ -967,6 +971,14 @@ Page({
       return;
     }
 
+    app.trackKbEvent(this.buildReadingTaskTrackPayload(task, {
+      event_type: 'task_start',
+      page_key: 'textbook_today_tasks',
+      event_meta: {
+        entry: 'today_tasks'
+      }
+    }));
+
     // 跳转到知识点详情页面
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(task.id) + '&subjectCode=' + task.subjectCode + '&pointName=' + encodeURIComponent(task.title || '') + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
@@ -979,7 +991,7 @@ Page({
   onReadingTaskTap: function(e) {
     var taskId = e.currentTarget.dataset.id;
     var taskTitle = e.currentTarget.dataset.title || '';
-    app.trackKbEvent(this.buildReadingTaskTrackPayload({ id: taskId, title: taskTitle }, {
+    app.trackKbEvent(this.buildReadingTaskTrackPayload({ id: taskId, title: taskTitle, subjectCode: 'reading_comprehension' }, {
       event_type: 'task_start'
     }));
     wx.navigateTo({
