@@ -123,6 +123,13 @@ const demoSnapshot = {
     { feature_key: 'ai_chat', feature_users: 1194, paid_users: 186, conversion_rate: 15.58 },
     { feature_key: 'reading_tasks', feature_users: 986, paid_users: 132, conversion_rate: 13.39 }
   ],
+  userSegments: [
+    { key: 'high_value_paid', label: '高价值付费用户', description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。', count: 268, percentage: 1.44 },
+    { key: 'churn_risk', label: '即将流失会员', description: '7 天内到期且未开启自动续费，适合重点召回。', count: 132, percentage: 0.71 },
+    { key: 'paid_low_activity', label: '低活跃付费用户', description: '已经付费，但近 14 天没有活跃行为，适合做使用唤醒。', count: 314, percentage: 1.68 },
+    { key: 'active_unpaid', label: '高活跃未付费用户', description: '近 14 天活跃但还没有付费，适合做转化承接。', count: 1628, percentage: 8.73 },
+    { key: 'active_trial', label: '活跃试用用户', description: '当前试用中且近 7 天活跃，适合做试用转付费。', count: 208, percentage: 1.12 }
+  ],
   userTrends: {
     items: [
       { stat_date: '2026-06-01', new_users: 108, active_users: 1822, paid_active_users: 352, ai_users: 468 },
@@ -275,6 +282,7 @@ function renderDashboard(snapshot) {
   renderMembershipLifecycle(snapshot.membershipLifecycle || snapshot.overview.membership_lifecycle || {});
   renderAgeFeaturePreferences(snapshot.ageFeaturePreferences || snapshot.overview.age_feature_preferences || []);
   renderFeatureConversion(snapshot.featureConversion || snapshot.overview.feature_conversion || []);
+  renderUserSegments(snapshot.userSegments || snapshot.overview.user_segments || []);
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
@@ -477,6 +485,28 @@ function renderFeatureConversion(items) {
     score: formatPercent(item.conversion_rate),
     meta: `触达 ${formatNumber(item.feature_users)} / 支付 ${formatNumber(item.paid_users)}`
   }));
+}
+
+function renderUserSegments(items) {
+  const container = document.getElementById('userSegments');
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无用户分层数据。</div>';
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'segment-card';
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.label || item.key || '-')}</span>
+        <strong>${escapeHtml(formatNumber(item.count))}</strong>
+      </div>
+      <span class="distribution-meta">占总用户 ${escapeHtml(formatPercent(item.percentage))}</span>
+      <p class="segment-copy">${escapeHtml(item.description || '')}</p>
+    `;
+    container.appendChild(node);
+  });
 }
 
 function renderTrendBars(containerId, items, valueKey, tone) {

@@ -473,6 +473,35 @@ async function adminDashboardOverviewHandler(req, res) {
      ORDER BY feature_users DESC, paid_users DESC
      LIMIT 12`
   );
+  const [segmentRows] = await pool.execute(
+    `SELECT
+       SUM(CASE WHEN COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 199 OR COALESCE(payments.paid_order_count, 0) >= 2) THEN 1 ELSE 0 END) AS high_value_paid_users,
+       SUM(CASE WHEN memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND memberships.current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) AND COALESCE(memberships.auto_renew, 0) = 0 THEN 1 ELSE 0 END) AS churn_risk_users,
+       SUM(CASE WHEN COALESCE(payments.paid_order_count, 0) > 0 AND COALESCE(activity.active_14d, 0) = 0 THEN 1 ELSE 0 END) AS paid_low_activity_users,
+       SUM(CASE WHEN COALESCE(activity.active_14d, 0) = 1 AND COALESCE(payments.paid_order_count, 0) = 0 THEN 1 ELSE 0 END) AS active_unpaid_users,
+       SUM(CASE WHEN memberships.membership_type = 'trial' AND memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND COALESCE(activity.active_7d, 0) = 1 THEN 1 ELSE 0 END) AS active_trial_users
+      FROM users u
+      LEFT JOIN (
+        SELECT user_id,
+               1 AS active_14d,
+               MAX(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS active_7d
+          FROM event_tracks
+         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+         GROUP BY user_id
+      ) activity
+        ON activity.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id,
+               COUNT(*) AS paid_order_count,
+               COALESCE(SUM(amount), 0) AS total_paid_amount
+          FROM payment_orders
+         WHERE status = 'paid'
+         GROUP BY user_id
+      ) payments
+        ON payments.user_id = u.id
+      LEFT JOIN user_memberships memberships
+        ON memberships.user_id = u.id`
+  );
   const [featureRows] = await pool.execute(
     `SELECT event_type, COUNT(*) AS count
        FROM event_tracks
@@ -495,6 +524,7 @@ async function adminDashboardOverviewHandler(req, res) {
   const totalRevenue = Number(revenue.total_revenue || 0);
   const funnel = funnelRows[0] || {};
   const lifecycle = lifecycleRows[0] || {};
+  const segments = segmentRows[0] || {};
   const funnelItems = [
     { key: 'registered', label: '注册用户', count: Number(funnel.registered_users || 0) },
     { key: 'active30d', label: '近30天活跃', count: Number(funnel.active_users_30d || 0) },
@@ -563,6 +593,7 @@ async function adminDashboardOverviewHandler(req, res) {
         paid_users: Number(row.paid_users || 0),
         conversion_rate: calculateRatio(row.paid_users, row.feature_users)
       })),
+      user_segments: buildUserSegments(segments, totalUsers),
       top_events_7d: featureRows,
       ai_status: getAIStatus()
     }
@@ -645,6 +676,45 @@ function formatAgeFeatureRows(rows) {
       const order = ['0-1', '1-2', '2-3', '3-4', '4-6', '6+', 'unknown'];
       return order.indexOf(left.age_key) - order.indexOf(right.age_key);
     });
+}
+
+function buildUserSegments(row, totalUsers) {
+  const definitions = [
+    {
+      key: 'high_value_paid',
+      label: '高价值付费用户',
+      description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。',
+      count: Number(row.high_value_paid_users || 0)
+    },
+    {
+      key: 'churn_risk',
+      label: '即将流失会员',
+      description: '7 天内到期且未开启自动续费，适合重点召回。',
+      count: Number(row.churn_risk_users || 0)
+    },
+    {
+      key: 'paid_low_activity',
+      label: '低活跃付费用户',
+      description: '已经付费，但近 14 天没有活跃行为，适合做使用唤醒。',
+      count: Number(row.paid_low_activity_users || 0)
+    },
+    {
+      key: 'active_unpaid',
+      label: '高活跃未付费用户',
+      description: '近 14 天活跃但还没有付费，适合做转化承接。',
+      count: Number(row.active_unpaid_users || 0)
+    },
+    {
+      key: 'active_trial',
+      label: '活跃试用用户',
+      description: '当前试用中且近 7 天活跃，适合做试用转付费。',
+      count: Number(row.active_trial_users || 0)
+    }
+  ];
+  return definitions.map((item) => ({
+    ...item,
+    percentage: calculateRatio(item.count, totalUsers)
+  }));
 }
 
 function buildFeatureKeySql(alias) {
