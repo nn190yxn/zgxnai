@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小牛育儿后台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div>
+          <p class="eyebrow">NiuNiu Parenting</p>
+          <h1>运营后台</h1>
+          <p class="sidebar-copy">面向小牛育儿独立经营数据，覆盖登录、总览、趋势和排行。</p>
+        </div>
+        <div class="sidebar-meta">
+          <div>
+            <span>接口前缀</span>
+            <strong id="apiBaseText">/admin-api/v1</strong>
+          </div>
+          <div>
+            <span>当前状态</span>
+            <strong id="authStateText">未登录</strong>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="panel hero">
+          <div>
+            <p class="eyebrow">Phase 1</p>
+            <h2>小牛育儿经营驾驶舱</h2>
+            <p class="hero-copy">当前页面直接对接后台认证、总览、趋势和排行接口，便于先完成业务可见性验证。</p>
+          </div>
+          <form id="loginForm" class="login-form">
+            <label>
+              <span>账号</span>
+              <input id="usernameInput" name="username" type="text" placeholder="admin" autocomplete="username" required />
+            </label>
+            <label>
+              <span>密码</span>
+              <input id="passwordInput" name="password" type="password" placeholder="请输入后台密码" autocomplete="current-password" required />
+            </label>
+            <div class="login-actions">
+              <button id="loginButton" type="submit">登录后台</button>
+              <button id="refreshButton" type="button" class="ghost">刷新数据</button>
+            </div>
+            <p id="loginHint" class="hint">登录后自动拉取总览、用户趋势、收入趋势、功能排行、内容排行。</p>
+          </form>
+        </section>
+
+        <section class="stats-grid" id="statsGrid">
+          <article class="panel stat-card accent-a">
+            <span>总用户数</span>
+            <strong id="totalUsersValue">-</strong>
+            <small id="todayUsersValue">今日新增 -</small>
+          </article>
+          <article class="panel stat-card accent-b">
+            <span>活跃度</span>
+            <strong id="dauValue">-</strong>
+            <small id="mauValue">MAU - / WAU -</small>
+          </article>
+          <article class="panel stat-card accent-c">
+            <span>收入总额</span>
+            <strong id="revenueValue">-</strong>
+            <small id="paidOrdersValue">今日支付单量 -</small>
+          </article>
+          <article class="panel stat-card accent-d">
+            <span>有效会员</span>
+            <strong id="membershipValue">-</strong>
+            <small id="membershipMixValue">试用 - / 月 - / 季 - / 年 -</small>
+          </article>
+        </section>
+
+        <section class="analytics-grid">
+          <article class="panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Users</p>
+                <h3>用户趋势</h3>
+              </div>
+              <span class="panel-note">最近 14 天</span>
+            </div>
+            <div id="userTrendChart" class="bars"></div>
+            <div id="userTrendTable" class="table-wrap"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Revenue</p>
+                <h3>收入趋势</h3>
+              </div>
+              <span class="panel-note">最近 14 天</span>
+            </div>
+            <div id="revenueTrendChart" class="bars"></div>
+            <div id="revenueTrendTable" class="table-wrap"></div>
+          </article>
+
+          <article class="panel ranking-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Features</p>
+                <h3>功能排行</h3>
+              </div>
+              <span class="panel-note">按浏览量排序</span>
+            </div>
+            <div id="featureRanking" class="ranking-list"></div>
+          </article>
+
+          <article class="panel ranking-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Content</p>
+                <h3>内容排行</h3>
+              </div>
+              <span class="panel-note">按浏览量排序</span>
+            </div>
+            <div id="contentRanking" class="ranking-list"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+  </html>

@@ -30,6 +30,7 @@ const REFERRAL_MAX_DAYS = 60;
 const NUTRITION_RECIPES = require('../nutrition-recipes.json');
 const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
 const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars');
+const ADMIN_PORTAL_ROOT = path.resolve(__dirname, '../../../admin-portal');
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production');
@@ -65,6 +66,9 @@ app.use(express.json({
   }
 }));
 app.use('/uploads', express.static(UPLOAD_ROOT));
+app.use('/admin-console', express.static(ADMIN_PORTAL_ROOT));
+app.get('/admin-console', adminPortalHandler);
+app.get('/admin-console/*', adminPortalHandler);
 
 app.get('/health', healthHandler);
 for (const prefix of API_PREFIXES) {
@@ -265,6 +269,10 @@ async function requireActiveMembership(req, res, next) {
 
 function paidFeaturePlaceholderHandler(req, res) {
   res.status(404).json({ success: false, message: '接口暂未在生产服务开放', path: req.path });
+}
+
+function adminPortalHandler(req, res) {
+  res.sendFile(path.join(ADMIN_PORTAL_ROOT, 'index.html'));
 }
 
 async function adminLoginHandler(req, res) {
