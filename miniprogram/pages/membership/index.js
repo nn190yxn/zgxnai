@@ -30,6 +30,12 @@ Page({
     promoCode: '',
     promoEnabled: false,
     promoBenefitText: '输入统一兑换码可领取2个月会员',
+    premiumFeatures: [
+      { key: 'weekly_summary', title: '每周成长总结', desc: '持续看记录趋势、计划完成度和下周重点' },
+      { key: 'scene_search', title: '场景化搜索承接', desc: '把“发脾气、挑食、睡前拖延”直接变成行动方案' },
+      { key: 'daily_guidance', title: '持续能力陪伴', desc: '把观察、训练、营养和方法连成闭环' }
+    ],
+    displayFeatures: [],
     
     // 邀请统计
     referralStats: {},
@@ -41,6 +47,9 @@ Page({
   },
 
   onLoad() {
+    this.setData({
+      displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
+    });
     app.ensureLogin().then(() => {
       this.loadMembershipInfo();
       this.loadReferralStats();
@@ -51,6 +60,32 @@ Page({
 
   onShow() {
     this.loadMembershipInfo();
+    this.trackMembershipEvent('membership_center_view');
+  },
+
+  trackMembershipEvent(eventType, extraMeta) {
+    if (!app.trackKbEvent) {
+      return;
+    }
+    app.trackKbEvent({
+      event_type: eventType,
+      module_key: 'membership_center',
+      page_key: 'membership_index',
+      event_meta: Object.assign({
+        is_active: !!(this.data.membershipInfo && this.data.membershipInfo.is_active),
+        membership_type: (this.data.membershipInfo && this.data.membershipInfo.membership_type) || 'free'
+      }, extraMeta || {})
+    });
+  },
+
+  buildDisplayFeatures(membershipInfo) {
+    var isActive = !!(membershipInfo && membershipInfo.is_active);
+    return (this.data.premiumFeatures || []).map(function(item) {
+      return Object.assign({}, item, {
+        statusText: isActive ? '已解锁' : '待解锁',
+        unlocked: isActive
+      });
+    });
   },
 
   // 加载会员信息
@@ -62,10 +97,14 @@ Page({
       this.setData({
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
-        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月会员'
+        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月会员',
+        displayFeatures: this.buildDisplayFeatures(data)
       });
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);
+      this.setData({
+        displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
+      });
       if (app.globalData.isDebug) {
         console.error('获取会员信息失败', err);
       }
@@ -96,6 +135,7 @@ Page({
       method: 'POST'
     }).then(data => {
       if (data.activated !== false) {
+        this.trackMembershipEvent('membership_trial_activate');
         wx.showToast({ title: '试用已激活', icon: 'success' });
         this.loadMembershipInfo();
       } else if (data.reason === 'active_membership_exists') {
@@ -115,6 +155,7 @@ Page({
   selectPlan(e) {
     const code = e.currentTarget.dataset.code;
     this.setData({ selectedPlan: code });
+    this.trackMembershipEvent('membership_plan_select', { plan_code: code });
     if (!this.data.showPayment) {
       wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
     }
@@ -171,6 +212,7 @@ Page({
         });
       });
     }).then(function() {
+      that.trackMembershipEvent('membership_payment_success', { plan_code: that.data.selectedPlan });
       wx.showToast({ title: '支付成功', icon: 'success' });
       that.loadMembershipInfo();
     }).catch(function(err) {
@@ -208,6 +250,7 @@ Page({
       method: 'POST',
       data: { code }
     }).then(data => {
+      this.trackMembershipEvent('membership_promo_redeem', { code_type: 'unified' });
       this.setData({ promoCode: '' });
       wx.showToast({ title: '兑换成功', icon: 'success' });
       this.loadMembershipInfo();
@@ -230,6 +273,7 @@ Page({
 
   // 邀请好友
   shareInvite() {
+    this.trackMembershipEvent('membership_invite_click');
     app.request({
       url: '/referral/code',
       method: 'GET'

@@ -101,6 +101,15 @@ for (const prefix of API_PREFIXES) {
   app.put(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenUpdateHandler));
   app.put(`${prefix}/children/:id/set-default`, authenticateToken, asyncHandler(childrenSetDefaultHandler));
   app.delete(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenDeleteHandler));
+  app.get(`${prefix}/daily-plan`, authenticateToken, asyncHandler(dailyPlanHandler));
+  app.post(`${prefix}/daily-plan/complete`, authenticateToken, asyncHandler(dailyPlanCompleteHandler));
+  app.get(`${prefix}/growth-records/daily`, authenticateToken, asyncHandler(growthRecordDailyHandler));
+  app.post(`${prefix}/growth-records`, authenticateToken, asyncHandler(growthRecordUpsertHandler));
+  app.get(`${prefix}/growth-records/history`, authenticateToken, asyncHandler(growthRecordHistoryHandler));
+  app.get(`${prefix}/growth-records/summary`, authenticateToken, asyncHandler(growthRecordSummaryHandler));
+  app.get(`${prefix}/weekly-summary`, authenticateToken, asyncHandler(weeklySummaryHandler));
+  app.get(`${prefix}/search/scenes`, optionalAuthenticateToken, asyncHandler(sceneSearchTagsHandler));
+  app.get(`${prefix}/search/solutions`, optionalAuthenticateToken, asyncHandler(sceneSearchSolutionsHandler));
   app.get(`${prefix}/parenting/articles`, optionalAuthenticateToken, asyncHandler(parentingArticlesHandler));
   app.get(`${prefix}/parenting/articles/:id`, optionalAuthenticateToken, asyncHandler(parentingArticleDetailHandler));
   app.get(`${prefix}/parenting/articles/:id/related`, optionalAuthenticateToken, asyncHandler(parentingRelatedArticlesHandler));
@@ -195,6 +204,10 @@ function runtimeConfigHandler(req, res) {
     assessments_enabled: true,
     education_enabled: true,
     parenting_enabled: true,
+    daily_plan_enabled: true,
+    growth_record_enabled: true,
+    weekly_summary_enabled: true,
+    scene_search_enabled: true,
     multimodal_enabled: false,
     payment_enabled: false,
     ai_mock_fallback: false,
@@ -2673,6 +2686,129 @@ async function ensureProductionTables() {
       INDEX idx_article_comments_article (article_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS daily_plan_records (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      child_id BIGINT NOT NULL,
+      plan_date DATE NOT NULL,
+      slot_index INT NOT NULL DEFAULT 0,
+      plan_type VARCHAR(64) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      reason_text TEXT,
+      action_text VARCHAR(64) DEFAULT '',
+      summary_text TEXT,
+      duration_minutes INT NOT NULL DEFAULT 0,
+      target_type VARCHAR(64) DEFAULT '',
+      target_id VARCHAR(128) DEFAULT '',
+      target_path VARCHAR(500) DEFAULT '',
+      source_key VARCHAR(128) DEFAULT '',
+      score INT NOT NULL DEFAULT 0,
+      status VARCHAR(32) NOT NULL DEFAULT 'pending',
+      completed_at DATETIME NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_daily_plan_slot (child_id, plan_date, slot_index),
+      INDEX idx_daily_plan_user_date (user_id, plan_date),
+      INDEX idx_daily_plan_child_date (child_id, plan_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS daily_plan_completions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      daily_plan_record_id BIGINT NOT NULL,
+      user_id BIGINT NOT NULL,
+      child_id BIGINT NOT NULL,
+      completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_daily_plan_completion (daily_plan_record_id, user_id),
+      INDEX idx_daily_plan_completion_child (child_id),
+      INDEX idx_daily_plan_completion_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS growth_daily_records (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      child_id BIGINT NOT NULL,
+      record_date DATE NOT NULL,
+      mood_status VARCHAR(32) NOT NULL DEFAULT 'steady',
+      appetite_status VARCHAR(32) NOT NULL DEFAULT 'normal',
+      sleep_status VARCHAR(32) NOT NULL DEFAULT 'stable',
+      exercise_status VARCHAR(32) NOT NULL DEFAULT 'enough',
+      social_status VARCHAR(32) NOT NULL DEFAULT 'smooth',
+      note_text TEXT,
+      source VARCHAR(32) NOT NULL DEFAULT 'manual',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_growth_daily_record (child_id, record_date),
+      INDEX idx_growth_daily_user_date (user_id, record_date),
+      INDEX idx_growth_daily_child_date (child_id, record_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS weekly_growth_summaries (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      child_id BIGINT NOT NULL,
+      week_start DATE NOT NULL,
+      week_end DATE NOT NULL,
+      summary_payload JSON NULL,
+      generated_from VARCHAR(32) NOT NULL DEFAULT 'server',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_weekly_growth_summary (child_id, week_start),
+      INDEX idx_weekly_growth_user_week (user_id, week_start),
+      INDEX idx_weekly_growth_child_week (child_id, week_start)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS parenting_scene_tags (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      scene_key VARCHAR(64) NOT NULL,
+      scene_title VARCHAR(128) NOT NULL,
+      scene_category VARCHAR(64) NOT NULL,
+      principle_text TEXT,
+      suggested_action TEXT,
+      status VARCHAR(32) NOT NULL DEFAULT 'active',
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_parenting_scene_key (scene_key),
+      INDEX idx_parenting_scene_category (scene_category)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS parenting_scene_aliases (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      scene_key VARCHAR(64) NOT NULL,
+      alias_text VARCHAR(128) NOT NULL,
+      status VARCHAR(32) NOT NULL DEFAULT 'active',
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_parenting_scene_alias (scene_key, alias_text),
+      INDEX idx_parenting_scene_alias_text (alias_text)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS parenting_scene_recommendations (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      scene_key VARCHAR(64) NOT NULL,
+      result_type VARCHAR(32) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      target_type VARCHAR(64) DEFAULT '',
+      target_id VARCHAR(128) DEFAULT '',
+      target_path VARCHAR(500) DEFAULT '',
+      age_group VARCHAR(32) DEFAULT '',
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_parenting_scene_recommendation (scene_key, result_type, title(120)),
+      INDEX idx_parenting_scene_recommendations_key (scene_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
   await seedContentIfNeeded();
 }
 
@@ -2792,6 +2928,131 @@ async function seedContentIfNeeded() {
       );
     }
   }
+
+  const sceneSeed = getDefaultSceneSeedData();
+  for (const scene of sceneSeed.scenes) {
+    await pool.execute(
+      `INSERT INTO parenting_scene_tags (scene_key, scene_title, scene_category, principle_text, suggested_action, status, sort_order)
+       VALUES (?, ?, ?, ?, ?, 'active', ?)
+       ON DUPLICATE KEY UPDATE
+         scene_title = VALUES(scene_title),
+         scene_category = VALUES(scene_category),
+         principle_text = VALUES(principle_text),
+         suggested_action = VALUES(suggested_action),
+         sort_order = VALUES(sort_order),
+         status = 'active'`,
+      [scene.sceneKey, scene.sceneTitle, scene.sceneCategory, scene.principleText, scene.suggestedAction, scene.sortOrder]
+    );
+  }
+  for (const alias of sceneSeed.aliases) {
+    await pool.execute(
+      `INSERT INTO parenting_scene_aliases (scene_key, alias_text, status, sort_order)
+       VALUES (?, ?, 'active', ?)
+       ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), status = 'active'`,
+      [alias.sceneKey, alias.aliasText, alias.sortOrder]
+    );
+  }
+  for (const recommendation of sceneSeed.recommendations) {
+    await pool.execute(
+      `INSERT INTO parenting_scene_recommendations (scene_key, result_type, title, summary, target_type, target_id, target_path, age_group, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         summary = VALUES(summary),
+         target_type = VALUES(target_type),
+         target_id = VALUES(target_id),
+         target_path = VALUES(target_path),
+         age_group = VALUES(age_group),
+         sort_order = VALUES(sort_order)`,
+      [
+        recommendation.sceneKey,
+        recommendation.resultType,
+        recommendation.title,
+        recommendation.summary,
+        recommendation.targetType,
+        recommendation.targetId,
+        recommendation.targetPath,
+        recommendation.ageGroup,
+        recommendation.sortOrder
+      ]
+    );
+  }
+}
+
+function getDefaultSceneSeedData() {
+  const scenes = [
+    {
+      sceneKey: 'tantrum_public',
+      sceneTitle: '公共场合闹情绪',
+      sceneCategory: '情绪支持',
+      principleText: '先稳情绪，再做要求，孩子会更愿意回到规则里。',
+      suggestedAction: '压低声音，先给一句确认，再给一个简单选择。',
+      sortOrder: 10
+    },
+    {
+      sceneKey: 'sleep_resist',
+      sceneTitle: '睡前拖延',
+      sceneCategory: '作息习惯',
+      principleText: '用固定流程和固定顺序，比临时催促更容易稳定入睡。',
+      suggestedAction: '把洗漱、收玩具、讲故事固定成同一顺序。',
+      sortOrder: 20
+    },
+    {
+      sceneKey: 'meal_picky',
+      sceneTitle: '吃饭挑食',
+      sceneCategory: '营养支持',
+      principleText: '减少对抗，增加稳定暴露和小份尝试，饮食接受度会更好。',
+      suggestedAction: '主食、蛋白质、蔬菜各放一点，先允许孩子从熟悉项开始。',
+      sortOrder: 30
+    },
+    {
+      sceneKey: 'homework_focus',
+      sceneTitle: '写作业坐不住',
+      sceneCategory: '学习支持',
+      principleText: '先把任务启动做顺，再慢慢拉长专注时间。',
+      suggestedAction: '只给一个起始动作，先做五分钟再反馈。',
+      sortOrder: 40
+    },
+    {
+      sceneKey: 'peer_conflict',
+      sceneTitle: '和同伴起冲突',
+      sceneCategory: '社交支持',
+      principleText: '先复盘事情过程，再练替代表达，社交修复会更稳。',
+      suggestedAction: '先问发生了什么，再教孩子说出需求和边界。',
+      sortOrder: 50
+    },
+    {
+      sceneKey: 'morning_rush',
+      sceneTitle: '早晨出门磨蹭',
+      sceneCategory: '习惯执行',
+      principleText: '把准备动作前置成清单，早晨冲突会明显下降。',
+      suggestedAction: '睡前先摆好衣物和书包，早晨按清单走。',
+      sortOrder: 60
+    }
+  ];
+  const aliases = [
+    ['tantrum_public', ['孩子发脾气', '公共场合哭闹', '商场哭闹', '出门闹脾气', '超市躺地', '外面发脾气', '爱发脾气', '当众哭闹']],
+    ['sleep_resist', ['不肯睡觉', '睡前磨蹭', '晚上兴奋', '拖着不睡', '哄睡困难', '入睡困难']],
+    ['meal_picky', ['挑食', '不爱吃菜', '只吃主食', '吃饭闹', '不肯吃饭', '边吃边玩']],
+    ['homework_focus', ['坐不住', '写作业分心', '学习拖拉', '容易走神', '专注力差', '上课分心']],
+    ['peer_conflict', ['抢玩具', '和小朋友打架', '不会分享', '同伴冲突', '和同学吵架', '被小朋友排斥']],
+    ['morning_rush', ['早上磨蹭', '出门慢', '不想穿衣服', '上学拖延', '起床拖拉', '晨起磨蹭']]
+  ].flatMap(([sceneKey, words], sceneIndex) => words.map((aliasText, aliasIndex) => ({
+    sceneKey,
+    aliasText,
+    sortOrder: sceneIndex * 10 + aliasIndex + 1
+  })));
+  const recommendations = scenes.map((scene, index) => ({
+    sceneKey: scene.sceneKey,
+    resultType: 'solution_card',
+    title: `${scene.sceneTitle}处理建议`,
+    summary: `${scene.principleText}${scene.suggestedAction}`,
+    targetType: 'scene_solution',
+    targetId: scene.sceneKey,
+    targetPath: '/pages/parenting/search/search',
+    ageGroup: '',
+    sortOrder: index + 1
+  }));
+  return { scenes, aliases, recommendations };
 }
 
 function parseJsonArray(value) {
@@ -2826,8 +3087,8 @@ function normalizeChild(row) {
     name: row.name,
     nickname: row.nickname || '',
     gender: row.gender || 'unknown',
-    birthday: row.birthday ? formatDateValue(row.birthday) : '',
-    birth_date: row.birthday ? formatDateValue(row.birthday) : '',
+    birthday: row.birthday ? formatStoredDateValue(row.birthday) : '',
+    birth_date: row.birthday ? formatStoredDateValue(row.birthday) : '',
     avatar: row.avatar || '',
     is_default: row.is_default ? 1 : 0,
     isDefault: !!row.is_default,
@@ -2856,6 +3117,35 @@ function formatDateValue(value) {
     return String(value).slice(0, 10);
   }
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function formatStoredDateValue(value) {
+  if (!value) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value.slice(0, 10);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function normalizeBoundedInt(rawValue, fallbackValue, minValue, maxValue) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) {
+    return fallbackValue;
+  }
+  const normalized = Math.floor(parsed);
+  if (normalized < minValue) {
+    return minValue;
+  }
+  if (normalized > maxValue) {
+    return maxValue;
+  }
+  return normalized;
 }
 
 function getUserId(req) {
@@ -2909,6 +3199,1087 @@ function buildChildPayload(payload, existing) {
     special_notes: data.special_notes !== undefined ? String(data.special_notes).slice(0, 500) : existing.special_notes,
     tags: data.tags !== undefined ? serializeJsonArray(data.tags) : existing.tags
   };
+}
+
+function getPlanDateValue(rawDate) {
+  if (!rawDate) {
+    return formatDateValue(new Date());
+  }
+  const value = String(rawDate).trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : formatDateValue(new Date());
+}
+
+function getWeekStartDateValue(rawDate) {
+  const date = rawDate ? new Date(`${getPlanDateValue(rawDate)}T00:00:00Z`) : new Date();
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - day + 1);
+  return formatDateValue(date);
+}
+
+function getWeekEndDateValue(weekStart) {
+  const date = new Date(`${weekStart}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 6);
+  return formatDateValue(date);
+}
+
+function getRecentDateValue(daysAgo) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - Number(daysAgo || 0));
+  return formatDateValue(date);
+}
+
+function buildDefaultGrowthRecord(dateValue, childId) {
+  return {
+    childId: Number(childId || 0),
+    recordDate: dateValue,
+    moodStatus: 'steady',
+    appetiteStatus: 'normal',
+    sleepStatus: 'stable',
+    exerciseStatus: 'enough',
+    socialStatus: 'smooth',
+    noteText: ''
+  };
+}
+
+function normalizeGrowthRecord(row) {
+  return {
+    id: row.id,
+    childId: row.child_id,
+    recordDate: formatStoredDateValue(row.record_date),
+    moodStatus: row.mood_status,
+    appetiteStatus: row.appetite_status,
+    sleepStatus: row.sleep_status,
+    exerciseStatus: row.exercise_status,
+    socialStatus: row.social_status,
+    noteText: row.note_text || '',
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null
+  };
+}
+
+function sanitizeGrowthRecordPayload(payload, dateValue) {
+  const data = payload || {};
+  const allowList = {
+    moodStatus: ['steady', 'happy', 'sensitive', 'meltdown'],
+    appetiteStatus: ['normal', 'good', 'picky', 'low'],
+    sleepStatus: ['stable', 'late', 'night_wake', 'short'],
+    exerciseStatus: ['enough', 'active', 'little', 'resist'],
+    socialStatus: ['smooth', 'warm', 'shy', 'conflict']
+  };
+  const sanitized = buildDefaultGrowthRecord(dateValue, data.childId);
+  Object.keys(allowList).forEach((key) => {
+    const nextValue = String(data[key] || '').trim();
+    if (allowList[key].includes(nextValue)) {
+      sanitized[key] = nextValue;
+    }
+  });
+  sanitized.noteText = String(data.noteText || data.note_text || '').trim().slice(0, 500);
+  return sanitized;
+}
+
+function getGrowthStatusScore(field, value) {
+  const maps = {
+    moodStatus: { happy: 4, steady: 3, sensitive: 2, meltdown: 1 },
+    appetiteStatus: { good: 4, normal: 3, picky: 2, low: 1 },
+    sleepStatus: { stable: 4, late: 3, short: 2, night_wake: 1 },
+    exerciseStatus: { active: 4, enough: 3, little: 2, resist: 1 },
+    socialStatus: { warm: 4, smooth: 3, shy: 2, conflict: 1 }
+  };
+  return (maps[field] && maps[field][value]) || 0;
+}
+
+function buildGrowthTrendLabel(score) {
+  if (score >= 3.4) {
+    return '整体比较稳定';
+  }
+  if (score >= 2.6) {
+    return '本周有波动，适合继续观察';
+  }
+  return '本周需要优先支持';
+}
+
+function getSceneProfileByKey(sceneKey) {
+  const profiles = {
+    tantrum_public: { articleCategory: '情绪管理', articleKeyword: '情绪', recipeKeyword: '镁', subjectCode: 'expression_communication' },
+    sleep_resist: { articleCategory: '行为习惯', articleKeyword: '睡眠', recipeKeyword: '晚餐', subjectCode: 'learning_metacognition' },
+    meal_picky: { articleCategory: '营养健康', articleKeyword: '挑食', recipeKeyword: '补铁', subjectCode: 'reading_comprehension' },
+    homework_focus: { articleCategory: '认知发展', articleKeyword: '专注', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    peer_conflict: { articleCategory: '社交能力', articleKeyword: '同伴', recipeKeyword: '能量', subjectCode: 'expression_communication' },
+    morning_rush: { articleCategory: '行为习惯', articleKeyword: '习惯', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' }
+  };
+  return profiles[sceneKey] || { articleCategory: '行为习惯', articleKeyword: '', recipeKeyword: '', subjectCode: 'learning_metacognition' };
+}
+
+function getWeeklyDimensionLabel(dimensionKey) {
+  const labels = {
+    moodStatus: '情绪状态',
+    appetiteStatus: '进食状态',
+    sleepStatus: '睡眠状态',
+    exerciseStatus: '活动状态',
+    socialStatus: '社交状态'
+  };
+  return labels[dimensionKey] || '成长状态';
+}
+
+function getWeeklySummaryProfileByDimension(dimensionKey) {
+  const profiles = {
+    moodStatus: { articleCategory: '情绪管理', articleKeyword: '情绪', subjectCode: 'expression_communication' },
+    appetiteStatus: { articleCategory: '营养健康', articleKeyword: '挑食', subjectCode: 'reading_comprehension' },
+    sleepStatus: { articleCategory: '行为习惯', articleKeyword: '睡眠', subjectCode: 'learning_metacognition' },
+    exerciseStatus: { articleCategory: '行为习惯', articleKeyword: '活动', subjectCode: 'learning_metacognition' },
+    socialStatus: { articleCategory: '社交能力', articleKeyword: '同伴', subjectCode: 'expression_communication' }
+  };
+  return profiles[dimensionKey] || { articleCategory: '认知发展', articleKeyword: '', subjectCode: 'reading_comprehension' };
+}
+
+async function getDefaultChildForUser(userId) {
+  const [rows] = await pool.execute(`${buildChildSelectSql()} WHERE user_id = ? ORDER BY is_default DESC, created_at ASC LIMIT 1`, [userId]);
+  return rows[0] || null;
+}
+
+async function resolveDailyPlanChild(userId, childId) {
+  if (childId) {
+    return getOwnedChild(userId, childId);
+  }
+  return getDefaultChildForUser(userId);
+}
+
+function getDailyPlanProfileByDimension(dimensionName) {
+  const key = String(dimensionName || '').trim();
+  const profiles = {
+    focus: {
+      subjectCode: 'learning_metacognition',
+      articleCategory: '行为习惯',
+      articleKeyword: '专注',
+      reasonText: '最近更适合先稳住任务启动和专注节奏。'
+    },
+    emotion: {
+      subjectCode: 'expression_communication',
+      articleCategory: '情绪管理',
+      articleKeyword: '情绪',
+      reasonText: '最近更适合先帮助孩子把情绪和表达接起来。'
+    },
+    learning: {
+      subjectCode: 'reading_comprehension',
+      articleCategory: '认知发展',
+      articleKeyword: '阅读',
+      reasonText: '最近更适合先补理解、复述和读懂重点的能力。'
+    },
+    social: {
+      subjectCode: 'expression_communication',
+      articleCategory: '社交能力',
+      articleKeyword: '同伴',
+      reasonText: '最近更适合先支持同伴互动和开口表达。'
+    },
+    nutrition: {
+      subjectCode: 'learning_metacognition',
+      articleCategory: '营养健康',
+      articleKeyword: '营养',
+      reasonText: '最近更适合先把饮食支持做得更稳定。'
+    }
+  };
+  return profiles[key] || {
+    subjectCode: 'reading_comprehension',
+    articleCategory: '认知发展',
+    articleKeyword: '',
+    reasonText: '先从家庭里最容易做到的一步开始。'
+  };
+}
+
+async function getLatestWeakDimension(childId) {
+  const [recordRows] = await pool.execute(
+    `SELECT id
+     FROM assessment_records
+     WHERE child_id = ?
+     ORDER BY completed_at DESC, id DESC
+     LIMIT 1`,
+    [childId]
+  );
+  if (!recordRows.length) {
+    return null;
+  }
+  const [rows] = await pool.execute(
+    `SELECT dimension_name, score_rate
+     FROM assessment_dimensions
+     WHERE record_id = ?
+     ORDER BY score_rate ASC, id ASC
+     LIMIT 1`,
+    [recordRows[0].id]
+  );
+  return rows[0] || null;
+}
+
+async function getRecentModuleUsage(userId, childId) {
+  const [rows] = await pool.execute(
+    `SELECT COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.module_key')), ''), 'unknown') AS module_key,
+            COUNT(*) AS total
+     FROM event_tracks
+     WHERE user_id = ?
+       AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+       AND (? = 0 OR JSON_EXTRACT(event_data, '$.child_id') IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.child_id')) = CAST(? AS CHAR))
+     GROUP BY module_key`,
+    [userId, childId || 0, childId || 0]
+  );
+  const usage = {
+    reading_tasks: 0,
+    knowledge: 0,
+    nutrition_recipe: 0,
+    assessment: 0,
+    parenting_home: 0,
+    unknown: 0
+  };
+  rows.forEach((row) => {
+    usage[row.module_key] = Number(row.total) || 0;
+  });
+  return usage;
+}
+
+async function getRecommendedReadingTask(childId, ageGroup, subjectCode) {
+  const likeAge = `%${ageGroup || '3-4岁'}%`;
+  let [rows] = await pool.execute(
+    `SELECT t.*, tp.status, tp.progress
+     FROM reading_tasks t
+     LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+     WHERE t.age_range LIKE ?
+       AND (? = '' OR t.subject_code = ?)
+     ORDER BY CASE WHEN tp.status = 'completed' THEN 1 ELSE 0 END ASC, t.difficulty ASC, t.id ASC
+     LIMIT 1`,
+    [childId, likeAge, subjectCode || '', subjectCode || '']
+  );
+  if (!rows.length) {
+    [rows] = await pool.execute(
+      `SELECT t.*, tp.status, tp.progress
+       FROM reading_tasks t
+       LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
+       WHERE t.age_range LIKE ?
+       ORDER BY CASE WHEN tp.status = 'completed' THEN 1 ELSE 0 END ASC, t.difficulty ASC, t.id ASC
+       LIMIT 1`,
+      [childId, likeAge]
+    );
+  }
+  if (!rows.length) {
+    return null;
+  }
+  return normalizeReadingTask(rows[0]);
+}
+
+async function getRecommendedParentingArticle(ageGroup, articleCategory, articleKeyword, userId) {
+  const params = [ageGroup || '3-4岁'];
+  let whereClause = 'WHERE is_published = 1 AND age_group = ?';
+  if (articleCategory) {
+    whereClause += ' AND category = ?';
+    params.push(articleCategory);
+  }
+  if (articleKeyword) {
+    whereClause += ' AND (title LIKE ? OR summary LIKE ? OR tags LIKE ?)';
+    const searchTerm = `%${articleKeyword}%`;
+    params.push(searchTerm, searchTerm, searchTerm);
+  }
+  let [rows] = await pool.execute(
+    `SELECT * FROM articles ${whereClause} ORDER BY read_count DESC, created_at DESC LIMIT 1`,
+    params
+  );
+  if (!rows.length) {
+    [rows] = await pool.execute(
+      'SELECT * FROM articles WHERE is_published = 1 AND age_group = ? ORDER BY read_count DESC, created_at DESC LIMIT 1',
+      [ageGroup || '3-4岁']
+    );
+  }
+  if (!rows.length) {
+    return null;
+  }
+  return normalizeArticle(rows[0], userId);
+}
+
+function parseAgeRangeValue(value) {
+  const match = String(value || '').match(/(\d+)(?:-(\d+))?岁/);
+  if (!match) {
+    return null;
+  }
+  const min = Number(match[1]);
+  const max = Number(match[2] || match[1]);
+  return { min, max };
+}
+
+function isRecipeAgeCompatible(recipeAgeRange, childAgeRange) {
+  const recipeRange = parseAgeRangeValue(recipeAgeRange);
+  const childRange = parseAgeRangeValue(childAgeRange);
+  if (!recipeRange || !childRange) {
+    return false;
+  }
+  return recipeRange.min <= childRange.max && recipeRange.max >= childRange.min;
+}
+
+function getRecommendedNutritionRecipe(ageGroup) {
+  const matched = (NUTRITION_RECIPES || []).filter((item) => isRecipeAgeCompatible(item.ageRange || item.age_range, ageGroup));
+  const poolList = matched.length ? matched : (NUTRITION_RECIPES || []);
+  if (!poolList.length) {
+    return null;
+  }
+  return poolList
+    .slice()
+    .sort((a, b) => Number(b.viewCount || 0) - Number(a.viewCount || 0))[0];
+}
+
+function buildNoChildDailyPlanCards(planDate) {
+  return [
+    {
+      slotIndex: 0,
+      planType: 'onboarding',
+      title: '先补孩子档案，后面的建议会更准',
+      reasonText: '先告诉我孩子年龄和基本情况，首页建议才能真正贴近你家当下阶段。',
+      actionText: '去完善',
+      summaryText: '完成孩子档案后，可以拿到按年龄整理的每日建议。',
+      durationMinutes: 2,
+      targetType: 'child_profile',
+      targetId: 'child_profile_setup',
+      targetPath: '/pages/profile/child-edit/child-edit',
+      sourceKey: 'no_child_profile',
+      score: 100,
+      planDate
+    },
+    {
+      slotIndex: 1,
+      planType: 'habit_reminder',
+      title: '今天先做一次成长观察，别急着猜孩子怎么了',
+      reasonText: '很多育儿卡点先看清，再行动，家庭执行会更稳。',
+      actionText: '去观察',
+      summaryText: '用成长观察先判断孩子当前卡在专注、表达还是习惯。',
+      durationMinutes: 3,
+      targetType: 'assessment',
+      targetId: 'assessment_entry',
+      targetPath: '/pages/assessment/assessment',
+      sourceKey: 'no_child_assessment',
+      score: 90,
+      planDate
+    },
+    {
+      slotIndex: 2,
+      planType: 'parenting_article',
+      title: '先看看育儿知识首页，找到和你家最像的问题',
+      reasonText: '先用高频问题入口缩小范围，会比盲目翻内容更省心。',
+      actionText: '去看看',
+      summaryText: '从情绪、习惯、认知、社交、营养五类问题快速进入。',
+      durationMinutes: 5,
+      targetType: 'parenting_home',
+      targetId: 'parenting_home',
+      targetPath: '/pages/parenting/parenting',
+      sourceKey: 'no_child_parenting',
+      score: 80,
+      planDate
+    }
+  ];
+}
+
+async function buildDailyPlanCards(userId, child, planDate) {
+  if (!child) {
+    return buildNoChildDailyPlanCards(planDate);
+  }
+  const ageGroup = inferAgeRangeFromChild(child) || '3-4岁';
+  const weakDimension = await getLatestWeakDimension(child.id);
+  const planProfile = getDailyPlanProfileByDimension(weakDimension && weakDimension.dimension_name);
+  const recentUsage = await getRecentModuleUsage(userId, child.id);
+  const readingTask = await getRecommendedReadingTask(child.id, ageGroup, planProfile.subjectCode);
+  const article = await getRecommendedParentingArticle(ageGroup, planProfile.articleCategory, planProfile.articleKeyword, userId);
+  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const cards = [];
+
+  if (readingTask) {
+    cards.push({
+      slotIndex: cards.length,
+      planType: 'ability_task',
+      title: `今天先做 1 次：${readingTask.title}`,
+      reasonText: weakDimension
+        ? `${planProfile.reasonText} 最近测评里“${weakDimension.dimension_name}”更值得优先补一补。`
+        : '先做一个短任务，最容易把今天的陪伴真正开始起来。',
+      actionText: '现在去练',
+      summaryText: readingTask.objective || readingTask.parent_prompt || readingTask.title,
+      durationMinutes: Number(readingTask.duration || 10),
+      targetType: 'knowledge_task',
+      targetId: String(readingTask.id),
+      targetPath: `/pages/textbook/knowledge-detail/knowledge-detail?pointId=${encodeURIComponent(readingTask.task_code || String(readingTask.id))}&subjectCode=${encodeURIComponent(readingTask.subject_code || '')}&pointName=${encodeURIComponent(readingTask.title || '')}&childId=${child.id}`,
+      sourceKey: weakDimension ? String(weakDimension.dimension_name) : 'default_task',
+      score: 90 + Math.max(0, 10 - Number(recentUsage.reading_tasks || 0)),
+      planDate,
+      childId: child.id
+    });
+  }
+
+  if (article) {
+    cards.push({
+      slotIndex: cards.length,
+      planType: 'parenting_article',
+      title: `再读一篇：${article.title}`,
+      reasonText: recentUsage.knowledge > recentUsage.reading_tasks
+        ? '你最近已经在看内容，这一篇更适合直接转成家庭做法。'
+        : `${planProfile.articleCategory}相关问题更适合今天顺手补一篇方法文。`,
+      actionText: '去看方法',
+      summaryText: article.summary || article.title,
+      durationMinutes: 6,
+      targetType: 'parenting_article',
+      targetId: String(article.id),
+      targetPath: `/pages/parenting/article-detail/article-detail?id=${article.id}`,
+      sourceKey: article.category || 'parenting_article',
+      score: 80 + Math.max(0, 10 - Number(recentUsage.knowledge || 0)),
+      planDate,
+      childId: child.id
+    });
+  }
+
+  if (recipe) {
+    cards.push({
+      slotIndex: cards.length,
+      planType: 'nutrition_recipe',
+      title: `饮食上先关注：${recipe.title || recipe.name}`,
+      reasonText: '日常饮食最适合做成小动作，今天先从一顿更容易落实的搭配开始。',
+      actionText: '看搭配',
+      summaryText: (recipe.nutrition && recipe.nutrition.highlight) || recipe.description || '',
+      durationMinutes: 5,
+      targetType: 'nutrition_recipe',
+      targetId: String(recipe.id),
+      targetPath: `/pages/nutrition/recipe-detail/recipe-detail?id=${encodeURIComponent(recipe.id)}`,
+      sourceKey: 'nutrition_recipe',
+      score: 70 + Math.max(0, 10 - Number(recentUsage.nutrition_recipe || 0)),
+      planDate,
+      childId: child.id
+    });
+  }
+
+  while (cards.length < 3) {
+    cards.push({
+      slotIndex: cards.length,
+      planType: 'habit_reminder',
+      title: '今天留 3 分钟，先复盘孩子最卡的一步',
+      reasonText: '每天只复盘一件小事，比一次解决很多问题更容易坚持。',
+      actionText: '去观察',
+      summaryText: '先判断今天最想继续保持什么、最想调整什么。',
+      durationMinutes: 3,
+      targetType: 'assessment',
+      targetId: 'assessment_entry',
+      targetPath: '/pages/assessment/assessment',
+      sourceKey: 'habit_reminder',
+      score: 60,
+      planDate,
+      childId: child.id
+    });
+  }
+
+  return cards.slice(0, 3);
+}
+
+async function storeDailyPlanCards(userId, childId, planDate, cards) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute('DELETE FROM daily_plan_records WHERE user_id = ? AND child_id = ? AND plan_date = ?', [userId, childId, planDate]);
+    for (const card of cards) {
+      await connection.execute(
+        `INSERT INTO daily_plan_records
+         (user_id, child_id, plan_date, slot_index, plan_type, title, reason_text, action_text, summary_text, duration_minutes, target_type, target_id, target_path, source_key, score, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [
+          userId,
+          childId,
+          planDate,
+          Number(card.slotIndex || 0),
+          card.planType,
+          card.title,
+          card.reasonText,
+          card.actionText,
+          card.summaryText,
+          Number(card.durationMinutes || 0),
+          card.targetType,
+          card.targetId,
+          card.targetPath,
+          card.sourceKey,
+          Number(card.score || 0)
+        ]
+      );
+    }
+    await connection.commit();
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+function normalizeDailyPlanRecord(row) {
+  return {
+    id: row.id,
+    childId: row.child_id,
+    planDate: formatStoredDateValue(row.plan_date),
+    type: row.plan_type,
+    title: row.title,
+    reason: row.reason_text || '',
+    actionText: row.action_text || '',
+    summary: row.summary_text || '',
+    durationMinutes: Number(row.duration_minutes || 0),
+    targetType: row.target_type || '',
+    targetId: row.target_id || '',
+    targetPath: row.target_path || '',
+    sourceKey: row.source_key || '',
+    score: Number(row.score || 0),
+    status: row.status || 'pending',
+    completed: row.status === 'completed',
+    completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null
+  };
+}
+
+async function loadDailyPlanRecords(userId, childId, planDate) {
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM daily_plan_records
+     WHERE user_id = ? AND child_id = ? AND plan_date = ?
+     ORDER BY slot_index ASC, id ASC`,
+    [userId, childId, planDate]
+  );
+  return rows.map(normalizeDailyPlanRecord);
+}
+
+async function dailyPlanHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const planDate = getPlanDateValue(req.query.date);
+  const child = await resolveDailyPlanChild(userId, childId);
+  if (childId && !child) {
+    res.status(403).json({ success: false, message: '无权访问该孩子的计划' });
+    return;
+  }
+
+  if (!child) {
+    res.json({
+      success: true,
+      data: {
+        date: planDate,
+        child_id: 0,
+        child_name: '',
+        age_group: '',
+        cards: buildNoChildDailyPlanCards(planDate).map((item, index) => ({
+          id: `guest_${index + 1}`,
+          childId: 0,
+          planDate,
+          type: item.planType,
+          title: item.title,
+          reason: item.reasonText,
+          actionText: item.actionText,
+          summary: item.summaryText,
+          durationMinutes: item.durationMinutes,
+          targetType: item.targetType,
+          targetId: item.targetId,
+          targetPath: item.targetPath,
+          sourceKey: item.sourceKey,
+          score: item.score,
+          status: 'pending',
+          completed: false,
+          completedAt: null
+        }))
+      }
+    });
+    return;
+  }
+
+  let cards = await loadDailyPlanRecords(userId, child.id, planDate);
+  if (!cards.length) {
+    const generated = await buildDailyPlanCards(userId, child, planDate);
+    await storeDailyPlanCards(userId, child.id, planDate, generated);
+    cards = await loadDailyPlanRecords(userId, child.id, planDate);
+  }
+  res.json({
+    success: true,
+    data: {
+      date: planDate,
+      child_id: child.id,
+      child_name: child.name || '',
+      age_group: inferAgeRangeFromChild(child) || '',
+      cards
+    }
+  });
+}
+
+async function dailyPlanCompleteHandler(req, res) {
+  const userId = getUserId(req);
+  const recordId = Number((req.body && req.body.record_id) || 0);
+  if (!recordId) {
+    res.status(400).json({ success: false, message: 'record_id不能为空' });
+    return;
+  }
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM daily_plan_records
+     WHERE id = ? AND user_id = ?
+     LIMIT 1`,
+    [recordId, userId]
+  );
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '计划卡不存在' });
+    return;
+  }
+  const record = rows[0];
+  await pool.execute(
+    `INSERT INTO daily_plan_completions (daily_plan_record_id, user_id, child_id, completed_at)
+     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+     ON DUPLICATE KEY UPDATE completed_at = CURRENT_TIMESTAMP`,
+    [record.id, userId, record.child_id]
+  );
+  await pool.execute(
+    `UPDATE daily_plan_records
+     SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND user_id = ?`,
+    [record.id, userId]
+  );
+  await deleteWeeklySummaryCache(userId, record.child_id, formatStoredDateValue(record.plan_date));
+  const [updatedRows] = await pool.execute('SELECT * FROM daily_plan_records WHERE id = ? LIMIT 1', [record.id]);
+  res.json({ success: true, data: normalizeDailyPlanRecord(updatedRows[0]) });
+}
+
+async function deleteWeeklySummaryCache(userId, childId, dateValue) {
+  const weekStart = getWeekStartDateValue(dateValue);
+  await pool.execute('DELETE FROM weekly_growth_summaries WHERE user_id = ? AND child_id = ? AND week_start = ?', [userId, childId, weekStart]);
+}
+
+async function growthRecordDailyHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const recordDate = getPlanDateValue(req.query.date);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM growth_daily_records
+     WHERE user_id = ? AND child_id = ? AND record_date = ?
+     LIMIT 1`,
+    [userId, childId, recordDate]
+  );
+  res.json({
+    success: true,
+    data: rows.length ? normalizeGrowthRecord(rows[0]) : buildDefaultGrowthRecord(recordDate, childId)
+  });
+}
+
+async function growthRecordUpsertHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number((req.body && req.body.childId) || 0);
+  const recordDate = getPlanDateValue(req.body && req.body.recordDate);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const payload = sanitizeGrowthRecordPayload(req.body, recordDate);
+  await pool.execute(
+    `INSERT INTO growth_daily_records
+     (user_id, child_id, record_date, mood_status, appetite_status, sleep_status, exercise_status, social_status, note_text, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual')
+     ON DUPLICATE KEY UPDATE
+       mood_status = VALUES(mood_status),
+       appetite_status = VALUES(appetite_status),
+       sleep_status = VALUES(sleep_status),
+       exercise_status = VALUES(exercise_status),
+       social_status = VALUES(social_status),
+       note_text = VALUES(note_text),
+       source = 'manual',
+       updated_at = CURRENT_TIMESTAMP`,
+    [
+      userId,
+      childId,
+      recordDate,
+      payload.moodStatus,
+      payload.appetiteStatus,
+      payload.sleepStatus,
+      payload.exerciseStatus,
+      payload.socialStatus,
+      payload.noteText
+    ]
+  );
+  await deleteWeeklySummaryCache(userId, childId, recordDate);
+  const [rows] = await pool.execute(
+    'SELECT * FROM growth_daily_records WHERE user_id = ? AND child_id = ? AND record_date = ? LIMIT 1',
+    [userId, childId, recordDate]
+  );
+  res.json({ success: true, data: normalizeGrowthRecord(rows[0]) });
+}
+
+async function growthRecordHistoryHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
+  const pageSize = normalizeBoundedInt(req.query.pageSize, 14, 1, 30);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const offset = (page - 1) * pageSize;
+  const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM growth_daily_records
+     WHERE user_id = ? AND child_id = ?
+     ORDER BY record_date DESC
+     ${paginationClause}`,
+    [userId, childId]
+  );
+  const [countRows] = await pool.execute(
+    'SELECT COUNT(*) AS total FROM growth_daily_records WHERE user_id = ? AND child_id = ?',
+    [userId, childId]
+  );
+  res.json({
+    success: true,
+    data: {
+      list: rows.map(normalizeGrowthRecord),
+      pagination: {
+        page,
+        pageSize,
+        total: Number(countRows[0].total || 0)
+      }
+    }
+  });
+}
+
+async function growthRecordSummaryHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const periodDays = normalizeBoundedInt(req.query.days, 7, 7, 30);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const startDate = getRecentDateValue(periodDays - 1);
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM growth_daily_records
+     WHERE user_id = ? AND child_id = ? AND record_date >= ?
+     ORDER BY record_date ASC`,
+    [userId, childId, startDate]
+  );
+  const list = rows.map(normalizeGrowthRecord);
+  const dimensionKeys = ['moodStatus', 'appetiteStatus', 'sleepStatus', 'exerciseStatus', 'socialStatus'];
+  const averages = {};
+  dimensionKeys.forEach((key) => {
+    const values = list.map((item) => getGrowthStatusScore(key, item[key])).filter(Boolean);
+    averages[key] = values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : 0;
+  });
+  const overallValues = Object.values(averages).filter(Boolean);
+  const overallScore = overallValues.length ? Number((overallValues.reduce((sum, value) => sum + value, 0) / overallValues.length).toFixed(2)) : 0;
+  const weakestKey = Object.entries(averages).sort((a, b) => a[1] - b[1])[0] || ['moodStatus', 0];
+  res.json({
+    success: true,
+    data: {
+      childId,
+      periodDays,
+      completedDays: list.length,
+      overallScore,
+      overallLabel: buildGrowthTrendLabel(overallScore),
+      weakestDimension: weakestKey[0],
+      averages,
+      latestRecord: list[list.length - 1] || null
+    }
+  });
+}
+
+async function buildWeeklySummaryPayload(userId, child, weekStart) {
+  const weekEnd = getWeekEndDateValue(weekStart);
+  const ageGroup = inferAgeRangeFromChild(child) || '3-4岁';
+  const [growthRows] = await pool.execute(
+    `SELECT *
+     FROM growth_daily_records
+     WHERE user_id = ? AND child_id = ? AND record_date BETWEEN ? AND ?
+     ORDER BY record_date ASC`,
+    [userId, child.id, weekStart, weekEnd]
+  );
+  const [planRows] = await pool.execute(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_total
+     FROM daily_plan_records
+     WHERE user_id = ? AND child_id = ? AND plan_date BETWEEN ? AND ?`,
+    [userId, child.id, weekStart, weekEnd]
+  );
+  const [taskRows] = await pool.execute(
+    `SELECT COUNT(*) AS completed_total
+     FROM task_progress
+     WHERE child_id = ? AND status = 'completed' AND completed_at BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)`,
+    [child.id, weekStart, weekEnd]
+  );
+  const growthList = growthRows.map(normalizeGrowthRecord);
+  const summaryBase = {
+    moodStatus: 0,
+    appetiteStatus: 0,
+    sleepStatus: 0,
+    exerciseStatus: 0,
+    socialStatus: 0
+  };
+  growthList.forEach((item) => {
+    Object.keys(summaryBase).forEach((key) => {
+      summaryBase[key] += getGrowthStatusScore(key, item[key]);
+    });
+  });
+  Object.keys(summaryBase).forEach((key) => {
+    summaryBase[key] = growthList.length ? Number((summaryBase[key] / growthList.length).toFixed(2)) : 0;
+  });
+  const weakestDimension = Object.entries(summaryBase).sort((a, b) => a[1] - b[1])[0] || ['moodStatus', 0];
+  const weakestDimensionLabel = getWeeklyDimensionLabel(weakestDimension[0]);
+  const sceneProfile = getWeeklySummaryProfileByDimension(weakestDimension[0]);
+  const article = await getRecommendedParentingArticle(ageGroup, sceneProfile.articleCategory, sceneProfile.articleKeyword, userId);
+  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const recommendedContent = [
+    article ? {
+      type: 'parenting_article',
+      title: article.title,
+      summary: article.summary || '',
+      targetPath: `/pages/parenting/article-detail/article-detail?id=${article.id}`
+    } : null,
+    recipe ? {
+      type: 'nutrition_recipe',
+      title: recipe.title || recipe.name,
+      summary: (recipe.nutrition && recipe.nutrition.highlight) || recipe.description || '',
+      targetPath: `/pages/nutrition/recipe-detail/recipe-detail?id=${encodeURIComponent(recipe.id)}`
+    } : null
+  ].filter(Boolean);
+  return {
+    childId: child.id,
+    childName: child.name || '',
+    ageGroup,
+    weekStart,
+    weekEnd,
+    recordDays: growthList.length,
+    completedPlanCount: Number(planRows[0].completed_total || 0),
+    totalPlanCount: Number(planRows[0].total || 0),
+    completedTaskCount: Number(taskRows[0].completed_total || 0),
+    dimensionScores: summaryBase,
+    weakestDimension: weakestDimension[0],
+    weakestDimensionLabel,
+    overview: growthList.length
+      ? `本周共记录${growthList.length}天，${buildGrowthTrendLabel(Object.values(summaryBase).reduce((sum, item) => sum + item, 0) / 5 || 0)}。`
+      : '本周还没有形成连续记录，先从每天30秒的成长记录开始。',
+    highlights: [
+      Number(planRows[0].completed_total || 0) > 0 ? `本周完成了${Number(planRows[0].completed_total || 0)}次今日育儿计划。` : '本周的计划完成次数还可以继续提高。',
+      Number(taskRows[0].completed_total || 0) > 0 ? `能力训练完成${Number(taskRows[0].completed_total || 0)}次，执行节奏正在形成。` : '本周能力训练触达较少，适合下周固定一个时段开始。'
+    ],
+    concernsFull: [
+      `当前更值得优先观察的是${weakestDimensionLabel}。`,
+      growthList.length < 4 ? '记录天数还偏少，下周先把记录频率稳定下来。' : '建议把家庭观察和固定动作继续配套执行。'
+    ],
+    concernsPreview: [
+      `当前更值得优先观察的是${weakestDimensionLabel}。`
+    ],
+    nextActionsFull: [
+      '下周继续保留每天一个固定记录时段。',
+      `围绕${sceneProfile.articleCategory}再补一篇方法文并尝试一条动作。`,
+      '继续跟踪趋势变化和建议完成度，优先把家庭里的固定动作做稳。'
+    ],
+    nextActionsPreview: [
+      '下周继续保留每天一个固定记录时段。',
+      `围绕${sceneProfile.articleCategory}先补一篇方法文。`
+    ],
+    recommendedContentPremium: recommendedContent,
+    recommendedContentPreview: recommendedContent.slice(0, 1),
+    premiumTip: '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。'
+  };
+}
+
+function formatWeeklySummaryForMembership(payload, activeMember) {
+  const data = Object.assign({}, payload || {});
+  const concernsPreview = Array.isArray(data.concernsPreview) ? data.concernsPreview : (Array.isArray(data.concerns) ? data.concerns.slice(0, 1) : []);
+  const concernsFull = Array.isArray(data.concernsFull) ? data.concernsFull : (Array.isArray(data.concerns) ? data.concerns : concernsPreview);
+  const nextActionsPreview = Array.isArray(data.nextActionsPreview) ? data.nextActionsPreview : (Array.isArray(data.nextActions) ? data.nextActions.slice(0, 2) : []);
+  const nextActionsFull = Array.isArray(data.nextActionsFull) ? data.nextActionsFull : (Array.isArray(data.nextActions) ? data.nextActions : nextActionsPreview);
+  const recommendedContentPreview = Array.isArray(data.recommendedContentPreview) ? data.recommendedContentPreview : (Array.isArray(data.recommendedContent) ? data.recommendedContent.slice(0, 1) : []);
+  const recommendedContentPremium = Array.isArray(data.recommendedContentPremium) ? data.recommendedContentPremium : (Array.isArray(data.recommendedContent) ? data.recommendedContent : recommendedContentPreview);
+  return Object.assign({}, data, {
+    concerns: activeMember ? concernsFull : concernsPreview,
+    nextActions: activeMember ? nextActionsFull : nextActionsPreview,
+    recommendedContent: activeMember ? recommendedContentPremium : recommendedContentPreview,
+    premiumUnlocked: !!activeMember,
+    premiumTip: activeMember ? '本周已解锁完整周总结。' : (data.premiumTip || '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。')
+  });
+}
+
+async function weeklySummaryHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const weekStart = getWeekStartDateValue(req.query.weekStart || req.query.date);
+  const activeMember = await isActiveMember(userId);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const [rows] = await pool.execute(
+    `SELECT *
+     FROM weekly_growth_summaries
+     WHERE user_id = ? AND child_id = ? AND week_start = ?
+     LIMIT 1`,
+    [userId, childId, weekStart]
+  );
+  let payload = null;
+  if (rows.length && rows[0].summary_payload) {
+    try {
+      payload = JSON.parse(rows[0].summary_payload);
+    } catch (err) {
+      payload = null;
+    }
+  }
+  if (payload && (!Array.isArray(payload.concernsFull) || !Array.isArray(payload.nextActionsFull))) {
+    payload = null;
+  }
+  if (!payload) {
+    payload = await buildWeeklySummaryPayload(userId, child, weekStart);
+    await pool.execute(
+      `INSERT INTO weekly_growth_summaries (user_id, child_id, week_start, week_end, summary_payload, generated_from)
+       VALUES (?, ?, ?, ?, ?, 'server')
+       ON DUPLICATE KEY UPDATE week_end = VALUES(week_end), summary_payload = VALUES(summary_payload), generated_from = 'server', updated_at = CURRENT_TIMESTAMP`,
+      [userId, childId, weekStart, payload.weekEnd, JSON.stringify(payload)]
+    );
+  }
+  res.json({ success: true, data: formatWeeklySummaryForMembership(payload, activeMember) });
+}
+
+async function sceneSearchTagsHandler(req, res) {
+  const [rows] = await pool.execute(
+    `SELECT scene_key, scene_title, scene_category, principle_text, suggested_action
+     FROM parenting_scene_tags
+     WHERE status = 'active'
+     ORDER BY sort_order ASC, id ASC`
+  );
+  res.json({
+    success: true,
+    data: rows.map((row) => ({
+      sceneKey: row.scene_key,
+      sceneTitle: row.scene_title,
+      sceneCategory: row.scene_category,
+      principleText: row.principle_text || '',
+      suggestedAction: row.suggested_action || ''
+    }))
+  });
+}
+
+async function searchParentingArticlesByKeyword(keyword, page, pageSize, userId) {
+  const searchTerm = `%${String(keyword || '').trim()}%`;
+  const safePage = normalizeBoundedInt(page, 1, 1, 1000000);
+  const safePageSize = normalizeBoundedInt(pageSize, 10, 1, 20);
+  const offset = (safePage - 1) * safePageSize;
+  const paginationClause = ` LIMIT ${safePageSize} OFFSET ${offset}`;
+  const [rows] = await pool.execute(
+    `SELECT * FROM articles
+     WHERE is_published = 1
+       AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+     ORDER BY read_count DESC, created_at DESC
+     ${paginationClause}`,
+    [searchTerm, searchTerm, searchTerm, searchTerm]
+  );
+  const data = [];
+  for (const row of rows) {
+    data.push(await normalizeArticle(row, userId || 0));
+  }
+  return data;
+}
+
+async function sceneSearchSolutionsHandler(req, res) {
+  const keyword = String(req.query.keyword || '').trim();
+  const sceneKey = String(req.query.sceneKey || '').trim();
+  const childId = Number(req.query.childId || 0);
+  const userId = req.user ? getUserId(req) : 0;
+  let child = null;
+  if (userId) {
+    child = childId ? await getOwnedChild(userId, childId) : await getDefaultChildForUser(userId);
+  }
+  const ageGroup = child ? (inferAgeRangeFromChild(child) || '3-4岁') : '3-4岁';
+  let matchedScene = null;
+  if (sceneKey) {
+    const [sceneRows] = await pool.execute('SELECT * FROM parenting_scene_tags WHERE scene_key = ? AND status = ? LIMIT 1', [sceneKey, 'active']);
+    matchedScene = sceneRows[0] || null;
+  }
+  if (!matchedScene && keyword) {
+    const searchTerm = `%${keyword}%`;
+    const [sceneRows] = await pool.execute(
+      `SELECT t.*
+       FROM parenting_scene_tags t
+       LEFT JOIN parenting_scene_aliases a ON a.scene_key = t.scene_key AND a.status = 'active'
+       WHERE t.status = 'active'
+         AND (t.scene_title LIKE ? OR a.alias_text LIKE ?)
+       ORDER BY t.sort_order ASC, a.sort_order ASC
+       LIMIT 1`,
+      [searchTerm, searchTerm]
+    );
+    matchedScene = sceneRows[0] || null;
+  }
+  if (!matchedScene) {
+    const fallbackArticles = keyword ? await searchParentingArticlesByKeyword(keyword, 1, 10, userId) : [];
+    res.json({
+      success: true,
+      data: {
+        matched: false,
+        scene: null,
+        solutions: [],
+        articles: fallbackArticles
+      }
+    });
+    return;
+  }
+  const profile = getSceneProfileByKey(matchedScene.scene_key);
+  const article = await getRecommendedParentingArticle(ageGroup, profile.articleCategory, profile.articleKeyword || keyword, userId || 0);
+  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const task = child ? await getRecommendedReadingTask(child.id, ageGroup, profile.subjectCode) : null;
+  const [recommendationRows] = await pool.execute(
+    `SELECT *
+     FROM parenting_scene_recommendations
+     WHERE scene_key = ? AND (age_group = '' OR age_group = ?)
+     ORDER BY sort_order ASC, id ASC`,
+    [matchedScene.scene_key, ageGroup]
+  );
+  const solutions = recommendationRows.map((row) => ({
+    type: row.result_type,
+    title: row.title,
+    summary: row.summary || '',
+    targetType: row.target_type || '',
+    targetId: row.target_id || '',
+    targetPath: row.target_path || ''
+  }));
+  if (article) {
+    solutions.push({
+      type: 'parenting_article',
+      title: article.title,
+      summary: article.summary || '',
+      targetType: 'parenting_article',
+      targetId: String(article.id),
+      targetPath: `/pages/parenting/article-detail/article-detail?id=${article.id}`
+    });
+  }
+  if (task) {
+    solutions.push({
+      type: 'ability_task',
+      title: task.title,
+      summary: task.objective || task.parent_prompt || '',
+      targetType: 'knowledge_task',
+      targetId: String(task.id),
+      targetPath: `/pages/textbook/knowledge-detail/knowledge-detail?pointId=${encodeURIComponent(task.task_code || String(task.id))}&subjectCode=${encodeURIComponent(task.subject_code || '')}&pointName=${encodeURIComponent(task.title || '')}&childId=${child.id}`
+    });
+  }
+  if (recipe) {
+    solutions.push({
+      type: 'nutrition_recipe',
+      title: recipe.title || recipe.name,
+      summary: (recipe.nutrition && recipe.nutrition.highlight) || recipe.description || '',
+      targetType: 'nutrition_recipe',
+      targetId: String(recipe.id),
+      targetPath: `/pages/nutrition/recipe-detail/recipe-detail?id=${encodeURIComponent(recipe.id)}`
+    });
+  }
+  res.json({
+    success: true,
+    data: {
+      matched: true,
+      scene: {
+        sceneKey: matchedScene.scene_key,
+        sceneTitle: matchedScene.scene_title,
+        sceneCategory: matchedScene.scene_category,
+        principleText: matchedScene.principle_text || '',
+        suggestedAction: matchedScene.suggested_action || ''
+      },
+      solutions,
+      articles: article ? [article] : []
+    }
+  });
 }
 
 async function childrenListHandler(req, res) {
@@ -3139,8 +4510,8 @@ function buildKeyPointsFromContent(content) {
 }
 
 async function parentingArticlesHandler(req, res) {
-  const page = Math.max(1, Number(req.query.page || 1));
-  const pageSize = Math.max(1, Math.min(20, Number(req.query.page_size || 10)));
+  const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
+  const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
   const offset = (page - 1) * pageSize;
   const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
   const params = [];
@@ -3223,29 +4594,15 @@ async function parentingSearchHandler(req, res) {
     res.json({ success: true, data: [] });
     return;
   }
-  const searchTerm = `%${keyword}%`;
-  const page = Math.max(1, Number(req.query.page || 1));
-  const pageSize = Math.max(1, Math.min(20, Number(req.query.page_size || 10)));
-  const offset = (page - 1) * pageSize;
-  const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
-  const [rows] = await pool.execute(
-    `SELECT * FROM articles
-     WHERE is_published = 1
-       AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
-     ORDER BY read_count DESC, created_at DESC
-     ${paginationClause}`,
-    [searchTerm, searchTerm, searchTerm, searchTerm]
-  );
-  const data = [];
-  for (const row of rows) {
-    data.push(await normalizeArticle(row, getUserId(req)));
-  }
+  const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
+  const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
+  const data = await searchParentingArticlesByKeyword(keyword, page, pageSize, getUserId(req));
   res.json({ success: true, data });
 }
 
 async function parentingCommentsHandler(req, res) {
-  const page = Math.max(1, Number(req.query.page || 1));
-  const pageSize = Math.max(1, Math.min(50, Number(req.query.page_size || 20)));
+  const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
+  const pageSize = normalizeBoundedInt(req.query.page_size, 20, 1, 50);
   const offset = (page - 1) * pageSize;
   const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
   const [rows] = await pool.execute(
@@ -3527,6 +4884,10 @@ async function accountDeletionHandler(req, res) {
     }
 
     await connection.execute('DELETE FROM children WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'daily_plan_completions', 'DELETE FROM daily_plan_completions WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'daily_plan_records', 'DELETE FROM daily_plan_records WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'growth_daily_records', 'DELETE FROM growth_daily_records WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'weekly_growth_summaries', 'DELETE FROM weekly_growth_summaries WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'chat_messages', 'DELETE FROM chat_messages WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'event_tracks', 'DELETE FROM event_tracks WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'subscriptions', 'DELETE FROM subscriptions WHERE user_id = ?', [userId]);

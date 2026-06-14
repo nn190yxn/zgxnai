@@ -1,13 +1,12 @@
 <!-- 搜索页面 -->
 <view class="page">
-  <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-input-wrap">
       <text class="back-btn" bindtap="onBackTap">‹</text>
       <text class="search-icon">🔍</text>
-      <input 
-        class="search-input" 
-        placeholder="搜索育儿知识、文章..." 
+      <input
+        class="search-input"
+        placeholder="搜问题场景、方法和文章"
         value="{{keyword}}"
         bindinput="onSearchInput"
         bindconfirm="onSearchConfirm"
@@ -18,122 +17,101 @@
     </view>
   </view>
 
-  <!-- 搜索结果 -->
   <view class="search-results" wx:if="{{showResults}}">
-    <!-- 加载中 -->
-    <view class="loading-wrap" wx:if="{{loading && searchResults.length === 0}}">
-      <text class="loading-text">搜索中...</text>
+    <view class="loading-wrap" wx:if="{{loading && !sceneSolutions.length && !searchResults.length}}">
+      <text class="loading-text">正在整理最接近你家的方案...</text>
     </view>
-    
-    <!-- 空结果 -->
-    <view class="empty-wrap" wx:elif="{{!loading && searchResults.length === 0}}">
+
+    <view class="empty-wrap" wx:elif="{{!loading && !sceneSolutions.length && !searchResults.length}}">
       <text class="empty-icon">🔍</text>
-      <text class="empty-text">未找到相关内容</text>
-      <text class="empty-desc">换个关键词试试吧</text>
+      <text class="empty-text">还没有找到直接匹配的内容</text>
+      <text class="empty-desc">换个更具体的场景试试，比如“睡前拖延”</text>
     </view>
-    
-    <!-- 结果列表 -->
-    <view class="article-list" wx:else>
-      <view class="result-count">找到 {{searchResults.length}} 篇相关文章</view>
-      <view 
-        class="article-card" 
-        wx:for="{{searchResults}}" 
-        wx:key="id"
-      >
-        <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}" data-index="{{index}}">
-          <view class="article-content no-image">
-            <text class="article-title">{{item.title}}</text>
-            <text class="article-summary">{{item.summary}}</text>
-            <view class="article-tags">
-              <text class="tag" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
-              <text class="tag tag-age" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
-            </view>
-            <view class="article-meta">
-              <text class="meta-item">{{item.author || '小牛育儿'}}</text>
-              <text class="meta-item" wx:if="{{item.viewCount}}">👁️ {{item.viewCount}}</text>
+
+    <block wx:else>
+      <view class="scene-card" wx:if="{{matchedScene}}">
+        <view class="scene-card-head">
+          <text class="scene-category">{{matchedScene.sceneCategory}}</text>
+          <text class="scene-title">{{matchedScene.sceneTitle}}</text>
+        </view>
+        <text class="scene-copy">{{matchedScene.principleText}}</text>
+        <text class="scene-copy scene-copy-action">{{matchedScene.suggestedAction}}</text>
+      </view>
+
+      <view class="solution-list" wx:if="{{sceneSolutions.length}}">
+        <view class="result-count">先给你 {{sceneSolutions.length}} 条可直接执行的承接方案</view>
+        <view
+          class="solution-card"
+          wx:for="{{sceneSolutions}}"
+          wx:key="title"
+          bindtap="onSolutionTap"
+          data-target-path="{{item.targetPath}}"
+        >
+          <text class="solution-type">{{item.type}}</text>
+          <text class="solution-title">{{item.title}}</text>
+          <text class="solution-summary">{{item.summary}}</text>
+        </view>
+      </view>
+
+      <view class="article-list" wx:if="{{searchResults.length}}">
+        <view class="result-count">相关文章 {{searchResults.length}} 篇</view>
+        <view class="article-card" wx:for="{{searchResults}}" wx:key="id">
+          <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}" data-index="{{index}}">
+            <view class="article-content no-image">
+              <text class="article-title">{{item.title}}</text>
+              <text class="article-summary">{{item.summary}}</text>
+              <view class="article-tags">
+                <text class="tag" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
+                <text class="tag tag-age" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
+              </view>
             </view>
           </view>
+          <view class="favorite-btn {{item.isFavorite ? 'active' : ''}}" catchtap="onFavoriteTap" data-id="{{item.id}}" data-index="{{index}}">
+            <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+          </view>
         </view>
-        <view 
-          class="favorite-btn {{item.isFavorite ? 'active' : ''}}" 
-          catchtap="onFavoriteTap" 
-          data-id="{{item.id}}" 
-          data-index="{{index}}"
+      </view>
+    </block>
+  </view>
+
+  <view class="search-suggest" wx:else>
+    <view class="suggest-section" wx:if="{{sceneTags.length}}">
+      <view class="section-header">
+        <text class="section-title">高频场景</text>
+      </view>
+      <view class="keyword-list hot-list">
+        <view
+          class="keyword-item hot-item"
+          wx:for="{{sceneTags}}"
+          wx:key="sceneKey"
+          bindtap="onSceneTap"
+          data-scene-key="{{item.sceneKey}}"
+          data-scene-title="{{item.sceneTitle}}"
         >
-          <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+          <text class="keyword-text">{{item.sceneTitle}}</text>
         </view>
       </view>
     </view>
 
-    <!-- 加载更多 -->
-    <view class="load-more" wx:if="{{searchResults.length > 0}}">
-      <text wx:if="{{loading}}">加载中...</text>
-      <text wx:elif="{{!hasMore}}">没有更多了</text>
-    </view>
-  </view>
-
-  <!-- 搜索历史和热门搜索 -->
-  <view class="search-suggest" wx:else>
-    <!-- 搜索历史 -->
     <view class="suggest-section" wx:if="{{searchHistory.length > 0}}">
       <view class="section-header">
         <text class="section-title">搜索历史</text>
         <text class="clear-history" bindtap="onClearHistory">清空</text>
       </view>
       <view class="keyword-list">
-        <view 
-          class="keyword-item" 
-          wx:for="{{searchHistory}}" 
-          wx:key="*this"
-          bindtap="onHistoryTap"
-          data-keyword="{{item}}"
-        >
-          <text class="keyword-icon">🕐</text>
+        <view class="keyword-item" wx:for="{{searchHistory}}" wx:key="*this" bindtap="onHistoryTap" data-keyword="{{item}}">
           <text class="keyword-text">{{item}}</text>
         </view>
       </view>
     </view>
 
-    <!-- 热门搜索 -->
     <view class="suggest-section">
       <view class="section-header">
         <text class="section-title">热门搜索</text>
-        <text class="hot-tag">🔥</text>
       </view>
       <view class="keyword-list hot-list">
-        <view 
-          class="keyword-item hot-item" 
-          wx:for="{{hotKeywords}}" 
-          wx:key="*this"
-          bindtap="onHotKeywordTap"
-          data-keyword="{{item}}"
-        >
+        <view class="keyword-item hot-item" wx:for="{{hotKeywords}}" wx:key="*this" bindtap="onHotKeywordTap" data-keyword="{{item}}">
           <text class="keyword-text">{{item}}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 推荐搜索 -->
-    <view class="suggest-section">
-      <view class="section-header">
-        <text class="section-title">推荐搜索</text>
-      </view>
-      <view class="recommend-list">
-        <view class="recommend-item">
-          <text class="recommend-icon">💡</text>
-          <text class="recommend-text">孩子发脾气怎么办</text>
-        </view>
-        <view class="recommend-item">
-          <text class="recommend-icon">💡</text>
-          <text class="recommend-text">如何培养孩子专注力</text>
-        </view>
-        <view class="recommend-item">
-          <text class="recommend-icon">💡</text>
-          <text class="recommend-text">孩子不爱吃蔬菜怎么办</text>
-        </view>
-        <view class="recommend-item">
-          <text class="recommend-icon">💡</text>
-          <text class="recommend-text">如何与孩子有效沟通</text>
         </view>
       </view>
     </view>

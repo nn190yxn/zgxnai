@@ -10,6 +10,10 @@ function normalizeRuntimeConfig(payload) {
     assessmentsEnabled: data.assessments_enabled !== undefined ? !!data.assessments_enabled : (envConfig.enableAssessments !== false),
     educationEnabled: data.education_enabled !== undefined ? !!data.education_enabled : (envConfig.enableEducation !== false),
     parentingEnabled: data.parenting_enabled !== undefined ? !!data.parenting_enabled : (envConfig.enableParenting !== false),
+    dailyPlanEnabled: data.daily_plan_enabled !== undefined ? !!data.daily_plan_enabled : true,
+    growthRecordEnabled: data.growth_record_enabled !== undefined ? !!data.growth_record_enabled : true,
+    weeklySummaryEnabled: data.weekly_summary_enabled !== undefined ? !!data.weekly_summary_enabled : true,
+    sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
     paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : false,
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
@@ -84,6 +88,18 @@ function isFeatureEnabled(app, featureName) {
   }
   if (featureName === 'parenting') {
     return !!config.parentingEnabled;
+  }
+  if (featureName === 'dailyPlan') {
+    return !!config.dailyPlanEnabled;
+  }
+  if (featureName === 'growthRecord') {
+    return !!config.growthRecordEnabled;
+  }
+  if (featureName === 'weeklySummary') {
+    return !!config.weeklySummaryEnabled;
+  }
+  if (featureName === 'sceneSearch') {
+    return !!config.sceneSearchEnabled;
   }
   return true;
 }

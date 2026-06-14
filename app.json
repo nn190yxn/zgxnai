@@ -22,6 +22,9 @@
     "miniprogram/pages/textbook/textbook",
     "miniprogram/pages/textbook/knowledge-list/knowledge-list",
     "miniprogram/pages/textbook/knowledge-detail/knowledge-detail",
+    "miniprogram/pages/growth-record/index",
+    "miniprogram/pages/growth-record/history/index",
+    "miniprogram/pages/weekly-summary/index",
     "miniprogram/pages/share/preview/preview",
     "miniprogram/pages/membership/index"
   ],

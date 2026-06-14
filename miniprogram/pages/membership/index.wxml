@@ -55,6 +55,19 @@
     </view>
   </view>
 
+  <view class="plans-section">
+    <view class="section-title">会员可解锁</view>
+    <view class="benefit-list">
+      <view class="benefit-item {{item.unlocked ? 'benefit-item-active' : ''}}" wx:for="{{displayFeatures}}" wx:key="key">
+        <view class="benefit-head">
+          <text class="benefit-title">{{item.title}}</text>
+          <text class="benefit-status {{item.unlocked ? 'benefit-status-active' : ''}}">{{item.statusText}}</text>
+        </view>
+        <text class="benefit-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 裂变邀请 -->
   <view class="referral-section">
     <view class="section-title">邀请好友</view>

@@ -79,6 +79,11 @@
         <text class="menu-text">成长记录</text>
         <text class="menu-arrow">→</text>
       </view>
+      <view class="menu-item" bindtap="viewWeeklySummary">
+        <text class="menu-icon">📝</text>
+        <text class="menu-text">每周成长总结</text>
+        <text class="menu-arrow">→</text>
+      </view>
       <view class="menu-item" bindtap="feedback">
         <text class="menu-icon">💬</text>
         <text class="menu-text">意见反馈</text>

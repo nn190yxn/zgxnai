@@ -207,6 +207,134 @@
   color: #1B2A1B;
 }
 
+.section-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #9A6E61;
+}
+
+.plan-loading-card,
+.plan-empty-card {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.plan-loading-title,
+.plan-empty-title {
+  display: block;
+  font-size: 30rpx;
+  line-height: 1.5;
+  color: #2F241F;
+  font-weight: 700;
+}
+
+.plan-loading-desc,
+.plan-empty-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #8F756C;
+}
+
+.plan-card {
+  background: linear-gradient(180deg, #FFFDF9 0%, #FFF5EB 100%);
+  border: 2rpx solid rgba(255, 126, 75, 0.14);
+  border-radius: 24rpx;
+  padding: 28rpx;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.plan-card + .plan-card {
+  margin-top: 18rpx;
+}
+
+.plan-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 107, 53, 0.1);
+  color: #D85C26;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.plan-status {
+  font-size: 22rpx;
+  color: #9A6E61;
+}
+
+.plan-status-done {
+  color: #2E8B57;
+  font-weight: 700;
+}
+
+.plan-title {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 32rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.plan-reason {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.7;
+  color: #694E44;
+}
+
+.plan-summary {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.7;
+  color: #92766B;
+}
+
+.plan-actions {
+  margin-top: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.plan-link {
+  flex: 1;
+  font-size: 24rpx;
+  color: #D85C26;
+  font-weight: 700;
+}
+
+.plan-complete-btn {
+  min-width: 176rpx;
+  padding: 16rpx 22rpx;
+  text-align: center;
+  border-radius: 18rpx;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.plan-complete-btn-done {
+  background: #E3F3E9;
+  color: #2E8B57;
+}
+
 /* 模块网格 */
 .module-grid {
   display: flex;

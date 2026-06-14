@@ -3,84 +3,71 @@ var app = getApp();
 
 Page({
   data: {
-    // 搜索关键词
     keyword: '',
-    // 搜索历史
     searchHistory: [],
-    // 热门搜索
     hotKeywords: [],
-    // 搜索结果
+    sceneTags: [],
     searchResults: [],
-    // 是否显示搜索结果
+    sceneSolutions: [],
+    matchedScene: null,
     showResults: false,
-    // 分页
+    loading: false,
+    hasMore: false,
     page: 1,
     pageSize: 10,
-    hasMore: true,
-    // 加载状态
-    loading: false,
     requestSeq: 0
   },
 
-  buildArticleTrackPayload: function(article, extra) {
-    article = article || {};
-    var baseEventMeta = {
-      title: article.title || '',
-      category: article.category || '',
-      age_group: article.age_group || '',
-      keyword: this.data.keyword || '',
-      page: 'parenting_search'
-    };
-    var payload = Object.assign({
-      module_key: 'knowledge',
+  trackSceneEvent: function(eventType, extraMeta) {
+    if (!app.trackKbEvent) {
+      return;
+    }
+    app.trackKbEvent({
+      event_type: eventType,
+      module_key: 'scene_search',
       page_key: 'parenting_search',
-      content_type: 'article',
-      content_id: String(article.id || ''),
-      event_meta: baseEventMeta
-    }, extra || {});
-    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
-    return payload;
-  },
-
-  normalizeArticleCard: function(article) {
-    article = article || {};
-    article.categoryName = article.categoryName || article.category || '';
-    article.ageRange = article.ageRange || article.age_group || '';
-    article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
-    article.publishTime = article.publishTime || article.created_at || '';
-    article.isFavorite = !!(article.is_favorited || article.isFavorite);
-    return article;
+      event_meta: Object.assign({
+        keyword: this.data.keyword || '',
+        matched_scene_key: this.data.matchedScene ? this.data.matchedScene.sceneKey : ''
+      }, extraMeta || {})
+    });
   },
 
   onLoad: function() {
     this.loadSearchHistory();
     this.loadHotKeywords();
+    this.loadSceneTags();
   },
 
   onShow: function() {
-    // 每次显示时刷新搜索历史
     this.loadSearchHistory();
   },
 
-  // 加载搜索历史
-  loadSearchHistory: function() {
-    var history = wx.getStorageSync('parenting_search_history') || [];
-    this.setData({
-      searchHistory: history
+  normalizeArticleCard: function(article) {
+    article = article || {};
+    return Object.assign({}, article, {
+      categoryName: article.categoryName || article.category || '',
+      ageRange: article.ageRange || article.age_group || '',
+      viewCount: typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0),
+      publishTime: article.publishTime || article.created_at || '',
+      isFavorite: !!(article.is_favorited || article.isFavorite)
     });
   },
 
-  // 加载热门搜索
+  loadSearchHistory: function() {
+    this.setData({
+      searchHistory: wx.getStorageSync('parenting_search_history') || []
+    });
+  },
+
   loadHotKeywords: function() {
     var that = this;
-
     if (app.shouldUseMockFallback()) {
       that.setData({
-        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养', '营养健康']
+        hotKeywords: ['孩子发脾气', '睡前拖延', '挑食', '坐不住', '同伴冲突', '早晨磨蹭']
       });
       return;
     }
-
     app.request({
       url: '/parenting/hot-keywords',
       method: 'GET'
@@ -88,358 +75,264 @@ Page({
       that.setData({
         hotKeywords: list || []
       });
-    }).catch(function(err) {
-      if (app.globalData.isDebug) console.error('加载热门搜索失败', err);
+    }).catch(function() {
       that.setData({
-        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养', '营养健康']
+        hotKeywords: ['孩子发脾气', '睡前拖延', '挑食', '坐不住', '同伴冲突', '早晨磨蹭']
       });
     });
   },
 
-  // 搜索输入
-  onSearchInput: function(e) {
-    this.setData({
-      keyword: e.detail.value
+  loadSceneTags: function() {
+    var that = this;
+    if (app.shouldUseMockFallback()) {
+      that.setData({
+        sceneTags: [
+          { sceneKey: 'tantrum_public', sceneTitle: '公共场合闹情绪', sceneCategory: '情绪支持' },
+          { sceneKey: 'sleep_resist', sceneTitle: '睡前拖延', sceneCategory: '作息习惯' },
+          { sceneKey: 'meal_picky', sceneTitle: '吃饭挑食', sceneCategory: '营养支持' },
+          { sceneKey: 'homework_focus', sceneTitle: '写作业坐不住', sceneCategory: '学习支持' }
+        ]
+      });
+      return;
+    }
+    app.request({
+      url: '/search/scenes',
+      method: 'GET'
+    }).then(function(list) {
+      that.setData({ sceneTags: list || [] });
+      if ((list || []).length) {
+        that.trackSceneEvent('scene_search_exposure', {
+          exposure_type: 'scene_tags',
+          total: (list || []).length
+        });
+      }
+    }).catch(function() {
+      that.setData({ sceneTags: [] });
     });
   },
 
-  // 搜索确认
-  onSearchConfirm: function() {
-    var keyword = this.data.keyword.trim();
-    if (!keyword) {
-      return;
-    }
-    
-    // 保存搜索历史
-    this.saveSearchHistory(keyword);
-    
-    // 执行搜索
-    this.doSearch();
+  onSearchInput: function(e) {
+    this.setData({ keyword: e.detail.value });
   },
 
-  // 执行搜索
-  doSearch: function() {
-    var that = this;
-    var keyword = that.data.keyword.trim();
-    
+  onSearchConfirm: function() {
+    var keyword = String(this.data.keyword || '').trim();
     if (!keyword) {
       return;
     }
-    
-    var requestSeq = that.data.requestSeq + 1;
-    that.setData({
+    this.saveSearchHistory(keyword);
+    this.trackSceneEvent('scene_search_submit', { submit_type: 'manual_keyword', keyword: keyword });
+    this.doSearch({ keyword: keyword });
+  },
+
+  saveSearchHistory: function(keyword) {
+    var history = (this.data.searchHistory || []).filter(function(item) {
+      return item !== keyword;
+    });
+    history.unshift(keyword);
+    history = history.slice(0, 10);
+    this.setData({ searchHistory: history });
+    wx.setStorageSync('parenting_search_history', history);
+  },
+
+  doSearch: function(options) {
+    var that = this;
+    var opts = options || {};
+    var keyword = String(opts.keyword || this.data.keyword || '').trim();
+    var sceneKey = String(opts.sceneKey || '').trim();
+    if (!keyword && !sceneKey) {
+      return;
+    }
+    var requestSeq = this.data.requestSeq + 1;
+    this.setData({
       loading: true,
       showResults: true,
+      requestSeq: requestSeq,
+      keyword: keyword,
       searchResults: [],
-      page: 1,
-      hasMore: true,
-      requestSeq: requestSeq
+      sceneSolutions: [],
+      matchedScene: null
     });
 
     if (app.shouldUseMockFallback()) {
-      var fallback = [
-        {
-          id: 'local_parenting_001',
-          title: '4-5岁孩子情绪表达的4个引导技巧',
-          summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
-          category: '情绪管理',
-          age_group: '4-5岁',
-          isFavorite: false
-        },
-        {
-          id: 'local_parenting_004',
-          title: '早餐营养搭配：让早晨吃进去，也吃得稳',
-          summary: '主食、蛋白和蔬果搭配得当，更有利于上午精力稳定。',
-          category: '营养健康',
-          age_group: '5-6岁',
-          isFavorite: false
-        },
-        {
-          id: 'local_parenting_005',
-          title: '专注力环境搭建：先减干扰，再谈坚持',
-          summary: '把材料和任务长度一起收窄，孩子更容易进入专注状态。',
-          category: '认知发展',
-          age_group: '5-6岁',
-          isFavorite: false
-        }
-      ].filter(function(item) {
-        return item.title.indexOf(keyword) !== -1 || item.summary.indexOf(keyword) !== -1 || item.category.indexOf(keyword) !== -1;
-      });
-      fallback = fallback.map(function(item) {
-        return that.normalizeArticleCard(item);
-      });
-      if (!fallback.length) {
-        fallback = [
-          {
-            id: 'local_parenting_001',
-            title: '4-5岁孩子情绪表达的4个引导技巧',
-            summary: '换个关键词试试，也可以从热门搜索进入。',
-            category: '情绪管理',
-            age_group: '4-5岁',
-            isFavorite: false
-          }
-        ];
-        fallback = fallback.map(function(item) {
-          return that.normalizeArticleCard(item);
-        });
-      }
+      var sceneTitle = keyword || '家庭场景';
       that.setData({
-        searchResults: fallback,
-        hasMore: false,
-        page: 2,
-        loading: false
+        loading: false,
+        matchedScene: {
+          sceneTitle: sceneTitle,
+          sceneCategory: '场景建议',
+          principleText: '先把场景说具体，再选一条今天就能做的动作。',
+          suggestedAction: '先做一条最容易执行的家庭动作。'
+        },
+        sceneSolutions: [
+          {
+            type: 'solution_card',
+            title: sceneTitle + '处理建议',
+            summary: '先稳住节奏，再给孩子一个简单动作。',
+            targetPath: ''
+          }
+        ],
+        searchResults: [
+          that.normalizeArticleCard({
+            id: 'local_parenting_001',
+            title: '孩子发脾气时，家里先怎么接',
+            summary: '先确认感受，再给边界，执行会更稳。',
+            category: '情绪管理',
+            age_group: '4-5岁'
+          })
+        ]
       });
       return;
     }
 
-    app.request({
-      url: '/parenting/search',
-      method: 'GET',
-      data: {
-        keyword: keyword,
-        page: 1,
-        page_size: that.data.pageSize
-      }
-    }).then(function(list) {
+    Promise.all([
+      app.request({
+        url: '/search/solutions',
+        method: 'GET',
+        data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {})
+      }).catch(function() {
+        return { matched: false, scene: null, solutions: [], articles: [] };
+      }),
+      app.request({
+        url: '/parenting/search',
+        method: 'GET',
+        data: {
+          keyword: keyword || sceneKey,
+          page: 1,
+          page_size: that.data.pageSize
+        }
+      }).catch(function() {
+        return [];
+      })
+    ]).then(function(result) {
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      list = list || [];
-      for (var i = 0; i < list.length; i++) {
-        that.normalizeArticleCard(list[i]);
-      }
+      var sceneResult = result[0] || {};
+      var fallbackArticles = Array.isArray(sceneResult.articles) ? sceneResult.articles : [];
+      var list = fallbackArticles.length ? fallbackArticles : (result[1] || []);
+      list = list.map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       that.setData({
+        matchedScene: sceneResult.scene || null,
+        sceneSolutions: sceneResult.solutions || [],
         searchResults: list,
         hasMore: list.length >= that.data.pageSize,
         page: 2
       });
-    }).catch(function(err) {
+      if (sceneResult.scene) {
+        that.trackSceneEvent('scene_search_exposure', {
+          exposure_type: 'scene_result',
+          matched_scene_key: sceneResult.scene.sceneKey || '',
+          solution_count: Number((sceneResult.solutions || []).length),
+          article_count: Number(list.length || 0)
+        });
+      }
+    }).catch(function() {
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      if (app.globalData.isDebug) console.error('搜索失败', err);
-      wx.showToast({
-        title: '搜索失败',
-        icon: 'none'
-      });
+      wx.showToast({ title: '搜索失败', icon: 'none' });
     }).finally(function() {
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      that.setData({
-        loading: false
-      });
+      that.setData({ loading: false });
     });
   },
 
-  // 保存搜索历史
-  saveSearchHistory: function(keyword) {
-    var history = this.data.searchHistory;
-    
-    // 移除已存在的相同关键词
-    var index = history.indexOf(keyword);
-    if (index > -1) {
-      history.splice(index, 1);
-    }
-    
-    // 添加到开头
-    history.unshift(keyword);
-    
-    // 最多保存10条
-    if (history.length > 10) {
-      history = history.slice(0, 10);
-    }
-    
-    this.setData({
-      searchHistory: history
+  onSceneTap: function(e) {
+    var sceneKey = e.currentTarget.dataset.sceneKey;
+    var sceneTitle = e.currentTarget.dataset.sceneTitle;
+    this.saveSearchHistory(sceneTitle);
+    this.trackSceneEvent('scene_search_submit', {
+      submit_type: 'scene_tag',
+      keyword: sceneTitle,
+      matched_scene_key: sceneKey
     });
-    
-    wx.setStorageSync('parenting_search_history', history);
+    this.doSearch({ sceneKey: sceneKey, keyword: sceneTitle });
   },
 
-  // 点击历史关键词
   onHistoryTap: function(e) {
     var keyword = e.currentTarget.dataset.keyword;
-    this.setData({
-      keyword: keyword
-    });
-    this.saveSearchHistory(keyword);
-    this.doSearch();
+    this.setData({ keyword: keyword });
+    this.doSearch({ keyword: keyword });
   },
 
-  // 点击热门关键词
   onHotKeywordTap: function(e) {
     var keyword = e.currentTarget.dataset.keyword;
-    this.setData({
-      keyword: keyword
-    });
+    this.setData({ keyword: keyword });
     this.saveSearchHistory(keyword);
-    this.doSearch();
+    this.trackSceneEvent('scene_search_submit', { submit_type: 'hot_keyword', keyword: keyword });
+    this.doSearch({ keyword: keyword });
   },
 
-  // 清除搜索历史
   onClearHistory: function() {
-    var that = this;
-    wx.showModal({
-      title: '提示',
-      content: '确定要清除搜索历史吗？',
-      success: function(res) {
-        if (res.confirm) {
-          that.setData({
-            searchHistory: []
-          });
-          wx.removeStorageSync('parenting_search_history');
-        }
-      }
-    });
+    wx.removeStorageSync('parenting_search_history');
+    this.setData({ searchHistory: [] });
   },
 
-  // 清除搜索框
   onClearInput: function() {
     this.setData({
       keyword: '',
       showResults: false,
-      searchResults: []
+      searchResults: [],
+      sceneSolutions: [],
+      matchedScene: null
     });
   },
 
-  // 返回
   onBackTap: function() {
-    if (this.data.showResults) {
-      this.setData({
-        showResults: false,
-        searchResults: [],
-        keyword: ''
-      });
-    } else {
-      wx.navigateBack();
-    }
+    wx.navigateBack({
+      fail: function() {
+        wx.navigateTo({ url: '/pages/parenting/parenting' });
+      }
+    });
   },
 
-  // 点击文章
   onArticleTap: function(e) {
-    var id = e.currentTarget.dataset.id;
-    var index = e.currentTarget.dataset.index;
-    var article = this.data.searchResults[index] || { id: id };
-    app.trackKbEvent(this.buildArticleTrackPayload(article, {
-      event_type: 'article_entry_click',
-      event_meta: {
-        section: 'search_results'
-      }
-    }));
+    var articleId = e.currentTarget.dataset.id;
+    if (!articleId) {
+      return;
+    }
     wx.navigateTo({
-      url: '/pages/parenting/article-detail/article-detail?id=' + id,
+      url: '/pages/parenting/article-detail/article-detail?id=' + articleId
+    });
+  },
+
+  onSolutionTap: function(e) {
+    var targetPath = e.currentTarget.dataset.targetPath;
+    if (!targetPath) {
+      return;
+    }
+    this.trackSceneEvent('scene_solution_click', { target_path: targetPath });
+    wx.navigateTo({
+      url: targetPath,
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
     });
   },
 
-  // 收藏/取消收藏
   onFavoriteTap: function(e) {
     var that = this;
-    if (that._favoritePending) {
-      return;
-    }
-    var id = e.currentTarget.dataset.id;
-    var index = e.currentTarget.dataset.index;
-    var article = that.data.searchResults[index];
-    var isFavorite = article.isFavorite;
-    that._favoritePending = true;
-
+    var articleId = e.currentTarget.dataset.id;
+    var index = Number(e.currentTarget.dataset.index || 0);
     app.requireLoginForAction().then(function(canOperate) {
       if (!canOperate) {
         return;
       }
-
       return app.request({
-      url: '/parenting/articles/' + id + '/favorite',
-      method: 'POST'
-    }).then(function() {
-      var searchResults = that.data.searchResults;
-      searchResults[index].isFavorite = !isFavorite;
-      that.setData({
-        searchResults: searchResults
-      });
-      wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
-        icon: 'success'
-      });
-    }).catch(function() {
-      wx.showToast({
-        title: '操作失败',
-        icon: 'none'
+        url: '/parenting/articles/' + articleId + '/favorite',
+        method: 'POST'
+      }).then(function() {
+        var list = that.data.searchResults.slice();
+        if (list[index]) {
+          list[index].isFavorite = !list[index].isFavorite;
+          that.setData({ searchResults: list });
+        }
       });
     });
-    }).finally(function() {
-      that._favoritePending = false;
-    });
-  },
-
-  // 上拉加载更多
-  onReachBottom: function() {
-    this.loadMoreResults();
-  },
-
-  // 加载更多结果
-  loadMoreResults: function() {
-    var that = this;
-    if (that.data.loading || !that.data.hasMore || !that.data.showResults) {
-      return;
-    }
-    
-    var requestSeq = that.data.requestSeq;
-    that.setData({
-      loading: true
-    });
-
-    if (app.shouldUseMockFallback()) {
-      that.setData({
-        hasMore: false,
-        loading: false
-      });
-      return;
-    }
-
-    app.request({
-      url: '/parenting/search',
-      method: 'GET',
-      data: {
-        keyword: that.data.keyword,
-        page: that.data.page,
-        page_size: that.data.pageSize
-      }
-    }).then(function(list) {
-      if (requestSeq !== that.data.requestSeq) {
-        return;
-      }
-      list = list || [];
-      for (var i = 0; i < list.length; i++) {
-        that.normalizeArticleCard(list[i]);
-      }
-      var newList = that.data.searchResults.concat(list);
-      that.setData({
-        searchResults: newList,
-        hasMore: list.length >= that.data.pageSize,
-        page: that.data.page + 1
-      });
-    }).catch(function(err) {
-      if (app.globalData.isDebug) console.error('加载更多失败', err);
-    }).finally(function() {
-      if (requestSeq !== that.data.requestSeq) {
-        return;
-      }
-      that.setData({
-        loading: false
-      });
-    });
-  }
-,
-
-  onShareAppMessage: function() {
-    return {
-      title: '小牛育儿AI助理',
-      path: '/pages/index/index'
-    };
   }
 });

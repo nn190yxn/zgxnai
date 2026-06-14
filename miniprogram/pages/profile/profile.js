@@ -135,7 +135,17 @@ Page({
   // 查看成长记录
   viewAssessments: function() {
     wx.navigateTo({
-      url: '/pages/assessment/history/history',
+      url: '/pages/growth-record/index',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  viewWeeklySummary: function() {
+    var childId = (this.data.currentChild && this.data.currentChild.id) || 0;
+    wx.navigateTo({
+      url: '/pages/weekly-summary/index' + (childId ? ('?childId=' + childId) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

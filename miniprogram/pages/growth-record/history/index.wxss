@@ -1,0 +1,29 @@
+.page {
+  min-height: 100vh;
+  background: #f6f1eb;
+  padding: 24rpx;
+}
+
+.history-card,
+.empty-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.history-date {
+  font-size: 30rpx;
+  color: #2c2623;
+  font-weight: 700;
+}
+
+.history-line,
+.history-note,
+.empty-card {
+  display: block;
+  margin-top: 12rpx;
+  color: #6c625b;
+  font-size: 24rpx;
+  line-height: 1.7;
+}

@@ -1,0 +1,100 @@
+.page {
+  min-height: 100vh;
+  background: #f6f1eb;
+  padding: 24rpx;
+}
+
+.hero-card,
+.section-card,
+.empty-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.hero-title,
+.section-title,
+.empty-title {
+  font-size: 32rpx;
+  color: #2c2623;
+  font-weight: 700;
+}
+
+.date-chip {
+  margin-top: 16rpx;
+  display: inline-block;
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: #fff2e8;
+  color: #d65a1f;
+  font-size: 24rpx;
+}
+
+.option-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 16rpx;
+}
+
+.option-chip {
+  padding: 14rpx 22rpx;
+  border-radius: 999rpx;
+  background: #f3f0ec;
+  margin-right: 16rpx;
+  margin-bottom: 16rpx;
+  color: #6c625b;
+  font-size: 24rpx;
+}
+
+.option-chip-active {
+  background: #ff7a45;
+  color: #fff;
+}
+
+.note-box {
+  width: 100%;
+  min-height: 180rpx;
+  margin-top: 16rpx;
+  background: #faf7f3;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.helper-copy {
+  display: block;
+  margin-top: 16rpx;
+  color: #6c625b;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.action-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.primary-btn,
+.secondary-btn {
+  text-align: center;
+  border-radius: 18rpx;
+  padding: 22rpx 24rpx;
+  font-size: 28rpx;
+}
+
+.primary-btn {
+  background: #ff7a45;
+  color: #fff;
+}
+
+.primary-btn-disabled {
+  opacity: 0.7;
+}
+
+.secondary-btn {
+  flex: 1;
+  background: #fff;
+  color: #6c625b;
+}

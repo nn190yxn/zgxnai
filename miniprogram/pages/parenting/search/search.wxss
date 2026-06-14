@@ -145,6 +145,51 @@
   padding: 24rpx 32rpx;
 }
 
+.scene-card,
+.solution-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.scene-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.scene-category,
+.solution-type {
+  font-size: 22rpx;
+  color: #FF6B35;
+}
+
+.scene-title,
+.solution-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.scene-copy,
+.solution-summary {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.7;
+}
+
+.scene-copy-action {
+  margin-top: 12rpx;
+  color: #333;
+}
+
+.solution-list {
+  margin-bottom: 20rpx;
+}
+
 .result-count {
   font-size: 26rpx;
   color: #999;

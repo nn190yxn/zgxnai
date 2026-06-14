@@ -82,7 +82,7 @@
         <text class="module-desc">暂未开放</text>
       </view>
 
-      <view class="module-card" bindtap="goToWeeklyReport">
+      <view class="module-card" bindtap="goToGrowthRecord">
         <text class="module-name">成长记录</text>
         <text class="module-desc">持续追踪</text>
       </view>
@@ -91,18 +91,47 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">今日建议</text>
+      <text class="section-title">今日育儿计划</text>
+      <text class="section-subtitle">已完成 {{dailyPlanCompletedCount}}/3</text>
     </view>
 
-    <view class="quick-action" bindtap="goToTodayTask">
-      <view class="quick-content">
-        <text class="quick-title">{{todayTask.title}}</text>
-        <text class="quick-desc">{{todayTask.duration}}</text>
+    <view wx:if="{{dailyPlanLoading}}" class="plan-loading-card">
+      <text class="plan-loading-title">正在整理今天更适合你家的三步建议</text>
+      <text class="plan-loading-desc">先给我一点点时间把年龄、任务和内容连起来。</text>
+    </view>
+
+    <block wx:elif="{{dailyPlanCards.length}}">
+      <view
+        class="plan-card"
+        wx:for="{{dailyPlanCards}}"
+        wx:key="id"
+        data-index="{{index}}"
+        bindtap="onDailyPlanTap"
+      >
+        <view class="plan-card-top">
+          <text class="plan-type">{{item.typeLabel}}</text>
+          <text wx:if="{{item.completed}}" class="plan-status plan-status-done">已完成</text>
+          <text wx:else class="plan-status">{{item.durationMinutes}}分钟</text>
+        </view>
+        <text class="plan-title">{{item.title}}</text>
+        <text class="plan-reason">{{item.reason}}</text>
+        <text class="plan-summary">{{item.summary}}</text>
+        <view class="plan-actions">
+          <text class="plan-link">{{item.actionText}}</text>
+          <view
+            class="plan-complete-btn {{item.completed ? 'plan-complete-btn-done' : ''}}"
+            catchtap="onDailyPlanComplete"
+            data-index="{{index}}"
+          >
+            {{item.completed ? '已记录' : '标记完成'}}
+          </view>
+        </view>
       </view>
-      <view class="quick-side">
-        <text class="quick-arrow">开始观察</text>
-        <text class="quick-share" catchtap="onShareTaskCard">生成介绍卡</text>
-      </view>
+    </block>
+
+    <view wx:else class="plan-empty-card" bindtap="goToTodayTask">
+      <text class="plan-empty-title">{{todayTask.title}}</text>
+      <text class="plan-empty-desc">{{dailyPlanEmptyText || todayTask.duration}}</text>
     </view>
   </view>
 
@@ -112,11 +141,22 @@
     </view>
 
     <view class="progress-card" bindtap="goToWeeklyReport">
-      <text class="progress-line">理解正确率 {{weeklyProgress.understandingFrom}}% → {{weeklyProgress.understandingTo}}%</text>
-      <text class="progress-line">连续打卡 {{weeklyProgress.streakDays}} 天</text>
+      <text class="progress-line">{{weeklyProgress.headline}}</text>
+      <text class="progress-line">{{weeklyProgress.summary}}</text>
+      <text class="progress-line">最近 7 天记录 {{weeklyProgress.streakDays}} 天</text>
       <view class="progress-actions">
-        <text class="progress-action">查看完整周报</text>
+        <text class="progress-action">{{weeklyProgress.actionText}}</text>
         <text class="progress-share" catchtap="onShareProgressCard">分享成果卡</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{membershipTouchpointVisible}}">
+    <view class="progress-card" bindtap="goToMembership">
+      <text class="progress-line">{{membershipTouchpointTitle}}</text>
+      <text class="progress-line">{{membershipTouchpointDesc}}</text>
+      <view class="progress-actions">
+        <text class="progress-action">查看会员权益</text>
       </view>
     </view>
   </view>

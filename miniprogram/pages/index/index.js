@@ -10,6 +10,9 @@ Page({
       assessmentsEnabled: true,
       educationEnabled: true,
       parentingEnabled: true,
+      growthRecordEnabled: true,
+      weeklySummaryEnabled: true,
+      sceneSearchEnabled: true,
       multimodalEnabled: true,
       paymentEnabled: false,
       configLoaded: false
@@ -21,14 +24,24 @@ Page({
       currentFocus: '先判断孩子卡在哪',
       todaySuggestion: '从成长观察或能力训练开始'
     },
+    dailyPlanLoading: false,
+    dailyPlanCards: [],
+    dailyPlanDate: '',
+    dailyPlanCompletedCount: 0,
+    dailyPlanEmptyText: '',
+    membershipTouchpointVisible: false,
+    membershipTouchpointTitle: '开通会员，持续看每周成长总结',
+    membershipTouchpointDesc: '把每日记录、今日计划和下周建议连起来，妈妈更容易坚持。',
     todayTask: {
       title: '今日建议：先做一次成长观察',
       duration: '3分钟了解孩子近期表现'
     },
     weeklyProgress: {
-      understandingFrom: 62,
-      understandingTo: 74,
-      streakDays: 5
+      headline: '先记录 3 天，周总结会开始成形',
+      summary: '把每日记录、今日计划和下周建议连成一个闭环。',
+      streakDays: 0,
+      actionText: '查看完整周报',
+      premiumUnlocked: false
     },
     bannerList: [
       {
@@ -61,6 +74,9 @@ Page({
     this.syncFeatureFlags();
     this.checkLogin();
     this.loadReadingStatus();
+    this.loadDailyPlan();
+    this.loadWeeklyProgress();
+    this.loadMembershipTouchpoint();
     this.captureShareSource();
     this.deferHeroImage();
   },
@@ -72,6 +88,9 @@ Page({
     this.syncFeatureFlags();
     this.checkLogin();
     this.loadReadingStatus();
+    this.loadDailyPlan();
+    this.loadWeeklyProgress();
+    this.loadMembershipTouchpoint();
     this.deferHeroImage();
   },
 
@@ -161,10 +180,88 @@ Page({
         todaySuggestion: suggestion
       },
       weeklyProgress: {
-        understandingFrom: this.data.weeklyProgress.understandingFrom,
-        understandingTo: Math.max(this.data.weeklyProgress.understandingTo, completionRate),
-        streakDays: streakDays
+        headline: this.data.weeklyProgress.headline,
+        summary: this.data.weeklyProgress.summary,
+        streakDays: streakDays,
+        actionText: this.data.weeklyProgress.actionText,
+        premiumUnlocked: this.data.weeklyProgress.premiumUnlocked
       }
+    });
+  },
+
+  loadWeeklyProgress: function() {
+    var that = this;
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
+      that.setData({
+        weeklyProgress: {
+          headline: '本周先把记录稳定到 3 天以上',
+          summary: '有了连续记录后，周总结会更贴近你家当前状态。',
+          streakDays: 0,
+          actionText: '查看完整周报',
+          premiumUnlocked: false
+        }
+      });
+      return;
+    }
+    if (!currentChild || !currentChild.id) {
+      that.setData({
+        weeklyProgress: {
+          headline: '先补孩子档案，周总结会更准确',
+          summary: '完成档案后，再用成长记录和今日计划形成每周总结。',
+          streakDays: 0,
+          actionText: '先去完善',
+          premiumUnlocked: false
+        }
+      });
+      return;
+    }
+    if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      return;
+    }
+    app.ensureLogin().then(function() {
+      return Promise.all([
+        app.request({
+          url: '/weekly-summary',
+          method: 'GET',
+          data: { childId: currentChild.id }
+        }).catch(function() { return null; }),
+        app.request({
+          url: '/growth-records/summary',
+          method: 'GET',
+          data: { childId: currentChild.id, days: 7 }
+        }).catch(function() { return null; })
+      ]);
+    }).then(function(result) {
+      var weeklySummary = result[0];
+      var trendSummary = result[1];
+      if (!weeklySummary && !trendSummary) {
+        return;
+      }
+      var recordDays = Number((weeklySummary && weeklySummary.recordDays) || (trendSummary && trendSummary.completedDays) || 0);
+      var headline = weeklySummary && weeklySummary.overview
+        ? weeklySummary.overview
+        : ((trendSummary && trendSummary.overallLabel) || '本周正在形成新的记录节奏');
+      var summary = weeklySummary && weeklySummary.highlights && weeklySummary.highlights.length
+        ? weeklySummary.highlights[0]
+        : (recordDays ? ('最近 7 天已记录 ' + recordDays + ' 天。') : '先记录 3 天，系统才能给出更稳定的趋势判断。');
+      that.setData({
+        weeklyProgress: {
+          headline: headline,
+          summary: summary,
+          streakDays: recordDays,
+          actionText: weeklySummary && weeklySummary.premiumUnlocked ? '查看完整周报' : '查看周总结',
+          premiumUnlocked: !!(weeklySummary && weeklySummary.premiumUnlocked)
+        }
+      });
+      if (weeklySummary && !weeklySummary.premiumUnlocked) {
+        that.setData({
+          membershipTouchpointTitle: '开通会员，解锁更完整的每周成长总结',
+          membershipTouchpointDesc: weeklySummary.premiumTip || that.data.membershipTouchpointDesc
+        });
+      }
+    }).catch(function() {
+      return null;
     });
   },
 
@@ -173,6 +270,290 @@ Page({
     this.setData({
       userInfo: app.globalData.userInfo,
       isLoggedIn: app.globalData.isLoggedIn
+    });
+  },
+
+  getPlanTypeLabel: function(type) {
+    var map = {
+      ability_task: '能力训练',
+      parenting_article: '育儿方法',
+      nutrition_recipe: '饮食支持',
+      habit_reminder: '家庭提醒',
+      onboarding: '开始设置'
+    };
+    return map[type] || '今日建议';
+  },
+
+  normalizeDailyPlanCard: function(card) {
+    card = card || {};
+    return {
+      id: card.id,
+      childId: card.childId || card.child_id || 0,
+      planDate: card.planDate || card.plan_date || '',
+      type: card.type || card.plan_type || '',
+      typeLabel: this.getPlanTypeLabel(card.type || card.plan_type || ''),
+      title: card.title || '今日建议',
+      reason: card.reason || card.reason_text || '',
+      summary: card.summary || card.summary_text || '',
+      actionText: card.actionText || card.action_text || '现在去做',
+      durationMinutes: Number(card.durationMinutes || card.duration_minutes || 0),
+      targetType: card.targetType || card.target_type || '',
+      targetId: card.targetId || card.target_id || '',
+      targetPath: card.targetPath || card.target_path || '',
+      sourceKey: card.sourceKey || card.source_key || '',
+      completed: !!(card.completed || card.status === 'completed'),
+      completedAt: card.completedAt || card.completed_at || null
+    };
+  },
+
+  getGuestDailyPlanCards: function() {
+    var today = new Date();
+    var dateText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    return [
+      this.normalizeDailyPlanCard({
+        id: 'guest_1',
+        planDate: dateText,
+        type: 'onboarding',
+        title: '先补孩子档案，后面的建议会更贴近你家',
+        reason: '告诉我孩子年龄和基本情况后，首页建议会更准。',
+        summary: '补完档案后，我会按年龄和重点给你今日建议。',
+        actionText: '去完善',
+        durationMinutes: 2,
+        targetType: 'child_profile',
+        targetPath: '/pages/profile/child-edit/child-edit'
+      }),
+      this.normalizeDailyPlanCard({
+        id: 'guest_2',
+        planDate: dateText,
+        type: 'habit_reminder',
+        title: '今天先做一次成长观察，别急着靠猜',
+        reason: '先判断孩子卡在哪一步，后面的陪伴会更稳。',
+        summary: '观察一次专注、表达或习惯问题，先把切入口找清楚。',
+        actionText: '去观察',
+        durationMinutes: 3,
+        targetType: 'assessment',
+        targetPath: '/pages/assessment/assessment'
+      }),
+      this.normalizeDailyPlanCard({
+        id: 'guest_3',
+        planDate: dateText,
+        type: 'parenting_article',
+        title: '先去育儿知识里找最像你家的一类问题',
+        reason: '先缩小问题范围，会比盲目翻内容更省心。',
+        summary: '从情绪、习惯、认知、社交、营养五类问题直接进入。',
+        actionText: '去看看',
+        durationMinutes: 5,
+        targetType: 'parenting_home',
+        targetPath: '/pages/parenting/parenting'
+      })
+    ];
+  },
+
+  applyDailyPlan: function(cards, payload) {
+    var list = (cards || []).map(this.normalizeDailyPlanCard.bind(this));
+    var completedCount = list.filter(function(item) { return item.completed; }).length;
+    var firstCard = list[0] || null;
+    var growthStatus = Object.assign({}, this.data.growthStatus, {
+      todaySuggestion: firstCard ? firstCard.title : '从成长观察或能力训练开始'
+    });
+    var todayTask = Object.assign({}, this.data.todayTask, firstCard ? {
+      title: firstCard.title,
+      duration: (firstCard.durationMinutes || 3) + '分钟可完成'
+    } : {});
+    this.setData({
+      dailyPlanCards: list,
+      dailyPlanDate: (payload && payload.date) || '',
+      dailyPlanCompletedCount: completedCount,
+      dailyPlanEmptyText: list.length ? '' : '今天先从最容易做到的一步开始。',
+      growthStatus: growthStatus,
+      todayTask: todayTask
+    });
+  },
+
+  trackDailyPlanEvent: function(eventType, plan, extraMeta) {
+    if (!plan || !eventType) {
+      return;
+    }
+    app.trackKbEvent({
+      event_type: eventType,
+      module_key: 'daily_guidance',
+      page_key: 'home_index',
+      content_type: 'daily_plan',
+      content_id: plan.id,
+      child_id: plan.childId || 0,
+      event_meta: Object.assign({
+        plan_type: plan.type,
+        target_type: plan.targetType,
+        target_id: plan.targetId,
+        plan_date: plan.planDate,
+        section: 'daily_plan'
+      }, extraMeta || {})
+    });
+  },
+
+  trackDailyPlanView: function(cards, payload) {
+    var viewKey = [payload && payload.date, payload && payload.child_id, (cards || []).map(function(item) { return item.id; }).join(',')].join(':');
+    if (!viewKey || this._lastDailyPlanViewKey === viewKey) {
+      return;
+    }
+    this._lastDailyPlanViewKey = viewKey;
+    (cards || []).forEach(function(plan) {
+      this.trackDailyPlanEvent('daily_plan_view', plan);
+    }, this);
+  },
+
+  trackMembershipTouchpointEvent: function(eventType, extraMeta) {
+    if (!app.trackKbEvent) {
+      return;
+    }
+    app.trackKbEvent({
+      event_type: eventType,
+      module_key: 'membership_touchpoint',
+      page_key: 'home_index',
+      event_meta: Object.assign({
+        title: this.data.membershipTouchpointTitle,
+        source: 'home_weekly_progress'
+      }, extraMeta || {})
+    });
+  },
+
+  loadDailyPlan: function() {
+    var that = this;
+    if (app.globalData.enableStartupSafeMode) {
+      return;
+    }
+    if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
+      that.applyDailyPlan(that.getGuestDailyPlanCards(), { date: '' });
+      return;
+    }
+    if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      that.applyDailyPlan(that.getGuestDailyPlanCards(), { date: '' });
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    that.setData({ dailyPlanLoading: true });
+    app.ensureLogin().then(function() {
+      return app.request({
+        url: '/daily-plan',
+        method: 'GET',
+        data: currentChild && currentChild.id ? { childId: currentChild.id } : {}
+      });
+    }).then(function(res) {
+      var cards = (res && res.cards) || [];
+      that.applyDailyPlan(cards, res || {});
+      that.trackDailyPlanView(that.data.dailyPlanCards, res || {});
+    }).catch(function() {
+      that.applyDailyPlan(that.getGuestDailyPlanCards(), { date: '' });
+    }).finally(function() {
+      that.setData({ dailyPlanLoading: false });
+    });
+  },
+
+  loadMembershipTouchpoint: function() {
+    var that = this;
+    if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
+      that.setData({ membershipTouchpointVisible: true });
+      if (!that._membershipTouchpointExposed) {
+        that._membershipTouchpointExposed = true;
+        that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'mock' });
+      }
+      return;
+    }
+    if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      that.setData({ membershipTouchpointVisible: true });
+      if (!that._membershipTouchpointExposed) {
+        that._membershipTouchpointExposed = true;
+        that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'guest' });
+      }
+      return;
+    }
+    app.ensureLogin().then(function() {
+      return app.request({
+        url: '/membership/info',
+        method: 'GET'
+      });
+    }).then(function(data) {
+      that.setData({
+        membershipTouchpointVisible: !(data && data.is_active)
+      });
+      if (!(data && data.is_active) && !that._membershipTouchpointExposed) {
+        that._membershipTouchpointExposed = true;
+        that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'logged_in_preview' });
+      }
+    }).catch(function() {
+      that.setData({ membershipTouchpointVisible: true });
+      if (!that._membershipTouchpointExposed) {
+        that._membershipTouchpointExposed = true;
+        that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'fallback' });
+      }
+    });
+  },
+
+  navigateByDailyPlan: function(plan) {
+    if (!plan || !plan.targetPath) {
+      wx.showToast({ title: '入口暂未准备好', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: plan.targetPath,
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  onDailyPlanTap: function(e) {
+    var index = Number(e.currentTarget.dataset.index || 0);
+    var plan = this.data.dailyPlanCards[index];
+    if (!plan) {
+      return;
+    }
+    this.trackDailyPlanEvent('daily_plan_click', plan, {
+      action: 'open_target'
+    });
+    this.navigateByDailyPlan(plan);
+  },
+
+  onDailyPlanComplete: function(e) {
+    var that = this;
+    var index = Number(e.currentTarget.dataset.index || 0);
+    var plan = that.data.dailyPlanCards[index];
+    if (!plan || plan.completed) {
+      return;
+    }
+    if (String(plan.id || '').indexOf('guest_') === 0) {
+      wx.showToast({ title: '登录后可记录完成状态', icon: 'none' });
+      return;
+    }
+    if (that._dailyPlanCompletePending) {
+      return;
+    }
+    that._dailyPlanCompletePending = true;
+    app.requireLoginForAction().then(function(canOperate) {
+      if (!canOperate) {
+        return null;
+      }
+      return app.request({
+        url: '/daily-plan/complete',
+        method: 'POST',
+        data: {
+          record_id: plan.id
+        }
+      }).then(function(res) {
+        var list = that.data.dailyPlanCards.slice();
+        list[index] = that.normalizeDailyPlanCard(res || plan);
+        that.applyDailyPlan(list, {
+          date: that.data.dailyPlanDate
+        });
+        that.trackDailyPlanEvent('daily_plan_complete', list[index], {
+          action: 'mark_completed'
+        });
+        wx.showToast({ title: '已记录完成', icon: 'success' });
+      });
+    }).catch(function() {
+      wx.showToast({ title: '记录失败', icon: 'none' });
+    }).finally(function() {
+      that._dailyPlanCompletePending = false;
     });
   },
 
@@ -240,6 +621,14 @@ Page({
 
   // 查看今日任务
   goToTodayTask() {
+    var firstCard = (this.data.dailyPlanCards || [])[0];
+    if (firstCard && firstCard.targetPath) {
+      this.trackDailyPlanEvent('daily_plan_click', firstCard, {
+        action: 'open_from_quick_entry'
+      });
+      this.navigateByDailyPlan(firstCard);
+      return;
+    }
     if (!this.ensureFeatureEnabled('education', '今日任务暂未开放')) {
       return;
     }
@@ -252,12 +641,39 @@ Page({
   },
 
   // 查看进步报告
-  goToWeeklyReport() {
-    if (!this.ensureFeatureEnabled('assessments', '成长记录暂未开放')) {
+  goToGrowthRecord() {
+    if (!this.ensureFeatureEnabled('growthRecord', '成长记录暂未开放')) {
       return;
     }
     wx.navigateTo({
-      url: '/pages/assessment/history/history',
+      url: '/pages/growth-record/index',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  goToMembership() {
+    this.trackMembershipTouchpointEvent('membership_touchpoint_click');
+    wx.navigateTo({
+      url: '/pages/membership/index',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  goToWeeklyReport() {
+    if (!this.ensureFeatureEnabled('weeklySummary', '周总结暂未开放')) {
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      this.goToGrowthRecord();
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/weekly-summary/index' + (currentChild && currentChild.id ? ('?childId=' + currentChild.id) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -294,9 +710,10 @@ Page({
 
   onShareTaskCard() {
     var stats = app.getReadingTaskStats();
+    var firstPlan = (this.data.dailyPlanCards || [])[0] || {};
     var draft = {
       type: 'app_intro',
-      title: this.data.todayTask.title || '成长观察建议',
+      title: firstPlan.title || this.data.todayTask.title || '成长观察建议',
       summary: '我正在用小牛育儿AI助理观察孩子的成长状态。',
       metrics: {
         completed: stats.completed || 0,
@@ -330,7 +747,7 @@ Page({
     var draft = {
       type: 'weekly_report',
       title: '本周成长成果卡',
-      summary: '本周坚持阅读与专注训练，继续加油！',
+      summary: this.data.weeklyProgress.summary || '本周坚持记录和行动，继续加油。',
       metrics: {
         completed: stats.completed || 0,
         total: stats.total || 0,

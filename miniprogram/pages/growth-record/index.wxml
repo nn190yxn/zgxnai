@@ -1,0 +1,49 @@
+<view class="page">
+  <view wx:if="{{!currentChild}}" class="empty-card">
+    <text class="empty-title">先补孩子档案，成长记录会更准确</text>
+    <view class="primary-btn" bindtap="goToChildSetup">去完善档案</view>
+  </view>
+
+  <block wx:else>
+    <view class="hero-card">
+      <text class="hero-title">{{currentChild.name}} 的成长记录</text>
+      <picker mode="date" value="{{recordDate}}" bindchange="onDateChange">
+        <view class="date-chip">{{recordDate}}</view>
+      </picker>
+    </view>
+
+    <view class="section-card" wx:for="{{sections}}" wx:key="field">
+      <text class="section-title">{{item.title}}</text>
+      <view class="option-list">
+        <view
+          class="option-chip {{form[item.field] === option.value ? 'option-chip-active' : ''}}"
+          wx:for="{{item.options}}"
+          wx:for-item="option"
+          wx:key="value"
+          data-field="{{item.field}}"
+          data-value="{{option.value}}"
+          bindtap="onPickStatus"
+        >
+          {{option.label}}
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <text class="section-title">今天想补充的一句话</text>
+      <textarea class="note-box" maxlength="500" placeholder="例如：午睡偏短，晚饭时情绪有点急，散步后稳定很多。" value="{{form.noteText}}" bindinput="onNoteInput"></textarea>
+    </view>
+
+    <view class="action-row">
+      <view class="secondary-btn" bindtap="goToHistory">看历史</view>
+      <view class="secondary-btn" bindtap="goToWeeklySummary">看周总结</view>
+    </view>
+
+    <view class="section-card">
+      <text class="section-title">记录建议</text>
+      <text class="helper-copy">每天睡前花 30 秒记录一次，连续 3 到 7 天后，周总结会开始更稳定地识别变化趋势。</text>
+    </view>
+
+    <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存今日记录'}}</view>
+  </block>
+</view>

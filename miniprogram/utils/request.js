@@ -142,6 +142,9 @@ function requiresAuthForPath(path) {
   return [
     '/assessments',
     '/children',
+    '/daily-plan',
+    '/growth-records',
+    '/weekly-summary',
     '/education',
     '/membership',
     '/referral',
