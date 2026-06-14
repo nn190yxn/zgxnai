@@ -875,6 +875,22 @@ async function adminWeeklyInsightsHandler(req, res) {
       WHERE stat_date BETWEEN ? AND ?`,
     [range.startDate, range.endDate]
   );
+  const [contentCoverageRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS total_content_events,
+       SUM(
+         CASE
+           WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.content_type')), '') IS NOT NULL
+            AND NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.content_id')), '') IS NOT NULL
+           THEN 1 ELSE 0
+         END
+       ) AS content_events_with_detail
+      FROM event_tracks
+     WHERE created_at >= ?
+       AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+       AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete', 'retell_complete')`,
+    [range.startDate, range.endDate]
+  );
   const [lifecycleRows] = await pool.execute(
     `SELECT
        SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_trials,
@@ -883,7 +899,13 @@ async function adminWeeklyInsightsHandler(req, res) {
       FROM user_memberships`
   );
 
-  const cards = buildWeeklyInsightCards(featureRows, contentRows, contentUserRows[0] || {}, lifecycleRows[0] || {}, range);
+  const cards = buildWeeklyInsightCards(
+    featureRows,
+    contentRows,
+    Object.assign({}, contentUserRows[0] || {}, contentCoverageRows[0] || {}),
+    lifecycleRows[0] || {},
+    range
+  );
   res.json({ success: true, data: { range, cards } });
 }
 
@@ -960,15 +982,18 @@ function buildWeeklyInsightCards(featureRows, contentRows, contentSummary, lifec
       evidence: `${lowCompletionContentSelection.isLowSample ? '当前样本偏少，建议结合收藏和后续浏览继续观察。' : '收藏 ' + lowCompletionContent.favorite_count + ' 次'}`
     });
   } else {
+    const totalContentEvents = Number(contentSummary.total_content_events || 0);
+    const contentEventsWithDetail = Number(contentSummary.content_events_with_detail || 0);
+    const contentDetailCoverage = calculateRatio(contentEventsWithDetail, totalContentEvents);
     cards.push({
       key: 'content_low_completion',
       title: '高浏览低完成内容',
       priority: Number(contentSummary.content_users || 0) > 0 ? 'medium' : 'low',
-      summary: `近一周有 ${Number(contentSummary.content_users || 0)} 位内容用户，但当前可用于完成率分析的内容明细仍然偏少。`,
-      metric: `${Number(contentSummary.content_users || 0)}`,
-      metric_label: '内容用户数',
+      summary: `近一周有 ${Number(contentSummary.content_users || 0)} 位内容用户，内容相关事件 ${totalContentEvents} 次，其中 ${contentEventsWithDetail} 次带有可分析明细。`,
+      metric: `${contentDetailCoverage.toFixed(2)}%`,
+      metric_label: '内容埋点明细覆盖率',
       recommendation: '优先补齐内容浏览与完成埋点中的 content_type 和 content_id，随后继续观察具体内容完成率。',
-      evidence: `统计区间 ${range.startDate} 至 ${range.endDate}`
+      evidence: `统计区间 ${range.startDate} 至 ${range.endDate}，当前仍有 ${Math.max(totalContentEvents - contentEventsWithDetail, 0)} 次内容事件缺少明细。`
     });
   }
 
