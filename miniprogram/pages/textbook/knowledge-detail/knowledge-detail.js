@@ -33,6 +33,10 @@ Page({
     showPracticeResult: false,
     practiceResult: null,
 
+    // 讲解结构化内容
+    explainBlocks: [],
+    stepChecklistDoneCount: 0,
+
     // 掌握确认弹窗
     showMasterModal: false,
 
@@ -142,6 +146,7 @@ Page({
     var normalizedDetail = this.normalizeKnowledgeDetail(detail || {});
     var noteContent = this.loadSavedNote(this.data.pointId);
     var stepChecklist = this.buildStepChecklist(normalizedDetail);
+    var explainBlocks = this.buildExplainBlocks(normalizedDetail.explain && normalizedDetail.explain.content);
     this.setData({
       knowledgeDetail: normalizedDetail,
       practiceList: normalizedDetail.practices || [],
@@ -149,8 +154,10 @@ Page({
       practiceAnswers: {},
       showPracticeResult: false,
       practiceResult: null,
+      explainBlocks: explainBlocks,
       noteContent: noteContent,
-      stepChecklist: stepChecklist
+      stepChecklist: stepChecklist,
+      stepChecklistDoneCount: this.getChecklistDoneCount(stepChecklist)
     });
   },
 
@@ -167,6 +174,77 @@ Page({
     normalized.material = normalized.material || '';
     normalized.duration = normalized.duration || 10;
     return normalized;
+  },
+
+  buildExplainBlocks: function(content) {
+    var lines = String(content || '').split(/\r?\n/);
+    var blocks = [];
+    var paragraphBuffer = [];
+    var stepIndex = 0;
+
+    function flushParagraph() {
+      var text = paragraphBuffer.join(' ').replace(/\s+/g, ' ').trim();
+      paragraphBuffer = [];
+      if (!text) {
+        return;
+      }
+      blocks.push({
+        type: blocks.length === 0 ? 'lead' : 'paragraph',
+        text: text
+      });
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = String(lines[i] || '').trim();
+      if (!line) {
+        flushParagraph();
+        continue;
+      }
+
+      var headingMatch = line.match(/^【([^\]]+)】\s*(.*)$/);
+      if (headingMatch) {
+        flushParagraph();
+        blocks.push({
+          type: 'heading',
+          title: headingMatch[1],
+          text: headingMatch[2] || ''
+        });
+        continue;
+      }
+
+      var stepMatch = line.match(/^(\d+)[\.．、]\s*(.+)$/);
+      if (stepMatch) {
+        flushParagraph();
+        stepIndex += 1;
+        blocks.push({
+          type: 'step',
+          index: stepIndex,
+          text: stepMatch[2]
+        });
+        continue;
+      }
+
+      var bulletMatch = line.match(/^[-•]\s*(.+)$/);
+      if (bulletMatch) {
+        flushParagraph();
+        blocks.push({
+          type: 'bullet',
+          text: bulletMatch[1]
+        });
+        continue;
+      }
+
+      paragraphBuffer.push(line);
+    }
+
+    flushParagraph();
+    return blocks;
+  },
+
+  getChecklistDoneCount: function(stepChecklist) {
+    return (stepChecklist || []).filter(function(item) {
+      return !!item.done;
+    }).length;
   },
 
   getKnowledgeContentType: function() {
@@ -831,7 +909,8 @@ Page({
     }
     stepChecklist[index].done = !stepChecklist[index].done;
     this.setData({
-      stepChecklist: stepChecklist
+      stepChecklist: stepChecklist,
+      stepChecklistDoneCount: this.getChecklistDoneCount(stepChecklist)
     });
     this.persistStepChecklist();
   },

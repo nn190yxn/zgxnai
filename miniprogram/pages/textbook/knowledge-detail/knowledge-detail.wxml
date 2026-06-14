@@ -90,8 +90,11 @@
         </view>
         <view class="step-checklist-card" wx:if="{{stepChecklist.length > 0}}">
           <view class="step-checklist-head">
-            <text class="step-checklist-title">今天先做这几步</text>
-            <text class="step-checklist-progress">{{stepChecklist.length}} 步可勾选</text>
+            <view class="step-checklist-heading">
+              <text class="step-checklist-title">今天先做这几步</text>
+              <text class="step-checklist-subtitle">按顺序完成，阅读节奏会更稳</text>
+            </view>
+            <text class="step-checklist-progress">{{stepChecklistDoneCount}} / {{stepChecklist.length}} 已完成</text>
           </view>
           <view class="step-checklist-list">
             <view class="step-checklist-item {{item.done ? 'done' : ''}}" wx:for="{{stepChecklist}}" wx:key="id" data-index="{{index}}" bindtap="toggleChecklistItem">
@@ -101,9 +104,29 @@
           </view>
         </view>
         <view class="explain-section">
-          <text class="section-title">{{knowledgeDetail.explain.title}}</text>
+          <view class="section-head-row">
+            <text class="section-title">{{knowledgeDetail.explain.title}}</text>
+            <text class="section-badge">分段讲解</text>
+          </view>
           <view class="explain-content">
-            <text class="explain-text" user-select="true">{{knowledgeDetail.explain.content}}</text>
+            <block wx:for="{{explainBlocks}}" wx:key="index">
+              <view class="explain-block explain-block-{{item.type}}">
+                <view class="explain-heading" wx:if="{{item.type === 'heading'}}">
+                  <text class="explain-heading-tag">{{item.title}}</text>
+                  <text class="explain-heading-text" wx:if="{{item.text}}">{{item.text}}</text>
+                </view>
+                <view class="explain-step" wx:if="{{item.type === 'step'}}">
+                  <text class="explain-step-index">{{item.index}}</text>
+                  <text class="explain-step-text">{{item.text}}</text>
+                </view>
+                <view class="explain-bullet" wx:if="{{item.type === 'bullet'}}">
+                  <text class="explain-bullet-dot"></text>
+                  <text class="explain-bullet-text">{{item.text}}</text>
+                </view>
+                <text class="explain-lead" user-select="true" wx:if="{{item.type === 'lead'}}">{{item.text}}</text>
+                <text class="explain-text" user-select="true" wx:if="{{item.type === 'paragraph'}}">{{item.text}}</text>
+              </view>
+            </block>
           </view>
         </view>
       </view>
@@ -111,20 +134,36 @@
       <!-- 重点难点 -->
       <view class="tab-content" wx:if="{{currentTab === 'key'}}">
         <view class="key-section">
-          <text class="section-title">操作步骤</text>
+          <view class="section-head-row">
+            <text class="section-title">操作步骤</text>
+            <text class="section-badge soft">按顺序做</text>
+          </view>
           <view class="key-list">
             <view class="key-item" wx:for="{{knowledgeDetail.keyPoints}}" wx:key="id">
-              <text class="key-icon">★</text>
-              <text class="key-text">{{item.content}}</text>
+              <view class="key-icon-wrap">
+                <text class="key-icon">{{index + 1}}</text>
+              </view>
+              <view class="key-body">
+                <text class="key-label">关键动作</text>
+                <text class="key-text">{{item.content}}</text>
+              </view>
             </view>
           </view>
         </view>
         <view class="key-section">
-          <text class="section-title">家长提醒</text>
+          <view class="section-head-row">
+            <text class="section-title">家长提醒</text>
+            <text class="section-badge warn">避免踩坑</text>
+          </view>
           <view class="key-list difficulty-list">
             <view class="key-item difficulty-item" wx:for="{{knowledgeDetail.difficulties}}" wx:key="id">
-              <text class="key-icon">!</text>
-              <text class="key-text">{{item.content}}</text>
+              <view class="key-icon-wrap warn">
+                <text class="key-icon">!</text>
+              </view>
+              <view class="key-body">
+                <text class="key-label warn">提醒</text>
+                <text class="key-text">{{item.content}}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -138,15 +177,15 @@
               <text class="example-title">{{item.title}}</text>
             </view>
             <view class="example-question">
-              <text class="question-label">题目：</text>
+              <text class="question-label">题目</text>
               <text class="question-text">{{item.question}}</text>
             </view>
             <view class="example-answer">
-              <text class="answer-label">答案：</text>
+              <text class="answer-label">参考答案</text>
               <text class="answer-text">{{item.answer}}</text>
             </view>
             <view class="example-analysis">
-              <text class="analysis-label">解析：</text>
+              <text class="analysis-label">家长理解提示</text>
               <text class="analysis-text">{{item.analysis}}</text>
             </view>
           </view>
