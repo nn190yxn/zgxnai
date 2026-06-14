@@ -88,6 +88,41 @@ const demoSnapshot = {
     auto_renew_on_rate: 74.63,
     expiring_7_days_rate: 5.74
   },
+  ageFeaturePreferences: [
+    {
+      age_key: '1-2',
+      age_label: '1-2岁',
+      items: [
+        { feature_key: 'nutrition_recipe', feature_label: '营养食谱', user_count: 824, event_count: 1860 },
+        { feature_key: 'ai_chat', feature_label: 'AI 问答', user_count: 612, event_count: 1204 },
+        { feature_key: 'membership', feature_label: '会员页', user_count: 284, event_count: 522 }
+      ]
+    },
+    {
+      age_key: '3-4',
+      age_label: '3-4岁',
+      items: [
+        { feature_key: 'assessment', feature_label: '成长测评', user_count: 902, event_count: 1744 },
+        { feature_key: 'reading_tasks', feature_label: '阅读任务', user_count: 648, event_count: 1318 },
+        { feature_key: 'ai_chat', feature_label: 'AI 问答', user_count: 406, event_count: 822 }
+      ]
+    },
+    {
+      age_key: '4-6',
+      age_label: '4-6岁',
+      items: [
+        { feature_key: 'reading_tasks', feature_label: '阅读任务', user_count: 1186, event_count: 2460 },
+        { feature_key: 'assessment', feature_label: '成长测评', user_count: 932, event_count: 1894 },
+        { feature_key: 'membership', feature_label: '会员页', user_count: 366, event_count: 706 }
+      ]
+    }
+  ],
+  featureConversion: [
+    { feature_key: 'membership', feature_users: 812, paid_users: 214, conversion_rate: 26.35 },
+    { feature_key: 'assessment', feature_users: 1326, paid_users: 248, conversion_rate: 18.70 },
+    { feature_key: 'ai_chat', feature_users: 1194, paid_users: 186, conversion_rate: 15.58 },
+    { feature_key: 'reading_tasks', feature_users: 986, paid_users: 132, conversion_rate: 13.39 }
+  ],
   userTrends: {
     items: [
       { stat_date: '2026-06-01', new_users: 108, active_users: 1822, paid_active_users: 352, ai_users: 468 },
@@ -238,6 +273,8 @@ function renderDashboard(snapshot) {
   );
   renderConversionFunnel(snapshot.conversionFunnel || snapshot.overview.conversion_funnel || []);
   renderMembershipLifecycle(snapshot.membershipLifecycle || snapshot.overview.membership_lifecycle || {});
+  renderAgeFeaturePreferences(snapshot.ageFeaturePreferences || snapshot.overview.age_feature_preferences || []);
+  renderFeatureConversion(snapshot.featureConversion || snapshot.overview.feature_conversion || []);
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
@@ -401,6 +438,45 @@ function renderMembershipLifecycle(lifecycle) {
       meta: '适合做试用转付费触达'
     }
   ]);
+}
+
+function renderAgeFeaturePreferences(groups) {
+  const container = document.getElementById('ageFeaturePreferences');
+  container.innerHTML = '';
+  if (!groups || !groups.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无年龄段功能偏好数据。</div>';
+    return;
+  }
+  groups.forEach((group) => {
+    const node = document.createElement('div');
+    node.className = 'age-feature-card';
+    const items = (group.items || []).map((item) => `
+      <div class="age-feature-item">
+        <div class="distribution-topline">
+          <span class="distribution-name">${escapeHtml(item.feature_label || item.feature_key || '-')}</span>
+          <strong>${escapeHtml(formatNumber(item.user_count))}</strong>
+        </div>
+        <span class="distribution-meta">事件 ${escapeHtml(formatNumber(item.event_count))}</span>
+      </div>
+    `).join('');
+    node.innerHTML = `
+      <div class="panel-header compact">
+        <div>
+          <h4>${escapeHtml(group.age_label || group.age_key || '-')}</h4>
+        </div>
+      </div>
+      <div class="distribution-list">${items}</div>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function renderFeatureConversion(items) {
+  renderRanking('featureConversion', items, (item) => ({
+    title: item.feature_key || '未命名功能',
+    score: formatPercent(item.conversion_rate),
+    meta: `触达 ${formatNumber(item.feature_users)} / 支付 ${formatNumber(item.paid_users)}`
+  }));
 }
 
 function renderTrendBars(containerId, items, valueKey, tone) {

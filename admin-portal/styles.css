@@ -363,6 +363,30 @@ td {
   gap: 12px;
 }
 
+.age-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.age-feature-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(61, 42, 24, 0.08);
+}
+
+.age-feature-item {
+  display: grid;
+  gap: 6px;
+}
+
+.panel-header.compact {
+  margin-bottom: 0;
+}
+
 .distribution-item {
   display: grid;
   gap: 8px;
@@ -462,7 +486,8 @@ td {
   }
 
   .distribution-split,
-  .mini-stats {
+  .mini-stats,
+  .age-feature-grid {
     grid-template-columns: 1fr;
   }
 }

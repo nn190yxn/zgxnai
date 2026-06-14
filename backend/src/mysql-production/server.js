@@ -419,6 +419,60 @@ async function adminDashboardOverviewHandler(req, res) {
        SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_trials
       FROM user_memberships`
   );
+  const [ageFeatureRows] = await pool.execute(
+    `SELECT
+       child_profiles.age_bucket,
+       ${buildFeatureKeySql('et')} AS feature_key,
+       COUNT(DISTINCT et.user_id) AS user_count,
+       COUNT(*) AS event_count
+      FROM event_tracks et
+      INNER JOIN (
+        SELECT child_source.user_id,
+               CASE
+                 WHEN child_source.birthday IS NULL THEN 'unknown'
+                 WHEN TIMESTAMPDIFF(MONTH, child_source.birthday, CURDATE()) < 12 THEN '0-1'
+                 WHEN TIMESTAMPDIFF(MONTH, child_source.birthday, CURDATE()) < 24 THEN '1-2'
+                 WHEN TIMESTAMPDIFF(MONTH, child_source.birthday, CURDATE()) < 36 THEN '2-3'
+                 WHEN TIMESTAMPDIFF(MONTH, child_source.birthday, CURDATE()) < 48 THEN '3-4'
+                 WHEN TIMESTAMPDIFF(MONTH, child_source.birthday, CURDATE()) < 72 THEN '4-6'
+                 ELSE '6+'
+               END AS age_bucket
+          FROM (
+            SELECT c.user_id,
+                   COALESCE(MAX(CASE WHEN c.is_default = 1 THEN c.birthday END), MIN(c.birthday)) AS birthday
+              FROM children c
+             GROUP BY c.user_id
+          ) child_source
+     ) child_profiles
+        ON child_profiles.user_id = et.user_id
+     WHERE et.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+       AND ${buildFeatureKeySql('et')} IS NOT NULL
+     GROUP BY child_profiles.age_bucket, feature_key
+     ORDER BY child_profiles.age_bucket ASC, user_count DESC, event_count DESC`
+  );
+  const [featureConversionRows] = await pool.execute(
+    `SELECT
+       feature_source.feature_key,
+       COUNT(DISTINCT feature_source.user_id) AS feature_users,
+       COUNT(DISTINCT paid_orders.user_id) AS paid_users
+      FROM (
+        SELECT DISTINCT et.user_id,
+               ${buildFeatureKeySql('et')} AS feature_key
+          FROM event_tracks et
+         WHERE et.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+           AND ${buildFeatureKeySql('et')} IS NOT NULL
+      ) feature_source
+      LEFT JOIN (
+        SELECT DISTINCT user_id
+          FROM payment_orders
+         WHERE status = 'paid'
+           AND COALESCE(paid_at, created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      ) paid_orders
+        ON paid_orders.user_id = feature_source.user_id
+     GROUP BY feature_source.feature_key
+     ORDER BY feature_users DESC, paid_users DESC
+     LIMIT 12`
+  );
   const [featureRows] = await pool.execute(
     `SELECT event_type, COUNT(*) AS count
        FROM event_tracks
@@ -502,6 +556,13 @@ async function adminDashboardOverviewHandler(req, res) {
         auto_renew_on_rate: calculateRatio(lifecycle.auto_renew_on, activeMemberships),
         expiring_7_days_rate: calculateRatio(lifecycle.expiring_in_7_days, activeMemberships)
       },
+      age_feature_preferences: formatAgeFeatureRows(ageFeatureRows),
+      feature_conversion: featureConversionRows.map((row) => ({
+        feature_key: row.feature_key || 'unknown',
+        feature_users: Number(row.feature_users || 0),
+        paid_users: Number(row.paid_users || 0),
+        conversion_rate: calculateRatio(row.paid_users, row.feature_users)
+      })),
       top_events_7d: featureRows,
       ai_status: getAIStatus()
     }
@@ -534,6 +595,71 @@ function formatDistributionRows(rows, total, labelMap, orderedKeys) {
   }
 
   return items.sort((left, right) => right.count - left.count);
+}
+
+function formatAgeFeatureRows(rows) {
+  const ageLabelMap = {
+    '0-1': '0-1岁',
+    '1-2': '1-2岁',
+    '2-3': '2-3岁',
+    '3-4': '3-4岁',
+    '4-6': '4-6岁',
+    '6+': '6岁以上',
+    unknown: '年龄待补充'
+  };
+  const featureLabelMap = {
+    assessment: '成长测评',
+    ai_chat: 'AI 问答',
+    membership: '会员页',
+    nutrition_recipe: '营养食谱',
+    nutrition: '营养模块',
+    parenting: '家长知识',
+    knowledge: '知识卡片',
+    reading_tasks: '阅读任务',
+    education: '能力成长',
+    share: '分享传播',
+    unknown: '未标记功能'
+  };
+  const grouped = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const ageKey = row.age_bucket || 'unknown';
+    const current = grouped.get(ageKey) || {
+      age_key: ageKey,
+      age_label: ageLabelMap[ageKey] || ageKey,
+      items: []
+    };
+    current.items.push({
+      feature_key: row.feature_key || 'unknown',
+      feature_label: featureLabelMap[row.feature_key] || row.feature_key || 'unknown',
+      user_count: Number(row.user_count || 0),
+      event_count: Number(row.event_count || 0)
+    });
+    grouped.set(ageKey, current);
+  }
+  return Array.from(grouped.values())
+    .map((group) => ({
+      ...group,
+      items: group.items.sort((left, right) => right.user_count - left.user_count || right.event_count - left.event_count).slice(0, 3)
+    }))
+    .sort((left, right) => {
+      const order = ['0-1', '1-2', '2-3', '3-4', '4-6', '6+', 'unknown'];
+      return order.indexOf(left.age_key) - order.indexOf(right.age_key);
+    });
+}
+
+function buildFeatureKeySql(alias) {
+  const prefix = alias ? `${alias}.` : '';
+  return `CASE
+    WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IS NOT NULL THEN JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key'))
+    WHEN ${prefix}event_type LIKE 'task_%' OR ${prefix}event_type = 'retell_complete' THEN 'reading_tasks'
+    WHEN ${prefix}event_type LIKE 'ai_chat_%' THEN 'ai_chat'
+    WHEN ${prefix}event_type LIKE 'assessment_%' THEN 'assessment'
+    WHEN ${prefix}event_type LIKE 'recipe_%' THEN 'nutrition_recipe'
+    WHEN ${prefix}event_type LIKE 'article_%' OR ${prefix}event_type LIKE 'knowledge_%' THEN 'knowledge'
+    WHEN ${prefix}event_type LIKE 'membership_%' OR ${prefix}event_type LIKE 'payment_%' THEN 'membership'
+    WHEN ${prefix}event_type LIKE 'share_%' THEN 'share'
+    ELSE NULL
+  END`;
 }
 
 function calculateRatio(part, total) {
