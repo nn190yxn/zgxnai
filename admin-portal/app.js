@@ -72,6 +72,22 @@ const demoSnapshot = {
     { key: 'female', label: '女孩', count: 4290, percentage: 45.51 },
     { key: 'unknown', label: '性别待补充', count: 274, percentage: 2.91 }
   ],
+  conversionFunnel: [
+    { key: 'registered', label: '注册用户', count: 18642, conversion_rate: 100, total_rate: 100 },
+    { key: 'active30d', label: '近30天活跃', count: 15428, conversion_rate: 82.76, total_rate: 82.76 },
+    { key: 'order30d', label: '近30天下单', count: 612, conversion_rate: 3.97, total_rate: 3.28 },
+    { key: 'paid30d', label: '近30天支付', count: 428, conversion_rate: 69.93, total_rate: 2.30 }
+  ],
+  membershipLifecycle: {
+    expiring_in_7_days: 186,
+    expiring_in_30_days: 642,
+    auto_renew_on: 2418,
+    auto_renew_off: 822,
+    active_trials: 426,
+    expiring_trials: 96,
+    auto_renew_on_rate: 74.63,
+    expiring_7_days_rate: 5.74
+  },
   userTrends: {
     items: [
       { stat_date: '2026-06-01', new_users: 108, active_users: 1822, paid_active_users: 352, ai_users: 468 },
@@ -220,6 +236,8 @@ function renderDashboard(snapshot) {
     snapshot.childGenderDistribution || snapshot.overview.child_gender_distribution || [],
     snapshot.overview
   );
+  renderConversionFunnel(snapshot.conversionFunnel || snapshot.overview.conversion_funnel || []);
+  renderMembershipLifecycle(snapshot.membershipLifecycle || snapshot.overview.membership_lifecycle || {});
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
@@ -325,6 +343,64 @@ function renderChildDemographics(ageItems, genderItems, overview) {
   ]);
   renderDistribution('childAgeDistribution', ageItems, '当前暂无孩子年龄分布数据');
   renderDistribution('childGenderDistribution', genderItems, '当前暂无孩子性别分布数据');
+}
+
+function renderConversionFunnel(items) {
+  const container = document.getElementById('conversionFunnel');
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无转化漏斗数据。</div>';
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'funnel-item';
+    const width = Math.max(8, Math.min(100, Number(item.total_rate || 0)));
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.label)}</span>
+        <strong>${escapeHtml(formatNumber(item.count))}</strong>
+      </div>
+      <div class="distribution-track"><div class="distribution-fill funnel" style="width:${width}%"></div></div>
+      <span class="distribution-meta">总转化 ${escapeHtml(formatPercent(item.total_rate))} / 步进转化 ${escapeHtml(formatPercent(item.conversion_rate))}</span>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function renderMembershipLifecycle(lifecycle) {
+  renderMiniStats('membershipLifecycle', [
+    {
+      label: '7天内到期',
+      value: formatNumber(lifecycle.expiring_in_7_days),
+      meta: `占当前有效会员 ${formatPercent(lifecycle.expiring_7_days_rate)}`
+    },
+    {
+      label: '30天内到期',
+      value: formatNumber(lifecycle.expiring_in_30_days),
+      meta: '用于续费召回排期'
+    },
+    {
+      label: '自动续费开启',
+      value: formatNumber(lifecycle.auto_renew_on),
+      meta: `开启率 ${formatPercent(lifecycle.auto_renew_on_rate)}`
+    },
+    {
+      label: '自动续费关闭',
+      value: formatNumber(lifecycle.auto_renew_off),
+      meta: '适合重点召回提醒'
+    },
+    {
+      label: '试用中用户',
+      value: formatNumber(lifecycle.active_trials),
+      meta: '当前处于试用状态'
+    },
+    {
+      label: '即将到期试用',
+      value: formatNumber(lifecycle.expiring_trials),
+      meta: '适合做试用转付费触达'
+    }
+  ]);
 }
 
 function renderTrendBars(containerId, items, valueKey, tone) {

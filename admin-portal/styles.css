@@ -358,6 +358,11 @@ td {
   gap: 12px;
 }
 
+.funnel-list {
+  display: grid;
+  gap: 12px;
+}
+
 .distribution-item {
   display: grid;
   gap: 8px;
@@ -390,6 +395,19 @@ td {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(182, 84, 47, 0.92) 0%, rgba(47, 122, 120, 0.72) 100%);
+}
+
+.distribution-fill.funnel {
+  background: linear-gradient(90deg, rgba(198, 147, 47, 0.92) 0%, rgba(182, 84, 47, 0.78) 100%);
+}
+
+.funnel-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(61, 42, 24, 0.08);
 }
 
 .ranking-item {

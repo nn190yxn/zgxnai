@@ -401,6 +401,24 @@ async function adminDashboardOverviewHandler(req, res) {
       FROM children
       GROUP BY gender_key`
   );
+  const [funnelRows] = await pool.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM users) AS registered_users,
+       (SELECT COUNT(DISTINCT user_id) FROM children) AS profiled_families,
+       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS active_users_30d,
+       (SELECT COUNT(DISTINCT user_id) FROM payment_orders WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS order_users_30d,
+       (SELECT COUNT(DISTINCT user_id) FROM payment_orders WHERE status = 'paid' AND COALESCE(paid_at, created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS paid_users_30d`
+  );
+  const [lifecycleRows] = await pool.execute(
+    `SELECT
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_in_7_days,
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS expiring_in_30_days,
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() AND auto_renew = 1 THEN 1 ELSE 0 END) AS auto_renew_on,
+       SUM(CASE WHEN current_end_date IS NOT NULL AND current_end_date >= NOW() AND auto_renew = 0 THEN 1 ELSE 0 END) AS auto_renew_off,
+       SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() THEN 1 ELSE 0 END) AS active_trials,
+       SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_trials
+      FROM user_memberships`
+  );
   const [featureRows] = await pool.execute(
     `SELECT event_type, COUNT(*) AS count
        FROM event_tracks
@@ -421,6 +439,18 @@ async function adminDashboardOverviewHandler(req, res) {
   const totalChildren = Number(families.total_children || 0);
   const paidOrderCount = Number(revenue.paid_order_count || 0);
   const totalRevenue = Number(revenue.total_revenue || 0);
+  const funnel = funnelRows[0] || {};
+  const lifecycle = lifecycleRows[0] || {};
+  const funnelItems = [
+    { key: 'registered', label: '注册用户', count: Number(funnel.registered_users || 0) },
+    { key: 'active30d', label: '近30天活跃', count: Number(funnel.active_users_30d || 0) },
+    { key: 'order30d', label: '近30天下单', count: Number(funnel.order_users_30d || 0) },
+    { key: 'paid30d', label: '近30天支付', count: Number(funnel.paid_users_30d || 0) }
+  ].map((item, index, source) => ({
+    ...item,
+    conversion_rate: index === 0 ? 100 : calculateRatio(item.count, source[index - 1].count),
+    total_rate: calculateRatio(item.count, source[0].count)
+  }));
 
   res.json({
     success: true,
@@ -461,6 +491,17 @@ async function adminDashboardOverviewHandler(req, res) {
         female: '女孩',
         unknown: '性别待补充'
       }, ['male', 'female', 'unknown']),
+      conversion_funnel: funnelItems,
+      membership_lifecycle: {
+        expiring_in_7_days: Number(lifecycle.expiring_in_7_days || 0),
+        expiring_in_30_days: Number(lifecycle.expiring_in_30_days || 0),
+        auto_renew_on: Number(lifecycle.auto_renew_on || 0),
+        auto_renew_off: Number(lifecycle.auto_renew_off || 0),
+        active_trials: Number(lifecycle.active_trials || 0),
+        expiring_trials: Number(lifecycle.expiring_trials || 0),
+        auto_renew_on_rate: calculateRatio(lifecycle.auto_renew_on, activeMemberships),
+        expiring_7_days_rate: calculateRatio(lifecycle.expiring_in_7_days, activeMemberships)
+      },
       top_events_7d: featureRows,
       ai_status: getAIStatus()
     }
