@@ -147,11 +147,11 @@ const demoSnapshot = {
         key: 'content_low_completion',
         title: '高浏览低完成内容',
         priority: 'medium',
-        summary: '夏季午休与晚睡调整指南近一周浏览 1586 次，完成 744 次。',
-        metric: '46.91%',
-        metric_label: '内容完成率',
-        recommendation: '优先缩短首屏内容长度，强化关键结论前置和收藏引导。',
-        evidence: '收藏 168 次'
+        summary: '近一周有 928 位内容用户，内容相关事件 1586 次，其中 1218 次带有可分析明细。',
+        metric: '76.80%',
+        metric_label: '内容埋点明细覆盖率',
+        recommendation: '优先补齐内容浏览与完成埋点中的 content_type 和 content_id，随后继续观察具体内容完成率。',
+        evidence: '当前仍有 368 次内容事件缺少明细。缺失最多的是 task_complete(196)、knowledge_detail_view(118)、retell_complete(54)。'
       },
       {
         key: 'membership_recall',

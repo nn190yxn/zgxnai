@@ -891,6 +891,21 @@ async function adminWeeklyInsightsHandler(req, res) {
        AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete', 'retell_complete')`,
     [range.startDate, range.endDate]
   );
+  const [contentMissingRows] = await pool.execute(
+    `SELECT event_type, COUNT(*) AS missing_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete', 'retell_complete')
+        AND (
+          NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.content_type')), '') IS NULL
+          OR NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.content_id')), '') IS NULL
+        )
+      GROUP BY event_type
+      ORDER BY missing_count DESC, event_type ASC
+      LIMIT 3`,
+    [range.startDate, range.endDate]
+  );
   const [lifecycleRows] = await pool.execute(
     `SELECT
        SUM(CASE WHEN membership_type = 'trial' AND current_end_date IS NOT NULL AND current_end_date >= NOW() AND current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS expiring_trials,
@@ -902,7 +917,7 @@ async function adminWeeklyInsightsHandler(req, res) {
   const cards = buildWeeklyInsightCards(
     featureRows,
     contentRows,
-    Object.assign({}, contentUserRows[0] || {}, contentCoverageRows[0] || {}),
+    Object.assign({}, contentUserRows[0] || {}, contentCoverageRows[0] || {}, { missing_detail_breakdown: contentMissingRows || [] }),
     lifecycleRows[0] || {},
     range
   );
@@ -985,6 +1000,10 @@ function buildWeeklyInsightCards(featureRows, contentRows, contentSummary, lifec
     const totalContentEvents = Number(contentSummary.total_content_events || 0);
     const contentEventsWithDetail = Number(contentSummary.content_events_with_detail || 0);
     const contentDetailCoverage = calculateRatio(contentEventsWithDetail, totalContentEvents);
+    const missingDetailBreakdown = Array.isArray(contentSummary.missing_detail_breakdown) ? contentSummary.missing_detail_breakdown : [];
+    const missingDetailSummary = missingDetailBreakdown.length
+      ? '缺失最多的是 ' + missingDetailBreakdown.map((item) => `${item.event_type}(${Number(item.missing_count || 0)})`).join('、') + '。'
+      : `统计区间 ${range.startDate} 至 ${range.endDate}。`;
     cards.push({
       key: 'content_low_completion',
       title: '高浏览低完成内容',
@@ -993,7 +1012,7 @@ function buildWeeklyInsightCards(featureRows, contentRows, contentSummary, lifec
       metric: `${contentDetailCoverage.toFixed(2)}%`,
       metric_label: '内容埋点明细覆盖率',
       recommendation: '优先补齐内容浏览与完成埋点中的 content_type 和 content_id，随后继续观察具体内容完成率。',
-      evidence: `统计区间 ${range.startDate} 至 ${range.endDate}，当前仍有 ${Math.max(totalContentEvents - contentEventsWithDetail, 0)} 次内容事件缺少明细。`
+      evidence: `当前仍有 ${Math.max(totalContentEvents - contentEventsWithDetail, 0)} 次内容事件缺少明细。${missingDetailSummary}`
     });
   }
 
