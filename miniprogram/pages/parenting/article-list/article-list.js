@@ -69,6 +69,25 @@ Page({
     ];
   },
 
+  buildArticleTrackPayload: function(article, extra) {
+    article = article || {};
+    var baseEventMeta = {
+      title: article.title || '',
+      category: article.category || '',
+      age_group: article.age_group || '',
+      page: 'parenting_article_list'
+    };
+    var payload = Object.assign({
+      module_key: 'knowledge',
+      page_key: 'parenting_article_list',
+      content_type: 'article',
+      content_id: String(article.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   onLoad: function(options) {
     // 处理传入的参数
     if (options.categoryId) {
@@ -242,6 +261,15 @@ Page({
   // 点击文章
   onArticleTap: function(e) {
     var id = e.currentTarget.dataset.id;
+    var index = e.currentTarget.dataset.index;
+    var article = this.data.articleList[index] || { id: id };
+    app.trackKbEvent(this.buildArticleTrackPayload(article, {
+      event_type: 'article_entry_click',
+      event_meta: {
+        section: 'article_list',
+        keyword: this.data.keyword || ''
+      }
+    }));
     wx.navigateTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {

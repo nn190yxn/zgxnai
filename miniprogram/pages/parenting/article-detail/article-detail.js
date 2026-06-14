@@ -448,6 +448,22 @@ Page({
   // 点击相关文章
   onRelatedArticleTap: function(e) {
     var id = e.currentTarget.dataset.id;
+    var relatedArticles = this.data.relatedArticles || [];
+    var targetArticle = null;
+    for (var i = 0; i < relatedArticles.length; i++) {
+      if (String(relatedArticles[i].id || '') === String(id || '')) {
+        targetArticle = relatedArticles[i];
+        break;
+      }
+    }
+    app.trackKbEvent(this.buildArticleTrackPayload(targetArticle || { id: id }, {
+      event_type: 'article_entry_click',
+      event_meta: {
+        page: 'parenting_article_detail',
+        section: 'related_articles',
+        source_article_id: String(this.data.articleId || '')
+      }
+    }));
     wx.redirectTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {

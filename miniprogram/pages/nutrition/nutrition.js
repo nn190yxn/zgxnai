@@ -95,6 +95,25 @@ Page({
     ];
   },
 
+  buildRecipeTrackPayload: function(recipe, extra) {
+    recipe = recipe || {};
+    var baseEventMeta = {
+      title: recipe.name || recipe.title || '',
+      category: recipe.category || '',
+      age_range: recipe.ageRange || recipe.age_range || '',
+      page: 'nutrition_home'
+    };
+    var payload = Object.assign({
+      module_key: 'nutrition_recipe',
+      page_key: 'nutrition_home',
+      content_type: 'recipe',
+      content_id: String(recipe.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   getRecipeVisualIcon: function(recipe) {
     var text = ((recipe && (recipe.category || recipe.name || recipe.title)) || '').toString();
     if (text.indexOf('汤') !== -1 || text.indexOf('粥') !== -1) return '🍲';
@@ -315,6 +334,12 @@ Page({
   onTodayRecommendTap: function() {
     var recipe = this.data.todayRecommend;
     if (recipe && recipe.id) {
+      app.trackKbEvent(this.buildRecipeTrackPayload(recipe, {
+        event_type: 'recipe_entry_click',
+        event_meta: {
+          section: 'today_recommend'
+        }
+      }));
       this.cacheRecipeSnapshot(recipe);
       wx.navigateTo({
         url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id,
@@ -330,6 +355,12 @@ Page({
     var id = e.currentTarget.dataset.id;
     var index = e.currentTarget.dataset.index;
     var recipe = this.data.hotRecipes[index];
+    app.trackKbEvent(this.buildRecipeTrackPayload(recipe, {
+      event_type: 'recipe_entry_click',
+      event_meta: {
+        section: 'hot_recipes'
+      }
+    }));
     this.cacheRecipeSnapshot(recipe);
     wx.navigateTo({
       url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,

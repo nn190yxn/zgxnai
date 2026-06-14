@@ -163,6 +163,25 @@ Page({
     };
   },
 
+  buildRecipeTrackPayload: function(recipe, extra) {
+    recipe = recipe || {};
+    var baseEventMeta = {
+      title: recipe.name || recipe.title || '',
+      category: recipe.category || '',
+      age_range: recipe.ageRange || recipe.age_range || '',
+      page: 'nutrition_recipe_list'
+    };
+    var payload = Object.assign({
+      module_key: 'nutrition_recipe',
+      page_key: 'nutrition_recipe_list',
+      content_type: 'recipe',
+      content_id: String(recipe.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   cacheRecipeSnapshot: function(recipe) {
     if (!recipe || !recipe.id) {
       return;
@@ -408,7 +427,15 @@ Page({
   onRecipeTap: function(e) {
     var id = e.currentTarget.dataset.id;
     var index = e.currentTarget.dataset.index;
-    this.cacheRecipeSnapshot(this.data.recipeList[index]);
+    var recipe = this.data.recipeList[index] || { id: id };
+    app.trackKbEvent(this.buildRecipeTrackPayload(recipe, {
+      event_type: 'recipe_entry_click',
+      event_meta: {
+        section: 'recipe_list',
+        keyword: this.data.keyword || ''
+      }
+    }));
+    this.cacheRecipeSnapshot(recipe);
     wx.navigateTo({
       url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,
       fail: function() {

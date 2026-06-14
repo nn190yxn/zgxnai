@@ -22,6 +22,26 @@ Page({
     requestSeq: 0
   },
 
+  buildArticleTrackPayload: function(article, extra) {
+    article = article || {};
+    var baseEventMeta = {
+      title: article.title || '',
+      category: article.category || '',
+      age_group: article.age_group || '',
+      keyword: this.data.keyword || '',
+      page: 'parenting_search'
+    };
+    var payload = Object.assign({
+      module_key: 'knowledge',
+      page_key: 'parenting_search',
+      content_type: 'article',
+      content_id: String(article.id || ''),
+      event_meta: baseEventMeta
+    }, extra || {});
+    payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
+    return payload;
+  },
+
   onLoad: function() {
     this.loadSearchHistory();
     this.loadHotKeywords();
@@ -275,6 +295,14 @@ Page({
   // 点击文章
   onArticleTap: function(e) {
     var id = e.currentTarget.dataset.id;
+    var index = e.currentTarget.dataset.index;
+    var article = this.data.searchResults[index] || { id: id };
+    app.trackKbEvent(this.buildArticleTrackPayload(article, {
+      event_type: 'article_entry_click',
+      event_meta: {
+        section: 'search_results'
+      }
+    }));
     wx.navigateTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {
