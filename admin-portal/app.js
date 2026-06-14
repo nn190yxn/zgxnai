@@ -5,7 +5,12 @@ const state = {
   token: localStorage.getItem(AUTH_STORAGE_KEY) || '',
   admin: null,
   activeSegmentKey: '',
-  segmentUsersByKey: {}
+  activeSegmentMeta: null,
+  segmentUsersByKey: {},
+  segmentFilters: {
+    expiringOnly: false,
+    highActivityOnly: false
+  }
 };
 
 const authStateText = document.getElementById('authStateText');
@@ -136,16 +141,16 @@ const demoSnapshot = {
     active_unpaid: {
       segment: { key: 'active_unpaid', label: '高活跃未付费用户', description: '近 14 天活跃但还没有付费，适合做转化承接。' },
       items: [
-        { id: 1001, nickname: '贵阳妈妈A', child_name: '小满', child_age_label: '3-4岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 20:18:00', active_event_count_14d: 18, created_at: '2026-05-20 10:12:00' },
-        { id: 1028, nickname: '云岩爸爸B', child_name: '安安', child_age_label: '4-6岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 18:36:00', active_event_count_14d: 15, created_at: '2026-05-25 14:08:00' },
-        { id: 1086, nickname: '花溪家长C', child_name: '果果', child_age_label: '1-2岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-13 21:42:00', active_event_count_14d: 13, created_at: '2026-06-01 09:22:00' }
+        { id: 1001, nickname: '贵阳妈妈A', child_name: '小满', child_age_label: '3-4岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 20:18:00', active_event_count_14d: 18, created_at: '2026-05-20 10:12:00', suggested_action: '优先推荐试用转会员权益，承接高意向用户。', action_priority: 'high' },
+        { id: 1028, nickname: '云岩爸爸B', child_name: '安安', child_age_label: '4-6岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-14 18:36:00', active_event_count_14d: 15, created_at: '2026-05-25 14:08:00', suggested_action: '优先推荐试用转会员权益，承接高意向用户。', action_priority: 'high' },
+        { id: 1086, nickname: '花溪家长C', child_name: '果果', child_age_label: '1-2岁', membership_type: 'free', current_plan: 'free', current_end_date: null, auto_renew: false, total_paid_amount: 0, paid_order_count: 0, last_active_at: '2026-06-13 21:42:00', active_event_count_14d: 13, created_at: '2026-06-01 09:22:00', suggested_action: '结合最近活跃模块推送限时会员权益。', action_priority: 'medium' }
       ]
     },
     high_value_paid: {
       segment: { key: 'high_value_paid', label: '高价值付费用户', description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。' },
       items: [
-        { id: 821, nickname: '南明妈妈D', child_name: '沐沐', child_age_label: '4-6岁', membership_type: 'year', current_plan: 'year', current_end_date: '2027-03-21 23:59:59', auto_renew: true, total_paid_amount: 698, paid_order_count: 3, last_active_at: '2026-06-14 17:04:00', active_event_count_14d: 12, created_at: '2026-01-18 11:00:00' },
-        { id: 906, nickname: '观山湖爸爸E', child_name: '糖糖', child_age_label: '2-3岁', membership_type: 'quarter', current_plan: 'quarter', current_end_date: '2026-08-30 23:59:59', auto_renew: false, total_paid_amount: 258, paid_order_count: 2, last_active_at: '2026-06-13 19:26:00', active_event_count_14d: 9, created_at: '2026-02-06 08:45:00' }
+        { id: 821, nickname: '南明妈妈D', child_name: '沐沐', child_age_label: '4-6岁', membership_type: 'year', current_plan: 'year', current_end_date: '2027-03-21 23:59:59', auto_renew: true, total_paid_amount: 698, paid_order_count: 3, last_active_at: '2026-06-14 17:04:00', active_event_count_14d: 12, created_at: '2026-01-18 11:00:00', suggested_action: '安排高价值会员回访，优先引导转介绍或续费升级。', action_priority: 'high' },
+        { id: 906, nickname: '观山湖爸爸E', child_name: '糖糖', child_age_label: '2-3岁', membership_type: 'quarter', current_plan: 'quarter', current_end_date: '2026-08-30 23:59:59', auto_renew: false, total_paid_amount: 258, paid_order_count: 2, last_active_at: '2026-06-13 19:26:00', active_event_count_14d: 9, created_at: '2026-02-06 08:45:00', suggested_action: '推送专属陪跑内容，强化会员价值感知。', action_priority: 'medium' }
       ]
     }
   },
@@ -209,6 +214,19 @@ const demoSnapshot = {
 
 apiBaseText.textContent = API_BASE;
 updateAuthState();
+syncSegmentFilterButtons();
+
+document.getElementById('segmentExpiringFilter').addEventListener('click', () => {
+  state.segmentFilters.expiringOnly = !state.segmentFilters.expiringOnly;
+  syncSegmentFilterButtons();
+  reloadActiveSegmentUsers();
+});
+
+document.getElementById('segmentHighActivityFilter').addEventListener('click', () => {
+  state.segmentFilters.highActivityOnly = !state.segmentFilters.highActivityOnly;
+  syncSegmentFilterButtons();
+  reloadActiveSegmentUsers();
+});
 
 loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -542,7 +560,9 @@ function renderUserSegments(items) {
 
 async function loadSegmentUsers(segment) {
   state.activeSegmentKey = segment.key;
-  const cached = state.segmentUsersByKey[segment.key];
+  state.activeSegmentMeta = segment;
+  const cacheKey = buildSegmentUsersCacheKey(segment.key);
+  const cached = state.segmentUsersByKey[cacheKey] || (isDefaultSegmentFilterState() ? state.segmentUsersByKey[segment.key] : null);
   if (cached) {
     renderSegmentUsersPanel(cached.segment || segment, cached.items || []);
     return;
@@ -553,12 +573,44 @@ async function loadSegmentUsers(segment) {
   }
   renderSegmentUsersPanel(segment, [], '正在加载分层用户名单...');
   try {
-    const data = await request(`/segments/${segment.key}/users?limit=20`);
-    state.segmentUsersByKey[segment.key] = data;
+    const query = new URLSearchParams({ limit: '20' });
+    if (state.segmentFilters.expiringOnly) {
+      query.set('expiring_only', '1');
+    }
+    if (state.segmentFilters.highActivityOnly) {
+      query.set('high_activity_only', '1');
+    }
+    const data = await request(`/segments/${segment.key}/users?${query.toString()}`);
+    state.segmentUsersByKey[cacheKey] = data;
     renderSegmentUsersPanel(data.segment || segment, data.items || []);
   } catch (error) {
     renderSegmentUsersPanel(segment, [], error.message || '分层名单加载失败');
   }
+}
+
+function reloadActiveSegmentUsers() {
+  if (!state.activeSegmentKey) {
+    return;
+  }
+  const segment = state.activeSegmentMeta || { key: state.activeSegmentKey, label: '', description: '' };
+  loadSegmentUsers(segment);
+}
+
+function buildSegmentUsersCacheKey(segmentKey) {
+  return [
+    segmentKey,
+    state.segmentFilters.expiringOnly ? 'expiring' : 'all',
+    state.segmentFilters.highActivityOnly ? 'high' : 'normal'
+  ].join(':');
+}
+
+function isDefaultSegmentFilterState() {
+  return !state.segmentFilters.expiringOnly && !state.segmentFilters.highActivityOnly;
+}
+
+function syncSegmentFilterButtons() {
+  document.getElementById('segmentExpiringFilter').classList.toggle('is-active', state.segmentFilters.expiringOnly);
+  document.getElementById('segmentHighActivityFilter').classList.toggle('is-active', state.segmentFilters.highActivityOnly);
 }
 
 function renderSegmentUsersPanel(segment, items, emptyMessage) {
@@ -584,6 +636,7 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
         <span class="segment-user-tag">${escapeHtml(item.child_name ? `${item.child_name} / ${item.child_age_label || '年龄待补充'}` : (item.child_age_label || '年龄待补充'))}</span>
         <span class="segment-user-tag">${escapeHtml(formatMembershipLabel(item.membership_type, item.current_plan))}</span>
         <span class="segment-user-tag">支付 ${escapeHtml(formatNumber(item.paid_order_count || 0))} 单</span>
+        <span class="segment-user-tag ${item.action_priority === 'high' ? 'priority-high' : ''}">${escapeHtml(formatActionPriority(item.action_priority))}</span>
       </div>
       <div class="segment-user-meta">
         <span>最近活跃：${escapeHtml(formatDateTime(item.last_active_at))}</span>
@@ -591,6 +644,7 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
         <span>会员到期：${escapeHtml(formatDateTime(item.current_end_date))}</span>
         <span>自动续费：${item.auto_renew ? '已开启' : '未开启'}</span>
       </div>
+      <p class="segment-user-suggestion">建议动作：${escapeHtml(item.suggested_action || '结合最近活跃行为安排精细化触达。')}</p>
     `;
     container.appendChild(node);
   });
@@ -752,6 +806,15 @@ function formatMembershipLabel(membershipType, currentPlan) {
     year: '年会员'
   };
   return map[plan] || plan;
+}
+
+function formatActionPriority(value) {
+  const map = {
+    high: '优先触达',
+    medium: '持续跟进',
+    low: '观察名单'
+  };
+  return map[String(value || 'medium')] || '持续跟进';
 }
 
 function escapeHtml(value) {

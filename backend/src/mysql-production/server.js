@@ -848,6 +848,15 @@ async function adminSegmentUsersHandler(req, res) {
   }
 
   const limit = clampAdminLimit(req.query.limit, 20);
+  const expiringOnly = normalizeBooleanQuery(req.query.expiring_only || req.query.expiringOnly);
+  const highActivityOnly = normalizeBooleanQuery(req.query.high_activity_only || req.query.highActivityOnly);
+  const filters = [definition.sql];
+  if (expiringOnly) {
+    filters.push("memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND memberships.current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY)");
+  }
+  if (highActivityOnly) {
+    filters.push('COALESCE(activity.active_event_count_14d, 0) >= 10');
+  }
   const [rows] = await pool.execute(
     `SELECT
        u.id,
@@ -904,7 +913,7 @@ async function adminSegmentUsersHandler(req, res) {
              GROUP BY c.user_id
           ) source
       ) child_profile ON child_profile.user_id = u.id
-      WHERE ${definition.sql}
+      WHERE ${filters.join(' AND ')}
       ORDER BY ${definition.orderBy}
       LIMIT ${limit}`
   );
@@ -916,6 +925,11 @@ async function adminSegmentUsersHandler(req, res) {
         key: definition.key,
         label: definition.label,
         description: definition.description
+      },
+      filters: {
+        expiring_only: expiringOnly,
+        high_activity_only: highActivityOnly,
+        limit
       },
       items: rows.map((row) => ({
         id: row.id,
@@ -931,10 +945,54 @@ async function adminSegmentUsersHandler(req, res) {
         paid_order_count: Number(row.paid_order_count || 0),
         last_active_at: row.last_active_at || null,
         active_event_count_14d: Number(row.active_event_count_14d || 0),
-        created_at: row.created_at || null
+        created_at: row.created_at || null,
+        suggested_action: buildSegmentUserSuggestedAction(definition.key, row),
+        action_priority: buildSegmentUserActionPriority(definition.key, row)
       }))
     }
   });
+}
+
+function normalizeBooleanQuery(value) {
+  const text = String(value || '').trim().toLowerCase();
+  return text === '1' || text === 'true' || text === 'yes' || text === 'on';
+}
+
+function buildSegmentUserSuggestedAction(segmentKey, row) {
+  const amount = Number(row.total_paid_amount || 0);
+  const activeEvents = Number(row.active_event_count_14d || 0);
+  const autoRenew = Number(row.auto_renew || 0) === 1;
+  if (segmentKey === 'high_value_paid') {
+    return amount >= 500 ? '安排高价值会员回访，优先引导转介绍或续费升级。' : '推送专属陪跑内容，强化会员价值感知。';
+  }
+  if (segmentKey === 'churn_risk') {
+    return autoRenew ? '发送续费价值提醒，强调持续使用收益。' : '优先发送到期召回提醒，并附带续费权益说明。';
+  }
+  if (segmentKey === 'paid_low_activity') {
+    return '推送孩子年龄匹配的任务或测评，拉回使用频次。';
+  }
+  if (segmentKey === 'active_unpaid') {
+    return activeEvents >= 15 ? '优先推荐试用转会员权益，承接高意向用户。' : '结合最近活跃模块推送限时会员权益。';
+  }
+  if (segmentKey === 'active_trial') {
+    return '围绕试用即将结束场景推送正式会员转化提醒。';
+  }
+  return '结合最近活跃行为安排精细化触达。';
+}
+
+function buildSegmentUserActionPriority(segmentKey, row) {
+  const amount = Number(row.total_paid_amount || 0);
+  const activeEvents = Number(row.active_event_count_14d || 0);
+  if (segmentKey === 'churn_risk') {
+    return 'high';
+  }
+  if (segmentKey === 'high_value_paid' && amount >= 500) {
+    return 'high';
+  }
+  if ((segmentKey === 'active_unpaid' || segmentKey === 'active_trial') && activeEvents >= 15) {
+    return 'high';
+  }
+  return 'medium';
 }
 
 function parseAdminDateRange(query, defaultDays) {

@@ -410,6 +410,23 @@ td {
   border-top: 1px solid rgba(61, 42, 24, 0.08);
 }
 
+.segment-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.filter-chip {
+  padding: 10px 14px;
+}
+
+.filter-chip.is-active {
+  background: rgba(182, 84, 47, 0.14);
+  color: var(--brand-deep);
+  border-color: rgba(182, 84, 47, 0.24);
+}
+
 .segment-copy {
   margin: 0;
   color: var(--muted);
@@ -454,6 +471,21 @@ td {
   font-size: 12px;
   color: var(--brand-deep);
   background: rgba(182, 84, 47, 0.08);
+}
+
+.segment-user-tag.priority-high {
+  color: #fff7f0;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+}
+
+.segment-user-suggestion {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(93, 107, 45, 0.08);
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 13px;
 }
 
 .segment-user-meta {
