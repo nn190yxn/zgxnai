@@ -346,8 +346,60 @@ async function adminDashboardOverviewHandler(req, res) {
        COALESCE(SUM(amount), 0) AS total_revenue,
        COALESCE(SUM(CASE WHEN DATE(paid_at) = CURDATE() THEN amount ELSE 0 END), 0) AS today_revenue,
        SUM(CASE WHEN DATE(paid_at) = CURDATE() THEN 1 ELSE 0 END) AS today_paid_order_count
-     FROM payment_orders
-     WHERE status = 'paid'`
+      FROM payment_orders
+      WHERE status = 'paid'`
+  );
+  const [familyRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS total_children,
+       COUNT(DISTINCT user_id) AS families_with_children,
+       COALESCE(AVG(child_count), 0) AS avg_children_per_family
+      FROM (
+        SELECT user_id, COUNT(*) AS child_count
+          FROM children
+         GROUP BY user_id
+      ) grouped_children`
+  );
+  const [membershipStructureRows] = await pool.execute(
+    `SELECT
+       CASE
+         WHEN membership_type = 'trial' THEN 'trial'
+         WHEN current_plan = 'month' THEN 'month'
+         WHEN current_plan = 'quarter' THEN 'quarter'
+         WHEN current_plan = 'year' THEN 'year'
+         ELSE 'other'
+       END AS segment_key,
+       COUNT(*) AS user_count
+      FROM user_memberships
+      WHERE current_end_date IS NOT NULL AND current_end_date >= NOW()
+      GROUP BY segment_key`
+  );
+  const [childAgeRows] = await pool.execute(
+    `SELECT age_bucket, COUNT(*) AS child_count
+       FROM (
+         SELECT CASE
+           WHEN birthday IS NULL THEN 'unknown'
+           WHEN TIMESTAMPDIFF(MONTH, birthday, CURDATE()) < 12 THEN '0-1'
+           WHEN TIMESTAMPDIFF(MONTH, birthday, CURDATE()) < 24 THEN '1-2'
+           WHEN TIMESTAMPDIFF(MONTH, birthday, CURDATE()) < 36 THEN '2-3'
+           WHEN TIMESTAMPDIFF(MONTH, birthday, CURDATE()) < 48 THEN '3-4'
+           WHEN TIMESTAMPDIFF(MONTH, birthday, CURDATE()) < 72 THEN '4-6'
+           ELSE '6+'
+         END AS age_bucket
+         FROM children
+       ) child_buckets
+      GROUP BY age_bucket`
+  );
+  const [childGenderRows] = await pool.execute(
+    `SELECT
+       CASE
+         WHEN gender IN ('male', 'boy', 'm', '男') THEN 'male'
+         WHEN gender IN ('female', 'girl', 'f', '女') THEN 'female'
+         ELSE 'unknown'
+       END AS gender_key,
+       COUNT(*) AS child_count
+      FROM children
+      GROUP BY gender_key`
   );
   const [featureRows] = await pool.execute(
     `SELECT event_type, COUNT(*) AS count
@@ -358,16 +410,98 @@ async function adminDashboardOverviewHandler(req, res) {
       LIMIT 10`
   );
 
+  const users = userRows[0] || {};
+  const memberships = membershipRows[0] || {};
+  const revenue = paymentRows[0] || {};
+  const families = familyRows[0] || {};
+  const totalUsers = Number(users.total_users || 0);
+  const paidUserCount = Number(revenue.paid_user_count || 0);
+  const activeMemberships = Number(memberships.active_memberships || 0);
+  const familiesWithChildren = Number(families.families_with_children || 0);
+  const totalChildren = Number(families.total_children || 0);
+  const paidOrderCount = Number(revenue.paid_order_count || 0);
+  const totalRevenue = Number(revenue.total_revenue || 0);
+
   res.json({
     success: true,
     data: {
-      users: userRows[0] || {},
-      memberships: membershipRows[0] || {},
-      revenue: paymentRows[0] || {},
+      users,
+      memberships,
+      revenue,
+      family: {
+        total_children: totalChildren,
+        families_with_children: familiesWithChildren,
+        avg_children_per_family: Number(families.avg_children_per_family || 0),
+        child_profile_penetration: calculateRatio(familiesWithChildren, totalUsers)
+      },
+      operations: {
+        active_membership_rate: calculateRatio(activeMemberships, totalUsers),
+        paid_user_penetration: calculateRatio(paidUserCount, totalUsers),
+        arppu: paidUserCount > 0 ? Number((totalRevenue / paidUserCount).toFixed(2)) : 0,
+        average_order_value: paidOrderCount > 0 ? Number((totalRevenue / paidOrderCount).toFixed(2)) : 0
+      },
+      membership_structure: formatDistributionRows(membershipStructureRows, activeMemberships, {
+        trial: '试用会员',
+        month: '月会员',
+        quarter: '季会员',
+        year: '年会员',
+        other: '其他会员'
+      }),
+      child_age_distribution: formatDistributionRows(childAgeRows, totalChildren, {
+        '0-1': '0-1岁',
+        '1-2': '1-2岁',
+        '2-3': '2-3岁',
+        '3-4': '3-4岁',
+        '4-6': '4-6岁',
+        '6+': '6岁以上',
+        unknown: '年龄待补充'
+      }, ['0-1', '1-2', '2-3', '3-4', '4-6', '6+', 'unknown']),
+      child_gender_distribution: formatDistributionRows(childGenderRows, totalChildren, {
+        male: '男孩',
+        female: '女孩',
+        unknown: '性别待补充'
+      }, ['male', 'female', 'unknown']),
       top_events_7d: featureRows,
       ai_status: getAIStatus()
     }
   });
+}
+
+function formatDistributionRows(rows, total, labelMap, orderedKeys) {
+  const items = Array.isArray(rows) ? rows.map((row) => {
+    const rawKey = row.segment_key || row.age_bucket || row.gender_key || 'unknown';
+    const count = Number(row.user_count || row.child_count || row.count || 0);
+    return {
+      key: rawKey,
+      label: labelMap[rawKey] || rawKey,
+      count,
+      percentage: calculateRatio(count, total)
+    };
+  }) : [];
+
+  if (Array.isArray(orderedKeys) && orderedKeys.length) {
+    const order = new Map(orderedKeys.map((key, index) => [key, index]));
+    items.sort((left, right) => {
+      const leftOrder = order.has(left.key) ? order.get(left.key) : Number.MAX_SAFE_INTEGER;
+      const rightOrder = order.has(right.key) ? order.get(right.key) : Number.MAX_SAFE_INTEGER;
+      if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+      return right.count - left.count;
+    });
+    return items;
+  }
+
+  return items.sort((left, right) => right.count - left.count);
+}
+
+function calculateRatio(part, total) {
+  const numerator = Number(part || 0);
+  const denominator = Number(total || 0);
+  if (!denominator) {
+    return 0;
+  }
+  return Number(((numerator / denominator) * 100).toFixed(2));
 }
 
 async function adminUserTrendsHandler(req, res) {

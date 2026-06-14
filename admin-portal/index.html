@@ -15,7 +15,7 @@
         <div>
           <p class="eyebrow">NiuNiu Parenting</p>
           <h1>运营后台</h1>
-          <p class="sidebar-copy">面向小牛育儿独立经营数据，覆盖登录、总览、趋势和排行。</p>
+          <p class="sidebar-copy">面向小牛育儿独立经营数据，覆盖登录、总览、趋势、会员结构和家庭画像。</p>
         </div>
         <div class="sidebar-meta">
           <div>
@@ -50,7 +50,7 @@
               <button id="refreshButton" type="button" class="ghost">刷新数据</button>
               <button id="demoButton" type="button" class="ghost alt">查看演示</button>
             </div>
-            <p id="loginHint" class="hint">登录后自动拉取总览、用户趋势、收入趋势、功能排行、内容排行。当前环境缺少真实后台时，可先查看演示数据。</p>
+            <p id="loginHint" class="hint">登录后自动拉取总览、会员结构、家庭画像、用户趋势、收入趋势和排行。当前环境缺少真实后台时，可先查看演示数据。</p>
           </form>
         </section>
 
@@ -122,6 +122,39 @@
               <span class="panel-note">按浏览量排序</span>
             </div>
             <div id="contentRanking" class="ranking-list"></div>
+          </article>
+
+          <article class="panel insight-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Membership</p>
+                <h3>会员结构</h3>
+              </div>
+              <span class="panel-note">当前有效会员占比</span>
+            </div>
+            <div id="membershipHealth" class="mini-stats"></div>
+            <div id="membershipStructure" class="distribution-list"></div>
+          </article>
+
+          <article class="panel insight-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Children</p>
+                <h3>孩子画像</h3>
+              </div>
+              <span class="panel-note">年龄段与家庭渗透</span>
+            </div>
+            <div id="familyHealth" class="mini-stats"></div>
+            <div class="distribution-split">
+              <div>
+                <h4>年龄分布</h4>
+                <div id="childAgeDistribution" class="distribution-list"></div>
+              </div>
+              <div>
+                <h4>性别分布</h4>
+                <div id="childGenderDistribution" class="distribution-list"></div>
+              </div>
+            </div>
           </article>
         </section>
       </main>

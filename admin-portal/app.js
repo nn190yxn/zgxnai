@@ -38,8 +38,40 @@ const demoSnapshot = {
     revenue: {
       total_revenue: 428630.5,
       today_paid_order_count: 37
+    },
+    family: {
+      total_children: 9426,
+      families_with_children: 8218,
+      avg_children_per_family: 1.15,
+      child_profile_penetration: 44.08
+    },
+    operations: {
+      active_membership_rate: 17.38,
+      paid_user_penetration: 28.64,
+      arppu: 131.12,
+      average_order_value: 104.71
     }
   },
+  membershipStructure: [
+    { key: 'month', label: '月会员', count: 1748, percentage: 53.95 },
+    { key: 'quarter', label: '季会员', count: 702, percentage: 21.67 },
+    { key: 'year', label: '年会员', count: 364, percentage: 11.23 },
+    { key: 'trial', label: '试用会员', count: 426, percentage: 13.15 }
+  ],
+  childAgeDistribution: [
+    { key: '0-1', label: '0-1岁', count: 1368, percentage: 14.51 },
+    { key: '1-2', label: '1-2岁', count: 1942, percentage: 20.60 },
+    { key: '2-3', label: '2-3岁', count: 1766, percentage: 18.74 },
+    { key: '3-4', label: '3-4岁', count: 1620, percentage: 17.19 },
+    { key: '4-6', label: '4-6岁', count: 2018, percentage: 21.41 },
+    { key: '6+', label: '6岁以上', count: 564, percentage: 5.98 },
+    { key: 'unknown', label: '年龄待补充', count: 148, percentage: 1.57 }
+  ],
+  childGenderDistribution: [
+    { key: 'male', label: '男孩', count: 4862, percentage: 51.58 },
+    { key: 'female', label: '女孩', count: 4290, percentage: 45.51 },
+    { key: 'unknown', label: '性别待补充', count: 274, percentage: 2.91 }
+  ],
   userTrends: {
     items: [
       { stat_date: '2026-06-01', new_users: 108, active_users: 1822, paid_active_users: 352, ai_users: 468 },
@@ -182,6 +214,12 @@ function renderDashboard(snapshot) {
   state.admin = snapshot.me;
   updateAuthState();
   renderOverview(snapshot.overview);
+  renderMembershipStructure(snapshot.membershipStructure || snapshot.overview.membership_structure || [], snapshot.overview);
+  renderChildDemographics(
+    snapshot.childAgeDistribution || snapshot.overview.child_age_distribution || [],
+    snapshot.childGenderDistribution || snapshot.overview.child_gender_distribution || [],
+    snapshot.overview
+  );
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
@@ -243,6 +281,52 @@ function renderOverview(overview) {
   );
 }
 
+function renderMembershipStructure(items, overview) {
+  const operations = overview.operations || {};
+  const memberships = overview.memberships || {};
+  renderMiniStats('membershipHealth', [
+    {
+      label: '有效会员渗透',
+      value: formatPercent(operations.active_membership_rate),
+      meta: `${formatNumber(memberships.active_memberships)} 位当前有效会员`
+    },
+    {
+      label: '付费用户渗透',
+      value: formatPercent(operations.paid_user_penetration),
+      meta: '累计付费用户占总注册用户'
+    },
+    {
+      label: 'ARPPU',
+      value: formatCurrency(operations.arppu),
+      meta: '累计收入 / 累计付费用户'
+    },
+    {
+      label: '客单价',
+      value: formatCurrency(operations.average_order_value),
+      meta: '累计收入 / 支付成功订单'
+    }
+  ]);
+  renderDistribution('membershipStructure', items, '当前暂无会员结构数据');
+}
+
+function renderChildDemographics(ageItems, genderItems, overview) {
+  const family = overview.family || {};
+  renderMiniStats('familyHealth', [
+    {
+      label: '有档案家庭',
+      value: formatNumber(family.families_with_children),
+      meta: `档案渗透 ${formatPercent(family.child_profile_penetration)}`
+    },
+    {
+      label: '孩子档案数',
+      value: formatNumber(family.total_children),
+      meta: `户均 ${formatDecimal(family.avg_children_per_family)} 个孩子`
+    }
+  ]);
+  renderDistribution('childAgeDistribution', ageItems, '当前暂无孩子年龄分布数据');
+  renderDistribution('childGenderDistribution', genderItems, '当前暂无孩子性别分布数据');
+}
+
 function renderTrendBars(containerId, items, valueKey, tone) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
@@ -302,6 +386,44 @@ function renderRanking(containerId, items, mapper) {
   });
 }
 
+function renderMiniStats(containerId, items) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'mini-stat';
+    node.innerHTML = `
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(String(item.value))}</strong>
+      <small>${escapeHtml(item.meta || '')}</small>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function renderDistribution(containerId, items, emptyMessage) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'distribution-item';
+    const width = Math.max(4, Math.min(100, Number(item.percentage || 0)));
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.label || item.key || '-')}</span>
+        <strong>${escapeHtml(formatNumber(item.count))}</strong>
+      </div>
+      <div class="distribution-track"><div class="distribution-fill" style="width:${width}%"></div></div>
+      <span class="distribution-meta">占比 ${escapeHtml(formatPercent(item.percentage))}</span>
+    `;
+    container.appendChild(node);
+  });
+}
+
 function updateAuthState() {
   authStateText.textContent = state.admin ? `${state.admin.display_name || state.admin.username}` : state.token ? '登录态待校验' : '未登录';
 }
@@ -334,6 +456,14 @@ function formatCompact(value) {
     return `${(number / 10000).toFixed(1)}w`;
   }
   return formatNumber(number);
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+}
+
+function formatDecimal(value) {
+  return Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function escapeHtml(value) {
