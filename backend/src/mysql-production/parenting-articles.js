@@ -13,33 +13,33 @@ const EDITOR = '小牛育儿内容组（循证审校）';
 const AGE_VARIANTS = [
   {
     label: '2-3岁',
-    development: '这个阶段以情绪体验和即时反应为主，家长需要先做外部调节器，再逐步教孩子说出感受。',
-    actionHint: '把要求缩成一个动作，例如先坐下、先喝水、先抱一抱。',
-    summarySuffix: '重点放在接住情绪、缩短指令和稳定节奏。'
+    development: '这个阶段更依赖家长陪同、即时示范和具体动作提示，学习通常发生在短时反复练习里。',
+    actionHint: '把目标缩成一个小动作，先示范，再让孩子跟着做一步。',
+    summarySuffix: '重点放在步骤具体、节奏稳定和即时反馈。'
   },
   {
     label: '3-4岁',
-    development: '孩子开始能理解简单规则，但遇到疲劳、挫折和分离时仍容易快速升级。',
-    actionHint: '用一句规则加一个选择，例如先擦眼泪还是先坐到你旁边。',
-    summarySuffix: '重点放在先命名情绪，再帮助孩子恢复合作。'
+    development: '孩子开始理解简单规则和两步指令，但执行时仍需要家长持续提醒和场景支持。',
+    actionHint: '用一句短规则加一个小选择，让孩子在可控范围内参与。',
+    summarySuffix: '重点放在规则清楚、示范明确和重复练习。'
   },
   {
     label: '4-5岁',
-    development: '孩子的语言和想象力都在增强，能够开始复盘原因，但高唤醒状态下仍需要家长代管节奏。',
-    actionHint: '把复盘限制在两到三句话，再让孩子给出一个下次做法。',
-    summarySuffix: '重点放在把情绪事件变成一次可重复练习。'
+    development: '孩子的语言、记忆和规则理解都在增强，已经可以在家长支架下完成更完整的说明和复盘。',
+    actionHint: '先让孩子说出看到什么、准备怎么做，再补一个下次优化点。',
+    summarySuffix: '重点放在说清步骤、理解原因和形成可重复做法。'
   },
   {
     label: '5-6岁',
-    development: '入园和群体生活增加后，孩子需要把情绪调节迁移到同伴、课堂和任务场景中。',
-    actionHint: '引导孩子先说事实、再说感受、最后说希望。',
-    summarySuffix: '重点放在规则场景中的自我控制和表达。'
+    development: '群体生活和学习任务增多后，孩子需要把家庭中练过的做法迁移到课堂、同伴和日常任务场景。',
+    actionHint: '引导孩子先说事实，再说理由，最后说出自己准备怎样做。',
+    summarySuffix: '重点放在迁移应用、规则执行和主动表达。'
   },
   {
     label: '6-9岁',
-    development: '学龄阶段更需要识别诱因、监测身体信号，并把复盘结果迁移到学校和同伴场景。',
-    actionHint: '让孩子自己说出诱因、身体感觉和一个替代动作。',
-    summarySuffix: '重点放在识别诱因、建立替代动作和持续复盘。'
+    development: '学龄阶段更适合加入自我监控、方法比较和复盘迁移，帮助孩子把经验带到学校和合作任务中。',
+    actionHint: '让孩子自己说出关键线索、当前做法和一个准备继续优化的动作。',
+    summarySuffix: '重点放在自我监控、方法意识和持续复盘。'
   }
 ];
 
@@ -898,10 +898,10 @@ const CATEGORY_LIBRARY = [
 
 function buildArticleContent(categoryConfig, topic, ageVariant) {
   const steps = [
-    `1. 在${topic.scene}出现时，先暂停额外说理，描述你看到的表情、动作和触发线索。`,
-    `2. 用一句短句帮助孩子完成“${topic.goal}”，例如“${topic.example}”。`,
+    `1. 在${topic.scene}，先把场景和目标说清楚，帮助孩子知道这一次准备练什么。`,
+    `2. 用一句短句聚焦目标“${topic.goal}”，例如“${topic.example}”。`,
     `3. 结合${ageVariant.label}阶段特点，${ageVariant.actionHint}`,
-    '4. 等情绪明显下降后，再一起复盘诱因、边界和下次可替代动作。'
+    '4. 结束后用两到三句话复盘这次哪里有效、下次准备继续怎么做。'
   ].join('\n');
 
   const observe = topic.observe.map((item) => `- ${item}`).join('\n');

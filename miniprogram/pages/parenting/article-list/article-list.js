@@ -87,6 +87,16 @@ Page({
     ];
   },
 
+  normalizeArticleCard: function(article) {
+    article = article || {};
+    article.categoryName = article.categoryName || article.category || '';
+    article.ageRange = article.ageRange || article.age_group || '';
+    article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
+    article.publishTime = article.publishTime || article.created_at || '';
+    article.isFavorite = !!(article.is_favorited || article.isFavorite);
+    return article;
+  },
+
   buildArticleTrackPayload: function(article, extra) {
     article = article || {};
     var baseEventMeta = {
@@ -155,6 +165,7 @@ Page({
     if (app.shouldUseMockFallback()) {
       var fallback = that.getLocalArticles();
       fallback.forEach(function(item) {
+        that.normalizeArticleCard(item);
         item.imageLoaded = false;
       });
       that.setData({
@@ -182,8 +193,8 @@ Page({
         list = that.getLocalArticles();
       }
       list.forEach(function(item) {
+        that.normalizeArticleCard(item);
         item.imageLoaded = false;
-        item.isFavorite = !!(item.is_favorited || item.isFavorite);
       });
       var newList = that.data.page === 1 ? list : that.data.articleList.concat(list);
       that.setData({

@@ -85,10 +85,8 @@
         wx:key="id"
         style="animation-delay: {{index * 50}}ms"
       >
-        <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}">
+        <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}" data-index="{{index}}">
           <view class="article-content no-image">
-            <text class="article-title">{{item.title}}</text>
-            <text class="article-summary">{{item.summary}}</text>
             <text class="article-title">{{item.title}}</text>
             <text class="article-summary">{{item.summary}}</text>
             <view class="article-tags">

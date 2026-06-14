@@ -2680,6 +2680,22 @@ async function seedContentIfNeeded() {
   for (const article of PARENTING_ARTICLES) {
     const [existingArticleRows] = await pool.execute('SELECT id FROM articles WHERE title = ? LIMIT 1', [article.title]);
     if (existingArticleRows.length) {
+      await pool.execute(
+        `UPDATE articles
+         SET summary = ?, content = ?, category = ?, sub_category = ?, age_group = ?, tags = ?, author = ?, evidence_level = ?
+         WHERE id = ?`,
+        [
+          article.summary,
+          article.content,
+          article.category,
+          article.sub_category,
+          article.age_group,
+          article.tags,
+          article.author,
+          article.evidence_level,
+          existingArticleRows[0].id
+        ]
+      );
       continue;
     }
     await pool.execute(
@@ -3087,18 +3103,25 @@ async function isArticleFavorited(userId, articleId) {
 
 async function normalizeArticle(row, userId) {
   const favorited = await isArticleFavorited(userId, row.id);
+  const readCount = Number(row.read_count || 0);
+  const category = row.category || '';
+  const ageGroup = row.age_group || '';
   return {
     id: row.id,
     title: row.title,
     summary: row.summary || '',
     content: row.content || '',
-    category: row.category || '',
+    category,
+    categoryName: category,
     sub_category: row.sub_category || '',
-    age_group: row.age_group || '',
+    age_group: ageGroup,
+    ageRange: ageGroup,
     tags: row.tags || '',
     author: row.author || '',
     evidence_level: row.evidence_level || '',
-    read_count: row.read_count || 0,
+    read_count: readCount,
+    viewCount: readCount,
+    publishTime: row.created_at || '',
     cover: row.cover || row.cover_image || row.icon_url || buildArticleCover(row.category),
     is_favorited: favorited,
     isFavorite: favorited,

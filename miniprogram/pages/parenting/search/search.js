@@ -42,6 +42,16 @@ Page({
     return payload;
   },
 
+  normalizeArticleCard: function(article) {
+    article = article || {};
+    article.categoryName = article.categoryName || article.category || '';
+    article.ageRange = article.ageRange || article.age_group || '';
+    article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
+    article.publishTime = article.publishTime || article.created_at || '';
+    article.isFavorite = !!(article.is_favorited || article.isFavorite);
+    return article;
+  },
+
   onLoad: function() {
     this.loadSearchHistory();
     this.loadHotKeywords();
@@ -155,6 +165,9 @@ Page({
       ].filter(function(item) {
         return item.title.indexOf(keyword) !== -1 || item.summary.indexOf(keyword) !== -1 || item.category.indexOf(keyword) !== -1;
       });
+      fallback = fallback.map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       if (!fallback.length) {
         fallback = [
           {
@@ -166,6 +179,9 @@ Page({
             isFavorite: false
           }
         ];
+        fallback = fallback.map(function(item) {
+          return that.normalizeArticleCard(item);
+        });
       }
       that.setData({
         searchResults: fallback,
@@ -190,7 +206,7 @@ Page({
       }
       list = list || [];
       for (var i = 0; i < list.length; i++) {
-        list[i].isFavorite = !!(list[i].is_favorited || list[i].isFavorite);
+        that.normalizeArticleCard(list[i]);
       }
       that.setData({
         searchResults: list,
@@ -399,7 +415,7 @@ Page({
       }
       list = list || [];
       for (var i = 0; i < list.length; i++) {
-        list[i].isFavorite = !!(list[i].is_favorited || list[i].isFavorite);
+        that.normalizeArticleCard(list[i]);
       }
       var newList = that.data.searchResults.concat(list);
       that.setData({

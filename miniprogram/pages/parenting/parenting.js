@@ -96,6 +96,16 @@ Page({
     ];
   },
 
+  normalizeArticleCard: function(article) {
+    article = article || {};
+    article.categoryName = article.categoryName || article.category || '';
+    article.ageRange = article.ageRange || article.age_group || '';
+    article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
+    article.publishTime = article.publishTime || article.created_at || '';
+    article.isFavorite = !!(article.is_favorited || article.isFavorite);
+    return article;
+  },
+
   buildArticleTrackPayload: function(article, extra) {
     article = article || {};
     var baseEventMeta = {
@@ -136,7 +146,9 @@ Page({
     });
 
     if (app.shouldUseMockFallback()) {
-      var fallback = that.getLocalArticles();
+      var fallback = that.getLocalArticles().map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       that.setData({
         hotArticles: fallback.slice(0, 3),
         latestArticles: fallback,
@@ -167,6 +179,9 @@ Page({
       if (!list.length && app.shouldUseMockFallback()) {
         list = that.getLocalArticles();
       }
+      list = list.map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       that.setData({
         hotArticles: list.slice(0, 5),
         latestArticles: list,
@@ -186,7 +201,9 @@ Page({
         });
         return;
       }
-      var fallback = that.getLocalArticles();
+      var fallback = that.getLocalArticles().map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       that.setData({
         hotArticles: fallback.slice(0, 3),
         latestArticles: fallback,
@@ -372,6 +389,9 @@ Page({
       }
     }).then(function(list) {
       list = list || [];
+      list = list.map(function(item) {
+        return that.normalizeArticleCard(item);
+      });
       var newList = that.data.latestArticles.concat(list);
       that.setData({
         latestArticles: newList,

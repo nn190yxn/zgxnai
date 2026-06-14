@@ -219,6 +219,10 @@ Page({
   normalizeArticleForDisplay: function(article) {
     article = article || {};
     article.keyPoints = article.key_points || article.keyPoints || [];
+    article.categoryName = article.categoryName || article.category || '';
+    article.ageRange = article.ageRange || article.age_group || '';
+    article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
+    article.publishTime = article.publishTime || article.created_at || '';
     article.content = this.sanitizeRichText(article.content);
     article.isFavorite = !!(article.is_favorited || article.isFavorite);
     return article;
