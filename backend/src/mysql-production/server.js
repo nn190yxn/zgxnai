@@ -2677,26 +2677,27 @@ async function ensureProductionTables() {
 }
 
 async function seedContentIfNeeded() {
-  const [articleCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM articles');
-  if (Number(articleCountRows[0].count) === 0) {
-    for (const article of PARENTING_ARTICLES) {
-      await pool.execute(
-        `INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
-        [
-          article.title,
-          article.summary,
-          article.content,
-          article.category,
-          article.sub_category,
-          article.age_group,
-          article.tags,
-          article.author,
-          article.evidence_level,
-          ''
-        ]
-      );
+  for (const article of PARENTING_ARTICLES) {
+    const [existingArticleRows] = await pool.execute('SELECT id FROM articles WHERE title = ? LIMIT 1', [article.title]);
+    if (existingArticleRows.length) {
+      continue;
     }
+    await pool.execute(
+      `INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+      [
+        article.title,
+        article.summary,
+        article.content,
+        article.category,
+        article.sub_category,
+        article.age_group,
+        article.tags,
+        article.author,
+        article.evidence_level,
+        ''
+      ]
+    );
   }
 
   for (const task of READING_TASKS) {
@@ -3124,6 +3125,15 @@ async function parentingArticlesHandler(req, res) {
   if (req.query.category) {
     whereClause += ' AND category = ?';
     params.push(req.query.category);
+  }
+  if (req.query.age_group) {
+    whereClause += ' AND age_group = ?';
+    params.push(req.query.age_group);
+  }
+  if (req.query.keyword) {
+    whereClause += ' AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)';
+    const searchTerm = `%${String(req.query.keyword).trim()}%`;
+    params.push(searchTerm, searchTerm, searchTerm, searchTerm);
   }
   const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
   const data = [];

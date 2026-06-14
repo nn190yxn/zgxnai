@@ -8,18 +8,18 @@ Page({
       { id: 0, name: '全部' },
       { id: 1, name: '情绪管理' },
       { id: 2, name: '行为习惯' },
-      { id: 3, name: '社交能力' },
-      { id: 4, name: '认知发展' },
-      { id: 5, name: '安全教育' },
-      { id: 6, name: '性教育' }
+      { id: 3, name: '认知发展' },
+      { id: 4, name: '社交能力' },
+      { id: 5, name: '营养健康' }
     ],
     // 年龄段列表
     ageList: [
       { id: 0, name: '全部年龄' },
-      { id: 1, name: '0-1岁' },
-      { id: 2, name: '1-3岁' },
-      { id: 3, name: '3-6岁' },
-      { id: 4, name: '6-12岁' }
+      { id: 1, name: '2-3岁' },
+      { id: 2, name: '3-4岁' },
+      { id: 3, name: '4-5岁' },
+      { id: 4, name: '5-6岁' },
+      { id: 5, name: '6-9岁' }
     ],
     // 当前选中的分类
     currentCategory: 0,
@@ -41,10 +41,10 @@ Page({
     return [
       {
         id: 'local_parenting_001',
-        title: '3-6岁孩子情绪表达的4个引导技巧',
+        title: '4-5岁孩子情绪表达的4个引导技巧',
         summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
         category: '情绪管理',
-        age_group: '3-6岁',
+        age_group: '4-5岁',
         imageLoaded: false,
         isFavorite: false
       },
@@ -53,7 +53,7 @@ Page({
         title: '建立睡前流程：让孩子更快入睡',
         summary: '固定节奏和低刺激环境可以显著降低入睡阻力。',
         category: '行为习惯',
-        age_group: '3-6岁',
+        age_group: '5-6岁',
         imageLoaded: false,
         isFavorite: false
       },
@@ -62,7 +62,25 @@ Page({
         title: '同伴冲突时，家长如何做“翻译官”',
         summary: '把争抢背后的需求说出来，帮助孩子学习社交协商。',
         category: '社交能力',
-        age_group: '3-6岁',
+        age_group: '4-5岁',
+        imageLoaded: false,
+        isFavorite: false
+      },
+      {
+        id: 'local_parenting_004',
+        title: '专注力环境搭建：先减干扰，再谈坚持',
+        summary: '把材料和任务长度一起收窄，孩子更容易进入专注状态。',
+        category: '认知发展',
+        age_group: '5-6岁',
+        imageLoaded: false,
+        isFavorite: false
+      },
+      {
+        id: 'local_parenting_005',
+        title: '早餐营养搭配：让早晨吃进去，也吃得稳',
+        summary: '主食、蛋白和蔬果搭配得当，更有利于上午精力稳定。',
+        category: '营养健康',
+        age_group: '5-6岁',
         imageLoaded: false,
         isFavorite: false
       }

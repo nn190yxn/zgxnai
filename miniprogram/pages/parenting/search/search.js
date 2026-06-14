@@ -66,7 +66,7 @@ Page({
 
     if (app.shouldUseMockFallback()) {
       that.setData({
-        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养', '性教育']
+        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养', '营养健康']
       });
       return;
     }
@@ -81,7 +81,7 @@ Page({
     }).catch(function(err) {
       if (app.globalData.isDebug) console.error('加载热门搜索失败', err);
       that.setData({
-        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养']
+        hotKeywords: ['情绪管理', '孩子哭闹', '睡眠问题', '饮食习惯', '社交能力', '专注力培养', '营养健康']
       });
     });
   },
@@ -130,18 +130,26 @@ Page({
       var fallback = [
         {
           id: 'local_parenting_001',
-          title: '3-6岁孩子情绪表达的4个引导技巧',
+          title: '4-5岁孩子情绪表达的4个引导技巧',
           summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
           category: '情绪管理',
-          age_group: '3-6岁',
+          age_group: '4-5岁',
           isFavorite: false
         },
         {
           id: 'local_parenting_004',
-          title: '认识身体边界：背心短裤盖住的地方',
-          summary: '用温和的方式帮助孩子理解隐私部位、拒绝和告诉可信任的大人。',
-          category: '性教育',
-          age_group: '3-6岁',
+          title: '早餐营养搭配：让早晨吃进去，也吃得稳',
+          summary: '主食、蛋白和蔬果搭配得当，更有利于上午精力稳定。',
+          category: '营养健康',
+          age_group: '5-6岁',
+          isFavorite: false
+        },
+        {
+          id: 'local_parenting_005',
+          title: '专注力环境搭建：先减干扰，再谈坚持',
+          summary: '把材料和任务长度一起收窄，孩子更容易进入专注状态。',
+          category: '认知发展',
+          age_group: '5-6岁',
           isFavorite: false
         }
       ].filter(function(item) {
@@ -151,10 +159,10 @@ Page({
         fallback = [
           {
             id: 'local_parenting_001',
-            title: '3-6岁孩子情绪表达的4个引导技巧',
+            title: '4-5岁孩子情绪表达的4个引导技巧',
             summary: '换个关键词试试，也可以从热门搜索进入。',
             category: '情绪管理',
-            age_group: '3-6岁',
+            age_group: '4-5岁',
             isFavorite: false
           }
         ];

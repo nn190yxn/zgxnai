@@ -32,12 +32,12 @@ Page({
     var map = {
       local_parenting_001: {
         id: 'local_parenting_001',
-        title: '3-6岁孩子情绪表达的4个引导技巧',
+        title: '4-5岁孩子情绪表达的4个引导技巧',
         summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
         content: '先接住情绪，再引导行为。家长可通过描述感受、提供选择来帮助孩子表达。',
         keyPoints: ['先共情后引导', '允许表达但设边界', '重复练习情绪词汇'],
         category: '情绪管理',
-        age_group: '3-6岁',
+        age_group: '4-5岁',
         isFavorite: false
       },
       local_parenting_002: {
@@ -47,7 +47,7 @@ Page({
         content: '固定洗漱、阅读、关灯顺序，尽量每天同一时间执行。',
         keyPoints: ['流程固定', '减少睡前刺激', '保持卧室光线柔和'],
         category: '行为习惯',
-        age_group: '3-6岁',
+        age_group: '5-6岁',
         isFavorite: false
       },
       local_parenting_003: {
@@ -57,7 +57,27 @@ Page({
         content: '帮助孩子说出需求和感受，示范轮流、交换、等待等策略。',
         keyPoints: ['先分开情绪', '表达需求', '给出协商方案'],
         category: '社交能力',
-        age_group: '3-6岁',
+        age_group: '4-5岁',
+        isFavorite: false
+      },
+      local_parenting_004: {
+        id: 'local_parenting_004',
+        title: '早餐营养搭配：让早晨吃进去，也吃得稳',
+        summary: '主食、蛋白和蔬果搭配得当，更有利于上午精力稳定。',
+        content: '早餐先保证主食与蛋白，再按接受度补水果或蔬菜，孩子上午状态通常会更稳。',
+        keyPoints: ['先保证吃进去', '每餐补一种蛋白', '高糖饮料少介入'],
+        category: '营养健康',
+        age_group: '5-6岁',
+        isFavorite: false
+      },
+      local_parenting_005: {
+        id: 'local_parenting_005',
+        title: '专注力环境搭建：先减干扰，再谈坚持',
+        summary: '把材料和任务长度一起收窄，孩子更容易进入专注状态。',
+        content: '桌面先只留当前任务材料，任务时间先短后长，完成后立刻给出具体反馈。',
+        keyPoints: ['单任务环境', '任务拆短', '完成后即时反馈'],
+        category: '认知发展',
+        age_group: '5-6岁',
         isFavorite: false
       }
     };
@@ -67,9 +87,11 @@ Page({
 
   getLocalRelatedArticles: function(currentId) {
     return [
-      { id: 'local_parenting_001', title: '3-6岁孩子情绪表达的4个引导技巧' },
+      { id: 'local_parenting_001', title: '4-5岁孩子情绪表达的4个引导技巧' },
       { id: 'local_parenting_002', title: '建立睡前流程：让孩子更快入睡' },
-      { id: 'local_parenting_003', title: '同伴冲突时，家长如何做“翻译官”' }
+      { id: 'local_parenting_003', title: '同伴冲突时，家长如何做“翻译官”' },
+      { id: 'local_parenting_004', title: '早餐营养搭配：让早晨吃进去，也吃得稳' },
+      { id: 'local_parenting_005', title: '专注力环境搭建：先减干扰，再谈坚持' }
     ].filter(function(item) {
       return item.id !== currentId;
     });
