@@ -2468,6 +2468,18 @@ function buildReadingStructuredSections(row, practiceMaterialSection, parsedCont
     extension.push(`【家长提醒】${row.tips}`);
   }
 
+  if (!analysis.length) {
+    analysis.push(`【这节任务在练什么】${row.objective || '先读懂材料，再把答案和依据连起来。'}`);
+    analysis.push(`【怎么带着读】${row.parent_prompt || '先读完整段，再回到关键句找线索。'}`);
+    if (row.example_answer) {
+      analysis.push(`【示范回答】${row.example_answer}`);
+    }
+  }
+
+  if (!extension.length) {
+    extension.push('【结束复盘】请孩子最后自己说一遍：这次答案是从哪一句或哪一个线索看出来的。');
+  }
+
   return {
     passage: practiceMaterialSection.value,
     passageLabel: practiceMaterialSection.label || '',
