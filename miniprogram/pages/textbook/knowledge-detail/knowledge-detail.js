@@ -112,16 +112,10 @@ Page({
         }));
       }
     }).catch(function(err) {
-      if (!app.shouldUseMockFallback()) {
-        app.showApiError('知识点详情加载失败');
-        that.setData({
-          knowledgeDetail: null
-        });
-        return;
-      }
-
-      // 仅在真实接口失败时回退到本地模拟数据
-      that.applyKnowledgeDetail(that.getMockDetail());
+      app.showApiError('知识点详情加载失败');
+      that.setData({
+        knowledgeDetail: null
+      });
     }).finally(function() {
       that.setData({
         loading: false
