@@ -77,7 +77,7 @@ Page({
       });
     }).catch(function() {
       that.setData({
-        hotKeywords: ['孩子发脾气', '睡前拖延', '挑食', '坐不住', '同伴冲突', '早晨磨蹭']
+        hotKeywords: []
       });
     });
   },

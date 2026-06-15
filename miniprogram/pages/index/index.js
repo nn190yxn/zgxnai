@@ -370,6 +370,23 @@ Page({
     });
   },
 
+  applyDailyPlanLoadError: function(message) {
+    var text = message || '今日建议加载失败，请稍后重试。';
+    this.setData({
+      dailyPlanCards: [],
+      dailyPlanDate: '',
+      dailyPlanCompletedCount: 0,
+      dailyPlanEmptyText: text,
+      growthStatus: Object.assign({}, this.data.growthStatus, {
+        todaySuggestion: text
+      }),
+      todayTask: {
+        title: '今日建议暂时无法加载',
+        duration: '请稍后刷新重试'
+      }
+    });
+  },
+
   trackDailyPlanEvent: function(eventType, plan, extraMeta) {
     if (!plan || !eventType) {
       return;
@@ -443,7 +460,7 @@ Page({
       that.applyDailyPlan(cards, res || {});
       that.trackDailyPlanView(that.data.dailyPlanCards, res || {});
     }).catch(function() {
-      that.applyDailyPlan(that.getGuestDailyPlanCards(), { date: '' });
+      that.applyDailyPlanLoadError('今日建议加载失败，请稍后重试。');
     }).finally(function() {
       that.setData({ dailyPlanLoading: false });
     });
@@ -481,11 +498,7 @@ Page({
         that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'logged_in_preview' });
       }
     }).catch(function() {
-      that.setData({ membershipTouchpointVisible: true });
-      if (!that._membershipTouchpointExposed) {
-        that._membershipTouchpointExposed = true;
-        that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'fallback' });
-      }
+      that.setData({ membershipTouchpointVisible: false });
     });
   },
 

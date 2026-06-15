@@ -166,6 +166,17 @@ Page({
       this.setData({
         recipeId: options.id
       });
+      if (app.shouldUseMockFallback()) {
+        var mockRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
+        this.setData({
+          recipe: mockRecipe,
+          isFavorite: !!mockRecipe.isFavorite,
+          imageLoaded: false,
+          offlineFallback: true,
+          loading: false
+        });
+        return;
+      }
       var cachedRecipe = this.getCachedRecipeDetail(options.id);
       if (cachedRecipe) {
         this.setData({
@@ -183,17 +194,18 @@ Page({
         }
         return;
       }
-      var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
-      this.setData({
-        recipe: fallbackRecipe,
-        isFavorite: !!fallbackRecipe.isFavorite,
-        imageLoaded: false,
-        offlineFallback: true,
-        loading: false
-      });
-      if (!String(options.id).startsWith('local_')) {
-        this.loadRecipeDetail({ silent: true });
+      if (String(options.id).startsWith('local_')) {
+        var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
+        this.setData({
+          recipe: fallbackRecipe,
+          isFavorite: !!fallbackRecipe.isFavorite,
+          imageLoaded: false,
+          offlineFallback: true,
+          loading: false
+        });
+        return;
       }
+      this.loadRecipeDetail({ silent: false });
     }
   },
 

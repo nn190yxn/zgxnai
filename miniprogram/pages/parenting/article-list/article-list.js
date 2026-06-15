@@ -189,9 +189,6 @@ Page({
       if (!Array.isArray(list)) {
         list = [];
       }
-      if (!list.length && that.data.page === 1) {
-        list = that.getLocalArticles();
-      }
       list.forEach(function(item) {
         that.normalizeArticleCard(item);
         item.imageLoaded = false;
@@ -203,7 +200,7 @@ Page({
         page: that.data.page + 1
       });
     }).catch(function(err) {
-      if (that.data.page === 1) {
+      if (that.data.page === 1 && app.shouldUseMockFallback()) {
         that.setData({
           articleList: that.getLocalArticles(),
           hasMore: false,
