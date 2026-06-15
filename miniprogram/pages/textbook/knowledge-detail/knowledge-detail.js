@@ -172,7 +172,37 @@ Page({
     normalized.parent_prompt = normalized.parent_prompt || '';
     normalized.objective = normalized.objective || '';
     normalized.material = normalized.material || '';
+    normalized.practice_material = normalized.practice_material || '';
+    normalized.practice_material_label = normalized.practice_material_label || '';
+    normalized.reading_sections = this.normalizeReadingSections(normalized.reading_sections, normalized);
+    normalized.has_reading_sections = !!(
+      normalized.reading_sections.passage ||
+      normalized.reading_sections.questions.length ||
+      normalized.reading_sections.analysis.length ||
+      normalized.reading_sections.extension.length
+    );
+    normalized.display_material_label = normalized.has_reading_sections ? '辅助材料' : '准备材料';
+    normalized.display_material_value = normalized.has_reading_sections
+      ? '阅读正文已提供，可准备铅笔，方便圈关键词或记录答案。'
+      : (normalized.material || '准备当日阅读或生活场景材料');
     normalized.duration = normalized.duration || 10;
+    return normalized;
+  },
+
+  normalizeReadingSections: function(sections, detail) {
+    var normalized = Object.assign({
+      passage: '',
+      passageLabel: '',
+      questions: [],
+      analysis: [],
+      extension: []
+    }, sections || {});
+
+    normalized.passage = normalized.passage || detail.practice_material || '';
+    normalized.passageLabel = normalized.passageLabel || detail.practice_material_label || '';
+    normalized.questions = Array.isArray(normalized.questions) ? normalized.questions.filter(Boolean) : [];
+    normalized.analysis = Array.isArray(normalized.analysis) ? normalized.analysis.filter(Boolean) : [];
+    normalized.extension = Array.isArray(normalized.extension) ? normalized.extension.filter(Boolean) : [];
     return normalized;
   },
 
@@ -317,6 +347,22 @@ Page({
           title: '看图找线索',
           desc: '用3页画面完成一次轻量共读'
         },
+        reading_sections: {
+          passage: '封面是一只背着红书包的小兔子。第一页里，小兔子站在门口回头看妈妈。第二页里，天上开始下雨，小兔子把书包抱在怀里快步往前走。第三页里，小兔子进了教室，把湿湿的雨伞放在门边。',
+          passageLabel: '练习材料示例',
+          questions: ['你看到谁了？它在哪里？后来发生了什么？'],
+          analysis: [
+            '这节任务先练孩子从画面里抓主角、地点和变化，不急着要求完整复述。',
+            '【怎么带着读】先看封面猜角色，再逐页指认画面，最后把故事变化连成一句话。',
+            '【卡住时怎么帮】孩子只说词语也可以，家长顺着补成完整句。'
+          ],
+          extension: [
+            '【结束动作】读完后回头问孩子：你最先看懂的是哪一页的哪个变化？',
+            '【家长提醒】每次只抓一个主角和一个变化，阅读压力会更小。'
+          ]
+        },
+        practice_material_label: '练习材料示例',
+        practice_material: '封面是一只背着红书包的小兔子。第一页里，小兔子站在门口回头看妈妈。第二页里，天上开始下雨，小兔子把书包抱在怀里快步往前走。第三页里，小兔子进了教室，把湿湿的雨伞放在门边。',
         explain: {
           title: '亲子共读任务',
           content: '这节任务不是让孩子背故事，而是让孩子在画面里找到信息。\n\n【材料准备】\n- 选择一本画面清楚、情节简单的绘本\n- 每次只读3-5页，控制在10分钟内\n- 家长准备3个问题：谁、在哪里、发生了什么\n\n【陪读步骤】\n1. 先看封面，猜一猜主角是谁\n2. 读一页后停下来，请孩子指一指画面\n3. 读到关键变化时问：后来怎么了\n4. 最后请孩子用一句话说出故事变化\n\n【家长话术】\n你看到谁了？它在哪里？后来发生了什么？'
@@ -367,6 +413,22 @@ Page({
           title: '读短文答问题',
           desc: '围绕谁、在哪、为什么做理解'
         },
+        reading_sections: {
+          passage: '春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。',
+          passageLabel: '练习短文',
+          questions: ['小朋友为什么轻轻地走过去？'],
+          analysis: [
+            '这节任务先练孩子找出时间、地点、人物和动作，再回答一个最直接的原因问题。',
+            '【怎么带着读】先完整读一遍，再回到最后一句找支持答案的词。',
+            '【回答句式】可以先说答案，再补一句“我是从最后一句看出来的”。'
+          ],
+          extension: [
+            '【结束动作】请孩子用一句话复述这段短文。',
+            '【家长提醒】先问事实，再问原因，孩子更容易进入理解状态。'
+          ]
+        },
+        practice_material_label: '练习短文',
+        practice_material: '春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。',
         explain: {
           title: '理解提问任务',
           content: '这节任务训练孩子读完后抓住关键信息。\n\n【阅读材料】\n春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。\n\n【训练目标】\n- 找出时间、地点、人物和动作\n- 能回答一个“为什么”问题\n- 用一句话复述这段内容\n\n【操作步骤】\n1. 家长读一遍，孩子听\n2. 让孩子说出看到了什么\n3. 问：小朋友为什么轻轻走过去\n4. 请孩子用一句话讲给家长听'
@@ -931,14 +993,18 @@ Page({
 
   copySessionPlan: function() {
     var detail = this.data.knowledgeDetail || {};
+    var readingSections = detail.reading_sections || {};
     var lines = [
       '今日能力成长带练卡',
       `任务：${detail.title || detail.name || '能力成长任务'}`,
       `目标：${detail.objective || '带孩子完成一次短时互动'}`,
-      `材料：${detail.material || '准备当日阅读或生活场景材料'}`,
+      `${detail.display_material_label || '准备材料'}：${detail.display_material_value || detail.material || '准备当日阅读或生活场景材料'}`,
       `提问：${detail.parent_prompt || '围绕谁、做什么、为什么追问'}`,
       `时长：约${detail.duration || 10}分钟`
     ];
+    if (readingSections.passage) {
+      lines.splice(3, 0, `阅读正文：${readingSections.passage}`);
+    }
     wx.setClipboardData({
       data: lines.join('\n'),
       success: function() {

@@ -2304,23 +2304,164 @@ function getChapterDisplayName(subjectCode, level) {
 
 function buildReadingTaskExplainContent(row) {
   const steps = String(row.steps || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
+  const materialLabel = row.material_label || '材料准备';
   const sections = [
     `【能力方向】${getSubjectDisplayName(row.subject_code)}`,
     `【适龄阶段】${row.age_range || '通用'}`,
     `【训练目标】${row.objective || row.title}`,
-    `【材料准备】${row.material || '准备当日阅读或生活场景材料'}`,
+    `【${materialLabel}】${row.material || '准备当日阅读或生活场景材料'}`,
     `【家长提问】${row.parent_prompt || '围绕“谁、做什么、为什么”展开追问'}`
   ];
   if (steps.length) {
     sections.push(`【操作步骤】\n${steps.map((item, index) => `${index + 1}. ${item}`).join('\n')}`);
   }
   if (row.content) {
-    sections.push(`【训练说明】${row.content}`);
+    sections.push(`【训练说明】\n${row.content}`);
   }
   if (row.tips) {
     sections.push(`【使用提醒】${row.tips}`);
   }
   return sections.join('\n\n');
+}
+
+function extractBracketSection(content, labels) {
+  const source = String(content || '');
+  const normalizedLabels = (labels || []).map((label) => String(label || '').trim()).filter(Boolean);
+  if (!source || !normalizedLabels.length) {
+    return { value: '', label: '', content: source };
+  }
+
+  const lines = source.split(/\r?\n/);
+  const extracted = [];
+  const remained = [];
+  let activeLabel = '';
+  let foundLabel = '';
+
+  for (const rawLine of lines) {
+    const line = String(rawLine || '');
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^【([^】]+)】\s*(.*)$/);
+    if (headingMatch) {
+      const label = headingMatch[1].trim();
+      const isTarget = normalizedLabels.includes(label);
+      activeLabel = isTarget ? label : '';
+      if (isTarget) {
+        foundLabel = label;
+        if (headingMatch[2]) {
+          extracted.push(headingMatch[2].trim());
+        }
+        continue;
+      }
+    }
+
+    if (activeLabel) {
+      if (trimmed) {
+        extracted.push(trimmed);
+      }
+      continue;
+    }
+
+    remained.push(line);
+  }
+
+  return {
+    value: extracted.join('\n').trim(),
+    label: foundLabel || normalizedLabels[0],
+    content: remained.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  };
+}
+
+function splitBracketSections(content) {
+  const source = String(content || '');
+  if (!source) {
+    return { intro: '', sections: {} };
+  }
+
+  const lines = source.split(/\r?\n/);
+  const intro = [];
+  const sections = {};
+  let currentLabel = '';
+
+  for (const rawLine of lines) {
+    const line = String(rawLine || '');
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^【([^】]+)】\s*(.*)$/);
+    if (headingMatch) {
+      currentLabel = headingMatch[1].trim();
+      sections[currentLabel] = sections[currentLabel] || [];
+      if (headingMatch[2]) {
+        sections[currentLabel].push(headingMatch[2].trim());
+      }
+      continue;
+    }
+
+    if (!trimmed) {
+      continue;
+    }
+
+    if (currentLabel) {
+      sections[currentLabel].push(trimmed);
+      continue;
+    }
+
+    intro.push(trimmed);
+  }
+
+  return {
+    intro: intro.join(' ').trim(),
+    sections
+  };
+}
+
+function getReadingDisplayMaterial(row, practiceMaterialSection) {
+  if (practiceMaterialSection && practiceMaterialSection.value) {
+    return '阅读正文已提供，可准备铅笔，方便圈关键词或记录答案。';
+  }
+  return row.material || '准备当日阅读或生活场景材料';
+}
+
+function getReadingDisplayMaterialLabel(practiceMaterialSection) {
+  if (practiceMaterialSection && practiceMaterialSection.value) {
+    return '辅助材料';
+  }
+  return '材料准备';
+}
+
+function buildReadingStructuredSections(row, practiceMaterialSection, parsedContent) {
+  const contentSections = (parsedContent && parsedContent.sections) || {};
+  const intro = (parsedContent && parsedContent.intro) || '';
+  const analysis = [];
+  const extension = [];
+
+  if (intro) {
+    analysis.push(intro);
+  }
+
+  ['适龄重点', '家长支持', '这节任务在练什么', '怎么判断原因和结果', '陪练顺序', '怎么抓重点', '怎么带着读', '卡住时怎么帮', '回答句式', '示范回答'].forEach(function(label) {
+    const values = contentSections[label] || [];
+    if (values.length) {
+      analysis.push(`【${label}】${values.join(' ')}`.trim());
+    }
+  });
+
+  ['结束动作', '结束复盘'].forEach(function(label) {
+    const values = contentSections[label] || [];
+    if (values.length) {
+      extension.push(`【${label}】${values.join(' ')}`.trim());
+    }
+  });
+
+  if (row.tips) {
+    extension.push(`【家长提醒】${row.tips}`);
+  }
+
+  return {
+    passage: practiceMaterialSection.value,
+    passageLabel: practiceMaterialSection.label || '',
+    questions: [row.parent_prompt || '围绕“谁、做什么、为什么”展开追问'].filter(Boolean),
+    analysis,
+    extension
+  };
 }
 
 function buildReadingTaskPractices(row, keyPoints) {
@@ -4642,6 +4783,7 @@ async function parentingLikeHandler(req, res) {
 }
 
 function normalizeReadingTask(row) {
+  const practiceMaterialSection = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
   return {
     id: row.id,
     task_code: row.task_code,
@@ -4650,7 +4792,7 @@ function normalizeReadingTask(row) {
     age_range: row.age_range,
     difficulty: row.difficulty,
     duration: row.duration,
-    material: row.material,
+    material: getReadingDisplayMaterial(row, practiceMaterialSection),
     objective: row.objective,
     steps: row.steps ? String(row.steps).split(/\n+/).filter(Boolean) : [],
     parent_prompt: row.parent_prompt || '',
@@ -4825,8 +4967,17 @@ async function educationKnowledgeDetailHandler(req, res) {
   const row = rows[0];
   const keyPoints = String(row.steps || '').split(/\n+/).filter(Boolean).map((content, index) => ({ id: index + 1, content }));
   const subjectName = getSubjectDisplayName(row.subject_code);
-  const explainContent = buildReadingTaskExplainContent(row);
+  const practiceMaterialSection = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
+  const parsedContent = splitBracketSections(practiceMaterialSection.content);
+  const displayMaterial = getReadingDisplayMaterial(row, practiceMaterialSection);
+  const displayMaterialLabel = getReadingDisplayMaterialLabel(practiceMaterialSection);
+  const explainContent = buildReadingTaskExplainContent(Object.assign({}, row, {
+    material_label: displayMaterialLabel,
+    material: displayMaterial,
+    content: practiceMaterialSection.content
+  }));
   const practices = buildReadingTaskPractices(row, keyPoints);
+  const readingSections = buildReadingStructuredSections(row, practiceMaterialSection, parsedContent);
   res.json({
     success: true,
     data: {
@@ -4850,7 +5001,11 @@ async function educationKnowledgeDetailHandler(req, res) {
       difficulties: row.tips ? [{ id: 1, content: row.tips }] : [],
       examples: row.example_answer ? [{ id: 1, title: '参考答案', question: row.parent_prompt || row.objective || row.title, answer: row.example_answer, analysis: row.content || row.tips || '' }] : [],
       practices,
-      material: row.material || '',
+      practice_material: practiceMaterialSection.value,
+      practice_material_label: practiceMaterialSection.value ? practiceMaterialSection.label : '',
+      reading_sections: readingSections,
+      material_label: displayMaterialLabel,
+      material: displayMaterial,
       objective: row.objective || '',
       parent_prompt: row.parent_prompt || '',
       duration: row.duration || 10,

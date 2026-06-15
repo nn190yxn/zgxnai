@@ -68,8 +68,8 @@
               <text class="coach-toolkit-value">{{knowledgeDetail.objective || '带孩子完成一次能力成长互动'}}</text>
             </view>
             <view class="coach-toolkit-item">
-              <text class="coach-toolkit-label">准备材料</text>
-              <text class="coach-toolkit-value">{{knowledgeDetail.material || '准备当日阅读或生活场景材料'}}</text>
+              <text class="coach-toolkit-label">{{knowledgeDetail.display_material_label}}</text>
+              <text class="coach-toolkit-value">{{knowledgeDetail.display_material_value}}</text>
             </view>
             <view class="coach-toolkit-item">
               <text class="coach-toolkit-label">家长提问</text>
@@ -88,6 +88,25 @@
             </view>
           </view>
         </view>
+        <view class="practice-material-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.passage}}">
+          <view class="section-head-row material-head-row">
+            <text class="section-title">阅读正文</text>
+            <text class="section-badge soft">先读这段</text>
+          </view>
+          <text class="practice-material-text" user-select="true">{{knowledgeDetail.reading_sections.passage}}</text>
+        </view>
+        <view class="reading-structure-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.questions.length}}">
+          <view class="section-head-row">
+            <text class="section-title">家长先问这句</text>
+            <text class="section-badge">跟着提问</text>
+          </view>
+          <view class="reading-structure-list">
+            <view class="reading-structure-item question" wx:for="{{knowledgeDetail.reading_sections.questions}}" wx:key="index">
+              <text class="reading-structure-mark">问</text>
+              <text class="reading-structure-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
         <view class="step-checklist-card" wx:if="{{stepChecklist.length > 0}}">
           <view class="step-checklist-head">
             <view class="step-checklist-heading">
@@ -103,7 +122,31 @@
             </view>
           </view>
         </view>
-        <view class="explain-section">
+        <view class="reading-structure-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.analysis.length}}">
+          <view class="section-head-row">
+            <text class="section-title">怎么带着读</text>
+            <text class="section-badge soft">边读边讲</text>
+          </view>
+          <view class="reading-structure-list">
+            <view class="reading-structure-item" wx:for="{{knowledgeDetail.reading_sections.analysis}}" wx:key="index">
+              <text class="reading-structure-mark">解</text>
+              <text class="reading-structure-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="reading-structure-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.extension.length}}">
+          <view class="section-head-row">
+            <text class="section-title">延伸练习</text>
+            <text class="section-badge warn">读完再做</text>
+          </view>
+          <view class="reading-structure-list">
+            <view class="reading-structure-item extension" wx:for="{{knowledgeDetail.reading_sections.extension}}" wx:key="index">
+              <text class="reading-structure-mark">练</text>
+              <text class="reading-structure-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="explain-section" wx:if="{{!knowledgeDetail.has_reading_sections}}">
           <view class="section-head-row">
             <text class="section-title">{{knowledgeDetail.explain.title}}</text>
             <text class="section-badge">分段讲解</text>
