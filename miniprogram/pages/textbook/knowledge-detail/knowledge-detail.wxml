@@ -48,6 +48,7 @@
 
     <!-- 内容区域 -->
     <view class="content-area">
+      <view class="debug-build-tag">调试版本 {{debugBuildId}}</view>
       <!-- 知识点讲解 -->
       <view class="tab-content" wx:if="{{currentTab === 'explain'}}">
         <view class="detail-visual-card" wx:if="{{knowledgeDetail.visual}}">

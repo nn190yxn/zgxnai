@@ -3,6 +3,7 @@ var app = getApp();
 
 Page({
   data: {
+    debugBuildId: 'a11ec21',
     // 知识点信息
     pointId: null,
     pointName: '',
@@ -46,6 +47,7 @@ Page({
 
   onLoad: function(options) {
     var that = this;
+    console.log('[knowledge-detail] build', that.data.debugBuildId, 'options=', options || {});
     
     // 获取页面参数
     if (options.pointId) {
@@ -91,6 +93,12 @@ Page({
   // 加载知识点详情
   loadKnowledgeDetail: function(fromPullDown) {
     var that = this;
+    console.log('[knowledge-detail] request detail', {
+      build: that.data.debugBuildId,
+      pointId: that.data.pointId,
+      subjectCode: that.data.subjectCode,
+      childId: that.data.childId || ((app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id) || 0)
+    });
     
     that.setData({
       loading: true
@@ -106,12 +114,14 @@ Page({
       }
     }).then(function(res) {
       if (res) {
+        console.log('[knowledge-detail] response keys', Object.keys(res || {}));
         that.applyKnowledgeDetail(res);
         app.trackKbEvent(that.buildKnowledgeTrackPayload({
           event_type: 'knowledge_detail_view'
         }));
       }
     }).catch(function(err) {
+      console.error('[knowledge-detail] request failed', err);
       app.showApiError('知识点详情加载失败');
       that.setData({
         knowledgeDetail: null
