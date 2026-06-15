@@ -176,9 +176,6 @@ Page({
       if (!Array.isArray(list)) {
         list = [];
       }
-      if (!list.length && app.shouldUseMockFallback()) {
-        list = that.getLocalArticles();
-      }
       list = list.map(function(item) {
         return that.normalizeArticleCard(item);
       });

@@ -324,9 +324,6 @@ Page({
       if (!Array.isArray(list)) {
         list = [];
       }
-      if (!list.length && app.shouldUseMockFallback()) {
-        list = that.getLocalRecipes();
-      }
       list = list.map(function(item) {
         return that.buildRecipeCardData(item);
       });
