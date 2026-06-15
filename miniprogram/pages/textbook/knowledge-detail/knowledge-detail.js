@@ -128,11 +128,13 @@ Page({
 
   applyKnowledgeDetail: function(detail) {
     var normalizedDetail = this.normalizeKnowledgeDetail(detail || {});
-    var noteContent = this.loadSavedNote(this.data.pointId);
-    var stepChecklist = this.buildStepChecklist(normalizedDetail);
+    var stablePointId = normalizedDetail.id || this.data.pointId;
+    var noteContent = this.loadSavedNote(stablePointId);
+    var stepChecklist = this.buildStepChecklist(normalizedDetail, stablePointId);
     var explainBlocks = this.buildExplainBlocks(normalizedDetail.explain && normalizedDetail.explain.content);
     var displayTitle = normalizedDetail.name || normalizedDetail.title || this.data.pointName || '知识点详情';
     this.setData({
+      pointId: stablePointId,
       pointName: displayTitle,
       knowledgeDetail: normalizedDetail,
       practiceList: normalizedDetail.practices || [],
@@ -275,17 +277,18 @@ Page({
 
   buildKnowledgeTrackPayload: function(extra) {
     var detail = this.data.knowledgeDetail || {};
+    var stablePointId = detail.id || this.data.pointId || '';
     var baseEventMeta = {
       title: this.data.pointName || detail.name || detail.title || '',
       subject_code: this.data.subjectCode || '',
       page: 'knowledge_detail'
     };
     var payload = Object.assign({
-      task_id: String(this.data.pointId || detail.id || ''),
+      task_id: String(stablePointId),
       module_key: this.getKnowledgeContentType() === 'reading_task' ? 'reading_tasks' : 'education',
       page_key: 'knowledge_detail',
       content_type: this.getKnowledgeContentType(),
-      content_id: String(this.data.pointId || detail.id || ''),
+      content_id: String(stablePointId),
       event_meta: baseEventMeta
     }, extra || {});
     payload.event_meta = Object.assign(baseEventMeta, (extra && extra.event_meta) || {});
@@ -297,9 +300,9 @@ Page({
     return (notes[pointId] && notes[pointId].content) || '';
   },
 
-  buildStepChecklist: function(detail) {
+  buildStepChecklist: function(detail, pointId) {
     var checklistStore = wx.getStorageSync('knowledgeStepChecklist') || {};
-    var savedMap = checklistStore[this.data.pointId] || {};
+    var savedMap = checklistStore[pointId] || {};
     var sourceList = (detail && detail.keyPoints && detail.keyPoints.length ? detail.keyPoints : []).slice(0, 6);
     return sourceList.map(function(item, index) {
       return {

@@ -63,13 +63,15 @@
 .point-tags {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .tag {
   font-size: 22rpx;
   padding: 6rpx 16rpx;
   border-radius: 8rpx;
-  margin-right: 12rpx;
+  margin-right: 0;
 }
 
 .tag.difficulty-1 {
