@@ -194,15 +194,185 @@ function buildTaskSteps(subjectCode, objective, customSteps) {
   return ['先观察当前情境', '提出一个猜想、问题或办法', '说出你的理由', '再想一种不同的可能或改进方案'].join('\n');
 }
 
-function buildTaskContent(subjectCode, ageProfile, objective) {
-  const subjectMap = {
-    reading_comprehension: '阅读理解',
-    logical_thinking: '逻辑思维',
-    expression_communication: '表达沟通',
-    learning_metacognition: '学习元认知',
-    inquiry_creativity: '探究创造'
-  };
-  return `${ageProfile.age_range}阶段的${subjectMap[subjectCode]}任务围绕“${objective}”展开，重点是让孩子在具体材料里形成稳定的思考和表达动作。家长在陪练时先接住孩子当前的回答，再用一个追问把任务往前推一步。\n\n【适龄重点】${ageProfile.focus}\n【家长支持】${ageProfile.coach}\n【建议节奏】先用1分钟准备材料，再用主体时间完成互动，最后用1句话收口。\n【结束动作】请孩子自己说出今天最重要的一个发现、一个理由，或者一个解决办法。`;
+function joinTaskContentSections(sections) {
+  return sections.filter(Boolean).join('\n');
+}
+
+function buildReadingPracticeExample(taskCode, title) {
+  const titleText = String(title || '');
+  const code = String(taskCode || '');
+
+  if (code.includes('cover_guess') || titleText.includes('封面')) {
+    return '【练习材料示例】封面上有一只背着小书包的小兔子，站在岔路口边，远处还有一盏亮着的小路灯。先请孩子看角色、地点和表情，再猜故事可能会发生什么。';
+  }
+  if (code.includes('fact_find') || titleText.includes('谁在哪里做什么')) {
+    return '【练习材料示例】操场边，小宇蹲在花坛旁边，手里拿着一个小喷水壶，正在给刚种下的花苗浇水。可以先问“是谁、在哪里、在做什么”。';
+  }
+  if (code.includes('sequence_story') || code.includes('picture_sequence') || titleText.includes('顺着讲') || titleText.includes('排画面')) {
+    return '【练习材料示例】放学后，小朋友先把雨伞收好，再换上室内鞋，最后把作业本放到桌子上。带孩子按“先、再、最后”把顺序讲清楚。';
+  }
+  if (code.includes('cause_effect') || titleText.includes('原因') || titleText.includes('因果')) {
+    return '【练习短文】午休前，小杰把水杯放在教室门边。下课时，门口的同学来回经过，不小心碰倒了水杯，地上洒了一片水。老师看到后，先请大家停下来，再拿来拖把把地面擦干。';
+  }
+  if (code.includes('key_point') || code.includes('paragraph_main') || code.includes('summary_sentence') || titleText.includes('重点') || titleText.includes('主旨') || titleText.includes('概括')) {
+    return '【练习短文】最近一周，乐乐每天睡前都会先收拾书包、再洗漱、最后读十分钟故事书。刚开始她总要大人催，现在到了时间就会主动去准备。妈妈发现，固定顺序以后，乐乐晚上更容易安静下来，第二天早晨出门也没有以前那么慌乱。';
+  }
+  if (code.includes('compare_view') || code.includes('reason_compare') || titleText.includes('比一比') || titleText.includes('比原因')) {
+    return '【练习材料示例】排队领点心时，明明看到队伍动得很慢，就一直往前挤；安安站在原地，等前面的人拿完再往前走。先请孩子说两个人分别怎么做，再比较他们为什么会做出不同选择。';
+  }
+  if (code.includes('emotion_clue') || titleText.includes('表情') || titleText.includes('心情')) {
+    return '【练习材料示例】小朋友站在舞台旁边，双手抓着衣角，眉头微微皱着，眼睛一直看向台下的妈妈。可以带孩子从表情、动作和场景一起判断情绪。';
+  }
+  if (code.includes('detail_seek') || code.includes('evidence_locate') || titleText.includes('细节') || titleText.includes('依据')) {
+    return '【练习短文】门口的鞋柜旁边放着一把还在滴水的蓝色小雨伞，地上也有一串湿脚印。晨晨轻轻把教室门关上，回到自己的座位时还特意绕过了正在午睡的小朋友。可以让孩子找出支持答案的具体细节。';
+  }
+  if (code.includes('ending_predict') || titleText.includes('猜结尾')) {
+    return '【练习短文】两个小朋友因为拼图最后一块怎么放争了起来。一个想马上自己试，另一个提议先看图再决定。说到这里故事先停住，让孩子根据前面的线索猜后面最可能怎么收尾。';
+  }
+  if (code.includes('fact_opinion') || titleText.includes('事实') || titleText.includes('想法')) {
+    return '【练习材料示例】“外面正在下雨”“这本书太有趣了”“桌上有三个苹果”“今天的操场看起来很冷清”。可以让孩子分一分哪句是事实，哪句是想法。';
+  }
+  if (code.includes('question_answer') || titleText.includes('自己问自己答')) {
+    return '【练习短文】晨晨忘了带彩笔，先低着头坐在座位上，后来鼓起勇气去找老师说明情况。老师借给他一盒彩笔，还提醒他回家后可以把明天要带的东西先放进书包。读完后先请孩子自己提一个最想问的问题。';
+  }
+  if (code.includes('life_connect') || titleText.includes('连生活')) {
+    return '【练习短文】点心时间到了，小雨发现自己忘了带水杯，只好先去找老师说明情况，再用一次性杯子接水。读完后可以问孩子：你有没有遇到过类似忘记带东西的情况？';
+  }
+  if (code.includes('title_guess') || titleText.includes('看标题')) {
+    return '【练习材料示例】标题是《小熊今天为什么迟到了》。先不急着看正文，只根据标题猜一猜：故事可能会写到谁、发生了什么事、最后会不会解决。';
+  }
+  return '【练习材料示例】小朋友读完一段短文后，先说出看到了什么，再回到原句找线索，最后用一句完整的话回答家长的提问。';
+}
+
+function buildReadingComprehensionContent(taskCode, ageProfile, title, objective, parentPrompt, exampleAnswer) {
+  const titleText = String(title || '');
+  const example = String(exampleAnswer || '').trim();
+  const prompt = String(parentPrompt || '').trim();
+  const practiceExample = buildReadingPracticeExample(taskCode, title);
+  const genericGuide = joinTaskContentSections([
+    `${ageProfile.age_range}阶段的阅读理解任务，重点是让孩子先读懂表面信息，再慢慢学会说明自己的判断依据。家长陪练时可以先让孩子说看到的事实，再补一个“为什么”追问，让理解从看见内容走向讲清理由。`,
+    `【适龄重点】${ageProfile.focus}`,
+    `【家长支持】${ageProfile.coach}`,
+    `【这节任务在练什么】${objective}`,
+    practiceExample,
+    '【怎么带着读】先完整读一遍，再回到关键句或关键画面，让孩子指出答案是从哪里看出来的。',
+    '【卡住时怎么帮】孩子答不出来时，先缩回到“谁、哪里、做了什么”这类事实问题，再追一个最直接的理由或重点。',
+    `【回答句式】${prompt || '可以先说答案，再补一句“我是从哪里看出来的”。'}`,
+    example ? `【示范回答】${example}` : '',
+    '【结束动作】请孩子最后自己说一遍：我今天是从哪条线索看懂这段内容的。'
+  ]);
+
+  if (titleText.includes('原因') || titleText.includes('因果') || titleText.includes('结果')) {
+    return joinTaskContentSections([
+      `${ageProfile.age_range}阶段的因果理解任务，重点是让孩子看见“前面发生了什么”以及“后来为什么会变成这样”。孩子一开始常常只会复述结果，家长可以带着他回到原句，先找出触发变化的那一步，再把原因和结果连成完整一句话。`,
+      `【适龄重点】${ageProfile.focus}`,
+      `【家长支持】${ageProfile.coach}`,
+      `【这节任务在练什么】${objective}`,
+      practiceExample,
+      '【怎么判断原因和结果】先找故事里最明显的变化或问题，再追问“它为什么会这样”，最后用“因为……所以……”把前后连起来。',
+      '【陪练顺序】先说发生了什么，再找导致变化的线索，最后确认结果是什么。孩子答不出来时，可以把关键句重读一遍，只追一个最直接的原因。',
+      `【回答句式】${prompt || '因为发生了什么，所以结果怎样。'}`,
+      example ? `【示范回答】${example}` : '',
+      `【结束动作】请孩子自己再说一遍：这次最关键的原因是什么，最后出现了什么结果。`
+    ]);
+  }
+
+  if (titleText.includes('重点') || titleText.includes('主旨') || titleText.includes('概括')) {
+    return joinTaskContentSections([
+      `${ageProfile.age_range}阶段的重点提炼任务，重点是让孩子从一页、一段或一个情节里抓住最值得记住的内容。家长可以先让孩子说出重复出现的人物、动作或变化，再一起压缩成一句最主要的话。`,
+      `【适龄重点】${ageProfile.focus}`,
+      `【家长支持】${ageProfile.coach}`,
+      `【这节任务在练什么】${objective}`,
+      practiceExample,
+      '【怎么抓重点】先看谁是主要人物，再看最关键的变化或结果，最后删掉不影响理解的小细节。',
+      '【卡住时怎么帮】当孩子说得太散时，可以先请他圈一个重复出现的词，再围绕这个词补出最重要的一句话。',
+      `【回答句式】${prompt || '这一页最重要的是……因为它说明了……'}`,
+      example ? `【示范回答】${example}` : '',
+      '【结束动作】请孩子用一句最短的话把这一页或这一段讲给别人听。'
+    ]);
+  }
+
+  return genericGuide;
+}
+
+function buildLogicalThinkingContent(ageProfile, objective, parentPrompt, exampleAnswer) {
+  const example = String(exampleAnswer || '').trim();
+  const prompt = String(parentPrompt || '').trim();
+  return joinTaskContentSections([
+    `${ageProfile.age_range}阶段的逻辑思维任务，重点是让孩子先看清条件、规则和线索，再说出自己的判断依据。家长陪练时先听孩子解释“为什么这样分、这样排、这样选”，逻辑能力才会真正稳下来。`,
+    `【适龄重点】${ageProfile.focus}`,
+    `【家长支持】${ageProfile.coach}`,
+    `【这节任务在练什么】${objective}`,
+    '【怎么带着想】先观察全部信息，再挑一个最关键的条件或标准说出来，然后完成比较、排序、分类或选择。',
+    '【卡住时怎么帮】当孩子只给答案时，先追一句“你是根据哪条线索这样想的”，再让他回到条件本身。',
+    `【提问句式】${prompt || '你这样判断时，最先用到的是哪条条件或标准？'}`,
+    example ? `【示范回答】${example}` : '',
+    '【结束复盘】请孩子最后说出：这次最有用的判断依据是什么。'
+  ]);
+}
+
+function buildExpressionContent(ageProfile, objective, parentPrompt, exampleAnswer) {
+  const example = String(exampleAnswer || '').trim();
+  const prompt = String(parentPrompt || '').trim();
+  return joinTaskContentSections([
+    `${ageProfile.age_range}阶段的表达沟通任务，重点是让孩子把脑子里的内容说出来，并慢慢形成“先说重点，再补理由、顺序或例子”的表达结构。家长先保护开口意愿，再帮孩子把零散词语补成完整句子。`,
+    `【适龄重点】${ageProfile.focus}`,
+    `【家长支持】${ageProfile.coach}`,
+    `【这节任务在练什么】${objective}`,
+    '【怎么带着说】先让孩子说一个最想讲的点，再补一句为什么、后来怎样，最后重说一遍让别人能听懂。',
+    '【卡住时怎么帮】当孩子只说词语时，可以先示范半句，让他补后半句；当孩子说得太散时，先帮他找一句最值得保留的核心句。',
+    `【提问句式】${prompt || '你最想先告诉我哪一点？再补一句为什么。'}`,
+    example ? `【示范回答】${example}` : '',
+    '【结束复盘】请孩子最后自己检查：别人能不能听懂我刚才最想表达的重点。'
+  ]);
+}
+
+function buildLearningContent(ageProfile, objective, parentPrompt, exampleAnswer) {
+  const example = String(exampleAnswer || '').trim();
+  const prompt = String(parentPrompt || '').trim();
+  return joinTaskContentSections([
+    `${ageProfile.age_range}阶段的学习元认知任务，重点是让孩子在开始前会想、进行中会看、做完后会复盘。家长陪练时把“计划、检查、调整、复盘”这些动作说出来，孩子才容易慢慢内化成自己的习惯。`,
+    `【适龄重点】${ageProfile.focus}`,
+    `【家长支持】${ageProfile.coach}`,
+    `【这节任务在练什么】${objective}`,
+    '【怎么带着做】开始前先说目标和步骤，中途停一下看进度，做完后再说这次哪一步最有效、下次还要不要继续用。',
+    '【卡住时怎么帮】当孩子只顾着往前做时，先请他停下来回答一个固定问题，例如“你现在做到哪一步了”或“接下来准备怎么做”。',
+    `【提问句式】${prompt || '你准备先做哪一步，做完后准备怎么检查？'}`,
+    example ? `【示范回答】${example}` : '',
+    '【结束复盘】请孩子最后说出：这次最管用的方法动作是什么。'
+  ]);
+}
+
+function buildInquiryContent(ageProfile, objective, parentPrompt, exampleAnswer) {
+  const example = String(exampleAnswer || '').trim();
+  const prompt = String(parentPrompt || '').trim();
+  return joinTaskContentSections([
+    `${ageProfile.age_range}阶段的探究创造任务，重点是让孩子先观察、再猜想、再找依据、最后形成一个可以继续尝试的办法。家长陪练时先接住孩子的猜法，再带着他回到线索、材料和可执行性。`,
+    `【适龄重点】${ageProfile.focus}`,
+    `【家长支持】${ageProfile.coach}`,
+    `【这节任务在练什么】${objective}`,
+    '【怎么带着探究】先把看到的现象说清楚，再提出一个猜想或方案，补一句理由，最后想想怎样验证、比较或继续改进。',
+    '【卡住时怎么帮】当孩子只会说“我觉得”时，可以追问“你是从哪里看出来的”或“我们怎样验证一下”。',
+    `【提问句式】${prompt || '你现在最想先试哪个想法？它为什么值得先试？'}`,
+    example ? `【示范回答】${example}` : '',
+    '【结束复盘】请孩子最后说出：这次最值得继续尝试的一个想法是什么。'
+  ]);
+}
+
+function buildTaskContent(subjectCode, ageProfile, taskCode, title, objective, parentPrompt, exampleAnswer) {
+  if (subjectCode === 'reading_comprehension') {
+    return buildReadingComprehensionContent(taskCode, ageProfile, title, objective, parentPrompt, exampleAnswer);
+  }
+  if (subjectCode === 'logical_thinking') {
+    return buildLogicalThinkingContent(ageProfile, objective, parentPrompt, exampleAnswer);
+  }
+  if (subjectCode === 'expression_communication') {
+    return buildExpressionContent(ageProfile, objective, parentPrompt, exampleAnswer);
+  }
+  if (subjectCode === 'learning_metacognition') {
+    return buildLearningContent(ageProfile, objective, parentPrompt, exampleAnswer);
+  }
+  return buildInquiryContent(ageProfile, objective, parentPrompt, exampleAnswer);
 }
 
 function buildReadingTasks() {
@@ -224,7 +394,7 @@ function buildReadingTasks() {
           objective: item[3],
           steps: buildTaskSteps(subjectCode, item[3], item[7]),
           parent_prompt: item[4],
-          content: buildTaskContent(subjectCode, ageProfile, item[3]),
+          content: buildTaskContent(subjectCode, ageProfile, item[0], item[1], item[3], item[4], item[5]),
           tips: `${item[6]} ${SUBJECT_TIPS[subjectCode]}`,
           example_answer: item[5]
         });
@@ -243,7 +413,7 @@ function buildReadingTasks() {
           objective: item[3],
           steps: buildTaskSteps(subjectCode, item[3], item[7]),
           parent_prompt: item[4],
-          content: buildTaskContent(subjectCode, ageProfile, item[3]),
+          content: buildTaskContent(subjectCode, ageProfile, item[0], item[1], item[3], item[4], item[5]),
           tips: `${item[6]} ${SUBJECT_TIPS[subjectCode]}`,
           example_answer: item[5]
         });
@@ -312,5 +482,6 @@ module.exports = {
   PARENTING_ARTICLES,
   READING_TASKS,
   ASSESSMENT_META,
-  buildAssessmentQuestions
+  buildAssessmentQuestions,
+  buildReadingPracticeExample
 };

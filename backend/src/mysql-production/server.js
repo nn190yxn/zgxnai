@@ -11,7 +11,8 @@ const {
   PARENTING_ARTICLES,
   READING_TASKS,
   ASSESSMENT_META,
-  buildAssessmentQuestions
+  buildAssessmentQuestions,
+  buildReadingPracticeExample
 } = require('./content-seeds');
 
 loadEnv(path.resolve(__dirname, '../../../.env'));
@@ -2427,6 +2428,18 @@ function getReadingDisplayMaterialLabel(practiceMaterialSection) {
   return '材料准备';
 }
 
+function resolvePracticeMaterialSection(row) {
+  const section = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
+  if (section && section.value) {
+    return section;
+  }
+  const fallback = buildReadingPracticeExample(row.task_code || row.id, row.title);
+  if (!fallback) {
+    return section;
+  }
+  return extractBracketSection(fallback, ['练习短文', '练习材料示例']);
+}
+
 function buildReadingStructuredSections(row, practiceMaterialSection, parsedContent) {
   const contentSections = (parsedContent && parsedContent.sections) || {};
   const intro = (parsedContent && parsedContent.intro) || '';
@@ -4783,7 +4796,7 @@ async function parentingLikeHandler(req, res) {
 }
 
 function normalizeReadingTask(row) {
-  const practiceMaterialSection = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
+  const practiceMaterialSection = resolvePracticeMaterialSection(row);
   return {
     id: row.id,
     task_code: row.task_code,
@@ -4967,7 +4980,7 @@ async function educationKnowledgeDetailHandler(req, res) {
   const row = rows[0];
   const keyPoints = String(row.steps || '').split(/\n+/).filter(Boolean).map((content, index) => ({ id: index + 1, content }));
   const subjectName = getSubjectDisplayName(row.subject_code);
-  const practiceMaterialSection = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
+  const practiceMaterialSection = resolvePracticeMaterialSection(row);
   const parsedContent = splitBracketSections(practiceMaterialSection.content);
   const displayMaterial = getReadingDisplayMaterial(row, practiceMaterialSection);
   const displayMaterialLabel = getReadingDisplayMaterialLabel(practiceMaterialSection);
