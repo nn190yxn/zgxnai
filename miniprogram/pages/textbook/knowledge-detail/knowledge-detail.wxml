@@ -15,7 +15,6 @@
     <!-- 知识点头部 -->
     <view class="point-header">
       <view class="point-title-wrap">
-        <text class="point-title">{{knowledgeDetail.name}}</text>
         <view class="point-tags">
           <text class="tag difficulty-{{knowledgeDetail.difficulty}}">{{knowledgeDetail.difficulty === 1 ? '简单' : knowledgeDetail.difficulty === 2 ? '中等' : '困难'}}</text>
           <text class="tag status-{{knowledgeDetail.status}}">{{knowledgeDetail.status === 'mastered' ? '已掌握' : knowledgeDetail.status === 'learning' ? '学习中' : '待学习'}}</text>
