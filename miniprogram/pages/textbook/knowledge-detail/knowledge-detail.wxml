@@ -49,6 +49,7 @@
     <!-- 内容区域 -->
     <view class="content-area">
       <view class="debug-build-tag">调试版本 {{debugBuildId}}</view>
+      <view class="debug-build-tag">阅读结构 {{knowledgeDetail.debug_reading_summary.hasReadingSections ? 'on' : 'off'}} / passage {{knowledgeDetail.debug_reading_summary.passageLength}} / q {{knowledgeDetail.debug_reading_summary.questionCount}} / a {{knowledgeDetail.debug_reading_summary.analysisCount}} / e {{knowledgeDetail.debug_reading_summary.extensionCount}}</view>
       <!-- 知识点讲解 -->
       <view class="tab-content" wx:if="{{currentTab === 'explain'}}">
         <view class="detail-visual-card" wx:if="{{knowledgeDetail.visual}}">

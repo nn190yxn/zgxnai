@@ -180,6 +180,14 @@ Page({
       ? '阅读正文已提供，可准备铅笔，方便圈关键词或记录答案。'
       : (normalized.material || '准备当日阅读或生活场景材料');
     normalized.duration = normalized.duration || 10;
+    normalized.debug_reading_summary = {
+      hasReadingSections: normalized.has_reading_sections,
+      passageLength: (normalized.reading_sections.passage || '').length,
+      questionCount: normalized.reading_sections.questions.length,
+      analysisCount: normalized.reading_sections.analysis.length,
+      extensionCount: normalized.reading_sections.extension.length
+    };
+    console.log('[knowledge-detail] normalized reading summary', normalized.debug_reading_summary);
     return normalized;
   },
 
