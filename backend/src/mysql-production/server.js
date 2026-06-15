@@ -72,6 +72,89 @@ const READING_TASK_MAP = READING_TASKS.reduce((acc, task) => {
   return acc;
 }, {});
 
+const READING_TASK_ALIAS_MAP = buildReadingTaskAliasMap();
+
+function buildReadingTaskAliasMap() {
+  const aliasMap = {};
+
+  function registerCanonical(taskCode, aliases) {
+    const canonical = READING_TASK_MAP[taskCode];
+    if (!canonical) {
+      return;
+    }
+    aliases.forEach((alias) => {
+      aliasMap[alias] = canonical;
+    });
+  }
+
+  ['34', '45', '56', '69', '912'].forEach((ageCode) => {
+    registerCanonical(`read_${ageCode}_cover_guess`, [`read_${ageCode}_cover`, `read_${ageCode}_cover_guess`]);
+    registerCanonical(`read_${ageCode}_fact_find`, [`read_${ageCode}_find`, `read_${ageCode}_fact`, `read_${ageCode}_fact_find`]);
+    registerCanonical(`read_${ageCode}_sequence_story`, [`read_${ageCode}_sequence`, `read_${ageCode}_sequence_story`]);
+    registerCanonical(`read_${ageCode}_emotion_clue`, [`read_${ageCode}_emotion`, `read_${ageCode}_emotion_clue`]);
+    registerCanonical(`read_${ageCode}_cause_effect`, [`read_${ageCode}_cause`, `read_${ageCode}_reason`, `read_${ageCode}_cause_effect`]);
+    registerCanonical(`read_${ageCode}_summary_sentence`, [`read_${ageCode}_retell`, `read_${ageCode}_summary`, `read_${ageCode}_summary_sentence`]);
+  });
+
+  registerCanonical('read_34_cover_guess', ['r1']);
+  registerCanonical('read_34_fact_find', ['r2']);
+  registerCanonical('read_45_sequence_story', ['r3']);
+  registerCanonical('read_45_emotion_clue', ['r4']);
+  registerCanonical('read_56_cause_effect', ['r5']);
+  registerCanonical('read_56_summary_sentence', ['r6']);
+
+  return aliasMap;
+}
+
+function inferReadingSemanticKey(row) {
+  const text = [row.task_code, row.title, row.objective, row.material, row.parent_prompt, row.content]
+    .map((item) => String(item || ''))
+    .join(' ');
+
+  if (/封面|主角|预测故事|读开头先猜/.test(text)) {
+    return 'cover_guess';
+  }
+  if (/谁在哪里做什么|画面找一找|基础事实信息/.test(text)) {
+    return 'fact_find';
+  }
+  if (/顺序|先后|接下来发生了什么/.test(text)) {
+    return 'sequence_story';
+  }
+  if (/表情|心情|情绪/.test(text)) {
+    return 'emotion_clue';
+  }
+  if (/因果|为什么会这样|原因和结果|原因/.test(text)) {
+    return 'cause_effect';
+  }
+  if (/复述|一句话讲给别人听|概括/.test(text)) {
+    return 'summary_sentence';
+  }
+  return '';
+}
+
+function findCanonicalReadingTask(row) {
+  if (!row || !row.task_code) {
+    return null;
+  }
+  if (READING_TASK_MAP[row.task_code]) {
+    return READING_TASK_MAP[row.task_code];
+  }
+  if (READING_TASK_ALIAS_MAP[row.task_code]) {
+    return READING_TASK_ALIAS_MAP[row.task_code];
+  }
+
+  const semanticKey = inferReadingSemanticKey(row);
+  if (!semanticKey) {
+    return null;
+  }
+
+  return READING_TASKS.find((task) => {
+    return task.subject_code === row.subject_code
+      && task.age_range === row.age_range
+      && String(task.task_code || '').endsWith(`_${semanticKey}`);
+  }) || null;
+}
+
 app.use(express.json({
   limit: '2mb',
   verify: (req, res, buf) => {
@@ -2436,7 +2519,7 @@ function getReadingDisplayMaterialLabel(practiceMaterialSection) {
 }
 
 function applyCanonicalReadingTask(row) {
-  const canonical = READING_TASK_MAP[row.task_code];
+  const canonical = findCanonicalReadingTask(row);
   if (!canonical) {
     return row;
   }
@@ -2452,7 +2535,9 @@ function applyCanonicalReadingTask(row) {
     duration: canonical.duration || row.duration,
     difficulty: canonical.difficulty || row.difficulty,
     age_range: canonical.age_range || row.age_range,
-    subject_code: canonical.subject_code || row.subject_code
+    subject_code: canonical.subject_code || row.subject_code,
+    image_url: canonical.image_url || '',
+    cover_image: canonical.cover_image || ''
   });
 }
 
