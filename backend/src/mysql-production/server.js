@@ -5091,6 +5091,9 @@ async function educationKnowledgeDetailHandler(req, res) {
   if (!child) {
     return;
   }
+  const canonicalTaskCode = (READING_TASK_MAP[pointId] && READING_TASK_MAP[pointId].task_code)
+    || (READING_TASK_ALIAS_MAP[pointId] && READING_TASK_ALIAS_MAP[pointId].task_code)
+    || pointId;
   const [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
@@ -5098,7 +5101,7 @@ async function educationKnowledgeDetailHandler(req, res) {
      WHERE (t.task_code = ? OR CAST(t.id AS CHAR) = ?)
        AND (? IS NULL OR t.subject_code = ?)
      LIMIT 1`,
-    [childId, pointId, pointId, subjectCode, subjectCode]
+    [childId, canonicalTaskCode, canonicalTaskCode, subjectCode, subjectCode]
   );
   if (!rows.length) {
     res.status(404).json({ success: false, message: '知识点不存在' });
@@ -5276,7 +5279,10 @@ async function educationUpdateProgressHandler(req, res) {
     res.status(403).json({ success: false, message: '无权更新该孩子的学习进度' });
     return;
   }
-  const [taskRows] = await pool.execute('SELECT id FROM reading_tasks WHERE task_code = ? OR CAST(id AS CHAR) = ? LIMIT 1', [pointId, pointId]);
+  const canonicalTaskCode = (READING_TASK_MAP[pointId] && READING_TASK_MAP[pointId].task_code)
+    || (READING_TASK_ALIAS_MAP[pointId] && READING_TASK_ALIAS_MAP[pointId].task_code)
+    || pointId;
+  const [taskRows] = await pool.execute('SELECT id FROM reading_tasks WHERE task_code = ? OR CAST(id AS CHAR) = ? LIMIT 1', [canonicalTaskCode, canonicalTaskCode]);
   if (!taskRows.length) {
     res.status(404).json({ success: false, message: '知识点不存在' });
     return;

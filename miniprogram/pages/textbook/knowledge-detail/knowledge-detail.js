@@ -3,7 +3,6 @@ var app = getApp();
 
 Page({
   data: {
-    debugBuildId: 'a11ec21',
     // 知识点信息
     pointId: null,
     pointName: '',
@@ -47,7 +46,6 @@ Page({
 
   onLoad: function(options) {
     var that = this;
-    console.log('[knowledge-detail] build', that.data.debugBuildId, 'options=', options || {});
     
     // 获取页面参数
     if (options.pointId) {
@@ -93,13 +91,7 @@ Page({
   // 加载知识点详情
   loadKnowledgeDetail: function(fromPullDown) {
     var that = this;
-    console.log('[knowledge-detail] request detail', {
-      build: that.data.debugBuildId,
-      pointId: that.data.pointId,
-      subjectCode: that.data.subjectCode,
-      childId: that.data.childId || ((app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id) || 0)
-    });
-    
+
     that.setData({
       loading: true
     });
@@ -114,14 +106,12 @@ Page({
       }
     }).then(function(res) {
       if (res) {
-        console.log('[knowledge-detail] response keys', Object.keys(res || {}));
         that.applyKnowledgeDetail(res);
         app.trackKbEvent(that.buildKnowledgeTrackPayload({
           event_type: 'knowledge_detail_view'
         }));
       }
     }).catch(function(err) {
-      console.error('[knowledge-detail] request failed', err);
       app.showApiError('知识点详情加载失败');
       that.setData({
         knowledgeDetail: null
@@ -185,14 +175,6 @@ Page({
       ? '阅读正文已提供，可准备铅笔，方便圈关键词或记录答案。'
       : (normalized.material || '准备当日阅读或生活场景材料');
     normalized.duration = normalized.duration || 10;
-    normalized.debug_reading_summary = {
-      hasReadingSections: normalized.has_reading_sections,
-      passageLength: (normalized.reading_sections.passage || '').length,
-      questionCount: normalized.reading_sections.questions.length,
-      analysisCount: normalized.reading_sections.analysis.length,
-      extensionCount: normalized.reading_sections.extension.length
-    };
-    console.log('[knowledge-detail] normalized reading summary', normalized.debug_reading_summary);
     return normalized;
   },
 

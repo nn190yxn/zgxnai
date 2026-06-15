@@ -176,12 +176,6 @@
   padding: 24rpx 32rpx;
 }
 
-.debug-build-tag {
-  margin-bottom: 16rpx;
-  font-size: 22rpx;
-  color: #8A6A5B;
-}
-
 .tab-content {
   background: #fff;
   border-radius: 24rpx;
