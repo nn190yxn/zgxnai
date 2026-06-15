@@ -14,11 +14,11 @@ Page({
     ],
     // 年龄段列表
     ageList: [
-      { id: 0, name: '全部年龄' },
-      { id: 1, name: '6-12月' },
-      { id: 2, name: '1-3岁' },
-      { id: 3, name: '3-6岁' },
-      { id: 4, name: '6-12岁' }
+      { id: 0, name: '全部年龄', value: '全部年龄' },
+      { id: 1, name: '6-12月', value: '0-1岁' },
+      { id: 2, name: '1-3岁', value: '1-3岁' },
+      { id: 3, name: '3-6岁', value: '3-6岁' },
+      { id: 4, name: '6-12岁', value: '6-12岁' }
     ],
     // 当前选中的分类
     currentCategory: 0,
@@ -229,7 +229,7 @@ Page({
       params.category = that.data.categoryList[that.data.currentCategory].name;
     }
     if (that.data.currentAge > 0) {
-      params.age = that.data.ageList[that.data.currentAge].name;
+      params.age = that.data.ageList[that.data.currentAge].value || that.data.ageList[that.data.currentAge].name;
     }
     if (that.data.keyword) {
       params.keyword = that.data.keyword;
@@ -260,9 +260,6 @@ Page({
       if (!Array.isArray(list)) {
         list = [];
       }
-      if (!list.length && that.data.page === 1) {
-        list = that.getLocalRecipes();
-      }
       list = list.map(function(item) {
         return that.buildRecipeCardData(item);
       });
@@ -273,7 +270,7 @@ Page({
         page: that.data.page + 1
       });
     }).catch(function(err) {
-      if (that.data.page === 1) {
+      if (that.data.page === 1 && app.shouldUseMockFallback()) {
         that.setData({
           recipeList: that.getLocalRecipes().map(function(item) {
             return that.buildRecipeCardData(item);
@@ -327,7 +324,7 @@ Page({
       if (!Array.isArray(list)) {
         list = [];
       }
-      if (!list.length) {
+      if (!list.length && app.shouldUseMockFallback()) {
         list = that.getLocalRecipes();
       }
       list = list.map(function(item) {
@@ -338,12 +335,19 @@ Page({
         hasMore: false
       });
     }).catch(function(err) {
-      that.setData({
-        recipeList: that.getLocalRecipes().map(function(item) {
-          return that.buildRecipeCardData(item);
-        }),
-        hasMore: false
-      });
+      if (app.shouldUseMockFallback()) {
+        that.setData({
+          recipeList: that.getLocalRecipes().map(function(item) {
+            return that.buildRecipeCardData(item);
+          }),
+          hasMore: false
+        });
+      } else {
+        that.setData({
+          recipeList: [],
+          hasMore: false
+        });
+      }
     }).finally(function() {
       that.setData({
         loading: false

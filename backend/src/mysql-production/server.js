@@ -1950,11 +1950,33 @@ function filterNutritionRecipes(query) {
     if (category && recipe.category !== category) {
       return false;
     }
-    if (age && age !== '全部年龄' && recipe.ageRange !== age) {
+    if (age && age !== '全部年龄' && !isNutritionAgeMatch(recipe.ageRange || recipe.age_range, age)) {
       return false;
     }
     return true;
   });
+}
+
+function normalizeNutritionAgeQuery(age) {
+  const value = String(age || '').trim();
+  const ageMap = {
+    '6-12月': '0-1岁',
+    '1-3岁': '1-3岁',
+    '3-6岁': '3-6岁',
+    '6-12岁': '6-12岁'
+  };
+  return ageMap[value] || value;
+}
+
+function isNutritionAgeMatch(recipeAgeRange, selectedAgeRange) {
+  const normalizedSelectedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  if (!normalizedSelectedAge || normalizedSelectedAge === '全部年龄') {
+    return true;
+  }
+  if (String(recipeAgeRange || '').trim() === normalizedSelectedAge) {
+    return true;
+  }
+  return isRecipeAgeCompatible(recipeAgeRange, normalizedSelectedAge);
 }
 
 function nutritionRecommendationsHandler(req, res) {
