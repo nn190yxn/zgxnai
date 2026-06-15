@@ -65,6 +65,13 @@ const wxPayConfig = {
   platformCertPath: process.env.WECHAT_PAY_PLATFORM_CERT_PATH || process.env.WX_PLATFORM_CERT_PATH || ''
 };
 
+const READING_TASK_MAP = READING_TASKS.reduce((acc, task) => {
+  if (task && task.task_code) {
+    acc[task.task_code] = task;
+  }
+  return acc;
+}, {});
+
 app.use(express.json({
   limit: '2mb',
   verify: (req, res, buf) => {
@@ -2428,6 +2435,27 @@ function getReadingDisplayMaterialLabel(practiceMaterialSection) {
   return '材料准备';
 }
 
+function applyCanonicalReadingTask(row) {
+  const canonical = READING_TASK_MAP[row.task_code];
+  if (!canonical) {
+    return row;
+  }
+  return Object.assign({}, row, {
+    title: canonical.title || row.title,
+    material: canonical.material || row.material,
+    objective: canonical.objective || row.objective,
+    steps: canonical.steps || row.steps,
+    parent_prompt: canonical.parent_prompt || row.parent_prompt,
+    content: canonical.content || row.content,
+    tips: canonical.tips || row.tips,
+    example_answer: canonical.example_answer || row.example_answer,
+    duration: canonical.duration || row.duration,
+    difficulty: canonical.difficulty || row.difficulty,
+    age_range: canonical.age_range || row.age_range,
+    subject_code: canonical.subject_code || row.subject_code
+  });
+}
+
 function resolvePracticeMaterialSection(row) {
   const section = extractBracketSection(row.content, ['练习短文', '练习材料示例']);
   if (section && section.value) {
@@ -2450,7 +2478,7 @@ function buildReadingStructuredSections(row, practiceMaterialSection, parsedCont
     analysis.push(intro);
   }
 
-  ['适龄重点', '家长支持', '这节任务在练什么', '怎么判断原因和结果', '陪练顺序', '怎么抓重点', '怎么带着读', '卡住时怎么帮', '回答句式', '示范回答'].forEach(function(label) {
+  ['适龄重点', '家长支持', '这节任务在练什么', '怎么判断原因和结果', '陪练顺序', '怎么抓重点', '怎么带着读', '卡住时怎么帮', '回答句式', '家长示范说法', '示范回答'].forEach(function(label) {
     const values = contentSections[label] || [];
     if (values.length) {
       analysis.push(`【${label}】${values.join(' ')}`.trim());
@@ -2472,7 +2500,7 @@ function buildReadingStructuredSections(row, practiceMaterialSection, parsedCont
     analysis.push(`【这节任务在练什么】${row.objective || '先读懂材料，再把答案和依据连起来。'}`);
     analysis.push(`【怎么带着读】${row.parent_prompt || '先读完整段，再回到关键句找线索。'}`);
     if (row.example_answer) {
-      analysis.push(`【示范回答】${row.example_answer}`);
+      analysis.push(`【家长示范说法】${row.example_answer}`);
     }
   }
 
@@ -4808,29 +4836,30 @@ async function parentingLikeHandler(req, res) {
 }
 
 function normalizeReadingTask(row) {
-  const practiceMaterialSection = resolvePracticeMaterialSection(row);
+  const normalizedRow = applyCanonicalReadingTask(row);
+  const practiceMaterialSection = resolvePracticeMaterialSection(normalizedRow);
   return {
-    id: row.id,
-    task_code: row.task_code,
-    title: row.title,
-    subject_code: row.subject_code,
-    age_range: row.age_range,
-    difficulty: row.difficulty,
-    duration: row.duration,
-    material: getReadingDisplayMaterial(row, practiceMaterialSection),
-    objective: row.objective,
-    steps: row.steps ? String(row.steps).split(/\n+/).filter(Boolean) : [],
-    parent_prompt: row.parent_prompt || '',
-    content: row.content || '',
-    image_url: row.image_url || '',
-    icon_url: row.icon_url || '',
-    cover_image: row.cover_image || '',
-    audio_url: row.audio_url || '',
-    video_url: row.video_url || '',
-    tips: row.tips || '',
-    example_answer: row.example_answer || '',
-    status: row.status || 'pending',
-    progress: row.progress || 0
+    id: normalizedRow.id,
+    task_code: normalizedRow.task_code,
+    title: normalizedRow.title,
+    subject_code: normalizedRow.subject_code,
+    age_range: normalizedRow.age_range,
+    difficulty: normalizedRow.difficulty,
+    duration: normalizedRow.duration,
+    material: getReadingDisplayMaterial(normalizedRow, practiceMaterialSection),
+    objective: normalizedRow.objective,
+    steps: normalizedRow.steps ? String(normalizedRow.steps).split(/\n+/).filter(Boolean) : [],
+    parent_prompt: normalizedRow.parent_prompt || '',
+    content: normalizedRow.content || '',
+    image_url: normalizedRow.image_url || '',
+    icon_url: normalizedRow.icon_url || '',
+    cover_image: normalizedRow.cover_image || '',
+    audio_url: normalizedRow.audio_url || '',
+    video_url: normalizedRow.video_url || '',
+    tips: normalizedRow.tips || '',
+    example_answer: normalizedRow.example_answer || '',
+    status: normalizedRow.status || 'pending',
+    progress: normalizedRow.progress || 0
   };
 }
 
@@ -4989,7 +5018,7 @@ async function educationKnowledgeDetailHandler(req, res) {
     res.status(404).json({ success: false, message: '知识点不存在' });
     return;
   }
-  const row = rows[0];
+  const row = applyCanonicalReadingTask(rows[0]);
   const keyPoints = String(row.steps || '').split(/\n+/).filter(Boolean).map((content, index) => ({ id: index + 1, content }));
   const subjectName = getSubjectDisplayName(row.subject_code);
   const practiceMaterialSection = resolvePracticeMaterialSection(row);
