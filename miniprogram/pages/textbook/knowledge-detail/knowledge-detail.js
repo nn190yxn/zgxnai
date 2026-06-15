@@ -96,17 +96,6 @@ Page({
       loading: true
     });
 
-    if (app.shouldUseMockFallback()) {
-      that.applyKnowledgeDetail(that.getMockDetail());
-      that.setData({
-        loading: false
-      });
-      if (fromPullDown) {
-        wx.stopPullDownRefresh();
-      }
-      return;
-    }
-
     app.request({
       url: '/education/knowledge/detail',
       method: 'GET',
@@ -130,7 +119,8 @@ Page({
         });
         return;
       }
-      // 使用模拟数据
+
+      // 仅在真实接口失败时回退到本地模拟数据
       that.applyKnowledgeDetail(that.getMockDetail());
     }).finally(function() {
       that.setData({
