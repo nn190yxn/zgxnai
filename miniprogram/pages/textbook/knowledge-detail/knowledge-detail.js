@@ -141,7 +141,9 @@ Page({
     var noteContent = this.loadSavedNote(this.data.pointId);
     var stepChecklist = this.buildStepChecklist(normalizedDetail);
     var explainBlocks = this.buildExplainBlocks(normalizedDetail.explain && normalizedDetail.explain.content);
+    var displayTitle = normalizedDetail.name || normalizedDetail.title || this.data.pointName || '知识点详情';
     this.setData({
+      pointName: displayTitle,
       knowledgeDetail: normalizedDetail,
       practiceList: normalizedDetail.practices || [],
       currentPracticeIndex: 0,
@@ -152,6 +154,9 @@ Page({
       noteContent: noteContent,
       stepChecklist: stepChecklist,
       stepChecklistDoneCount: this.getChecklistDoneCount(stepChecklist)
+    });
+    wx.setNavigationBarTitle({
+      title: displayTitle
     });
   },
 

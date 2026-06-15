@@ -4963,7 +4963,8 @@ async function educationKnowledgeChaptersHandler(req, res) {
     );
   }
   const chaptersMap = new Map();
-  for (const row of rows) {
+  for (const item of rows) {
+    const row = applyCanonicalReadingTask(item);
     const chapterId = `${row.subject_code || 'general'}-${row.difficulty || 1}`;
     if (!chaptersMap.has(chapterId)) {
       chaptersMap.set(chapterId, {
