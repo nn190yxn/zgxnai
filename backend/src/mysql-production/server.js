@@ -3585,7 +3585,7 @@ function getNutritionAgeTargetMidpoint(age) {
   return (range.min + range.max) / 2;
 }
 
-function scoreNutritionRecipeForAge(recipe, selectedAgeRange) {
+function scoreNutritionRecipeForAge(recipe, selectedAgeRange, mealPeriod) {
   const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
   const profile = getNutritionAgeStageProfile(normalizedAge);
   if (!profile) {
@@ -3631,6 +3631,20 @@ function scoreNutritionRecipeForAge(recipe, selectedAgeRange) {
     }
   });
 
+  if (mealPeriod) {
+    const categoryScoreMap = {
+      breakfast: { '早餐': 50, '加餐': 30 },
+      lunch: { '午餐': 50, '汤品': 20 },
+      dinner: { '晚餐': 50, '汤品': 20 },
+      snack: { '加餐': 50, '早餐': 20 }
+    };
+    const periodWeights = categoryScoreMap[mealPeriod] || {};
+    const catBonus = periodWeights[category] || 0;
+    if (catBonus) {
+      score += catBonus;
+    }
+  }
+
   return score;
 }
 
@@ -3673,7 +3687,7 @@ function curateNutritionRecipesForAge(recipes, selectedAgeRange) {
     .sort((a, b) => scoreNutritionRecipeForAge(b, normalizedAge) - scoreNutritionRecipeForAge(a, normalizedAge));
 }
 
-function diversifyNutritionRecommendationPool(recipes, selectedAgeRange, limit) {
+function diversifyNutritionRecommendationPool(recipes, selectedAgeRange, limit, mealPeriod) {
   const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
   const source = Array.isArray(recipes) ? recipes.slice() : [];
   if (!source.length) {
@@ -3682,7 +3696,7 @@ function diversifyNutritionRecommendationPool(recipes, selectedAgeRange, limit) 
   const count = Math.max(Number(limit) || source.length, 1);
   const picked = [];
   const usedCategories = new Set();
-  const sorted = source.slice().sort((a, b) => scoreNutritionRecipeForAge(b, normalizedAge) - scoreNutritionRecipeForAge(a, normalizedAge));
+  const sorted = source.slice().sort((a, b) => scoreNutritionRecipeForAge(b, normalizedAge, mealPeriod) - scoreNutritionRecipeForAge(a, normalizedAge, mealPeriod));
 
   sorted.forEach((recipe) => {
     if (picked.length >= count) {
@@ -3791,7 +3805,8 @@ function nutritionRecommendationsHandler(req, res) {
   const count = Math.min(Math.max(Number((req.query && req.query.count) || 7) || 7, 1), 12);
   const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query), selectedAgeRange);
   const source = filtered.length ? filtered : curateNutritionRecipesForAge(NUTRITION_RECIPES, selectedAgeRange);
-  const diversified = diversifyNutritionRecommendationPool(source, selectedAgeRange, count);
+  const mealPeriod = String((req.query && req.query.meal_period) || '').trim() || null;
+  const diversified = diversifyNutritionRecommendationPool(source, selectedAgeRange, count, mealPeriod);
   const recipes = diversified.map((recipe) => normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange));
   res.json({ success: true, data: recipes });
 }

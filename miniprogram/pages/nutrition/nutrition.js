@@ -159,6 +159,14 @@ Page({
     };
   },
 
+  getMealPeriod: function() {
+    var hour = new Date().getHours();
+    if (hour >= 6 && hour < 10) return 'breakfast';
+    if (hour >= 10 && hour < 14) return 'lunch';
+    if (hour >= 14 && hour < 20) return 'dinner';
+    return 'snack';
+  },
+
   buildNutritionAdviceList: function(recipes) {
     var list = recipes || [];
     var ageLabel = this.getSelectedAgeLabel();
@@ -366,7 +374,7 @@ Page({
     app.request({
       url: '/nutrition/recommendations',
       method: 'GET',
-      data: Object.assign({ count: 8 }, that.data.currentAgeGroup ? { age_group: that.data.currentAgeGroup } : {})
+      data: Object.assign({ count: 8, meal_period: that.getMealPeriod() }, that.data.currentAgeGroup ? { age_group: that.data.currentAgeGroup } : {})
     }).then(function(list) {
       list = list || [];
       if (!Array.isArray(list)) {
