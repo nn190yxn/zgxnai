@@ -22,7 +22,7 @@
       <text class="summary-badge summary-badge-soft" wx:if="{{summary.ageGroup}}">{{summary.ageGroup}}</text>
       <text class="summary-badge summary-badge-soft" wx:if="{{summary.weakestDimensionLabel}}">重点关注 {{summary.weakestDimensionLabel}}</text>
     </view>
-    <text class="summary-copy">{{summary.overview}}</text>
+    <text class="summary-copy {{summary.overviewMood === 'begin' ? 'overview-begin' : summary.overviewMood === 'building' ? 'overview-building' : summary.overviewMood === 'steady' ? 'overview-steady' : ''}}">{{summary.overview}}</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">
@@ -47,6 +47,14 @@
   <view class="summary-card" wx:if="{{currentChild && summary}}">
     <text class="section-title">本周亮点</text>
     <text class="summary-copy" wx:for="{{summary.highlights}}" wx:key="*this">{{item}}</text>
+  </view>
+
+  <view class="summary-card" wx:if="{{currentChild && summary && summary.trendItems.length}}">
+    <text class="section-title">趋势变化</text>
+    <view wx:for="{{summary.trendItems}}" wx:key="label" class="trend-row">
+      <text class="trend-dir {{item.direction === 'up' ? 'trend-up' : item.direction === 'down' ? 'trend-down' : 'trend-stable'}}">{{item.direction === 'up' ? '↑' : item.direction === 'down' ? '↓' : '→'}}</text>
+      <text class="summary-copy" style="flex:1">{{item.detail}}</text>
+    </view>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && summary.premiumUnlocked}}">

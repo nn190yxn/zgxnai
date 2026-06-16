@@ -5389,6 +5389,12 @@ function getWeekEndDateValue(weekStart) {
   return formatDateValue(date);
 }
 
+function getRelativeWeekDate(baseWeekStart, offsetWeeks) {
+  const date = new Date(`${baseWeekStart}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + (Number(offsetWeeks) || 0) * 7);
+  return formatDateValue(date);
+}
+
 function getRecentDateValue(daysAgo) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() - Number(daysAgo || 0));
@@ -5498,6 +5504,190 @@ function getWeeklySummaryProfileByDimension(dimensionKey) {
     socialStatus: { articleCategory: '社交能力', articleKeyword: '同伴', subjectCode: 'expression_communication' }
   };
   return profiles[dimensionKey] || { articleCategory: '认知发展', articleKeyword: '', subjectCode: 'reading_comprehension' };
+}
+
+function getWeeklyAgeStageKey(ageGroup) {
+  const value = String(ageGroup || '').trim();
+  if (['1-2岁', '2-3岁', '1-3岁'].includes(value)) return '1-3岁';
+  if (['3-4岁', '4-5岁', '5-6岁', '3-6岁'].includes(value)) return '3-6岁';
+  if (['6-7岁', '7-8岁', '8-12岁', '6-12岁'].includes(value)) return '6-12岁';
+  if (value === '12岁以上') return '12岁以上';
+  return '3-6岁';
+}
+
+function getWeeklyDimensionAdvice(dimensionKey, ageStage) {
+  const adviceMap = {
+    moodStatus: {
+      '1-3岁': {
+        concern: '这阶段情绪波动是正常的探索行为，重点看情绪恢复速度和是否影响进食睡眠。',
+        action: '每天固定1-2个安抚动作（抱抱、哼歌），让孩子在可预测的节奏里更容易平复。'
+      },
+      '3-6岁': {
+        concern: '学龄前情绪更多和规则冲突、表达受限有关，先看触发模式再定干预优先级。',
+        action: '每天留10分钟让孩子主导一段对话或游戏，情绪信号更容易被看见和安抚。'
+      },
+      '6-12岁': {
+        concern: '学习日疲劳和同伴关系更容易引发情绪波动，关注作业后和睡前两个关键时段。',
+        action: '帮孩子建立1-2个固定的情绪释放渠道，比如放学后15分钟自由时间或睡前聊聊。'
+      },
+      '12岁以上': {
+        concern: '青少年情绪更多和独立空间、同伴认同有关，尊重边界的同时保持观察窗口。',
+        action: '每周固定一个放松的家庭时间，不评判不追问，只保持在场和可被找到。'
+      }
+    },
+    appetiteStatus: {
+      '1-3岁': {
+        concern: '这阶段食欲波动更多和咀嚼能力、食物质地、新食物恐惧有关，先看接受度再看总量。',
+        action: '保留1-2种孩子熟悉的食物打底，每餐再试着放1种新食材在旁边，不加压不强喂。'
+      },
+      '3-6岁': {
+        concern: '学龄前容易受零食、疲劳和注意力分散的影响，先看正餐前后的零食控制。',
+        action: '正餐前1小时不安排零食和甜饮料，让孩子带着适度饥饿感坐到餐桌前。'
+      },
+      '6-12岁': {
+        concern: '学习日节奏快易跳过早餐或午餐匆忙，先稳住三餐时间再调品类。',
+        action: '早餐优先保证主食加蛋白，午晚餐每顿至少让主食、蛋白质和蔬菜同餐出现。'
+      },
+      '12岁以上': {
+        concern: '青少年阶段容易受同伴饮食和外卖影响，先看三餐规律度再调具体食物。',
+        action: '每周至少保持5天家庭正餐，让孩子参与选菜和备餐，自主感和营养密度一起提升。'
+      }
+    },
+    sleepStatus: {
+      '1-3岁': {
+        concern: '这阶段睡眠更多看入睡难度和夜醒次数，白天的活动量和午觉时长都会影响夜间睡眠。',
+        action: '固定每天晚上入睡前30分钟的安抚流程（洗澡-故事-关灯），连续做1周看变化。'
+      },
+      '3-6岁': {
+        concern: '学龄前抗拒入睡更多和分离焦虑、过度兴奋有关，先看入睡前的屏幕和活动强度。',
+        action: '睡前1小时切换为安静活动，用绘本或轻柔音乐做入睡信号，逐步降低兴奋度。'
+      },
+      '6-12岁': {
+        concern: '学习日睡眠更容易被作业和屏幕挤占，先看就寝时间和起床时间是否稳定。',
+        action: '固定就寝和起床时间，周末偏差控制在1小时以内，帮助生物钟稳定。'
+      },
+      '12岁以上': {
+        concern: '青少年褪黑素分泌延迟，自然入睡时间更晚，重点看总睡眠时长是否达标。',
+        action: '保持周末起床时间不比平时晚超2小时，避免周一生物钟剧烈调整。'
+      }
+    },
+    exerciseStatus: {
+      '1-3岁': {
+        concern: '这阶段活动量主要看自主探索和户外时间，重点保证每天有安全的爬、走、跑空间。',
+        action: '每天至少安排1次户外或室内宽敞场地的自由活动，时长以孩子情绪为准。'
+      },
+      '3-6岁': {
+        concern: '学龄前大运动发展快，重点保证每天有充足的跑跳攀爬时间和安全边界。',
+        action: '每天保证至少1小时户外或大运动时间，周末安排1次2小时以上的户外活动。'
+      },
+      '6-12岁': {
+        concern: '学习日久坐时间增加，重点看运动类型是否覆盖有氧和力量，每周频次是否稳定。',
+        action: '每周至少3次30分钟以上的中等强度运动，体育课和课后活动一起算。'
+      },
+      '12岁以上': {
+        concern: '青少年阶段运动更多依赖兴趣和同伴驱动，先找到孩子愿意持续的运动形式。',
+        action: '帮孩子找到1-2项有兴趣的体育类活动（校内社团或校外），每周保持固定频次。'
+      }
+    },
+    socialStatus: {
+      '1-3岁': {
+        concern: '这阶段社交以平行游戏为主，先看孩子在熟悉环境里对同伴的观察和接近意愿。',
+        action: '每周安排1-2次和同龄孩子在同一空间活动，不做强制互动，只提供机会。'
+      },
+      '3-6岁': {
+        concern: '学龄前开始进入合作游戏阶段，先看轮流、分享和简单冲突的处理能力。',
+        action: '安排小范围同伴互动（1-2个孩子），家长在旁边观察，只在必要时介入。'
+      },
+      '6-12岁': {
+        concern: '同伴关系逐渐成为核心，先看孩子是否有1-2个稳定的朋友和是否被接纳。',
+        action: '帮孩子创造课后社交机会，比如邀请同学来家或参加小组活动，每周1次即可。'
+      },
+      '12岁以上': {
+        concern: '青少年社交圈扩大，更看重同伴认同，同时需要保持家庭沟通窗口。',
+        action: '保持每周至少1次不设评判的家庭对话时间，孩子愿说多少说多少。'
+      }
+    }
+  };
+  const dimAdvice = adviceMap[dimensionKey] || adviceMap.moodStatus;
+  return dimAdvice[ageStage] || dimAdvice['3-6岁'];
+}
+
+function buildWeeklyAgeOverview(recordDays, avgScore, ageStage) {
+  if (recordDays < 1) {
+    return {
+      text: '本周还没有形成连续记录，先从每天30秒的成长记录开始。',
+      mood: 'begin'
+    };
+  }
+  const stageOverviews = {
+    '1-3岁': recordDays >= 5
+      ? { text: `本周记录了${recordDays}天，低龄阶段能做到固定节奏已经是很稳的开始。`, mood: 'steady' }
+      : { text: `本周记录了${recordDays}天，低龄阶段先稳住记录节奏比追求完美数据更重要。`, mood: 'building' },
+    '3-6岁': recordDays >= 5
+      ? { text: `本周记录了${recordDays}天，学龄前阶段能保持这个频率，规律已经在建立。`, mood: 'steady' }
+      : { text: `本周记录了${recordDays}天，再增加1-2天就能看到更稳定的趋势变化。`, mood: 'building' },
+    '6-12岁': recordDays >= 5
+      ? { text: `本周记录了${recordDays}天，学习日保持这个频率，趋势变化会更有参考价值。`, mood: 'steady' }
+      : { text: `本周记录了${recordDays}天，上学日更容易疏漏记录，试着把记录放在固定时间点。`, mood: 'building' },
+    '12岁以上': recordDays >= 5
+      ? { text: `本周记录了${recordDays}天，青少年阶段保持固定记录节奏，变化趋势会越来越清晰。`, mood: 'steady' }
+      : { text: `本周记录了${recordDays}天，试着把记录放在睡前5分钟，慢慢连成节奏。`, mood: 'building' }
+  };
+  return stageOverviews[ageStage] || stageOverviews['3-6岁'];
+}
+
+function buildDimensionSummaryFromRecords(records) {
+  const summary = { moodStatus: 0, appetiteStatus: 0, sleepStatus: 0, exerciseStatus: 0, socialStatus: 0 };
+  records.forEach((item) => {
+    Object.keys(summary).forEach((key) => {
+      summary[key] += getGrowthStatusScore(key, item[key]);
+    });
+  });
+  Object.keys(summary).forEach((key) => {
+    summary[key] = records.length ? Number((summary[key] / records.length).toFixed(2)) : 0;
+  });
+  return summary;
+}
+
+function buildTrendSummary(currentSummary, prevSummary) {
+  const dimKeys = Object.keys(currentSummary);
+  const diffs = dimKeys.map((key) => ({
+    key,
+    current: currentSummary[key],
+    previous: prevSummary[key] || 0,
+    diff: Number((currentSummary[key] - (prevSummary[key] || 0)).toFixed(2))
+  }));
+  const improved = diffs.filter((d) => d.diff >= 0.3).sort((a, b) => b.diff - a.diff);
+  const declined = diffs.filter((d) => d.diff <= -0.3).sort((a, b) => a.diff - b.diff);
+  const items = [];
+  if (improved.length) {
+    items.push({
+      direction: 'up',
+      label: getWeeklyDimensionLabel(improved[0].key),
+      detail:
+        improved.length === 1
+          ? `${getWeeklyDimensionLabel(improved[0].key)}对比上周有提升，家庭里的固定动作正在产生效果。`
+          : `${improved.map((d) => getWeeklyDimensionLabel(d.key)).join('和')}对比上周有提升，多维度同步向好。`
+    });
+  }
+  if (declined.length) {
+    items.push({
+      direction: 'down',
+      label: getWeeklyDimensionLabel(declined[0].key),
+      detail:
+        declined.length === 1
+          ? `${getWeeklyDimensionLabel(declined[0].key)}对比上周有所回落，下周可以优先关注这个维度的记录频率。`
+          : `${declined.map((d) => getWeeklyDimensionLabel(d.key)).join('和')}对比上周有所回落，可能和本周节奏变化有关。`
+    });
+  }
+  if (!items.length) {
+    items.push({
+      direction: 'stable',
+      label: '整体',
+      detail: '各维度对比上周变化不大，状态总体稳定，下周继续维持记录和固定动作节奏。'
+    });
+  }
+  return items;
 }
 
 async function getDefaultChildForUser(userId) {
@@ -5684,9 +5874,21 @@ function getRecommendedNutritionRecipe(ageGroup) {
   if (!poolList.length) {
     return null;
   }
-  return poolList
-    .slice()
-    .sort((a, b) => Number(b.viewCount || 0) - Number(a.viewCount || 0))[0];
+  const scored = poolList.map((item) => ({
+    item,
+    score: scoreNutritionRecipeForAge(item, ageGroup)
+  }));
+  const sorted = scored.sort((a, b) => b.score - a.score);
+  const topThree = sorted.slice(0, 3);
+  if (!topThree.length) return sorted[0] ? sorted[0].item : null;
+  const pick = topThree[Math.floor(Math.random() * topThree.length)];
+  return pick.item;
+}
+
+function getNutritionAgeOverride(recipe, ageRange, field) {
+  const override = getNutritionRecipeSourceOverride(recipe, ageRange);
+  if (!override) return '';
+  return override[field] || '';
 }
 
 function buildNoChildDailyPlanCards(planDate) {
@@ -6171,24 +6373,26 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     [child.id, weekStart, weekEnd]
   );
   const growthList = growthRows.map(normalizeGrowthRecord);
-  const summaryBase = {
-    moodStatus: 0,
-    appetiteStatus: 0,
-    sleepStatus: 0,
-    exerciseStatus: 0,
-    socialStatus: 0
-  };
-  growthList.forEach((item) => {
-    Object.keys(summaryBase).forEach((key) => {
-      summaryBase[key] += getGrowthStatusScore(key, item[key]);
-    });
-  });
-  Object.keys(summaryBase).forEach((key) => {
-    summaryBase[key] = growthList.length ? Number((summaryBase[key] / growthList.length).toFixed(2)) : 0;
-  });
+  const prevWeekStart = getRelativeWeekDate(weekStart, -1);
+  const prevWeekEnd = getWeekEndDateValue(prevWeekStart);
+  const [prevGrowthRows] = await pool.execute(
+    `SELECT *
+     FROM growth_daily_records
+     WHERE user_id = ? AND child_id = ? AND record_date BETWEEN ? AND ?
+     ORDER BY record_date ASC`,
+    [userId, child.id, prevWeekStart, prevWeekEnd]
+  );
+  const prevGrowthList = prevGrowthRows.map(normalizeGrowthRecord);
+  const summaryBase = buildDimensionSummaryFromRecords(growthList);
+  const prevSummaryBase = buildDimensionSummaryFromRecords(prevGrowthList);
+  const trendItems = prevGrowthList.length ? buildTrendSummary(summaryBase, prevSummaryBase) : [];
   const weakestDimension = Object.entries(summaryBase).sort((a, b) => a[1] - b[1])[0] || ['moodStatus', 0];
+  const avgScore = Object.values(summaryBase).reduce((sum, item) => sum + item, 0) / (Object.keys(summaryBase).length || 1);
   const weakestDimensionLabel = getWeeklyDimensionLabel(weakestDimension[0]);
   const sceneProfile = getWeeklySummaryProfileByDimension(weakestDimension[0]);
+  const ageStage = getWeeklyAgeStageKey(ageGroup);
+  const dimAdvice = getWeeklyDimensionAdvice(weakestDimension[0], ageStage);
+  const overviewData = buildWeeklyAgeOverview(growthList.length, avgScore, ageStage);
   const article = await getRecommendedParentingArticle(ageGroup, sceneProfile.articleCategory, sceneProfile.articleKeyword, userId);
   const recipe = getRecommendedNutritionRecipe(ageGroup);
   const recommendedContent = [
@@ -6201,7 +6405,7 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     recipe ? {
       type: 'nutrition_recipe',
       title: recipe.title || recipe.name,
-      summary: (recipe.nutrition && recipe.nutrition.highlight) || recipe.description || '',
+      summary: (recipe.nutrition && recipe.nutrition.highlight) || getNutritionAgeOverride(recipe, ageGroup, 'description') || recipe.description || '',
       targetPath: `/pages/nutrition/recipe-detail/recipe-detail?id=${encodeURIComponent(recipe.id)}`
     } : null
   ].filter(Boolean);
@@ -6218,32 +6422,35 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     dimensionScores: summaryBase,
     weakestDimension: weakestDimension[0],
     weakestDimensionLabel,
-    overview: growthList.length
-      ? `本周共记录${growthList.length}天，${buildGrowthTrendLabel(Object.values(summaryBase).reduce((sum, item) => sum + item, 0) / 5 || 0)}。`
-      : '本周还没有形成连续记录，先从每天30秒的成长记录开始。',
+    overview: overviewData.text,
+    overviewMood: overviewData.mood,
     highlights: [
-      normalizeAggregateNumber(planRows[0] && planRows[0].completed_total) > 0 ? `本周完成了${normalizeAggregateNumber(planRows[0] && planRows[0].completed_total)}次今日育儿计划。` : '本周的计划完成次数还可以继续提高。',
-      normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total) > 0 ? `能力训练完成${normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total)}次，执行节奏正在形成。` : '本周能力训练触达较少，适合下周固定一个时段开始。'
+      normalizeAggregateNumber(planRows[0] && planRows[0].completed_total) > 0
+        ? `本周完成了${normalizeAggregateNumber(planRows[0] && planRows[0].completed_total)}次今日育儿计划，固定动作在形成节奏。`
+        : '本周的计划完成次数还可以继续提高，试试把1-2个固定动作放进每天的同一个时段。',
+      normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total) > 0
+        ? `能力训练完成${normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total)}次，执行节奏正在形成。`
+        : '本周能力训练触达较少，下周可以试试固定一个时段开始，先从每周2次起。'
     ],
     concernsFull: [
-      `当前更值得优先观察的是${weakestDimensionLabel}。`,
-      growthList.length < 4 ? '记录天数还偏少，下周先把记录频率稳定下来。' : '建议把家庭观察和固定动作继续配套执行。'
+      dimAdvice.concern,
+      growthList.length < 4 ? '记录天数还偏少，下周先把记录频率稳定下来再评估趋势。' : '建议把家庭观察和固定动作继续配套执行，连续几周后再对比趋势。'
     ],
     concernsPreview: [
-      `当前更值得优先观察的是${weakestDimensionLabel}。`
+      dimAdvice.concern
     ],
     nextActionsFull: [
-      '下周继续保留每天一个固定记录时段。',
-      `围绕${sceneProfile.articleCategory}再补一篇方法文并尝试一条动作。`,
-      '继续跟踪趋势变化和建议完成度，优先把家庭里的固定动作做稳。'
+      dimAdvice.action,
+      growthList.length < 4 ? '下周优先稳住记录节奏，每天固定一个时间点花30秒记录即可。' : '下周继续保留每天一个固定记录时段，观察动作效果。',
+      `围绕${sceneProfile.articleCategory}再读一篇方法文并尝试其中一条建议，下周记录变化。`
     ],
     nextActionsPreview: [
-      '下周继续保留每天一个固定记录时段。',
-      `围绕${sceneProfile.articleCategory}先补一篇方法文。`
+      dimAdvice.action
     ],
     recommendedContentPremium: recommendedContent,
     recommendedContentPreview: recommendedContent.slice(0, 1),
-    premiumTip: '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。'
+    premiumTip: '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。',
+    trendItems
   };
 }
 

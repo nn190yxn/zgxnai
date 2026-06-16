@@ -111,3 +111,44 @@
   border-radius: 999rpx;
   background: linear-gradient(90deg, #ff9c5f 0%, #ff7a45 100%);
 }
+
+.trend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.trend-dir {
+  font-size: 32rpx;
+  line-height: 1.6;
+  min-width: 36rpx;
+  text-align: center;
+}
+
+.trend-up {
+  color: #2f8f46;
+}
+
+.trend-down {
+  color: #d65a1f;
+}
+
+.trend-stable {
+  color: #7c6858;
+}
+
+.overview-begin {
+  border-left: 8rpx solid #ffb64d;
+  padding-left: 16rpx;
+}
+
+.overview-building {
+  border-left: 8rpx solid #ffb64d;
+  padding-left: 16rpx;
+}
+
+.overview-steady {
+  border-left: 8rpx solid #2f8f46;
+  padding-left: 16rpx;
+}
