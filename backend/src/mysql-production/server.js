@@ -5202,7 +5202,11 @@ async function seedContentIfNeeded() {
   }
 
   const [interpretationCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM assessment_interpretations');
-  if (Number(interpretationCountRows[0].count) === 0) {
+  const interpretationCount = Number(interpretationCountRows[0].count);
+  if (interpretationCount < 10) {
+    if (interpretationCount > 0) {
+      await pool.execute('TRUNCATE TABLE assessment_interpretations');
+    }
     const rows = buildAssessmentInterpretationSeeds();
     for (const row of rows) {
       await pool.execute(
@@ -5215,7 +5219,11 @@ async function seedContentIfNeeded() {
   }
 
   const [suggestionCountRows] = await pool.execute('SELECT COUNT(*) AS count FROM assessment_suggestions');
-  if (Number(suggestionCountRows[0].count) === 0) {
+  const suggestionCount = Number(suggestionCountRows[0].count);
+  if (suggestionCount < 10) {
+    if (suggestionCount > 0) {
+      await pool.execute('TRUNCATE TABLE assessment_suggestions');
+    }
     const rows = buildAssessmentSuggestionSeeds();
     for (const row of rows) {
       await pool.execute(
