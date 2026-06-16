@@ -411,6 +411,36 @@
   border-radius: 44rpx;
 }
 
+/* 年龄段专属解读 */
+.age-context-card {
+  background: #f8f5ef;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.age-context-row {
+  margin-bottom: 20rpx;
+}
+
+.age-context-row:last-child {
+  margin-bottom: 0;
+}
+
+.age-context-label {
+  display: block;
+  font-size: 24rpx;
+  color: #d65a1f;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.age-context-text {
+  display: block;
+  font-size: 26rpx;
+  color: #4f453f;
+  line-height: 1.7;
+}
+
 /* 底部提示 */
 .footer-tip {
   text-align: center;

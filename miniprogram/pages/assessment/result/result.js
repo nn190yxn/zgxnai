@@ -252,7 +252,11 @@ Page({
       recommendations: reportData.recommendations || [],
       suggestionCards: suggestionCards,
       interpretations: interpretations,
-      suggestions: suggestions
+      suggestions: suggestions,
+      ageContext: reportData.ageContext || null,
+      ageNote: (reportData.ageContext && reportData.ageContext.ageNote) || '',
+      expectedByAge: (reportData.ageContext && reportData.ageContext.expectedByAge) || '',
+      priorityFocus: (reportData.ageContext && reportData.ageContext.priorityFocus) || ''
     };
   },
 
@@ -276,6 +280,7 @@ Page({
     // 生成训练方案
     var trainingPlans = that.generateTrainingPlans(record);
     
+    var reportData = record.reportData || {};
     that.setData({
       assessmentCode: normalizeAssessmentCode(record.assessmentCode),
       assessmentName: record.assessmentName,
@@ -293,6 +298,9 @@ Page({
       disclaimerText: that.getDisclaimerText(record.assessmentCode),
       elapsedTime: record.elapsedTime,
       timeText: timeText,
+      ageNote: reportData.ageNote || '',
+      expectedByAge: reportData.expectedByAge || '',
+      priorityFocus: reportData.priorityFocus || '',
       loading: false
     });
   },

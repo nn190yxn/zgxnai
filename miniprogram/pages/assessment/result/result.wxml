@@ -79,6 +79,27 @@
       </view>
     </view>
 
+    <!-- 年龄段专属解读 -->
+    <view class="section" wx:if="{{ageNote}}">
+      <view class="section-header">
+        <text class="section-title">本年龄段说明</text>
+      </view>
+      <view class="age-context-card">
+        <view class="age-context-row">
+          <text class="age-context-label">发展阶段</text>
+          <text class="age-context-text">{{ageNote}}</text>
+        </view>
+        <view class="age-context-row" wx:if="{{expectedByAge}}">
+          <text class="age-context-label">年龄预期</text>
+          <text class="age-context-text">{{expectedByAge}}</text>
+        </view>
+        <view class="age-context-row" wx:if="{{priorityFocus}}">
+          <text class="age-context-label">优先方向</text>
+          <text class="age-context-text">{{priorityFocus}}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 个性化建议 -->
     <view class="section" wx:if="{{suggestions.length > 0}}">
       <view class="section-header">
