@@ -182,6 +182,42 @@ Page({
     return payload;
   },
 
+  matchesAgeFilter: function(recipeAgeRange, selectedAgeRange) {
+    if (!selectedAgeRange || selectedAgeRange === '全部年龄') {
+      return true;
+    }
+    var recipeMatch = String(recipeAgeRange || '').match(/(\d+)(?:-(\d+))?岁/);
+    var selectedMatch = String(selectedAgeRange || '').match(/(\d+)(?:-(\d+))?岁/);
+    if (!recipeMatch || !selectedMatch) {
+      return String(recipeAgeRange || '') === String(selectedAgeRange || '');
+    }
+    var recipeMin = Number(recipeMatch[1]);
+    var recipeMax = Number(recipeMatch[2] || recipeMatch[1]);
+    var selectedMin = Number(selectedMatch[1]);
+    var selectedMax = Number(selectedMatch[2] || selectedMatch[1]);
+    return recipeMin <= selectedMax && recipeMax >= selectedMin;
+  },
+
+  filterLocalRecipes: function(recipes) {
+    var that = this;
+    var keyword = String(that.data.keyword || '').trim();
+    var category = that.data.currentCategory > 0 ? that.data.categoryList[that.data.currentCategory].name : '';
+    var ageGroup = that.data.currentAge > 0 ? that.data.ageList[that.data.currentAge].value : '';
+    return (recipes || []).filter(function(recipe) {
+      var text = [recipe.title, recipe.name, recipe.description, recipe.category, (recipe.tags || []).join(' ')].join(' ');
+      if (keyword && text.indexOf(keyword) === -1) {
+        return false;
+      }
+      if (category && recipe.category !== category) {
+        return false;
+      }
+      if (ageGroup && !that.matchesAgeFilter(recipe.ageRange || recipe.age_range, ageGroup)) {
+        return false;
+      }
+      return true;
+    });
+  },
+
   cacheRecipeSnapshot: function(recipe) {
     if (!recipe || !recipe.id) {
       return;
@@ -201,6 +237,21 @@ Page({
         keyword: decodeURIComponent(options.keyword)
       });
     }
+    if (options.age_group || options.ageGroup || options.age) {
+      var selectedAge = decodeURIComponent(options.age_group || options.ageGroup || options.age);
+      var targetIndex = -1;
+      for (var i = 0; i < this.data.ageList.length; i++) {
+        if (this.data.ageList[i].value === selectedAge || this.data.ageList[i].name === selectedAge) {
+          targetIndex = i;
+          break;
+        }
+      }
+      if (targetIndex > -1) {
+        this.setData({
+          currentAge: targetIndex
+        });
+      }
+    }
     if (options.type === 'hot') {
       // 热门食谱
       this.loadHotRecipes();
@@ -215,6 +266,7 @@ Page({
     if (that.data.loading || !that.data.hasMore) {
       return;
     }
+    var currentPage = that.data.page;
 
     that.setData({
       loading: true
@@ -229,14 +281,14 @@ Page({
       params.category = that.data.categoryList[that.data.currentCategory].name;
     }
     if (that.data.currentAge > 0) {
-      params.age = that.data.ageList[that.data.currentAge].value || that.data.ageList[that.data.currentAge].name;
+      params.age_group = that.data.ageList[that.data.currentAge].value || that.data.ageList[that.data.currentAge].name;
     }
     if (that.data.keyword) {
       params.keyword = that.data.keyword;
     }
 
     if (app.shouldUseMockFallback()) {
-      var list = that.getLocalRecipes().map(function(item) {
+      var list = that.filterLocalRecipes(that.getLocalRecipes()).map(function(item) {
         return that.buildRecipeCardData(item);
       });
       that.setData({
@@ -263,14 +315,30 @@ Page({
       list = list.map(function(item) {
         return that.buildRecipeCardData(item);
       });
+      if (currentPage > 1 && list.length === 0) {
+        that.setData({
+          hasMore: false
+        });
+        wx.showToast({
+          title: '已加载全部食谱',
+          icon: 'none'
+        });
+        return;
+      }
       var newList = that.data.page === 1 ? list : that.data.recipeList.concat(list);
       that.setData({
         recipeList: newList,
         hasMore: list.length >= that.data.pageSize,
-        page: that.data.page + 1
+        page: list.length > 0 ? currentPage + 1 : currentPage
       });
-    }).catch(function(err) {
-      if (that.data.page === 1 && app.shouldUseMockFallback()) {
+      if (currentPage > 1 && list.length < that.data.pageSize) {
+        wx.showToast({
+          title: '已加载全部食谱',
+          icon: 'none'
+        });
+      }
+    }).catch(function() {
+      if (currentPage === 1 && app.shouldUseMockFallback()) {
         that.setData({
           recipeList: that.getLocalRecipes().map(function(item) {
             return that.buildRecipeCardData(item);
@@ -278,7 +346,12 @@ Page({
           hasMore: false,
           page: 2
         });
+        return;
       }
+      wx.showToast({
+        title: currentPage > 1 ? '食谱加载失败，请重试' : '食谱加载失败',
+        icon: 'none'
+      });
     }).finally(function() {
       that.setData({
         loading: false
@@ -301,6 +374,10 @@ Page({
   // 加载热门食谱
   loadHotRecipes: function() {
     var that = this;
+    if (that._hotRecipesLoading) {
+      return;
+    }
+    that._hotRecipesLoading = true;
     that.setData({
       loading: true
     });
@@ -331,7 +408,7 @@ Page({
         recipeList: list,
         hasMore: false
       });
-    }).catch(function(err) {
+    }).catch(function() {
       if (app.shouldUseMockFallback()) {
         that.setData({
           recipeList: that.getLocalRecipes().map(function(item) {
@@ -344,8 +421,13 @@ Page({
           recipeList: [],
           hasMore: false
         });
+        wx.showToast({
+          title: '热门食谱加载失败',
+          icon: 'none'
+        });
       }
     }).finally(function() {
+      that._hotRecipesLoading = false;
       that.setData({
         loading: false
       });
@@ -488,6 +570,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.setData({
       recipeList: [],
       page: 1,

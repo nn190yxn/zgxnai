@@ -17,7 +17,11 @@
   <view class="summary-card" wx:if="{{currentChild && summary}}">
     <text class="summary-title">{{summary.childName}} 的本周成长总结</text>
     <text class="summary-range">{{summary.weekStart}} - {{summary.weekEnd}}</text>
-    <text class="summary-badge {{summary.premiumUnlocked ? 'summary-badge-active' : ''}}">{{summary.premiumUnlocked ? '完整成长内容' : '基础成长内容'}}</text>
+    <view class="summary-badge-row">
+      <text class="summary-badge {{summary.premiumUnlocked ? 'summary-badge-active' : ''}}">{{summary.premiumUnlocked ? '完整成长内容' : '基础成长内容'}}</text>
+      <text class="summary-badge summary-badge-soft" wx:if="{{summary.ageGroup}}">{{summary.ageGroup}}</text>
+      <text class="summary-badge summary-badge-soft" wx:if="{{summary.weakestDimensionLabel}}">重点关注 {{summary.weakestDimensionLabel}}</text>
+    </view>
     <text class="summary-copy">{{summary.overview}}</text>
   </view>
 
@@ -25,6 +29,19 @@
     <text class="section-title">记录概况</text>
     <text class="summary-copy">本周记录 {{summary.recordDays}} 天，完成今日计划 {{summary.completedPlanCount}} / {{summary.totalPlanCount}} 次。</text>
     <text class="summary-copy">能力训练完成 {{summary.completedTaskCount}} 次。</text>
+  </view>
+
+  <view class="summary-card" wx:if="{{currentChild && summary && summary.dimensionScoreList.length}}">
+    <text class="section-title">成长维度</text>
+    <view class="dimension-item" wx:for="{{summary.dimensionScoreList}}" wx:key="key">
+      <view class="dimension-row">
+        <text class="dimension-label">{{item.label}}</text>
+        <text class="dimension-score">{{item.scoreText}}</text>
+      </view>
+      <view class="dimension-track">
+        <view class="dimension-fill" style="width: {{item.score}}%;"></view>
+      </view>
+    </view>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">

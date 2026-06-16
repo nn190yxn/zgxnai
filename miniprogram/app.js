@@ -134,15 +134,11 @@ onError: function(error) {
 
   // 初始化 API 基址（允许开发环境通过 storage 覆盖）
   initApiBaseUrl: function() {
-var allowHosts = {
+    var allowHosts = {
       'api.woyai.cn': true,
       'woyai.cn': true,
       'www.woyai.cn': true,
-      'api.supercalf.com': true,
-      'supercalf.com': true,
-      'www.supercalf.com': true,
-      '127.0.0.1': true,
-      'localhost': true
+      '127.0.0.1': true
     };
 
     function getHost(url) {
@@ -304,6 +300,18 @@ var allowHosts = {
     function finishLoginWithCode(code, resolve, reject) {
       // 获取邀请码（如果有）
       var inviteCode = wx.getStorageSync('inviteCode') || '';
+
+      function buildSignupRewardMessage(data) {
+        var messages = [];
+        if (data && data.signup_reward && data.signup_reward.message) {
+          messages.push(data.signup_reward.message);
+        }
+        if (data && data.referral_reward && data.referral_reward.invitee_reward_days) {
+          messages.push('邀请奖励已到账，可额外获得' + data.referral_reward.invitee_reward_days + '天成长服务');
+        }
+        return messages.join('\n');
+      }
+
       that.request({
         url: '/auth/login',
         method: 'POST',
@@ -317,6 +325,14 @@ var allowHosts = {
         wx.setStorageSync('refreshToken', data.refresh_token);
         that.globalData.refreshToken = data.refresh_token;
         that.globalData._loginRetryCount = 0;
+        var signupRewardMessage = buildSignupRewardMessage(data);
+        if (signupRewardMessage) {
+          wx.showModal({
+            title: '成长服务已到账',
+            content: signupRewardMessage,
+            showCancel: false
+          });
+        }
         if (inviteCode) {
           wx.removeStorageSync('inviteCode');
         }

@@ -26,6 +26,10 @@ const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
+const SIGNUP_REWARD_DAYS = 7;
+const SIGNUP_REWARD_PLAN_CODE = 'signup_reward';
+const SIGNUP_REWARD_MEMBERSHIP_TYPE = 'gift';
+const SIGNUP_REWARD_TYPE = 'signup_reward';
 const REFERRAL_REWARD_DAYS = 7;
 const REFERRAL_MAX_DAYS = 60;
 const UNIFIED_PROMO_CODE = String(
@@ -73,6 +77,9 @@ const READING_TASK_MAP = READING_TASKS.reduce((acc, task) => {
 }, {});
 
 const READING_TASK_ALIAS_MAP = buildReadingTaskAliasMap();
+const VALID_PARENTING_CATEGORIES = new Set(['情绪管理', '行为习惯', '认知发展', '社交能力', '营养健康']);
+const VALID_PARENTING_AGE_GROUPS = new Set(['2-3岁', '3-4岁', '4-5岁', '5-6岁', '6-9岁']);
+const VALID_SUBJECT_CODES = new Set(['logical_thinking', 'reading_comprehension', 'expression_communication', 'learning_metacognition', 'inquiry_creativity']);
 
 function buildReadingTaskAliasMap() {
   const aliasMap = {};
@@ -1555,10 +1562,24 @@ async function loginHandler(req, res) {
   }
   const session = await getWechatSession(code);
   const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {});
+  let signupReward = null;
+  let referralReward = null;
+
+  if (isNewUser) {
+    try {
+      signupReward = await grantSignupReward(user.id);
+    } catch (err) {
+      console.error('[Membership] Signup reward failed:', err.message);
+    }
+  }
 
   // 处理邀请码（新用户注册时）
   if (isNewUser && req.body.invite_code) {
-    await handleReferralSignup(user.id, req.body.invite_code);
+    try {
+      referralReward = await handleReferralSignup(user.id, req.body.invite_code);
+    } catch (err) {
+      console.error('[Referral] Signup reward failed:', err.message);
+    }
   }
 
   const payload = { userId: user.id, openid: user.openid, username: user.nickname || '微信用户' };
@@ -1567,7 +1588,9 @@ async function loginHandler(req, res) {
     data: {
       user,
       token: signToken(payload),
-      refresh_token: signToken(Object.assign({}, payload, { tokenType: 'refresh' }))
+      refresh_token: signToken(Object.assign({}, payload, { tokenType: 'refresh' })),
+      signup_reward: signupReward,
+      referral_reward: referralReward
     }
   });
 }
@@ -1654,7 +1677,7 @@ async function handleReferralSignup(inviteeId, inviteCode) {
     const [inviters] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [inviterId]);
     if (!inviters.length) {
       await connection.rollback();
-      return;
+      return null;
     }
     const [existing] = await connection.execute(
       'SELECT id FROM referrals WHERE invitee_id = ? FOR UPDATE',
@@ -1662,7 +1685,7 @@ async function handleReferralSignup(inviteeId, inviteCode) {
     );
     if (existing.length) {
       await connection.rollback();
-      return;
+      return null;
     }
     const rewardDays = await getAvailableReferralRewardDays(connection, inviterId);
     await connection.execute(
@@ -1674,9 +1697,42 @@ async function handleReferralSignup(inviteeId, inviteCode) {
     }
     await extendMembership(connection, inviteeId, REFERRAL_REWARD_DAYS, 'invitee_reward');
     await connection.commit();
+    return {
+      invitee_reward_days: REFERRAL_REWARD_DAYS,
+      inviter_reward_days: rewardDays,
+      invite_code: String(inviteCode || '').trim().toUpperCase()
+    };
   } catch (err) {
     await connection.rollback();
     console.error('[Referral] Handle signup error:', err.message);
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function grantSignupReward(userId) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const endDate = await extendMembership(connection, userId, SIGNUP_REWARD_DAYS, SIGNUP_REWARD_TYPE, {
+      planCode: SIGNUP_REWARD_PLAN_CODE,
+      membershipType: SIGNUP_REWARD_MEMBERSHIP_TYPE,
+      preserveAutoRenew: true,
+      preservePlanIfActive: true,
+      autoRenew: 0,
+      orderNo: `${SIGNUP_REWARD_TYPE}_${userId}_${Date.now()}`
+    });
+    await connection.commit();
+    return {
+      granted: true,
+      duration_days: SIGNUP_REWARD_DAYS,
+      current_end_date: endDate.toISOString(),
+      message: `新用户注册成功，已到账${SIGNUP_REWARD_DAYS}天成长服务`
+    };
+  } catch (err) {
+    await connection.rollback();
+    throw err;
   } finally {
     connection.release();
   }
@@ -1898,6 +1954,7 @@ async function referralCodeHandler(req, res) {
 }
 
 function buildNutritionRecipeBase(recipe) {
+  const image = getNutritionRecipeImage(recipe);
   return {
     id: recipe.id,
     title: recipe.title,
@@ -1911,12 +1968,37 @@ function buildNutritionRecipeBase(recipe) {
     calories: recipe.calories,
     difficulty: recipe.difficulty,
     visualIcon: recipe.visualIcon || '',
-    image: recipe.image || '',
+    image,
+    images: normalizeNutritionRecipeImages(recipe, image),
     viewCount: recipe.viewCount || 0,
     is_favorited: false,
     isFavorite: false,
     created_at: new Date().toISOString()
   };
+}
+
+function getNutritionRecipeFallbackImage(recipe) {
+  const category = String((recipe && recipe.category) || '').trim();
+  const categoryImageMap = {
+    '早餐': 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80',
+    '午餐': 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80',
+    '晚餐': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80',
+    '加餐': 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=1200&q=80',
+    '汤品': 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80'
+  };
+  return categoryImageMap[category] || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80';
+}
+
+function getNutritionRecipeImage(recipe) {
+  return String((recipe && (recipe.image || recipe.cover_image || recipe.cover)) || '').trim() || getNutritionRecipeFallbackImage(recipe);
+}
+
+function normalizeNutritionRecipeImages(recipe, primaryImage) {
+  const source = Array.isArray(recipe && recipe.images) ? recipe.images.filter(Boolean) : [];
+  if (source.length) {
+    return source;
+  }
+  return primaryImage ? [primaryImage] : [];
 }
 
 function normalizeNutritionRecipeSummary(recipe) {
@@ -1931,6 +2013,7 @@ function normalizeNutritionRecipeSummary(recipe) {
 function normalizeNutritionRecipeDetail(recipe) {
   return Object.assign({}, buildNutritionRecipeBase(recipe), {
     ingredients: recipe.ingredients || [],
+    steps: recipe.steps || [],
     nutrition: recipe.nutrition || {},
     tips: recipe.tips || '',
     nutrientCombination: recipe.nutrientCombination || '',
@@ -1941,7 +2024,7 @@ function normalizeNutritionRecipeDetail(recipe) {
 function filterNutritionRecipes(query) {
   const keyword = String((query && query.keyword) || '').trim();
   const category = String((query && query.category) || '').trim();
-  const age = String((query && query.age) || '').trim();
+  const age = normalizeNutritionAgeQuery((query && (query.age_group || query.age)) || '');
   return NUTRITION_RECIPES.filter((recipe) => {
     const text = `${recipe.title} ${recipe.description} ${recipe.category} ${recipe.tags.join(' ')}`;
     if (keyword && !text.includes(keyword)) {
@@ -1960,10 +2043,17 @@ function filterNutritionRecipes(query) {
 function normalizeNutritionAgeQuery(age) {
   const value = String(age || '').trim();
   const ageMap = {
+    '全部': '全部年龄',
+    'all': '全部年龄',
     '6-12月': '0-1岁',
+    '0-1岁': '0-1岁',
+    'ling-yi-sui': '0-1岁',
     '1-3岁': '1-3岁',
+    'yi-san-sui': '1-3岁',
     '3-6岁': '3-6岁',
-    '6-12岁': '6-12岁'
+    'san-liu-sui': '3-6岁',
+    '6-12岁': '6-12岁',
+    'liu-shi-er-sui': '6-12岁'
   };
   return ageMap[value] || value;
 }
@@ -3363,11 +3453,28 @@ function parseJsonArray(value) {
   if (Array.isArray(value)) {
     return value;
   }
+  const parsed = safeParseJson(value, null);
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+  if (parsed !== null) {
+    return [];
+  }
+  return String(value).split(/[、,，\s]+/).filter(Boolean);
+}
+
+function safeParseJson(value, fallbackValue) {
+  if (value === undefined || value === null || value === '') {
+    return fallbackValue;
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
   try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
+    return JSON.parse(value);
   } catch (err) {
-    return String(value).split(/[、,，\s]+/).filter(Boolean);
+    console.warn('JSON parse failed:', err && err.message ? err.message : err);
+    return fallbackValue;
   }
 }
 
@@ -3447,6 +3554,22 @@ function normalizeBoundedInt(rawValue, fallbackValue, minValue, maxValue) {
     return maxValue;
   }
   return normalized;
+}
+
+function isValidBoundedIntInput(rawValue, minValue, maxValue) {
+  if (rawValue === undefined || rawValue === null || rawValue === '') {
+    return true;
+  }
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed)) {
+    return false;
+  }
+  return parsed >= minValue && parsed <= maxValue;
+}
+
+function normalizeAggregateNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
 }
 
 function getUserId(req) {
@@ -3531,6 +3654,7 @@ function getRecentDateValue(daysAgo) {
 
 function buildDefaultGrowthRecord(dateValue, childId) {
   return {
+    id: null,
     childId: Number(childId || 0),
     recordDate: dateValue,
     moodStatus: 'steady',
@@ -3538,7 +3662,8 @@ function buildDefaultGrowthRecord(dateValue, childId) {
     sleepStatus: 'stable',
     exerciseStatus: 'enough',
     socialStatus: 'smooth',
-    noteText: ''
+    noteText: '',
+    updatedAt: null
   };
 }
 
@@ -4344,9 +4469,9 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     weekStart,
     weekEnd,
     recordDays: growthList.length,
-    completedPlanCount: Number(planRows[0].completed_total || 0),
-    totalPlanCount: Number(planRows[0].total || 0),
-    completedTaskCount: Number(taskRows[0].completed_total || 0),
+    completedPlanCount: normalizeAggregateNumber(planRows[0] && planRows[0].completed_total),
+    totalPlanCount: normalizeAggregateNumber(planRows[0] && planRows[0].total),
+    completedTaskCount: normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total),
     dimensionScores: summaryBase,
     weakestDimension: weakestDimension[0],
     weakestDimensionLabel,
@@ -4354,8 +4479,8 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
       ? `本周共记录${growthList.length}天，${buildGrowthTrendLabel(Object.values(summaryBase).reduce((sum, item) => sum + item, 0) / 5 || 0)}。`
       : '本周还没有形成连续记录，先从每天30秒的成长记录开始。',
     highlights: [
-      Number(planRows[0].completed_total || 0) > 0 ? `本周完成了${Number(planRows[0].completed_total || 0)}次今日育儿计划。` : '本周的计划完成次数还可以继续提高。',
-      Number(taskRows[0].completed_total || 0) > 0 ? `能力训练完成${Number(taskRows[0].completed_total || 0)}次，执行节奏正在形成。` : '本周能力训练触达较少，适合下周固定一个时段开始。'
+      normalizeAggregateNumber(planRows[0] && planRows[0].completed_total) > 0 ? `本周完成了${normalizeAggregateNumber(planRows[0] && planRows[0].completed_total)}次今日育儿计划。` : '本周的计划完成次数还可以继续提高。',
+      normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total) > 0 ? `能力训练完成${normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total)}次，执行节奏正在形成。` : '本周能力训练触达较少，适合下周固定一个时段开始。'
     ],
     concernsFull: [
       `当前更值得优先观察的是${weakestDimensionLabel}。`,
@@ -4414,11 +4539,7 @@ async function weeklySummaryHandler(req, res) {
   );
   let payload = null;
   if (rows.length && rows[0].summary_payload) {
-    try {
-      payload = JSON.parse(rows[0].summary_payload);
-    } catch (err) {
-      payload = null;
-    }
+    payload = safeParseJson(rows[0].summary_payload, null);
   }
   if (payload && (!Array.isArray(payload.concernsFull) || !Array.isArray(payload.nextActionsFull))) {
     payload = null;
@@ -4811,31 +4932,65 @@ function buildKeyPointsFromContent(content) {
 }
 
 async function parentingArticlesHandler(req, res) {
+  if (!isValidBoundedIntInput(req.query.page, 1, 1000000)) {
+    res.status(400).json({ success: false, message: 'page参数无效' });
+    return;
+  }
+  if (!isValidBoundedIntInput(req.query.page_size, 1, 20)) {
+    res.status(400).json({ success: false, message: 'page_size参数无效' });
+    return;
+  }
+  if (req.query.category && !VALID_PARENTING_CATEGORIES.has(String(req.query.category).trim())) {
+    res.status(400).json({ success: false, message: 'category参数无效' });
+    return;
+  }
+  if (req.query.age_group && !VALID_PARENTING_AGE_GROUPS.has(String(req.query.age_group).trim())) {
+    res.status(400).json({ success: false, message: 'age_group参数无效' });
+    return;
+  }
   const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
   const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
   const offset = (page - 1) * pageSize;
   const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
   const params = [];
+  const countParams = [];
   let whereClause = 'WHERE is_published = 1';
   if (req.query.category) {
     whereClause += ' AND category = ?';
     params.push(req.query.category);
+    countParams.push(req.query.category);
   }
   if (req.query.age_group) {
     whereClause += ' AND age_group = ?';
     params.push(req.query.age_group);
+    countParams.push(req.query.age_group);
   }
   if (req.query.keyword) {
     whereClause += ' AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)';
     const searchTerm = `%${String(req.query.keyword).trim()}%`;
     params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
   }
+  const [countRows] = await pool.execute(`SELECT COUNT(*) AS total FROM articles ${whereClause}`, countParams);
   const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
   const data = [];
   for (const row of rows) {
     data.push(await normalizeArticle(row, getUserId(req)));
   }
-  res.json({ success: true, data });
+  const total = normalizeAggregateNumber(countRows[0] && countRows[0].total);
+  res.json({
+    success: true,
+    data: {
+      list: data,
+      pagination: {
+        page,
+        page_size: pageSize,
+        total,
+        has_more: offset + data.length < total,
+        hasMore: offset + data.length < total
+      }
+    }
+  });
 }
 
 async function parentingArticleDetailHandler(req, res) {
@@ -5103,19 +5258,22 @@ async function educationKnowledgeChaptersHandler(req, res) {
 
 async function educationKnowledgeDetailHandler(req, res) {
   const pointId = String(req.query.pointId || '').trim();
-  const subjectCode = req.query.subjectCode || null;
+  const rawSubjectCode = String(req.query.subjectCode || '').trim();
+  const subjectCode = rawSubjectCode || null;
   const childId = Number(req.query.childId || 0);
   if (!pointId) {
     res.status(400).json({ success: false, message: 'pointId不能为空' });
+    return;
+  }
+  if (rawSubjectCode && !VALID_SUBJECT_CODES.has(rawSubjectCode)) {
+    res.status(404).json({ success: false, message: '知识点不存在' });
     return;
   }
   const child = await requireOwnedChildForRead(req, res, childId);
   if (!child) {
     return;
   }
-  const canonicalTaskCode = (READING_TASK_MAP[pointId] && READING_TASK_MAP[pointId].task_code)
-    || (READING_TASK_ALIAS_MAP[pointId] && READING_TASK_ALIAS_MAP[pointId].task_code)
-    || pointId;
+  const canonicalTaskCode = resolveCanonicalReadingTaskCode(pointId);
   const [rows] = await pool.execute(
     `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
@@ -5301,9 +5459,7 @@ async function educationUpdateProgressHandler(req, res) {
     res.status(403).json({ success: false, message: '无权更新该孩子的学习进度' });
     return;
   }
-  const canonicalTaskCode = (READING_TASK_MAP[pointId] && READING_TASK_MAP[pointId].task_code)
-    || (READING_TASK_ALIAS_MAP[pointId] && READING_TASK_ALIAS_MAP[pointId].task_code)
-    || pointId;
+  const canonicalTaskCode = resolveCanonicalReadingTaskCode(pointId);
   const [taskRows] = await pool.execute('SELECT id FROM reading_tasks WHERE task_code = ? OR CAST(id AS CHAR) = ? LIMIT 1', [canonicalTaskCode, canonicalTaskCode]);
   if (!taskRows.length) {
     res.status(404).json({ success: false, message: '知识点不存在' });
@@ -5317,7 +5473,7 @@ async function educationUpdateProgressHandler(req, res) {
      ON DUPLICATE KEY UPDATE status = VALUES(status), progress = VALUES(progress), completed_at = CASE WHEN VALUES(status) = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END`,
     [childId, taskRows[0].id, normalizedStatus, progress, normalizedStatus]
   );
-  res.json({ success: true, data: { child_id: childId, knowledge_point_id: pointId, status: req.body.status || 'in_progress', mapped_status: normalizedStatus, mastery_level: progress } });
+  res.json({ success: true, data: { child_id: childId, knowledge_point_id: canonicalTaskCode, status: req.body.status || 'in_progress', mapped_status: normalizedStatus, mastery_level: progress } });
 }
 
 async function kbEventTrackHandler(req, res) {
@@ -5387,8 +5543,25 @@ function normalizeLevelText(level) {
   return map[level] || level || '';
 }
 
+function buildAssessmentReportData(interpretationRows, suggestionRows) {
+  const interpretations = Array.isArray(interpretationRows) ? interpretationRows : [];
+  const suggestions = Array.isArray(suggestionRows) ? suggestionRows : [];
+  const primaryInterpretation = interpretations[0] || null;
+  return {
+    summary: primaryInterpretation ? (primaryInterpretation.interpretation || primaryInterpretation.behavior_description || primaryInterpretation.scene_advice || primaryInterpretation.expected_goal || '') : '',
+    recommendations: suggestions.map((item) => item.description || item.steps || item.title || '').filter(Boolean),
+    interpretations,
+    suggestions
+  };
+}
+
 async function assessmentSubmitHandler(req, res) {
   const code = req.params.code;
+  const meta = ASSESSMENT_META[code];
+  if (!meta) {
+    res.status(404).json({ success: false, message: '观察工具不存在' });
+    return;
+  }
   const childId = Number(req.body.child_id || 0);
   const answers = Array.isArray(req.body.answers) ? req.body.answers : [];
   if (!childId || !answers.length) {
@@ -5421,7 +5594,7 @@ async function assessmentSubmitHandler(req, res) {
     const [result] = await connection.execute(
       `INSERT INTO assessment_records (child_id, assessment_code, assessment_name, age_group, total_score, max_score, percentage, overall_level, elapsed_time)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [childId, code, (ASSESSMENT_META[code] && ASSESSMENT_META[code].name) || code, req.body.age_group || '', totalScore, maxScore, percentage, level, Number(req.body.elapsed_time || 0)]
+      [childId, code, meta.name, req.body.age_group || '', totalScore, maxScore, percentage, level, Number(req.body.elapsed_time || 0)]
     );
     for (const [dimension, info] of grouped.entries()) {
       const scoreRate = info.count > 0 ? Math.round((info.score / (info.count * 3)) * 100) : 0;
@@ -5438,6 +5611,7 @@ async function assessmentSubmitHandler(req, res) {
       [code, percentage]
     );
     const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [code, level]);
+    const reportData = buildAssessmentReportData(interpretationRows, suggestionRows);
     res.json({
       success: true,
       data: {
@@ -5445,7 +5619,7 @@ async function assessmentSubmitHandler(req, res) {
         id: result.insertId,
         assessment_code: code,
         assessment_type: code,
-        assessment_name: (ASSESSMENT_META[code] && ASSESSMENT_META[code].name) || code,
+        assessment_name: meta.name,
         total_score: totalScore,
         overall_score: totalScore,
         max_score: maxScore,
@@ -5453,10 +5627,7 @@ async function assessmentSubmitHandler(req, res) {
         overall_level: level,
         overall_level_text: normalizeLevelText(level),
         dimension_scores: [],
-        report_data: {
-          interpretations: interpretationRows,
-          suggestions: suggestionRows
-        },
+        report_data: reportData,
         interpretations: interpretationRows,
         suggestions: suggestionRows
       }
@@ -5478,6 +5649,7 @@ async function buildAssessmentRecord(record) {
     [record.assessment_code, record.percentage || 0]
   );
   const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [record.assessment_code, record.overall_level]);
+  const reportData = buildAssessmentReportData(interpretationRows, suggestionRows);
   return {
     ...record,
     assessment_type: record.assessment_code,
@@ -5485,7 +5657,7 @@ async function buildAssessmentRecord(record) {
     child_name: childRows[0] ? childRows[0].name : '',
     overall_score: record.total_score,
     dimension_scores: dimensionRows.map((item) => ({ dimension_id: item.dimension_name, dimension_name: item.dimension_name, name: item.dimension_name, score: item.score, score_rate: item.score_rate, standard_score: item.standard_score })),
-    report_data: { interpretations: interpretationRows, suggestions: suggestionRows },
+    report_data: reportData,
     overall_level_text: normalizeLevelText(record.overall_level)
   };
 }

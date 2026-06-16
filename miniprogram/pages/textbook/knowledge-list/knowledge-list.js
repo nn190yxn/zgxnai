@@ -23,15 +23,35 @@ Page({
     currentPoint: null
   },
 
+  handleInvalidEntry: function(message) {
+    wx.showToast({
+      title: message || '页面参数缺失',
+      icon: 'none'
+    });
+    setTimeout(function() {
+      wx.navigateBack({
+        fail: function() {
+          wx.switchTab({
+            url: '/pages/index/index'
+          });
+        }
+      });
+    }, 300);
+  },
+
   onLoad: function(options) {
     var that = this;
+    options = options || {};
+
+    if (!options.subjectCode) {
+      that.handleInvalidEntry('缺少学科参数');
+      return;
+    }
     
     // 获取页面参数
-    if (options.subjectCode) {
-      that.setData({
-        subjectCode: options.subjectCode
-      });
-    }
+    that.setData({
+      subjectCode: options.subjectCode
+    });
     if (options.subjectName) {
       that.setData({
         subjectName: decodeURIComponent(options.subjectName)
@@ -60,6 +80,12 @@ Page({
   // 加载章节列表
   loadChapterList: function(fromPullDown) {
     var that = this;
+    if (that.data.loading) {
+      if (fromPullDown) {
+        wx.stopPullDownRefresh();
+      }
+      return;
+    }
     
     that.setData({
       loading: true

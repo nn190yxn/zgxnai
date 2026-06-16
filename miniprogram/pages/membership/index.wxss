@@ -52,6 +52,14 @@
   opacity: 0.9;
 }
 
+.membership-tip {
+  display: block;
+  font-size: 24rpx;
+  margin-top: 12rpx;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
 .membership-actions {
   display: flex;
   flex-direction: column;

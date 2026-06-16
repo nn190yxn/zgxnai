@@ -1,5 +1,7 @@
 // 成长观察历史记录页面
 var app = getApp();
+var assessmentUtils = require('../../../utils/assessment.js');
+var normalizeAssessmentCode = assessmentUtils.normalizeAssessmentCode;
 
 function getAssessmentRecordsStorage() {
   return wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];

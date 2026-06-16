@@ -171,7 +171,9 @@ Page({
         page: 1,
         page_size: that.data.pageSize
       }
-    }).then(function(list) {
+    }).then(function(payload) {
+      var pagination = payload && payload.pagination ? payload.pagination : null;
+      var list = payload && Array.isArray(payload.list) ? payload.list : payload;
       list = list || [];
       if (!Array.isArray(list)) {
         list = [];
@@ -182,7 +184,7 @@ Page({
       that.setData({
         hotArticles: list.slice(0, 5),
         latestArticles: list,
-        hasMore: list.length >= that.data.pageSize,
+        hasMore: pagination && typeof pagination.hasMore === 'boolean' ? pagination.hasMore : list.length >= that.data.pageSize,
         page: 2,
         loadError: ''
       });
@@ -354,6 +356,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.setData({
       page: 1,
       hasMore: true
@@ -384,7 +390,9 @@ Page({
         page: that.data.page,
         page_size: that.data.pageSize
       }
-    }).then(function(list) {
+    }).then(function(payload) {
+      var pagination = payload && payload.pagination ? payload.pagination : null;
+      var list = payload && Array.isArray(payload.list) ? payload.list : payload;
       list = list || [];
       list = list.map(function(item) {
         return that.normalizeArticleCard(item);
@@ -392,7 +400,7 @@ Page({
       var newList = that.data.latestArticles.concat(list);
       that.setData({
         latestArticles: newList,
-        hasMore: list.length >= that.data.pageSize,
+        hasMore: pagination && typeof pagination.hasMore === 'boolean' ? pagination.hasMore : list.length >= that.data.pageSize,
         page: that.data.page + 1
       });
     }).catch(function(err) {

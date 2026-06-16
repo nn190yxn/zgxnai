@@ -31,6 +31,9 @@ Page({
   },
 
   onLoad: function(options) {
+    this._navigateBackTimer = null;
+
+
     var that = this;
     that.setData({
       today: that.getToday(),
@@ -43,6 +46,24 @@ Page({
       });
       that.loadChildData(options.id);
     }
+  },
+
+  onUnload: function() {
+    this.clearNavigateBackTimer();
+  },
+
+  clearNavigateBackTimer: function() {
+    if (this._navigateBackTimer) {
+      clearTimeout(this._navigateBackTimer);
+      this._navigateBackTimer = null;
+    }
+  },
+
+  scheduleNavigateBack: function(delay) {
+    this.clearNavigateBackTimer();
+    this._navigateBackTimer = setTimeout(function() {
+      wx.navigateBack();
+    }, delay || 1000);
   },
 
   // 加载孩子数据
@@ -398,14 +419,13 @@ Page({
   },
 
   finishSaveSuccess: function() {
+    var that = this;
     wx.showToast({
       title: '保存成功',
       icon: 'success'
     });
 
-    setTimeout(function() {
-      wx.navigateBack();
-    }, 1000);
+    that.scheduleNavigateBack(1000);
   },
 
   // 保存
@@ -551,9 +571,7 @@ Page({
         title: '删除成功',
         icon: 'success'
       });
-      setTimeout(function() {
-        wx.navigateBack();
-      }, 1000);
+      that.scheduleNavigateBack(1000);
       return;
     }
 
@@ -588,9 +606,7 @@ Page({
         icon: 'success'
       });
 
-      setTimeout(function() {
-        wx.navigateBack();
-      }, 1500);
+      that.scheduleNavigateBack(1500);
     }).catch(function(err) {
       wx.hideLoading();
       wx.showToast({

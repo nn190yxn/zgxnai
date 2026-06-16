@@ -420,6 +420,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.loadData(true);
   }
 ,

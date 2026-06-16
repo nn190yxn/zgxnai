@@ -23,7 +23,9 @@
         <text class="article-title">{{article.title}}</text>
         <view class="article-tags">
           <text class="tag tag-primary" wx:if="{{article.categoryName}}">{{article.categoryName}}</text>
+          <text class="tag tag-muted" wx:if="{{article.subCategoryName}}">{{article.subCategoryName}}</text>
           <text class="tag tag-accent" wx:if="{{article.ageRange}}">{{article.ageRange}}</text>
+          <text class="tag tag-evidence" wx:if="{{article.evidenceLevelText}}">{{article.evidenceLevelText}}</text>
         </view>
       </view>
       

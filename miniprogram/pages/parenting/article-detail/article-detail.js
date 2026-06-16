@@ -220,12 +220,28 @@ Page({
     article = article || {};
     article.keyPoints = article.key_points || article.keyPoints || [];
     article.categoryName = article.categoryName || article.category || '';
+    article.subCategoryName = article.subCategoryName || article.sub_category || '';
     article.ageRange = article.ageRange || article.age_group || '';
+    article.evidenceLevelText = this.getEvidenceLevelText(article.evidence_level || article.evidenceLevel || '');
     article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
     article.publishTime = article.publishTime || article.created_at || '';
     article.content = this.sanitizeRichText(article.content);
     article.isFavorite = !!(article.is_favorited || article.isFavorite);
     return article;
+  },
+
+  getEvidenceLevelText: function(level) {
+    var normalized = String(level || '').trim();
+    if (!normalized) {
+      return '';
+    }
+    var map = {
+      high: '高证据支持',
+      medium: '实践验证',
+      low: '观察建议',
+      expert: '专家建议'
+    };
+    return map[normalized] || normalized;
   },
 
   buildArticleTrackPayload: function(extra) {
@@ -247,13 +263,28 @@ Page({
   },
 
   onLoad: function(options) {
-    if (options.id) {
+    var articleId = options && options.id;
+    if (!articleId) {
       this.setData({
-        articleId: options.id
+        loading: false,
+        article: null,
+        relatedArticles: []
       });
-      this.loadArticleDetail();
-      this.loadRelatedArticles();
+      wx.showToast({
+        title: '文章参数缺失',
+        icon: 'none'
+      });
+      if (getCurrentPages().length > 1) {
+        wx.navigateBack();
+      }
+      return;
     }
+
+    this.setData({
+      articleId: articleId
+    });
+    this.loadArticleDetail();
+    this.loadRelatedArticles();
   },
 
   // 加载文章详情
@@ -349,6 +380,9 @@ Page({
   // 加载相关文章
   loadRelatedArticles: function() {
     var that = this;
+    if (that._relatedArticlesLoading) {
+      return;
+    }
     
     // 本地文章不请求相关文章
     if (String(that.data.articleId || '').indexOf('local_parenting_') === 0) {
@@ -364,6 +398,7 @@ Page({
       });
       return;
     }
+    that._relatedArticlesLoading = true;
     
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/related',
@@ -382,6 +417,8 @@ Page({
       that.setData({
         relatedArticles: []
       });
+    }).finally(function() {
+      that._relatedArticlesLoading = false;
     });
   },
 
@@ -543,6 +580,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.loadArticleDetail(true);
     this.loadRelatedArticles();
     this.loadComments();
@@ -551,10 +592,14 @@ Page({
   // 加载评论列表
   loadComments: function() {
     var that = this;
+    if (that._commentsLoading) {
+      return;
+    }
     if (String(that.data.articleId || '').indexOf('local_parenting_') === 0) {
       that.setData({ comments: [] });
       return;
     }
+    that._commentsLoading = true;
     
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/comments',
@@ -565,17 +610,23 @@ Page({
       }
     }).catch(function(err) {
       console.log('获取评论失败', err);
+    }).finally(function() {
+      that._commentsLoading = false;
     });
   },
 
   // 切换点赞
   toggleLike: function() {
     var that = this;
+    if (that._likePending) {
+      return;
+    }
     if (that.data.offlineFallback) {
       wx.showToast({ title: '离线示例不可点赞', icon: 'none' });
       return;
     }
-    
+
+    that._likePending = true;
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/like',
       method: 'POST'
@@ -594,12 +645,14 @@ Page({
           }
         }));
         wx.showToast({
-          title: that.data.isLiked ? '已点赞' : '已取消',
+          title: nextLikedState ? '已点赞' : '已取消',
           icon: 'success'
         });
       }
-    }).catch(function(err) {
+    }).catch(function() {
       wx.showToast({ title: '点赞失败', icon: 'none' });
+    }).finally(function() {
+      that._likePending = false;
     });
   },
 
@@ -611,6 +664,9 @@ Page({
   // 提交评论
   submitComment: function() {
     var that = this;
+    if (that._commentPending) {
+      return;
+    }
     var content = that.data.commentText;
     if (!content || !content.trim()) {
       wx.showToast({ title: '请输入评论内容', icon: 'none' });
@@ -621,7 +677,8 @@ Page({
       wx.showToast({ title: '离线示例不可评论', icon: 'none' });
       return;
     }
-    
+
+    that._commentPending = true;
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/comments',
       method: 'POST',
@@ -636,8 +693,10 @@ Page({
       wx.showToast({ title: '评论成功', icon: 'success' });
       that.setData({ commentText: '' });
       that.loadComments();
-    }).catch(function(err) {
+    }).catch(function() {
       wx.showToast({ title: '评论失败', icon: 'none' });
+    }).finally(function() {
+      that._commentPending = false;
     });
   },
 

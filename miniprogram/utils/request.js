@@ -165,7 +165,7 @@ function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
     : app.login();
 
   authPromise.then(function() {
-    request(app, options).then(resolve).catch(reject);
+    request(app, Object.assign({}, options, { _skipAuthRetry: true })).then(resolve).catch(reject);
   }).catch(function(err) {
     reject(err || fallbackError || new Error('请求失败'));
   });

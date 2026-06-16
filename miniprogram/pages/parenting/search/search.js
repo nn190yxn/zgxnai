@@ -4,6 +4,8 @@ var app = getApp();
 Page({
   data: {
     keyword: '',
+    currentAgeGroup: '',
+    currentCategory: '',
     searchHistory: [],
     hotKeywords: [],
     sceneTags: [],
@@ -33,7 +35,11 @@ Page({
     });
   },
 
-  onLoad: function() {
+  onLoad: function(options) {
+    this.setData({
+      currentAgeGroup: String((options && (options.ageGroup || options.age_group)) || '').trim(),
+      currentCategory: String((options && options.category) || '').trim()
+    });
     this.loadSearchHistory();
     this.loadHotKeywords();
     this.loadSceneTags();
@@ -140,6 +146,8 @@ Page({
     var opts = options || {};
     var keyword = String(opts.keyword || this.data.keyword || '').trim();
     var sceneKey = String(opts.sceneKey || '').trim();
+    var ageGroup = String(opts.ageGroup || opts.age_group || this.data.currentAgeGroup || '').trim();
+    var category = String(opts.category || this.data.currentCategory || '').trim();
     if (!keyword && !sceneKey) {
       return;
     }
@@ -196,11 +204,11 @@ Page({
       app.request({
         url: '/parenting/search',
         method: 'GET',
-        data: {
+        data: Object.assign({
           keyword: keyword || sceneKey,
           page: 1,
           page_size: that.data.pageSize
-        }
+        }, ageGroup ? { age_group: ageGroup } : {}, category ? { category: category } : {})
       }).catch(function() {
         return [];
       })

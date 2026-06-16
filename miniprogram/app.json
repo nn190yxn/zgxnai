@@ -24,6 +24,9 @@
     "pages/textbook/textbook",
     "pages/textbook/knowledge-list/knowledge-list",
     "pages/textbook/knowledge-detail/knowledge-detail",
+    "pages/growth-record/index",
+    "pages/growth-record/history/index",
+    "pages/weekly-summary/index",
     "pages/share/preview/preview",
     "pages/membership/index"
   ],

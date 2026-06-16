@@ -66,6 +66,7 @@ Page({
   },
 
   onLoad() {
+    this._heroImageTimer = null;
     this._runtimeConfigLoading = false;
     if (app.globalData.enableStartupSafeMode) {
       this.setData({ startupSafeMode: true });
@@ -94,11 +95,24 @@ Page({
     this.deferHeroImage();
   },
 
+  onUnload() {
+    this.clearHeroImageTimer();
+  },
+
+  clearHeroImageTimer() {
+    if (this._heroImageTimer) {
+      clearTimeout(this._heroImageTimer);
+      this._heroImageTimer = null;
+    }
+  },
+
   deferHeroImage() {
     if (this.data.heroImageReady) {
       return;
     }
-    setTimeout(() => {
+    this.clearHeroImageTimer();
+    this._heroImageTimer = setTimeout(() => {
+      this._heroImageTimer = null;
       this.setData({ heroImageReady: true });
     }, 300);
   },
@@ -158,18 +172,19 @@ Page({
     var stats = app.getReadingTaskStats();
     var shareDraft = wx.getStorageSync('readingShareDraft') || {};
     var metrics = shareDraft.metrics || {};
+    var allowDraftMetrics = shareDraft.mode !== 'mock';
     var completionRate = stats.completionRate || 0;
     var completed = stats.completed || 0;
     var total = stats.total || 0;
 
     // 优先使用最近周报/分享草稿中的指标，其次使用全局统计
-    if (metrics.total > 0) {
+    if (allowDraftMetrics && metrics.total > 0) {
       completionRate = metrics.completionRate || completionRate;
       completed = metrics.completed || completed;
       total = metrics.total || total;
     }
 
-    var streakDays = metrics.streakDays || this.data.weeklyProgress.streakDays;
+    var streakDays = allowDraftMetrics ? (metrics.streakDays || this.data.weeklyProgress.streakDays) : this.data.weeklyProgress.streakDays;
 
     var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项能力成长任务') : '从成长观察、能力成长或成长记录中选择一个开始';
 
@@ -195,8 +210,8 @@ Page({
     if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
       that.setData({
         weeklyProgress: {
-          headline: '先完成连续记录，本周成长总结会更完整',
-          summary: '连续记录每天的变化后，系统会整理出更清晰的本周成长总结。',
+          headline: '当前为演示模式，周总结展示为示例内容',
+          summary: '接入真实记录后，这里会展示孩子本周的成长趋势和建议。',
           streakDays: 0,
           actionText: '查看完整周报',
           premiumUnlocked: false
@@ -217,6 +232,15 @@ Page({
       return;
     }
     if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      that.setData({
+        weeklyProgress: {
+          headline: '登录后可查看孩子本周的成长总结',
+          summary: '登录后系统会结合最近 7 天记录，整理趋势和陪伴建议。',
+          streakDays: 0,
+          actionText: '立即登录',
+          premiumUnlocked: false
+        }
+      });
       return;
     }
     app.ensureLogin().then(function() {
@@ -236,6 +260,7 @@ Page({
       var weeklySummary = result[0];
       var trendSummary = result[1];
       if (!weeklySummary && !trendSummary) {
+        that.applyWeeklyProgressLoadError('周总结暂时无法加载，请稍后重试。');
         return;
       }
       var recordDays = Number((weeklySummary && weeklySummary.recordDays) || (trendSummary && trendSummary.completedDays) || 0);
@@ -261,7 +286,20 @@ Page({
         });
       }
     }).catch(function() {
-      return null;
+      that.applyWeeklyProgressLoadError('周总结暂时无法加载，请稍后重试。');
+    });
+  },
+
+  applyWeeklyProgressLoadError: function(message) {
+    var text = message || '周总结暂时无法加载，请稍后重试。';
+    this.setData({
+      weeklyProgress: {
+        headline: text,
+        summary: '请稍后刷新重试，或先继续记录今天的成长变化。',
+        streakDays: 0,
+        actionText: '稍后再试',
+        premiumUnlocked: false
+      }
     });
   },
 
@@ -345,6 +383,37 @@ Page({
         durationMinutes: 5,
         targetType: 'parenting_home',
         targetPath: '/pages/parenting/parenting'
+      })
+    ];
+  },
+
+  getMockDailyPlanCards: function() {
+    var today = new Date();
+    var dateText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    return [
+      this.normalizeDailyPlanCard({
+        id: 'mock_1',
+        planDate: dateText,
+        type: 'onboarding',
+        title: '演示模式：今日建议展示为示例内容',
+        reason: '当前环境使用演示数据，内容仅用于展示首页布局和交互。',
+        summary: '接入真实孩子档案和记录后，这里会生成当天的实际陪伴建议。',
+        actionText: '查看示例',
+        durationMinutes: 2,
+        targetType: 'child_profile',
+        targetPath: '/pages/profile/child-edit/child-edit'
+      }),
+      this.normalizeDailyPlanCard({
+        id: 'mock_2',
+        planDate: dateText,
+        type: 'habit_reminder',
+        title: '演示模式：成长观察入口示例',
+        reason: '用于展示首页如何引导用户进入成长观察。',
+        summary: '真实模式下会根据孩子年龄和近期记录推荐更具体的观察方向。',
+        actionText: '查看示例',
+        durationMinutes: 3,
+        targetType: 'assessment',
+        targetPath: '/pages/assessment/assessment'
       })
     ];
   },
@@ -440,7 +509,7 @@ Page({
       return;
     }
     if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
-      that.applyDailyPlan(that.getGuestDailyPlanCards(), { date: '' });
+      that.applyDailyPlan(that.getMockDailyPlanCards(), { date: '' });
       return;
     }
     if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
@@ -469,7 +538,11 @@ Page({
   loadMembershipTouchpoint: function() {
     var that = this;
     if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
-      that.setData({ membershipTouchpointVisible: true });
+      that.setData({
+        membershipTouchpointVisible: true,
+        membershipTouchpointTitle: '演示模式：会员周总结入口示例',
+        membershipTouchpointDesc: '当前展示为演示文案，真实会员状态和完整周总结以正式环境数据为准。'
+      });
       if (!that._membershipTouchpointExposed) {
         that._membershipTouchpointExposed = true;
         that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'mock' });
@@ -477,7 +550,11 @@ Page({
       return;
     }
     if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
-      that.setData({ membershipTouchpointVisible: true });
+      that.setData({
+        membershipTouchpointVisible: true,
+        membershipTouchpointTitle: '登录后可查看宝贝每周成长总结',
+        membershipTouchpointDesc: '登录并完成记录后，这里会展示本周趋势、提醒和陪伴建议。'
+      });
       if (!that._membershipTouchpointExposed) {
         that._membershipTouchpointExposed = true;
         that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'guest' });
@@ -536,6 +613,10 @@ Page({
     }
     if (String(plan.id || '').indexOf('guest_') === 0) {
       wx.showToast({ title: '登录后可记录完成状态', icon: 'none' });
+      return;
+    }
+    if (String(plan.id || '').indexOf('mock_') === 0) {
+      wx.showToast({ title: '演示内容不可记录完成状态', icon: 'none' });
       return;
     }
     if (that._dailyPlanCompletePending) {
@@ -724,10 +805,12 @@ Page({
   onShareTaskCard() {
     var stats = app.getReadingTaskStats();
     var firstPlan = (this.data.dailyPlanCards || [])[0] || {};
+    var isMockMode = !!(app.shouldUseMockFallback && app.shouldUseMockFallback());
     var draft = {
       type: 'app_intro',
-      title: firstPlan.title || this.data.todayTask.title || '成长观察建议',
-      summary: '我正在用小牛育儿AI助理观察孩子的成长状态。',
+      mode: isMockMode ? 'mock' : 'live',
+      title: isMockMode ? '演示模式：首页建议卡示例' : (firstPlan.title || this.data.todayTask.title || '成长观察建议'),
+      summary: isMockMode ? '当前为演示内容分享，用于展示首页建议卡样式。' : '我正在用小牛育儿AI助理观察孩子的成长状态。',
       metrics: {
         completed: stats.completed || 0,
         total: stats.total || 0,
@@ -757,10 +840,12 @@ Page({
 
   onShareProgressCard() {
     var stats = app.getReadingTaskStats();
+    var isMockMode = !!(app.shouldUseMockFallback && app.shouldUseMockFallback());
     var draft = {
       type: 'weekly_report',
-      title: '本周成长成果卡',
-      summary: this.data.weeklyProgress.summary || '本周坚持记录和行动，继续加油。',
+      mode: isMockMode ? 'mock' : 'live',
+      title: isMockMode ? '演示模式：本周成长成果卡示例' : '本周成长成果卡',
+      summary: isMockMode ? '当前展示为演示周报卡片，真实成长结果以正式环境数据为准。' : (this.data.weeklyProgress.summary || '本周坚持记录和行动，继续加油。'),
       metrics: {
         completed: stats.completed || 0,
         total: stats.total || 0,

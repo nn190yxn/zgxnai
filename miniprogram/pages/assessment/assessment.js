@@ -389,8 +389,12 @@ Page({
     var tasks = [
       that.loadAssessmentListFromServer(),
       that.loadHistoryCount()
-    ];
-    Promise.allSettled(tasks).finally(function() {
+    ].map(function(task) {
+      return Promise.resolve(task).catch(function() {
+        return null;
+      });
+    });
+    Promise.all(tasks).finally(function() {
       that.checkPendingProgress();
       wx.stopPullDownRefresh();
     });

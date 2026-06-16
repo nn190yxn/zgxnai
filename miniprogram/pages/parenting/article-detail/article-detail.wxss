@@ -67,6 +67,16 @@
   color: #FF8F00;
 }
 
+.tag-muted {
+  background: #EEF3F0;
+  color: #4D6355;
+}
+
+.tag-evidence {
+  background: #EDF4FF;
+  color: #3568B8;
+}
+
 .article-meta {
   display: flex;
   align-items: center;

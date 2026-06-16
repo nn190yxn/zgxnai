@@ -30,13 +30,17 @@ Page({
         calories: '180卡',
         difficulty: '简单',
         ageRange: '3-6岁',
+        image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80',
+        images: ['https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80'],
         ingredients: [
           { name: '小米', amount: '50g' },
           { name: '南瓜', amount: '100g' },
           { name: '清水', amount: '500ml' }
         ],
         steps: ['小米洗净浸泡', '南瓜切块', '先煮小米后加南瓜', '小火煮至软糯'],
-        nutrition: { highlight: '易消化，适合早餐', protein: '4g', carbs: '32g', fat: '2g', fiber: '3g' },
+        nutrition: { highlight: '易消化，适合早餐', protein: '4g', carbs: '32g', fat: '2g', fiber: '3g', calcium: '68mg', iron: '1.4mg', zinc: '0.9mg', vitaminC: '18mg', vitaminA: '42μg', proteinPercent: 42, carbsPercent: 68, fatPercent: 24, fiberPercent: 36 },
+        nutrientCombination: '南瓜提供维生素 A，小米提供碳水和少量蛋白，适合作为早晨温和能量补给。',
+        dailyNutritionPercent: { protein: 14, calcium: 12, iron: 11 },
         tips: '口味清淡，适合低龄儿童。',
         keywords: ['早餐', '粥'],
         visualIcon: '🥣',
@@ -53,13 +57,17 @@ Page({
         calories: '220卡',
         difficulty: '中等',
         ageRange: '3-6岁',
+        image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80',
+        images: ['https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80'],
         ingredients: [
           { name: '鱼头', amount: '半个' },
           { name: '豆腐', amount: '100g' },
           { name: '姜片', amount: '3片' }
         ],
         steps: ['鱼头煎香', '加开水煮汤', '放入豆腐炖煮', '少盐调味'],
-        nutrition: { highlight: '高蛋白，补钙', protein: '18g', carbs: '5g', fat: '10g', fiber: '1g' },
+        nutrition: { highlight: '高蛋白，补钙', protein: '18g', carbs: '5g', fat: '10g', fiber: '1g', calcium: '126mg', iron: '1.6mg', zinc: '1.8mg', vitaminC: '6mg', vitaminA: '24μg', proteinPercent: 72, carbsPercent: 18, fatPercent: 48, fiberPercent: 12 },
+        nutrientCombination: '鱼头与豆腐组合提供更高蛋白和钙，适合作为午晚餐的骨骼发育支持。',
+        dailyNutritionPercent: { protein: 32, calcium: 25, iron: 13 },
         tips: '注意鱼刺处理，避免儿童误食。',
         keywords: ['汤品', '补钙'],
         visualIcon: '🍲',
@@ -76,13 +84,17 @@ Page({
         calories: '160卡',
         difficulty: '简单',
         ageRange: '3-6岁',
+        image: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80',
+        images: ['https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80'],
         ingredients: [
           { name: '鸡蛋', amount: '1个' },
           { name: '糯玉米粒', amount: '30g' },
           { name: '温水', amount: '100ml' }
         ],
         steps: ['蛋液加温水打匀', '加入玉米粒', '中火蒸约10分钟'],
-        nutrition: { highlight: '优质蛋白，口感软嫩', protein: '9g', carbs: '12g', fat: '7g', fiber: '2g' },
+        nutrition: { highlight: '优质蛋白，口感软嫩', protein: '9g', carbs: '12g', fat: '7g', fiber: '2g', calcium: '74mg', iron: '1.2mg', zinc: '1.1mg', vitaminC: '4mg', vitaminA: '58μg', proteinPercent: 56, carbsPercent: 34, fatPercent: 38, fiberPercent: 20 },
+        nutrientCombination: '鸡蛋提供优质蛋白，玉米增加碳水和纤维，适合作为早餐或加餐的轻量搭配。',
+        dailyNutritionPercent: { protein: 20, calcium: 14, iron: 10 },
         tips: '蒸制时间不宜过长，避免口感变老。',
         keywords: ['早餐', '蒸蛋'],
         visualIcon: '🥚',
@@ -129,6 +141,7 @@ Page({
       }
       item.dailyNutritionPercent = parts.join('，');
     }
+    item.images = Array.isArray(item.images) && item.images.length ? item.images : (item.image ? [item.image] : []);
     return item;
   },
 
@@ -162,51 +175,65 @@ Page({
   },
 
   onLoad: function(options) {
-    if (options.id) {
+    var recipeId = options && options.id;
+    if (!recipeId) {
       this.setData({
-        recipeId: options.id
+        loading: false,
+        recipe: null
       });
-      if (app.shouldUseMockFallback()) {
-        var mockRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
-        this.setData({
-          recipe: mockRecipe,
-          isFavorite: !!mockRecipe.isFavorite,
-          imageLoaded: false,
-          offlineFallback: true,
-          loading: false
-        });
-        return;
+      wx.showToast({
+        title: '食谱参数缺失',
+        icon: 'none'
+      });
+      if (getCurrentPages().length > 1) {
+        wx.navigateBack();
       }
-      var cachedRecipe = this.getCachedRecipeDetail(options.id);
-      if (cachedRecipe) {
-        this.setData({
-          recipe: this.normalizeRecipeForDisplay(cachedRecipe),
-          isFavorite: !!(cachedRecipe.is_favorited || cachedRecipe.isFavorite),
-          imageLoaded: false,
-          offlineFallback: false,
-          loading: false
-        });
-        app.trackKbEvent(this.buildRecipeTrackPayload({
-          event_type: 'recipe_detail_view'
-        }));
-        if (!this.hasCompleteRecipeDetail(cachedRecipe)) {
-          this.loadRecipeDetail({ silent: true });
-        }
-        return;
-      }
-      if (String(options.id).startsWith('local_')) {
-        var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(options.id));
-        this.setData({
-          recipe: fallbackRecipe,
-          isFavorite: !!fallbackRecipe.isFavorite,
-          imageLoaded: false,
-          offlineFallback: true,
-          loading: false
-        });
-        return;
-      }
-      this.loadRecipeDetail({ silent: false });
+      return;
     }
+
+    this.setData({
+      recipeId: recipeId
+    });
+    if (app.shouldUseMockFallback()) {
+      var mockRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(recipeId));
+      this.setData({
+        recipe: mockRecipe,
+        isFavorite: !!mockRecipe.isFavorite,
+        imageLoaded: false,
+        offlineFallback: true,
+        loading: false
+      });
+      return;
+    }
+    var cachedRecipe = this.getCachedRecipeDetail(recipeId);
+    if (cachedRecipe) {
+      this.setData({
+        recipe: this.normalizeRecipeForDisplay(cachedRecipe),
+        isFavorite: !!(cachedRecipe.is_favorited || cachedRecipe.isFavorite),
+        imageLoaded: false,
+        offlineFallback: false,
+        loading: false
+      });
+      app.trackKbEvent(this.buildRecipeTrackPayload({
+        event_type: 'recipe_detail_view'
+      }));
+      if (!this.hasCompleteRecipeDetail(cachedRecipe)) {
+        this.loadRecipeDetail({ silent: true });
+      }
+      return;
+    }
+    if (String(recipeId).startsWith('local_')) {
+      var fallbackRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(recipeId));
+      this.setData({
+        recipe: fallbackRecipe,
+        isFavorite: !!fallbackRecipe.isFavorite,
+        imageLoaded: false,
+        offlineFallback: true,
+        loading: false
+      });
+      return;
+    }
+    this.loadRecipeDetail({ silent: false });
   },
 
   // 加载食谱详情
@@ -445,6 +472,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.loadRecipeDetail({ fromPullDown: true });
   },
 

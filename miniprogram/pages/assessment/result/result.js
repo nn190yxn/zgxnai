@@ -45,8 +45,35 @@ Page({
     loading: true
   },
 
+  onUnload: function() {
+    this.clearPendingTimers();
+  },
+
+  clearPendingTimers: function() {
+    if (this._navigateBackTimer) {
+      clearTimeout(this._navigateBackTimer);
+      this._navigateBackTimer = null;
+    }
+    if (this._saveReportTimer) {
+      clearTimeout(this._saveReportTimer);
+      this._saveReportTimer = null;
+    }
+  },
+
+  scheduleNavigateBack: function(delay) {
+    var that = this;
+    if (that._navigateBackTimer) {
+      clearTimeout(that._navigateBackTimer);
+    }
+    that._navigateBackTimer = setTimeout(function() {
+      that._navigateBackTimer = null;
+      wx.navigateBack();
+    }, delay || 1500);
+  },
+
   onLoad: function(options) {
     var that = this;
+    that.clearPendingTimers();
     var recordId = options.recordId;
     var isLocal = options.local === '1';
     
@@ -55,9 +82,7 @@ Page({
         title: '参数错误',
         icon: 'none'
       });
-      setTimeout(function() {
-        wx.navigateBack();
-      }, 1500);
+      that.scheduleNavigateBack(1500);
       return;
     }
     
@@ -98,9 +123,7 @@ Page({
         title: '未找到记录',
         icon: 'none'
       });
-      setTimeout(function() {
-        wx.navigateBack();
-      }, 1500);
+      that.scheduleNavigateBack(1500);
     }
   },
 
@@ -175,7 +198,7 @@ Page({
       completedAt: record.completed_at,
       dimensions: dimensions,
       elapsedTime: record.elapsed_time || 0,
-      reportData: record.report_data || {}
+      reportData: this.normalizeReportData(record)
     };
   },
 
@@ -189,6 +212,48 @@ Page({
     if (level === '需关注') return '轻度失调';
     if (level === '需干预') return '中度失调';
     return level || '';
+  },
+
+  normalizeReportData: function(record) {
+    var reportData = record && record.report_data && typeof record.report_data === 'object' ? record.report_data : {};
+    var interpretations = Array.isArray(reportData.interpretations) ? reportData.interpretations : (Array.isArray(record && record.interpretations) ? record.interpretations : []);
+    var suggestions = Array.isArray(reportData.suggestions) ? reportData.suggestions : (Array.isArray(record && record.suggestions) ? record.suggestions : []);
+    var summary = reportData.summary || '';
+    if (!summary && interpretations.length > 0) {
+      var primaryInterpretation = interpretations[0] || {};
+      summary = primaryInterpretation.interpretation || primaryInterpretation.summary || primaryInterpretation.behavior_description || primaryInterpretation.scene_advice || primaryInterpretation.expected_goal || '';
+    }
+    var suggestionCards = [];
+    if (Array.isArray(reportData.recommendations) && reportData.recommendations.length > 0) {
+      suggestionCards = reportData.recommendations.map(function(item, index) {
+        if (typeof item === 'string') {
+          return { title: '建议' + (index + 1), desc: item };
+        }
+        return {
+          title: item.title || ('建议' + (index + 1)),
+          desc: item.desc || item.description || item.steps || ''
+        };
+      }).filter(function(item) {
+        return item.desc;
+      });
+    }
+    if (!suggestionCards.length && suggestions.length > 0) {
+      suggestionCards = suggestions.map(function(item, index) {
+        return {
+          title: item.title || item.dimension_name || ('建议' + (index + 1)),
+          desc: item.description || item.desc || item.steps || ''
+        };
+      }).filter(function(item) {
+        return item.desc;
+      });
+    }
+    return {
+      summary: summary,
+      recommendations: reportData.recommendations || [],
+      suggestionCards: suggestionCards,
+      interpretations: interpretations,
+      suggestions: suggestions
+    };
   },
 
   // 处理结果数据
@@ -354,13 +419,8 @@ Page({
   generateSuggestions: function(record) {
     var code = record.assessmentCode;
     var percentage = record.percentage;
-    if (record.reportData && Array.isArray(record.reportData.recommendations) && record.reportData.recommendations.length > 0) {
-      return record.reportData.recommendations.map(function(item, index) {
-        return {
-          title: '建议' + (index + 1),
-          desc: item
-        };
-      });
+    if (record.reportData && Array.isArray(record.reportData.suggestionCards) && record.reportData.suggestionCards.length > 0) {
+      return record.reportData.suggestionCards;
     }
     
     var allSuggestions = {
@@ -474,7 +534,11 @@ Page({
     
     // 实际项目中需要使用canvas绘制
     // 这里简化处理
-    setTimeout(function() {
+    if (that._saveReportTimer) {
+      clearTimeout(that._saveReportTimer);
+    }
+    that._saveReportTimer = setTimeout(function() {
+      that._saveReportTimer = null;
       wx.hideLoading();
       wx.showToast({
         title: '报告已保存',

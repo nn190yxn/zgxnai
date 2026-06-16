@@ -1038,7 +1038,7 @@ Page({
   },
 
   markReadingTaskDone: function(e) {
-    var taskId = e.currentTarget.dataset.id;
+    var taskId = this.normalizeReadingTaskCode(e.currentTarget.dataset.id);
     if (!taskId) return;
     var completedMap = wx.getStorageSync('readingTaskCompletionMap') || {};
     completedMap[taskId] = true;
@@ -1213,6 +1213,10 @@ Page({
   // 下拉刷新
   onPullDownRefresh: function() {
     var that = this;
+    if (that.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     that.loadProgressOverview();
     that.loadTodayTasks();
     that.loadReadingTasks();

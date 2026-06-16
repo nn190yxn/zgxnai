@@ -17,7 +17,8 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_WECHAT_PAY,
-    paymentNotice: ENABLE_WECHAT_PAY ? '选择方案后可发起微信支付' : '微信支付暂未开放，可先使用试用资格和邀请奖励',
+    paymentNotice: ENABLE_WECHAT_PAY ? '选择方案后可发起微信支付' : '微信支付暂未开放，新用户注册可先领取7天成长服务，再使用试用资格和邀请奖励',
+    signupBenefitText: '新用户首次注册自动赠送7天成长服务，可与邀请奖励叠加。',
     
     // 套餐列表
     plans: [
@@ -47,6 +48,7 @@ Page({
   },
 
   onLoad() {
+    this._redeemSuccessTimer = null;
     this.setData({
       displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
     });
@@ -56,6 +58,17 @@ Page({
     }).catch(() => {
       this.loadMembershipInfo();
     });
+  },
+
+  onUnload() {
+    this.clearRedeemSuccessTimer();
+  },
+
+  clearRedeemSuccessTimer() {
+    if (this._redeemSuccessTimer) {
+      clearTimeout(this._redeemSuccessTimer);
+      this._redeemSuccessTimer = null;
+    }
   },
 
   onShow() {
@@ -255,7 +268,9 @@ Page({
       wx.showToast({ title: '兑换成功', icon: 'success' });
       this.loadMembershipInfo();
       if (data && data.message) {
-        setTimeout(() => {
+        this.clearRedeemSuccessTimer();
+        this._redeemSuccessTimer = setTimeout(() => {
+          this._redeemSuccessTimer = null;
           wx.showModal({
             title: '成长服务已到账',
             content: data.message,

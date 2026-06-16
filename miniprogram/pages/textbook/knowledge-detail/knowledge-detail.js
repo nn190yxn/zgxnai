@@ -44,13 +44,22 @@ Page({
     loading: false
   },
 
+  normalizeReadingPointId: function(pointId) {
+    var value = String(pointId || '');
+    var aliasMap = {
+      r0_1: 'r1',
+      r0_2: 'r2'
+    };
+    return aliasMap[value] || value;
+  },
+
   onLoad: function(options) {
     var that = this;
     
     // 获取页面参数
     if (options.pointId) {
       that.setData({
-        pointId: decodeURIComponent(options.pointId)
+        pointId: that.normalizeReadingPointId(decodeURIComponent(options.pointId))
       });
     }
     if (options.pointName) {
@@ -75,7 +84,7 @@ Page({
     }
     if (options.taskId) {
       that.setData({
-        pointId: decodeURIComponent(options.taskId)
+        pointId: that.normalizeReadingPointId(decodeURIComponent(options.taskId))
       });
     }
 
@@ -84,6 +93,21 @@ Page({
       title: that.data.pointName || '知识点详情'
     });
 
+    if (!that.data.pointId) {
+      that.setData({
+        loading: false,
+        knowledgeDetail: null
+      });
+      wx.showToast({
+        title: '知识点参数缺失',
+        icon: 'none'
+      });
+      if (getCurrentPages().length > 1) {
+        wx.navigateBack();
+      }
+      return;
+    }
+
     // 加载知识点详情
     that.loadKnowledgeDetail();
   },
@@ -91,6 +115,12 @@ Page({
   // 加载知识点详情
   loadKnowledgeDetail: function(fromPullDown) {
     var that = this;
+    if (that.data.loading) {
+      if (fromPullDown) {
+        wx.stopPullDownRefresh();
+      }
+      return;
+    }
 
     that.setData({
       loading: true
@@ -112,6 +142,10 @@ Page({
         }));
       }
     }).catch(function(err) {
+      if (app.shouldUseMockFallback()) {
+        that.applyKnowledgeDetail(that.getMockDetail());
+        return;
+      }
       app.showApiError('知识点详情加载失败');
       that.setData({
         knowledgeDetail: null
@@ -749,12 +783,12 @@ Page({
     };
     
     if (topicMockDetails[subjectCode]) {
-      return topicMockDetails[subjectCode];
+      return this.ensureMockDetailStructure(topicMockDetails[subjectCode]);
     }
     
     // 兼容旧版学科数据
     if (subjectCode === 'chinese') {
-      return {
+      return this.ensureMockDetailStructure({
         id: pointId,
         name: '生字学习：春、夏、秋、冬',
         status: 'learning',
@@ -830,9 +864,9 @@ Page({
             analysis: '一年有四个季节：春、夏、秋、冬。'
           }
         ]
-      };
+      });
     } else if (subjectCode === 'math') {
-      return {
+      return this.ensureMockDetailStructure({
         id: pointId,
         name: '10以内加减法',
         status: 'mastered',
@@ -906,11 +940,11 @@ Page({
             analysis: '2 + 3 + 4 = 9，可以分步计算：2 + 3 = 5，5 + 4 = 9。'
           }
         ]
-      };
+      });
     } else {
-      return {
+      return this.ensureMockDetailStructure({
         id: pointId,
-        name: that.data.pointName || '知识点',
+        name: pointName || '知识点',
         status: 'learning',
         difficulty: 2,
         explain: {
@@ -943,7 +977,7 @@ Page({
             analysis: '这是解析'
           }
         ]
-      };
+      });
     }
   },
 

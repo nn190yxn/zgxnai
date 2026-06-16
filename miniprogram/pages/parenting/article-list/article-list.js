@@ -142,6 +142,7 @@ Page({
     if (that.data.loading || !that.data.hasMore) {
       return;
     }
+    var currentPage = that.data.page;
 
     that.setData({
       loading: true
@@ -184,7 +185,9 @@ Page({
       url: '/parenting/articles',
       method: 'GET',
       data: params
-    }).then(function(list) {
+    }).then(function(payload) {
+      var pagination = payload && payload.pagination ? payload.pagination : null;
+      var list = payload && Array.isArray(payload.list) ? payload.list : payload;
       list = list || [];
       if (!Array.isArray(list)) {
         list = [];
@@ -193,20 +196,44 @@ Page({
         that.normalizeArticleCard(item);
         item.imageLoaded = false;
       });
+      if (currentPage > 1 && list.length === 0) {
+        that.setData({
+          hasMore: false
+        });
+        wx.showToast({
+          title: '已加载全部文章',
+          icon: 'none'
+        });
+        return;
+      }
       var newList = that.data.page === 1 ? list : that.data.articleList.concat(list);
+      var hasMore = pagination && typeof pagination.hasMore === 'boolean'
+        ? pagination.hasMore
+        : list.length >= that.data.pageSize;
       that.setData({
         articleList: newList,
-        hasMore: list.length >= that.data.pageSize,
-        page: that.data.page + 1
+        hasMore: hasMore,
+        page: list.length > 0 ? currentPage + 1 : currentPage
       });
-    }).catch(function(err) {
-      if (that.data.page === 1 && app.shouldUseMockFallback()) {
+      if (currentPage > 1 && !hasMore) {
+        wx.showToast({
+          title: '已加载全部文章',
+          icon: 'none'
+        });
+      }
+    }).catch(function() {
+      if (currentPage === 1 && app.shouldUseMockFallback()) {
         that.setData({
           articleList: that.getLocalArticles(),
           hasMore: false,
           page: 2
         });
+        return;
       }
+      wx.showToast({
+        title: currentPage > 1 ? '文章加载失败，请重试' : '文章加载失败',
+        icon: 'none'
+      });
     }).finally(function() {
       that.setData({
         loading: false
@@ -347,6 +374,10 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
+    if (this.data.loading) {
+      wx.stopPullDownRefresh();
+      return;
+    }
     this.setData({
       articleList: [],
       page: 1,

@@ -253,7 +253,13 @@ Page({
   // 下拉刷新
   onPullDownRefresh: function() {
     var that = this;
-    that.loadChildren();
+    var task = that.loadChildren();
+    if (task && typeof task.finally === 'function') {
+      task.finally(function() {
+        wx.stopPullDownRefresh();
+      });
+      return;
+    }
     wx.stopPullDownRefresh();
   }
 ,
