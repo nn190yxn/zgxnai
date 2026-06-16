@@ -1360,14 +1360,20 @@ async function chatHandler(req, res) {
     return;
   }
 
+  const childProfile = req.body && req.body.child_profile ? req.body.child_profile : null;
+  const ageGroup = childProfile && childProfile.ageGroup
+    ? String(childProfile.ageGroup).trim()
+    : (childProfile && childProfile.age_range ? String(childProfile.age_range).trim() : '');
+  const childName = (childProfile && childProfile.name) || '';
+
   const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
   const intent = analyzeChatIntent(message);
-  const references = collectChatReferences(intent, message);
-  const fallbackAnswer = buildChatAnswer(message, intent, references);
-  const aiResult = await generateAIAnswer(buildChatPrompt(message, intent, references), {
-    systemPrompt: getChatSystemPrompt(intent),
+  const references = collectChatReferences(intent, message, ageGroup);
+  const fallbackAnswer = buildChatAnswer(message, intent, references, ageGroup, childName);
+  const aiResult = await generateAIAnswer(buildChatPrompt(message, intent, references, ageGroup, childName), {
+    systemPrompt: getChatSystemPrompt(intent, ageGroup),
     temperature: 0.6,
-    maxTokens: 900
+    maxTokens: 1200
   });
   const answer = aiResult.success ? aiResult.answer : fallbackAnswer;
   const aiStatus = getAIStatus();
@@ -1386,34 +1392,43 @@ async function chatHandler(req, res) {
   });
 }
 
-function getChatSystemPrompt(intent) {
-  const prompts = {
-    nutrition: '你是小牛育儿AI助理中的儿童营养与喂养顾问。回答要结合年龄、家庭执行成本和连续观察方法，优先给家长能当场执行的建议。',
-    reading: '你是小牛育儿AI助理中的能力成长顾问。回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练，优先给短时高频的训练建议。',
-    emotion: '你是小牛育儿AI助理中的儿童情绪支持顾问。回答要先稳定家庭回应，再给可执行的情绪引导步骤。',
-    focus: '你是小牛育儿AI助理中的专注力支持顾问。回答要关注场景拆解、家长提示语和任务节奏控制。',
-    assessment: '你是小牛育儿AI助理中的成长观察解读顾问。回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。',
-    general: '你是小牛育儿AI助理。回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。'
+function getChatSystemPrompt(intent, ageGroup) {
+  const ageContext = ageGroup ? `当前对话的孩子年龄为${ageGroup}。请确保所有建议、活动时长、食材选择和能力预期都严格匹配这个年龄段。` : '如果用户提到孩子的年龄，请确保建议和预期严格匹配该年龄段。';
+
+  const basePrompts = {
+    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}回答要结合家庭执行成本和连续观察方法，优先给家长能当场执行的建议。`,
+    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练，优先给短时高频的训练建议。`,
+    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
+    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}回答要关注场景拆解、家长提示语和任务节奏控制。`,
+    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
+    general: `你是小牛育儿AI助理。${ageContext}回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
   };
-  return prompts[intent] || prompts.general;
+  return basePrompts[intent] || basePrompts.general;
 }
 
-function buildChatPrompt(message, intent, references) {
+function buildChatPrompt(message, intent, references, ageGroup, childName) {
   const referenceBlock = references.length
     ? references.map((item, index) => `${index + 1}. ${item.title}\n${String(item.content || '').slice(0, 220)}`).join('\n\n')
     : '当前没有直接匹配的知识库条目，请基于儿童发展与家庭养育常识给出稳妥建议。';
 
-  return [
+  const parts = [
     `用户问题：${message}`,
-    `问题类型：${intent}`,
+    `问题类型：${intent}`
+  ];
+  if (childName || ageGroup) {
+    parts.push(`孩子信息：${[childName ? `名字${childName}` : '', ageGroup ? `年龄${ageGroup}` : ''].filter(Boolean).join('，')}`);
+  }
+  parts.push(
     '回答要求：',
     '1. 先给判断，再给家庭可执行方案。',
     '2. 优先使用清晰短句和分步骤建议。',
-    '3. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。',
-    '4. 不编造产品能力，不输出无法执行的空泛表述。',
+    ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动和食材。` : '3. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。',
+    ageGroup ? '4. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。' : '4. 不编造产品能力，不输出无法执行的空泛表述。',
+    '5. 不编造产品能力，不输出无法执行的空泛表述。',
     '参考资料：',
     referenceBlock
-  ].join('\n\n');
+  );
+  return parts.join('\n\n');
 }
 
 function analyzeChatIntent(message) {
@@ -1436,7 +1451,7 @@ function analyzeChatIntent(message) {
   return 'general';
 }
 
-function collectChatReferences(intent, message) {
+function collectChatReferences(intent, message, ageGroup) {
   const keywords = String(message || '').split(/[\s，。！？、,.!?]+/).filter(Boolean);
   const lowerKeywords = keywords.map((item) => item.toLowerCase());
 
@@ -1449,6 +1464,7 @@ function collectChatReferences(intent, message) {
 
   if (intent === 'nutrition') {
     for (const recipe of NUTRITION_RECIPES.slice(0, 120)) {
+      if (ageGroup && !isRecipeAgeCompatible(recipe.ageRange || recipe.age_range, ageGroup)) continue;
       const score = scoreText([recipe.title, recipe.description, (recipe.ingredients || []).join(' ')].join(' '));
       if (score > 0) {
         references.push({
@@ -1501,12 +1517,13 @@ function collectChatReferences(intent, message) {
   return references.slice(0, 5);
 }
 
-function buildChatAnswer(message, intent, references) {
+function buildChatAnswer(message, intent, references, ageGroup, childName) {
   if (intent === 'nutrition') {
     const recipe = references[0] && references[0].extra;
     const article = references.find((item) => item.extra && item.extra.summary);
+    const ageNote = ageGroup ? `（${ageGroup}）` : '';
     return [
-      `关于“${message}”，我建议先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
+      `关于${ageNote}“${message}”，我建议先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
       recipe ? `优先参考 ${recipe.title}：${recipe.description || '这道搭配更适合孩子接受，能同时补充主食、蛋白质和蔬菜。'}` : '每餐优先保证主食、蛋白质、蔬菜三类食物同时出现。',
       recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `这类搭配可以从 ${recipe.ingredients.slice(0, 4).join('、')} 开始，先做孩子熟悉的口味。` : '先保留一种孩子愿意吃的安全食物，再增加一种少量新食物。',
       article ? `家庭执行要点：${article.extra.summary}` : '家长负责提供，孩子负责决定吃多少，连续多次接触比一次吃很多更有效。',

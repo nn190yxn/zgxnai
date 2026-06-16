@@ -282,8 +282,11 @@
   border-top-right-radius: 8rpx;
 }
 
-.bubble text {
+.bubble text,
+.bubble rich-text {
   display: block;
+  font-size: 28rpx;
+  line-height: 1.8;
 }
 
 .mt20 {

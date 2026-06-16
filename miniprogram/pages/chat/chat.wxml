@@ -62,7 +62,8 @@
         <view wx:else class="avatar avatar-image avatar-ai">AI</view>
         <view class="bubble">
           <text class="ai-label" wx:if="{{item.role !== 'user'}}">AI生成</text>
-          <text>{{item.content}}</text>
+          <rich-text wx:if="{{item.markdownNodes && item.markdownNodes.length > 0}}" nodes="{{item.markdownNodes}}"></rich-text>
+          <text wx:else>{{item.content}}</text>
           <!-- 显示来源 -->
           <view wx:if="{{item.sources && item.sources.length > 0}}" class="sources">
             <text class="sources-label">📚 参考资料：</text>
