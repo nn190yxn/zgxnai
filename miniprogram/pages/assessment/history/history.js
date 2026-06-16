@@ -1,6 +1,8 @@
 // 成长观察历史记录页面
 var app = getApp();
 var assessmentUtils = require('../../../utils/assessment.js');
+var getAssessmentMeta = assessmentUtils.getAssessmentMeta;
+var getAssessmentMetaList = assessmentUtils.getAssessmentMetaList;
 var normalizeAssessmentCode = assessmentUtils.normalizeAssessmentCode;
 
 function getAssessmentRecordsStorage() {
@@ -20,15 +22,9 @@ Page({
     childrenList: [],
     
     // 类型列表
-    assessmentTypes: [
-      { code: 'all', name: '全部类型' },
-      { code: 'sensory', name: '感统观察' },
-      { code: 'focus', name: '专注力观察' },
-      { code: 'adhd', name: 'ADHD风险观察筛查' },
-      { code: 'multi_intelligence', name: '多元智能观察' },
-      { code: 'emotion', name: '情绪能力观察' },
-      { code: 'learning', name: '学习适应观察' }
-    ],
+    assessmentTypes: [{ code: 'all', name: '全部类型' }].concat(getAssessmentMetaList().map(function(item) {
+      return { code: item.code, name: item.shortName || item.name };
+    })),
     
     // 显示筛选弹窗
     showFilterModal: false,
@@ -149,17 +145,18 @@ Page({
       }
       normalized.push({
         recordId: item.id,
-        assessmentCode: item.assessment_type,
+        assessmentCode: normalizeAssessmentCode(item.assessment_type),
         childId: item.child_id,
         totalScore: totalScore,
         percentage: percentage,
         level: this.normalizeLevel(item.overall_level),
         completedAt: item.completed_at,
         completed_at: item.completed_at,
-        assessmentName: item.assessment_name,
+        assessmentName: item.assessment_name || this.getAssessmentName(item.assessment_type),
         childName: item.child_name || '',
         dimensions: item.dimension_scores || [],
-        reportData: item.report_data || {}
+        reportData: item.report_data || {},
+        completedAtStr: this.formatDate(item.completed_at)
       });
     }
     return normalized;
@@ -416,15 +413,11 @@ Page({
 
   // 获取名称
   getAssessmentName: function(code) {
-    var names = {
-      sensory: '感统观察',
-      focus: '专注力观察',
-      adhd: 'ADHD风险观察筛查',
-      multi_intelligence: '多元智能观察',
-      emotion: '情绪能力观察',
-      learning: '学习适应观察'
-    };
-    return names[code] || code;
+    var meta = getAssessmentMeta(code);
+    if (meta) {
+      return meta.shortName || meta.name;
+    }
+    return normalizeAssessmentCode(code) || code;
   },
 
   // 格式化日期

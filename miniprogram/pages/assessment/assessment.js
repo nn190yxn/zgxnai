@@ -1,82 +1,29 @@
 // 成长观察页面逻辑
 var app = getApp();
 var assessmentUtils = require('../../utils/assessment.js');
+var getAssessmentMetaList = assessmentUtils.getAssessmentMetaList;
+var getChildAgeYears = assessmentUtils.getChildAgeYears;
+var getDefaultAgeGroup = assessmentUtils.getDefaultAgeGroup;
 var normalizeAssessmentCode = assessmentUtils.normalizeAssessmentCode;
 
 Page({
   data: {
     // 观察工具列表
-    assessmentList: [
-      {
-        id: 1,
-        code: 'sensory',
-        icon: '🧠',
-        name: '儿童感觉统合能力发展评定量表',
-        desc: '58题评估前庭、触觉、本体感和学习相关表现',
-        count: 58,
-        duration: 15,
-        ageGroups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁']
-      },
-      {
-        id: 2,
-        code: 'focus',
-        icon: '💡',
-        name: '专注力观察',
-        desc: '了解孩子注意力集中、持续和抗干扰表现',
-        count: 25,
-        duration: 12,
-        ageGroups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁']
-      },
-      {
-        id: 3,
-        code: 'adhd',
-        icon: '📝',
-        name: 'ADHD风险观察筛查',
-        desc: '观察注意力、多动和冲动相关表现，仅作风险提示',
-        count: 18,
-        duration: 10,
-        ageGroups: ['4-6岁', '6-9岁', '9-12岁']
-      },
-      {
-        id: 4,
-        code: 'multi_intelligence',
-        icon: '🎨',
-        name: '多元智能观察',
-        desc: '发现孩子优势智能领域',
-        count: 40,
-        duration: 20,
-        ageGroups: ['3-6岁', '6-9岁', '9-12岁']
-      },
-      {
-        id: 5,
-        code: 'emotion',
-        icon: '🤗',
-        name: '情绪能力观察',
-        desc: '了解孩子情绪识别、表达和调节表现',
-        count: 22,
-        duration: 12,
-        ageGroups: ['3-6岁', '6-9岁', '9-12岁']
-      },
-      {
-        id: 6,
-        code: 'learning',
-        icon: '📚',
-        name: '学习适应观察',
-        desc: '了解孩子学习适应与准备情况',
-        count: 35,
-        duration: 18,
-        ageGroups: ['6-9岁', '9-12岁']
-      }
-    ],
+    assessmentList: getAssessmentMetaList().map(function(item, index) {
+      return Object.assign({ id: index + 1 }, item);
+    }),
     filteredAssessmentList: [],
     ageOptions: [
+      { label: '0-1岁', value: '0-1岁' },
+      { label: '1-2岁', value: '1-2岁' },
+      { label: '2-3岁', value: '2-3岁' },
       { label: '3-4岁', value: '3-4岁' },
       { label: '4-5岁', value: '4-5岁' },
       { label: '5-6岁', value: '5-6岁' },
       { label: '6-9岁', value: '6-9岁' },
       { label: '9-12岁', value: '9-12岁' }
     ],
-    selectedAgeGroup: '3-4岁',
+    selectedAgeGroup: '0-1岁',
     
     // 当前孩子信息
     currentChild: null,
@@ -123,37 +70,11 @@ Page({
   },
 
   getChildAge: function(child) {
-    if (typeof child.age === 'number' && child.age >= 0) {
-      return child.age;
-    }
-
-    var birthDate = child.birth_date || child.birthday;
-    if (!birthDate) {
-      return 3;
-    }
-
-    var birth = new Date(birthDate);
-    if (Number.isNaN(birth.getTime())) {
-      return 3;
-    }
-
-    var today = new Date();
-    var age = today.getFullYear() - birth.getFullYear();
-    var monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age > 0 ? age : 3;
+    return getChildAgeYears(child, 3);
   },
 
   getDefaultAgeGroup: function(child) {
-    var age = this.getChildAge(child || {});
-    if (age < 4) return '3-4岁';
-    if (age < 5) return '4-5岁';
-    if (age < 6) return '5-6岁';
-    if (age < 9) return '6-9岁';
-    return '9-12岁';
+    return getDefaultAgeGroup(child || {}, '3-4岁');
   },
 
   getAgeBounds: function(ageGroup) {

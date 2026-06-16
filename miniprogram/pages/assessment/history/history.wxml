@@ -27,7 +27,7 @@
       data-id="{{item.recordId}}"
     >
       <view class="record-left">
-        <view class="record-icon">{{item.assessmentCode === 'sensory' ? '🧠' : item.assessmentCode === 'focus' ? '💡' : item.assessmentCode === 'adhd' ? '📝' : item.assessmentCode === 'multi_intelligence' ? '🎨' : item.assessmentCode === 'emotion' ? '🤗' : '📚'}}</view>
+        <view class="record-icon">{{item.assessmentCode === 'sensory' ? '🧠' : item.assessmentCode === 'focus' ? '💡' : item.assessmentCode === 'adhd' ? '📝' : item.assessmentCode === 'multi_intelligence' ? '🎨' : item.assessmentCode === 'emotion' ? '🤗' : item.assessmentCode === 'gross_motor' ? '🦵' : item.assessmentCode === 'fine_motor' ? '✋' : item.assessmentCode === 'language_dev' ? '🗣️' : item.assessmentCode === 'social_emotion' ? '🥰' : '📚'}}</view>
       </view>
       <view class="record-content">
         <view class="record-header">

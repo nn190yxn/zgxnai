@@ -1,6 +1,9 @@
 // 答题页面逻辑
 var app = getApp();
 var assessmentUtils = require('../../../utils/assessment.js');
+var getAssessmentMetaList = assessmentUtils.getAssessmentMetaList;
+var getChildAgeYears = assessmentUtils.getChildAgeYears;
+var getDefaultAgeGroup = assessmentUtils.getDefaultAgeGroup;
 var normalizeAssessmentCode = assessmentUtils.normalizeAssessmentCode;
 
 function normalizeAssessmentQuestions(questions) {
@@ -33,14 +36,10 @@ function normalizeAssessmentQuestions(questions) {
 
 var ageGroupMatches = assessmentUtils.ageGroupMatches;
 
-var ASSESSMENT_AGE_GROUPS = {
-  sensory: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'],
-  focus: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'],
-  adhd: ['4-6岁', '6-9岁', '9-12岁'],
-  multi_intelligence: ['3-6岁', '6-9岁', '9-12岁'],
-  emotion: ['3-6岁', '6-9岁', '9-12岁'],
-  learning: ['6-9岁', '9-12岁']
-};
+var ASSESSMENT_AGE_GROUPS = getAssessmentMetaList().reduce(function(result, item) {
+  result[item.code] = item.ageGroups || [];
+  return result;
+}, {});
 
 // 观察题目数据（模拟数据，实际应从服务器获取）
 var ASSESSMENT_QUESTIONS = {
@@ -124,6 +123,42 @@ var ASSESSMENT_QUESTIONS = {
       { id: 6, text: '孩子对学校生活的适应程度如何？', options: ['非常适应', '比较适应', '需要时间', '很难适应'] },
       { id: 7, text: '孩子与同学的关系如何？', options: ['非常好', '比较好', '一般', '较差'] },
       { id: 8, text: '孩子是否能遵守课堂纪律？', options: ['完全能', '基本能', '偶尔不能', '经常不能'] }
+    ]
+  },
+  gross_motor: {
+    name: '大运动发育观察',
+    questions: [
+      { id: 1, text: '孩子能否完成当前年龄段常见的大动作里程碑？', options: ['稳定做到', '大多做到', '偶尔做到', '暂时做不到'] },
+      { id: 2, text: '孩子在翻身、坐、爬、走、跳等动作转换时是否协调？', options: ['非常协调', '比较协调', '有些吃力', '明显困难'] },
+      { id: 3, text: '孩子在户外活动中是否愿意主动尝试跑跳或攀爬？', options: ['经常主动', '多数会', '偶尔会', '很少尝试'] },
+      { id: 4, text: '孩子完成大动作后身体控制是否稳定？', options: ['很稳定', '基本稳定', '偶尔不稳', '经常不稳'] }
+    ]
+  },
+  fine_motor: {
+    name: '精细动作观察',
+    questions: [
+      { id: 1, text: '孩子能否用手完成抓握、捏取或放下物品？', options: ['稳定做到', '大多做到', '偶尔做到', '暂时做不到'] },
+      { id: 2, text: '孩子双手配合操作玩具或生活物品时是否顺畅？', options: ['很顺畅', '比较顺畅', '偶尔吃力', '明显困难'] },
+      { id: 3, text: '孩子使用勺子、蜡笔或翻书等工具时表现如何？', options: ['很熟练', '比较熟练', '需要帮助', '明显困难'] },
+      { id: 4, text: '孩子在需要手眼协调的活动中是否能持续参与？', options: ['经常能', '多数能', '偶尔能', '很少能'] }
+    ]
+  },
+  language_dev: {
+    name: '语言发育观察',
+    questions: [
+      { id: 1, text: '孩子是否会用声音、词语或短句表达需求？', options: ['经常主动', '多数会', '偶尔会', '很少表达'] },
+      { id: 2, text: '孩子对常见称呼和简单指令的理解情况如何？', options: ['理解很好', '基本理解', '部分理解', '理解较少'] },
+      { id: 3, text: '孩子在亲子互动中是否愿意模仿发音或回应对话？', options: ['经常回应', '多数回应', '偶尔回应', '很少回应'] },
+      { id: 4, text: '孩子的语言交流是否在持续进步？', options: ['进步明显', '有一定进步', '进步较慢', '暂未看到进步'] }
+    ]
+  },
+  social_emotion: {
+    name: '社交情绪观察',
+    questions: [
+      { id: 1, text: '孩子面对熟悉照护者时是否有积极回应？', options: ['经常主动', '多数会', '偶尔会', '很少回应'] },
+      { id: 2, text: '孩子能否通过表情、动作或语言表达情绪？', options: ['表达清楚', '基本能表达', '偶尔表达', '较少表达'] },
+      { id: 3, text: '孩子在互动游戏中是否愿意看人、模仿或轮流？', options: ['经常愿意', '多数愿意', '偶尔愿意', '很少愿意'] },
+      { id: 4, text: '孩子情绪波动时在照护者帮助下能否逐步安稳？', options: ['通常可以', '大多可以', '偶尔可以', '经常困难'] }
     ]
   }
 };
@@ -305,39 +340,11 @@ loadQuestionsFromServer: function(code) {
     }
 
     var child = this.data.currentChild || {};
-    var age = this.getChildAge(child);
-
-    if (age < 4) return '3-4岁';
-    if (age < 5) return '4-5岁';
-    if (age < 6) return '5-6岁';
-    if (age < 9) return '6-9岁';
-    if (age < 12) return '9-12岁';
-    return '9-12岁';
+    return getDefaultAgeGroup(child, '6-9岁');
   },
 
   getChildAge: function(child) {
-    if (typeof child.age === 'number' && child.age >= 0) {
-      return child.age;
-    }
-
-    var birthDate = child.birth_date || child.birthday;
-    if (!birthDate) {
-      return 6;
-    }
-
-    var birth = new Date(birthDate);
-    if (Number.isNaN(birth.getTime())) {
-      return 6;
-    }
-
-    var today = new Date();
-    var age = today.getFullYear() - birth.getFullYear();
-    var monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age > 0 ? age : 3;
+    return getChildAgeYears(child, 6);
   },
 
   buildSubmitAnswers: function() {
