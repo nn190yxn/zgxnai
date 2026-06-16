@@ -904,8 +904,24 @@ function buildArticleContent(categoryConfig, topic, ageVariant) {
     '4. 结束后用两到三句话复盘这次哪里有效、下次准备继续怎么做。'
   ].join('\n');
 
+  const signals = [
+    `- 这个主题最常出现的场景是：${topic.scene}`,
+    `- 家长这轮最值得先盯住的变化是：${topic.goal}`,
+    `- ${ageVariant.label}阶段最容易拉开差距的地方是：${ageVariant.summarySuffix.replace(/。$/, '')}`
+  ].join('\n');
+
   const observe = topic.observe.map((item) => `- ${item}`).join('\n');
   const pitfalls = topic.pitfalls.map((item) => `- ${item}`).join('\n');
+  const scripts = [
+    `- 先说看到的事实：${topic.example}`,
+    `- 再把目标说短：我们现在先练“${topic.goal}”。`,
+    `- 收尾时这样复盘：刚才哪一步最有用，下次我们继续保留哪一个动作。`
+  ].join('\n');
+  const weeklyPlan = [
+    '- 第1-2天：只固定一个场景开始练，先把提醒句和动作顺序稳定下来。',
+    '- 第3-4天：观察孩子最容易卡住的点，只调整一个变量，例如时机、语速或任务长度。',
+    '- 第5-7天：保留最有效的做法，再加入一次简短复盘，让孩子慢慢参与总结。'
+  ].join('\n');
   const authorities = [
     `- 本文建议综合参考${categoryConfig.authorities.join('、')}关于${topic.evidenceFocus}的指南、共识和家庭养育建议。`,
     '- 实操上优先使用稳定作息、低刺激环境、共情回应、分步骤练习和一致边界五类循证策略。',
@@ -917,12 +933,18 @@ function buildArticleContent(categoryConfig, topic, ageVariant) {
     `${topic.summary}${ageVariant.summarySuffix}`,
     '## 这个年龄段为什么要这样做',
     `${ageVariant.development}${topic.why}`,
+    '## 先看见的信号',
+    signals,
     '## 家庭操作步骤',
     steps,
+    '## 可以直接这样说',
+    scripts,
     '## 家长观察重点',
     observe,
     '## 常见误区',
     pitfalls,
+    '## 一周怎么落地',
+    weeklyPlan,
     `【家长提示】${topic.tip}`,
     `【转介边界】${topic.referral}`,
     '## 证据依据',
