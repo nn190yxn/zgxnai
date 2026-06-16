@@ -308,6 +308,20 @@
   line-height: 1.5;
 }
 
+.suggestion-meta {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.suggestion-meta-tag {
+  font-size: 20rpx;
+  color: #d65a1f;
+  background: #fff1ea;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+}
+
 /* 训练方案 */
 .plans-list {
   display: flex;

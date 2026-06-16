@@ -111,6 +111,10 @@
           <view class="suggestion-content">
             <text class="suggestion-title">{{item.title}}</text>
             <text class="suggestion-desc">{{item.desc}}</text>
+            <view class="suggestion-meta" wx:if="{{item.duration || item.frequency}}">
+              <text class="suggestion-meta-tag" wx:if="{{item.duration}}">{{item.duration}}</text>
+              <text class="suggestion-meta-tag" wx:if="{{item.frequency}}">{{item.frequency}}</text>
+            </view>
           </view>
         </view>
       </view>

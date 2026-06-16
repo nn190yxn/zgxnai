@@ -224,7 +224,19 @@ Page({
       summary = primaryInterpretation.interpretation || primaryInterpretation.summary || primaryInterpretation.behavior_description || primaryInterpretation.scene_advice || primaryInterpretation.expected_goal || '';
     }
     var suggestionCards = [];
-    if (Array.isArray(reportData.recommendations) && reportData.recommendations.length > 0) {
+    if (Array.isArray(reportData.suggestionCards) && reportData.suggestionCards.length > 0) {
+      suggestionCards = reportData.suggestionCards.map(function(item) {
+        return {
+          title: item.title || '',
+          desc: item.steps || item.description || '',
+          duration: item.duration || '',
+          frequency: item.frequency || ''
+        };
+      }).filter(function(item) {
+        return item.desc;
+      });
+    }
+    if (!suggestionCards.length && Array.isArray(reportData.recommendations) && reportData.recommendations.length > 0) {
       suggestionCards = reportData.recommendations.map(function(item, index) {
         if (typeof item === 'string') {
           return { title: '建议' + (index + 1), desc: item };
