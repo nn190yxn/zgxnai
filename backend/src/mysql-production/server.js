@@ -2320,7 +2320,13 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '3-6岁' ? '早餐里再配一份主食会更稳，甜口饮料留到其他时间。家长控制分量和节奏，孩子自己拿勺收尾。' :
         stageKey === '6-12岁' ? '学习日早餐更适合和主食搭配，帮助上午专注和饱腹感更稳定。' :
         '青少年阶段更适合配全麦面包或燕麦，把早餐里的主食和蛋白质一起补齐。'),
-      nutrientCombination: '鸡蛋和豆腐分别提供动物蛋白和植物蛋白，双重蛋白搭配，这道更适合早餐和主食一起安排成完整的一餐。'
+      nutrientCombination: '鸡蛋和豆腐分别提供动物蛋白和植物蛋白，双重蛋白搭配，这道更适合早餐和主食一起安排成完整的一餐。',
+      ingredients: [
+        { name: '鸡蛋', amount: '2个' },
+        { name: '嫩豆腐', amount: '100g' },
+        { name: '温水', amount: '100ml' },
+        { name: '盐', amount: '少许' }
+      ]
     };
   }
 
@@ -2350,7 +2356,13 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '3-6岁' ? '更适合午餐安排，配一份蔬菜或蒸蛋更完整。家长控制分量，孩子练习自己夹面。' :
         stageKey === '6-12岁' ? '更适合和蔬菜、蛋类一起安排，比单吃面更稳。学习日午餐优先保证主食和蛋白质。' :
         '青少年阶段更适合和蔬菜、肉类一起安排，总热量和蛋白质配比更合理。'),
-      nutrientCombination: '面条提供碳水化合物，豆花补充植物蛋白，这道更适合午餐或晚餐做主食，和蔬菜、肉类一起搭配更完整。'
+      nutrientCombination: '面条提供碳水化合物，豆花补充植物蛋白，这道更适合午餐或晚餐做主食，和蔬菜、肉类一起搭配更完整。',
+      ingredients: [
+        { name: '面条', amount: '150g' },
+        { name: '嫩豆花', amount: '120g' },
+        { name: '青菜', amount: '80g' },
+        { name: '酱油', amount: '少许' }
+      ]
     };
   }
 
@@ -2395,7 +2407,12 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '3-6岁' ? '早餐里再配一份蛋白质来源会更稳，单独一碗粥容易饿得快。适合赶时间的早晨做基础打底。' :
         stageKey === '6-12岁' ? '学习日早餐更适合和鸡蛋、牛奶或豆浆一起安排，帮助上午能量更平稳。' :
         '青少年阶段更适合把这道和蛋类、坚果或奶类搭配，避免早餐只有碳水。'),
-      nutrientCombination: '山药提供淀粉和部分矿物质，小米做温和主食，这道更适合放在早餐或加餐里做温和补充，和蛋白质来源一起安排更完整。'
+      nutrientCombination: '山药提供淀粉和部分矿物质，小米做温和主食，这道更适合放在早餐或加餐里做温和补充，和蛋白质来源一起安排更完整。',
+      ingredients: [
+        { name: '山药', amount: '80g' },
+        { name: '小米', amount: '50g' },
+        { name: '清水', amount: '600ml' }
+      ]
     };
   }
 
@@ -2410,7 +2427,13 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '3-6岁' ? '更适合和米饭、面食一起安排，先保证主食和蛋白质，再喝汤。喝汤量控制住更稳。' :
         stageKey === '6-12岁' ? '和主食、蛋白质来源一起搭配，喝汤量控制在半碗以内，给孩子留出吃主食的空间。' :
         '青少年阶段更适合和主食、蛋白质来源一起安排，喝汤量以不影响主食和蛋白质摄入为准。'),
-      nutrientCombination: '豆腐提供植物蛋白，白菜补充水分和膳食纤维，这道更适合作为正餐配汤，和主食、肉类一起安排更完整。'
+      nutrientCombination: '豆腐提供植物蛋白，白菜补充水分和膳食纤维，这道更适合作为正餐配汤，和主食、肉类一起安排更完整。',
+      ingredients: [
+        { name: '白菜', amount: '100g' },
+        { name: '嫩豆腐', amount: '120g' },
+        { name: '清水', amount: '500ml' },
+        { name: '盐', amount: '少许' }
+      ]
     };
   }
 
@@ -2425,7 +2448,13 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '3-6岁' ? '早餐里再配一份主食会更稳，甜口饮料留到其他时间。家长控制分量和节奏，孩子自己拿勺收尾。' :
         stageKey === '6-12岁' ? '学习日早餐更适合和主食搭配，帮助上午专注和饱腹感更稳定。' :
         '青少年阶段更适合配全麦面包或燕麦，把早餐里的主食和蛋白质一起补齐。'),
-      nutrientCombination: '鸡蛋提供动物蛋白，豆花补充植物蛋白，双重蛋白搭配，这道更适合早餐和主食一起安排成完整的一餐。'
+      nutrientCombination: '鸡蛋提供动物蛋白，豆花补充植物蛋白，双重蛋白搭配，这道更适合早餐和主食一起安排成完整的一餐。',
+      ingredients: [
+        { name: '鸡蛋', amount: '2个' },
+        { name: '嫩豆花', amount: '100g' },
+        { name: '温水', amount: '100ml' },
+        { name: '盐', amount: '少许' }
+      ]
     };
   }
 
@@ -2441,6 +2470,93 @@ function getNutritionRecipeSourceOverride(recipe, ageRange) {
         stageKey === '6-12岁' ? '学习日早餐更适合和主食搭配，帮助上午专注和饱腹感更稳定。' :
         '青少年阶段更适合配全麦面包或燕麦，把早餐里的主食和蛋白质一起补齐。'),
       nutrientCombination: '山药提供淀粉和部分矿物质，鸡蛋提供优质蛋白，这道更适合早餐做温和组合，和主食一起安排更完整。'
+    };
+  }
+
+  if (title === '红薯小米粥') {
+    return {
+      ingredients: [
+        { name: '红薯', amount: '100g' },
+        { name: '小米', amount: '50g' },
+        { name: '清水', amount: '600ml' }
+      ]
+    };
+  }
+
+  if (title === '豆米南瓜软烩饭') {
+    return {
+      ingredients: [
+        { name: '米饭', amount: '150g' },
+        { name: '南瓜', amount: '80g' },
+        { name: '芸豆', amount: '50g' },
+        { name: '清水', amount: '300ml' }
+      ]
+    };
+  }
+
+  if (title === '四季豆鸡肉丝') {
+    return {
+      ingredients: [
+        { name: '四季豆', amount: '100g' },
+        { name: '鸡胸肉', amount: '60g' },
+        { name: '植物油', amount: '5ml' },
+        { name: '盐', amount: '少许' }
+      ]
+    };
+  }
+
+  if (title === '四季豆豆腐汤') {
+    return {
+      ingredients: [
+        { name: '四季豆', amount: '80g' },
+        { name: '嫩豆腐', amount: '100g' },
+        { name: '清水', amount: '500ml' },
+        { name: '盐', amount: '少许' }
+      ]
+    };
+  }
+
+  if (title === '豆花拌饭') {
+    return {
+      ingredients: [
+        { name: '米饭', amount: '150g' },
+        { name: '嫩豆花', amount: '100g' },
+        { name: '酱油', amount: '少许' }
+      ]
+    };
+  }
+
+  if (title === '豆花拌黄瓜') {
+    return {
+      ingredients: [
+        { name: '嫩豆花', amount: '100g' },
+        { name: '黄瓜', amount: '80g' },
+        { name: '香油', amount: '少许' },
+        { name: '盐', amount: '少许' }
+      ]
+    };
+  }
+
+  if (title === '番茄酸汤豆花饭') {
+    return {
+      ingredients: [
+        { name: '米饭', amount: '150g' },
+        { name: '番茄', amount: '80g' },
+        { name: '嫩豆花', amount: '100g' },
+        { name: '清水', amount: '300ml' },
+        { name: '盐', amount: '少许' }
+      ]
+    };
+  }
+
+  if (title === '香椿拌豆腐') {
+    return {
+      ingredients: [
+        { name: '香椿', amount: '60g' },
+        { name: '嫩豆腐', amount: '120g' },
+        { name: '香油', amount: '少许' },
+        { name: '盐', amount: '少许' }
+      ]
     };
   }
 
