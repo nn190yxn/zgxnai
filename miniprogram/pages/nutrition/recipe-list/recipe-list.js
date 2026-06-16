@@ -15,10 +15,15 @@ Page({
     // 年龄段列表
     ageList: [
       { id: 0, name: '全部年龄', value: '全部年龄' },
-      { id: 1, name: '6-12月', value: '0-1岁' },
-      { id: 2, name: '1-3岁', value: '1-3岁' },
-      { id: 3, name: '3-6岁', value: '3-6岁' },
-      { id: 4, name: '6-12岁', value: '6-12岁' }
+      { id: 1, name: '1-2岁', value: '1-2岁' },
+      { id: 2, name: '2-3岁', value: '2-3岁' },
+      { id: 3, name: '3-4岁', value: '3-4岁' },
+      { id: 4, name: '4-5岁', value: '4-5岁' },
+      { id: 5, name: '5-6岁', value: '5-6岁' },
+      { id: 6, name: '6-7岁', value: '6-7岁' },
+      { id: 7, name: '7-8岁', value: '7-8岁' },
+      { id: 8, name: '8-12岁', value: '8-12岁' },
+      { id: 9, name: '12岁以上', value: '12岁以上' }
     ],
     // 当前选中的分类
     currentCategory: 0,
@@ -85,6 +90,27 @@ Page({
     ];
   },
 
+  resolveAgeIndexByValue: function(ageValue) {
+    var normalizedValue = String(ageValue || '').trim();
+    for (var i = 0; i < this.data.ageList.length; i++) {
+      if (this.data.ageList[i].value === normalizedValue || this.data.ageList[i].name === normalizedValue) {
+        return i;
+      }
+    }
+    return -1;
+  },
+
+  syncCurrentAgeFromChild: function() {
+    var child = app.getCurrentChild ? app.getCurrentChild() : null;
+    var nextAgeGroup = app.inferNutritionAgeGroup ? app.inferNutritionAgeGroup(child) : '';
+    var nextIndex = this.resolveAgeIndexByValue(nextAgeGroup);
+    if (nextIndex < 0 || nextIndex === this.data.currentAge) {
+      return false;
+    }
+    this.setData({ currentAge: nextIndex });
+    return true;
+  },
+
   getRecipeVisualIcon: function(recipe) {
     var text = ((recipe && (recipe.category || recipe.name || recipe.title)) || '').toString();
     if (text.indexOf('汤') !== -1 || text.indexOf('粥') !== -1) return '🍲';
@@ -127,6 +153,14 @@ Page({
       hasImage: item.hasImage,
       imageLoaded: false,
       nutrition: item.nutrition ? { highlight: item.nutrition.highlight || '' } : { highlight: '' },
+      tips: item.tips || '',
+      depthSummary: item.depthSummary || '',
+      suitableScene: item.suitableScene || '',
+      feedingAdvice: item.feedingAdvice || [],
+      safetyWarnings: item.safetyWarnings || [],
+      pairingAdvice: item.pairingAdvice || [],
+      substitutionAdvice: item.substitutionAdvice || '',
+      ageFocus: item.ageFocus || '',
       is_favorited: item.is_favorited,
       isFavorite: item.isFavorite,
       viewCount: item.viewCount || 0,
@@ -155,6 +189,13 @@ Page({
       nutrition: recipe.nutrition,
       ingredients: recipe.ingredients,
       tips: recipe.tips,
+      depthSummary: recipe.depthSummary,
+      suitableScene: recipe.suitableScene,
+      feedingAdvice: recipe.feedingAdvice,
+      safetyWarnings: recipe.safetyWarnings,
+      pairingAdvice: recipe.pairingAdvice,
+      substitutionAdvice: recipe.substitutionAdvice,
+      ageFocus: recipe.ageFocus,
       nutrientCombination: recipe.nutrientCombination,
       dailyNutritionPercent: recipe.dailyNutritionPercent,
       is_favorited: recipe.is_favorited,
@@ -239,18 +280,14 @@ Page({
     }
     if (options.age_group || options.ageGroup || options.age) {
       var selectedAge = decodeURIComponent(options.age_group || options.ageGroup || options.age);
-      var targetIndex = -1;
-      for (var i = 0; i < this.data.ageList.length; i++) {
-        if (this.data.ageList[i].value === selectedAge || this.data.ageList[i].name === selectedAge) {
-          targetIndex = i;
-          break;
-        }
-      }
+      var targetIndex = this.resolveAgeIndexByValue(selectedAge);
       if (targetIndex > -1) {
         this.setData({
           currentAge: targetIndex
         });
       }
+    } else {
+      this.syncCurrentAgeFromChild();
     }
     if (options.type === 'hot') {
       // 热门食谱
@@ -395,7 +432,8 @@ Page({
 
     app.request({
       url: '/nutrition/recommendations',
-      method: 'GET'
+      method: 'GET',
+      data: Object.assign({ count: 8 }, that.data.currentAge > 0 ? { age_group: that.data.ageList[that.data.currentAge].value } : {})
     }).then(function(list) {
       list = list || [];
       if (!Array.isArray(list)) {
@@ -511,6 +549,10 @@ Page({
     var id = e.currentTarget.dataset.id;
     var index = e.currentTarget.dataset.index;
     var recipe = this.data.recipeList[index] || { id: id };
+    var ageQuery = '';
+    if (this.data.currentAge > 0) {
+      ageQuery = this.data.ageList[this.data.currentAge].value || this.data.ageList[this.data.currentAge].name || '';
+    }
     app.trackKbEvent(this.buildRecipeTrackPayload(recipe, {
       event_type: 'recipe_entry_click',
       event_meta: {
@@ -520,7 +562,7 @@ Page({
     }));
     this.cacheRecipeSnapshot(recipe);
     wx.navigateTo({
-      url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,
+      url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id + (ageQuery ? '&age_group=' + encodeURIComponent(ageQuery) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

@@ -124,6 +124,46 @@
   color: #8A5A44;
 }
 
+.age-switch-section {
+  padding: 16rpx 32rpx 8rpx;
+  background: #fff;
+}
+
+.compact-header {
+  margin-bottom: 16rpx;
+}
+
+.section-subtext {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.age-switch-scroll {
+  white-space: nowrap;
+}
+
+.age-switch-list {
+  display: flex;
+  padding-bottom: 4rpx;
+}
+
+.age-switch-item {
+  flex-shrink: 0;
+  margin-right: 16rpx;
+  padding: 14rpx 24rpx;
+  border-radius: 999rpx;
+  background: #FFF3ED;
+  color: #A04B20;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.age-switch-item.active {
+  background: linear-gradient(135deg, #FF6B35, #FF8A55);
+  color: #fff;
+  box-shadow: 0 8rpx 18rpx rgba(255, 107, 53, 0.22);
+}
+
 /* 区块 */
 .section {
   padding: 24rpx 32rpx;
@@ -160,6 +200,44 @@
 .more-arrow {
   margin-left: 4rpx;
   font-size: 32rpx;
+}
+
+.advice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.advice-card {
+  background: #fff;
+  border-radius: 22rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
+}
+
+.advice-badge {
+  display: inline-block;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #FFF3ED;
+  color: #D65A28;
+  font-size: 20rpx;
+  margin-bottom: 12rpx;
+}
+
+.advice-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.advice-content {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.6;
 }
 
 /* 分类滚动 */

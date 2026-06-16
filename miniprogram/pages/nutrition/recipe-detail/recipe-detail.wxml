@@ -51,6 +51,7 @@
     <view class="info-section">
       <text class="recipe-name">{{recipe.name}}</text>
       <text class="recipe-desc">{{recipe.description}}</text>
+      <view class="offline-tip" wx:if="{{recipe.contentNotice}}">{{recipe.contentNotice}}</view>
       <view class="summary-pills">
         <text class="summary-pill">{{recipe.category || '营养食谱'}}</text>
         <text class="summary-pill">{{recipe.ageRange || '儿童适用'}}</text>
@@ -163,7 +164,22 @@
         <view class="combination-title">营养搭配建议</view>
         <text class="combination-text">{{recipe.nutrientCombination}}</text>
       </view>
-      
+
+      <view class="nutrition-combination" wx:if="{{recipe.depthSummary}}">
+        <view class="combination-title">这道为什么适合当前年龄</view>
+        <text class="combination-text">{{recipe.depthSummary}}</text>
+      </view>
+
+      <view class="nutrition-combination" wx:if="{{recipe.suitableScene}}">
+        <view class="combination-title">更适合怎么安排</view>
+        <text class="combination-text">{{recipe.suitableScene}}</text>
+      </view>
+
+      <view class="nutrition-combination" wx:if="{{recipe.ageFocus}}">
+        <view class="combination-title">当前阶段重点</view>
+        <text class="combination-text">{{recipe.ageFocus}}</text>
+      </view>
+
       <!-- 每日营养占比 -->
       <view class="daily-nutrition" wx:if="{{recipe.dailyNutritionPercent}}">
         <view class="daily-title">每日营养占比</view>
@@ -173,6 +189,41 @@
       <view class="nutrition-tips" wx:if="{{recipe.tips}}">
         <view class="combination-title">喂养建议</view>
         <text class="combination-text">{{recipe.tips}}</text>
+      </view>
+
+      <view class="nutrition-combination" wx:if="{{recipe.feedingAdvice && recipe.feedingAdvice.length > 0}}">
+        <view class="combination-title">家长怎么执行更稳</view>
+        <view class="advice-points">
+          <view class="advice-point" wx:for="{{recipe.feedingAdvice}}" wx:key="*this">
+            <text class="advice-point-index">{{index + 1}}</text>
+            <text class="advice-point-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="nutrition-combination" wx:if="{{recipe.pairingAdvice && recipe.pairingAdvice.length > 0}}">
+        <view class="combination-title">同餐搭配建议</view>
+        <view class="advice-points">
+          <view class="advice-point" wx:for="{{recipe.pairingAdvice}}" wx:key="*this">
+            <text class="advice-point-index">搭</text>
+            <text class="advice-point-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="nutrition-combination warning-block" wx:if="{{recipe.safetyWarnings && recipe.safetyWarnings.length > 0}}">
+        <view class="combination-title">需要特别注意</view>
+        <view class="advice-points">
+          <view class="advice-point" wx:for="{{recipe.safetyWarnings}}" wx:key="*this">
+            <text class="advice-point-index">!</text>
+            <text class="advice-point-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="nutrition-combination" wx:if="{{recipe.substitutionAdvice}}">
+        <view class="combination-title">孩子暂时不接受时</view>
+        <text class="combination-text">{{recipe.substitutionAdvice}}</text>
       </view>
     </view>
 

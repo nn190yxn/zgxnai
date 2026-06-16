@@ -39,7 +39,10 @@ const UNIFIED_PROMO_DAYS = Math.max(1, Number(process.env.MEMBERSHIP_PROMO_DAYS 
 const UNIFIED_PROMO_PLAN_CODE = 'promo_2month';
 const UNIFIED_PROMO_MEMBERSHIP_TYPE = 'gift';
 const UNIFIED_PROMO_TYPE = 'unified_membership_2month';
-const NUTRITION_RECIPES = require('../nutrition-recipes.json');
+const RAW_NUTRITION_RECIPES = require('../nutrition-recipes.json');
+const NUTRITION_RECIPES = RAW_NUTRITION_RECIPES
+  .map((recipe) => sanitizeNutritionRecipeSource(recipe))
+  .filter(Boolean);
 const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
 const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars');
 const ADMIN_PORTAL_ROOT = path.resolve(__dirname, '../../../admin-portal');
@@ -1953,6 +1956,399 @@ async function referralCodeHandler(req, res) {
   res.json({ success: true, data: { invite_code: `NN${String(req.user.userId).padStart(6, '0')}` } });
 }
 
+function sanitizeNutritionRecipeSourceText(value, ageRange, field) {
+  let text = String(value || '').trim();
+  if (!text) {
+    return text;
+  }
+
+  const normalizedAge = normalizeNutritionAgeQuery(ageRange);
+  const stageKey = getNutritionAgeStageKey(normalizedAge);
+
+  const ageTextMap = {
+    '1-3岁': ['软烂易消化，适合低龄阶段先练接受度再逐步增加颗粒感', '这阶段重点看吞咽安全和接受度，再逐步增加食物种类'],
+    '3-6岁': ['口感清晰，适合学龄前阶段练习自主进食和餐桌规则', '这阶段重点看规律进餐和食物多样性，比追求吃得多更重要'],
+    '6-12岁': ['适合学习日和活动日的营养补给', '这阶段重点看主食、蛋白质和蔬菜同餐出现，减少零食干扰'],
+    '12岁以上': ['适合青少年阶段的营养搭配', '这阶段优先稳住三餐规律和总量均衡']
+  };
+  const stageTipOngoingMap = {
+    '1-3岁': '家长全程看护，先保证进食安全再逐步练自主。',
+    '3-6岁': '家长坐在旁边，鼓励孩子自己吃完一餐。',
+    '6-12岁': '关注进餐节奏和总量，帮孩子建立规律习惯。',
+    '12岁以上': '让孩子参与餐前准备和餐后收尾，培养自主管理能力。'
+  };
+  const [descPhrase, tipPhrase] = ageTextMap[stageKey] || ageTextMap['3-6岁'];
+  const stageOngoingTip = stageTipOngoingMap[stageKey] || stageTipOngoingMap['3-6岁'];
+
+  const replacements = [
+    [/成人饮食模式|成人饮食标准/g, '按当前年龄阶段安排'],
+    [/成人饮食。|成人饮食标准。|完整咀嚼。|完全独立用餐。|独立用餐安全。/g, '家长看护下练习。'],
+    [/完整咀嚼能力|锻炼完整咀嚼|完整咀嚼/g, '逐步建立适合当前阶段的咀嚼能力'],
+    [/完全独立用餐|独立用餐安全/g, '在家长看护下练习进食'],
+    [/铁吸收率提升3倍/g, '有助于这餐里的铁摄入安排得更均衡'],
+    [/促进钙吸收/g, '帮助这餐里的钙来源安排得更合理'],
+    [/补铁食材避免与钙质同食以免影响吸收/g, '补铁与补钙可以放在全天不同餐次里灵活安排'],
+    [/富含铁的食材宜与橙子、番茄同食提升吸收率/g, '补铁食材可以搭配富含维生素C的蔬果，帮助整餐更均衡'],
+    [/富含铁的食材宜与橙子、番茄同食/g, '补铁食材可以搭配富含维生素C的蔬果'],
+    [/蛋白质与钙协同作用，促进钙吸收，助力骨骼发育/g, '同时提供蛋白质和钙来源，更适合成长阶段日常搭配'],
+    [/维C可将三价铁转化为易吸收的二价铁/g, '维生素C来源有助于这餐里的铁摄入安排更合理'],
+    [/贵州(?:早餐|午餐|晚餐|小食)?经典搭配，?营养丰富。?/g, '适合家庭日常搭配。'],
+    [/营养丰富。?/g, '适合家庭日常搭配。'],
+    [/口感细腻，适合辅食添加。|软烂易嚼，适合学步期宝宝。/g, descPhrase + '。'],
+    [/软硬适中，锻炼咀嚼能力。/g, descPhrase + '。'],
+    [/口感丰富，培养自主进食。/g, descPhrase + '。'],
+    [/营养均衡，适合幼儿园阶段。/g, descPhrase + '。'],
+    [/营养全面，为小学做准备。/g, descPhrase + '。'],
+    [/蛋白质丰富，助力成长发育。/g, descPhrase + '。'],
+    [/能量充足，满足活动需求。/g, descPhrase + '。'],
+    [/营养均衡，支持快速成长。/g, descPhrase + '。'],
+    [/营养健康，适合青少年。/g, descPhrase + '。'],
+    [/建议过滤后食用。|需打成细腻泥状。|应研磨至无颗粒。|需搅拌成糊状。/g, tipPhrase + '。'],
+    [/食材需切碎煮软。|切成小块便于咀嚼。|建议软烂易吞咽。/g, tipPhrase + '。'],
+    [/食材切适中大小。|可尝试小块状。|可尝试细碎状。/g, tipPhrase + '。'],
+    [/锻炼咀嚼能力。|逐步适应成人口感。|可食用常规切法。|接近家庭饮食。/g, tipPhrase + '。'],
+    [/锻炼咀嚼耐力。|适应多种口感。|可正常家庭烹饪。/g, tipPhrase + '。'],
+    [/锻炼咀嚼各种质地。|正常烹饪方式。|可食用各类食材。/g, tipPhrase + '。'],
+    [/适应多种烹饪。|适应所有口感。|完全成人化饮食。/g, tipPhrase + '。'],
+    [/成人饮食模式。|成人饮食标准。|各类烹饪方式。|各类烹饪技巧。/g, tipPhrase + '。'],
+    [/各类食材。|所有食材。|多样化烹饪。/g, tipPhrase + '。'],
+    [/补钙食材建议晒太阳帮助吸收。|补钙食材建议适量运动促进骨骼发育。/g, '搭配日常户外活动帮助钙更好利用。'],
+    [/富含钙的食材宜避免高盐饮食以免流失。/g, '控制整体盐分有助于钙更好地保留。'],
+    [/监督进食过程。|监督用餐过程。|监督进食速度。|注意用餐安全。/g, stageOngoingTip],
+    [/教导细嚼慢咽。|教导用餐礼仪。|培养用餐习惯。/g, '帮孩子建立进食节奏，比纠正单个动作更有用。'],
+    [/避免过硬食材。|避免危险食材。|注意食材安全。/g, '按孩子当前咀嚼能力处理食材大小和软硬度。'],
+    [/避免整块硬物。|防止噎食风险。|注意鱼刺骨头。/g, '低龄阶段重点检查食材里有没有硬块、骨头或长纤维。'],
+    [/确认无过敏反应。|注意过敏源。|注意特殊过敏。|了解过敏风险。|避免过敏风险。|首次食用需观察。/g, '首次吃这类食材先少量试2-3次，观察皮肤和排便情况。'],
+    [/维生素C丰富食材建议即食不宜久存。/g, '颜色鲜艳的蔬菜焯水后尽快吃完，保留更多营养。'],
+    [/培养卫生习惯。|了解食品安全。|注意饮食卫生。|培养良好习惯。/g, '引导孩子餐前洗手和餐桌清洁，养成稳定的用餐习惯。'],
+    [/早餐不宜空腹冷食。|早餐建议清淡少油。|早餐宜易消化食材。|早餐建议营养全面。/g, '早餐优先温热、易入口，主食和蛋白质搭配更稳。'],
+    [/午餐不宜过于油腻。|午餐宜荤素搭配。|午餐建议适量油脂。|午餐建议营养均衡。/g, '午餐更适合主食、蛋白质和蔬菜一起安排，下午不容易累。'],
+    [/晚餐不宜高脂高糖。|晚餐宜少油少盐。|晚餐建议不宜过饱。|晚餐建议清淡易消化。/g, '晚餐更适合清淡收口，留出睡前消化的空间。'],
+    [/加餐不宜影响正餐。|加餐宜健康选择。|加餐建议不宜过甜。|加餐建议适量控制。/g, '加餐更适合小份轻负担，量以不影响下一顿为准。'],
+  ];
+
+  replacements.forEach(([pattern, replacement]) => {
+    text = text.replace(pattern, replacement);
+  });
+
+  text = text.replace(/适合家庭日常搭配。\s*适合家庭日常搭配。/g, '适合家庭日常搭配。');
+
+  return text;
+}
+
+function getNutritionRecipeSourceOverride(recipe, ageRange) {
+  const title = String((recipe && recipe.title) || '').trim();
+  const category = inferNutritionServingCategory(recipe);
+  const stageKey = getNutritionAgeStageKey(ageRange);
+
+  if (title === '萝卜排骨汤') {
+    const descriptionMap = {
+      '1-3岁': '萝卜排骨汤更适合做成清淡汤品，排骨先炖软后分小块，白萝卜煮透后和主食一起安排，更贴合低龄阶段的吞咽与接受节奏。',
+      '3-6岁': '萝卜排骨汤更适合放在午餐或晚餐做配汤，先喝几口热汤，再吃萝卜和去骨肉块，整餐会更容易收口。',
+      '6-12岁': '萝卜排骨汤更适合学习日或活动日的午晚餐，和米饭、青菜一起安排，更容易把主食、蛋白质和蔬菜吃完整。',
+      '12岁以上': '萝卜排骨汤适合放在青少年阶段的午晚餐，口味保持清淡，和主食、蔬菜一起搭配更稳。'
+    };
+    const tipsMap = {
+      '1-3岁': '分给孩子前先把骨头和硬筋处理干净，肉块控制在一口大小。先配主食和软烂蔬菜，再少量喝汤，整餐节奏更稳。',
+      '3-6岁': '这道更适合做正餐配汤，先盛小半碗，鼓励孩子自己吃萝卜和肉块。当天如果还有其他荤菜，这道以补汤和补菜为主。',
+      '6-12岁': '活动量大的日子更适合放在午餐或晚餐，排骨和萝卜一起吃，比单独喝汤更有饱腹感。控制盐和油，避免把这道做成重口味汤底。',
+      '12岁以上': '青少年阶段更适合把这道作为午晚餐配汤，先吃主食和肉菜，再补汤水，整体更均衡。'
+    };
+    return {
+      category,
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '排骨提供蛋白质，白萝卜补充膳食纤维和水分，这道更适合作为正餐配汤，把主食、蛋白质和蔬菜安排进同一餐。'
+    };
+  }
+
+  if (title === '嫩南瓜蒸蛋') {
+    const breakfastDescriptionMap = {
+      '1-3岁': '嫩南瓜蒸蛋适合早餐作为软嫩的蛋白质来源，南瓜带来的淡甜口感更容易帮助低龄孩子把早餐吃进去。',
+      '3-6岁': '嫩南瓜蒸蛋适合早餐打底，蒸蛋的软嫩口感和南瓜的自然甜味更适合在上学前把一餐收稳。',
+      '6-12岁': '嫩南瓜蒸蛋适合早餐作为轻负担蛋白质来源，搭配主食和奶制品后，上午的能量会更稳定。',
+      '12岁以上': '嫩南瓜蒸蛋适合作为青少年早餐的一部分，口味清淡，和全谷主食、水果一起安排更完整。'
+    };
+    const snackDescriptionMap = {
+      '1-3岁': '嫩南瓜蒸蛋适合作为两餐之间的小份加餐，分量控制在正餐的一半以内，更容易稳住低龄阶段的正餐节奏。',
+      '3-6岁': '嫩南瓜蒸蛋适合作为下午加餐，口感软嫩，分量控制住后更容易兼顾晚餐食欲。',
+      '6-12岁': '嫩南瓜蒸蛋适合作为放学后的小份加餐，优先补一点蛋白质，再留出晚餐空间。',
+      '12岁以上': '嫩南瓜蒸蛋适合作为青少年阶段的小份加餐，控制总量后更容易和正餐衔接。'
+    };
+    const breakfastTipsMap = {
+      '1-3岁': '蒸蛋中心凝固后再出锅，先从小半碗开始，和馒头或软饭一起吃更稳。连续几次都能接受后，再逐步增加颗粒感。',
+      '3-6岁': '早餐里配一份主食会更完整，甜口饮料可以留到其他时间。让孩子自己拿勺收尾，家长主要控制分量和节奏。',
+      '6-12岁': '更适合和主食、水果或奶类一起安排成完整早餐，帮助上午的专注和饱腹感更稳定。',
+      '12岁以上': '青少年阶段更适合配全麦面包、玉米或燕麦，把早餐里的主食和蛋白质一起补齐。'
+    };
+    const snackTipsMap = {
+      '1-3岁': '加餐量控制在小半碗，和正餐至少留出1.5到2小时。先看接受度，再决定是否连续安排。',
+      '3-6岁': '下午加餐更适合放在正餐中间，量以不影响晚餐为准。家长负责控制分量，孩子负责自己吃完。',
+      '6-12岁': '放学后如果晚餐还早，这道适合做小份补给，配白水或温奶即可。',
+      '12岁以上': '青少年阶段的加餐更看重总量控制，这道适合小份安排，避免和甜食叠加。'
+    };
+    const isSnack = category === '加餐';
+    return {
+      category,
+      description: (isSnack ? snackDescriptionMap : breakfastDescriptionMap)[stageKey] || breakfastDescriptionMap['3-6岁'],
+      tips: (isSnack ? snackTipsMap : breakfastTipsMap)[stageKey] || breakfastTipsMap['3-6岁'],
+      nutrientCombination: '鸡蛋提供优质蛋白，南瓜带来自然甜味和胡萝卜素，这道更适合和主食、水果或温奶搭配成轻负担的一餐。'
+    };
+  }
+
+  if (title === '嫩南瓜粥') {
+    const breakfastDescriptionMap = {
+      '1-3岁': '嫩南瓜粥更适合早餐做温和主食，南瓜的自然甜味更容易帮助低龄孩子在早晨建立进食节奏。',
+      '3-6岁': '嫩南瓜粥适合早餐打底，口感柔和，搭配鸡蛋或豆制品后更容易把早餐吃完整。',
+      '6-12岁': '嫩南瓜粥适合早餐作为温热主食，和蛋类或奶类一起安排，更适合学习日前半天。',
+      '12岁以上': '嫩南瓜粥适合作为青少年早餐里的温热主食，和蛋白质来源一起搭配更稳。'
+    };
+    const snackDescriptionMap = {
+      '1-3岁': '嫩南瓜粥适合作为两餐之间的小份加餐，口感软烂，比较适合低龄阶段先稳住接受度。',
+      '3-6岁': '嫩南瓜粥适合作为加餐的小份能量补充，下午安排一小碗更容易兼顾晚餐。',
+      '6-12岁': '嫩南瓜粥适合作为课后或运动前的小份加餐，帮助先垫一垫肚子，再等正餐。',
+      '12岁以上': '嫩南瓜粥适合作为青少年阶段的小份加餐，温热、清淡，也方便和正餐错开。'
+    };
+    const breakfastTipsMap = {
+      '1-3岁': '早餐先给小半碗，再配鸡蛋或豆腐，整体更接近完整一餐。粥体保持稠而不黏，孩子更容易吞咽。',
+      '3-6岁': '早餐里再配一份蛋白质来源会更稳，单独一碗粥更容易饿得快。适合在赶时间的早晨做基础打底。',
+      '6-12岁': '学习日早餐更适合和鸡蛋、牛奶或豆浆一起安排，帮助上午能量更平稳。',
+      '12岁以上': '青少年阶段更适合把这道和蛋类、坚果或奶类搭配，避免早餐只有碳水。'
+    };
+    const snackTipsMap = {
+      '1-3岁': '加餐量控制在小半碗，和正餐留出足够间隔。孩子刚起病或胃口差时，这类温热加餐更容易接受。',
+      '3-6岁': '加餐更适合放在午晚餐中间，量以不影响下一顿为准。当天如果活动量小，这道更适合小份。',
+      '6-12岁': '放学后或运动前可以少量安排，晚餐前1小时左右更容易衔接。',
+      '12岁以上': '青少年阶段的加餐更适合少量温热主食，帮助过渡到下一顿正餐。'
+    };
+    const isSnack = category === '加餐';
+    return {
+      category,
+      description: (isSnack ? snackDescriptionMap : breakfastDescriptionMap)[stageKey] || breakfastDescriptionMap['3-6岁'],
+      tips: (isSnack ? snackTipsMap : breakfastTipsMap)[stageKey] || breakfastTipsMap['3-6岁'],
+      nutrientCombination: '南瓜提供自然甜味和部分膳食纤维，大米负责基础能量，这道更适合放在早餐或加餐里做温和补充。'
+    };
+  }
+
+  if (title === '红糖姜枣小米粥') {
+    const descriptionMap = {
+      '3-6岁': '姜枣小米粥更适合作为早餐里的温热主食，口味保持清淡，比单独当汤品更适合学龄前孩子的早晨节奏。',
+      '6-12岁': '姜枣小米粥更适合作为早餐或活动后的小份热食，和鸡蛋、奶类一起安排，更容易把上午的能量垫稳。',
+      '12岁以上': '姜枣小米粥适合青少年阶段做温热早餐主食，甜度控制住后，和蛋白质来源搭配会更均衡。'
+    };
+    const tipsMap = {
+      '3-6岁': '这道更适合作为早餐主食的一部分，配鸡蛋或豆制品会更完整。糖度尽量轻一点，避免把甜味做成早餐主导。',
+      '6-12岁': '学习日前半天更适合把这道和鸡蛋、牛奶或无糖豆浆一起安排，帮助上午饱腹感更稳定。',
+      '12岁以上': '青少年阶段更适合把这道当温热早餐主食，控制额外糖分，再补一份蛋白质来源。'
+    };
+    return {
+      category: '早餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '小米提供基础能量，红枣主要增加风味和接受度，这道更适合作为早餐主食的一部分，再配蛋白质来源和水果会更完整。'
+    };
+  }
+
+  if (title === '豌豆肉末饭') {
+    const descriptionMap = {
+      '1-3岁': '豌豆肉末饭更适合作为午餐主食，米饭、肉末和蔬菜放在同一碗里，比分散喂食更容易让低龄孩子把一餐吃完整。',
+      '3-6岁': '豌豆肉末饭更适合午餐做一碗饭主食，豌豆和肉末一起拌进米饭里，比较适合学龄前阶段的正餐节奏。',
+      '6-12岁': '豌豆肉末饭更适合午餐或放学后的早晚餐主食，主食、蛋白质和蔬菜集中在一碗里，执行起来更稳。',
+      '12岁以上': '豌豆肉末饭适合青少年阶段做午餐主食，配一份清淡蔬菜或汤品更容易把整餐吃完整。'
+    };
+    const tipsMap = {
+      '1-3岁': '肉末炒熟后再和软饭拌匀，豌豆颗粒按接受度处理。先从小半碗开始，孩子更容易稳住节奏。',
+      '3-6岁': '更适合放在午餐，米饭不要太干，先保证孩子能顺利吃完，再慢慢增加颗粒感和配菜量。',
+      '6-12岁': '学习日或活动日更适合放在午餐，配一份蔬菜汤或炒青菜，比单独一碗饭更均衡。',
+      '12岁以上': '青少年阶段更适合把这道和蔬菜、汤品一起安排，主食和蛋白质先吃够，再考虑额外加餐。'
+    };
+    return {
+      category: '午餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '米饭负责基础能量，肉末提供蛋白质，豌豆补一些蔬菜和膳食纤维，这道更适合当一餐主食，而不是当早餐快手替代。'
+    };
+  }
+
+  if (title === '豌豆豆腐汤') {
+    const descriptionMap = {
+      '1-3岁': '豌豆豆腐汤更适合作为午餐或晚餐的配汤，豆腐提供软嫩蛋白质，豌豆煮透后更容易让低龄孩子接受。',
+      '3-6岁': '豌豆豆腐汤更适合晚餐或午餐做清淡配汤，豆腐和豌豆一起入口，比较适合学龄前阶段的收口节奏。',
+      '6-12岁': '豌豆豆腐汤更适合学习日和活动日晚餐做配汤，口味保持清淡，比重口味汤底更适合日常。',
+      '12岁以上': '豌豆豆腐汤适合青少年阶段做清淡配汤，和米饭、肉菜一起搭配更稳。'
+    };
+    const tipsMap = {
+      '1-3岁': '分给孩子前先确认豌豆煮透，豆腐切成小块。先吃主食和肉菜，再少量喝汤，整餐更稳。',
+      '3-6岁': '更适合做晚餐配汤，量不要太大，避免孩子只喝汤不吃主食。豆腐和豌豆一起盛到碗里，饱腹感会更好。',
+      '6-12岁': '如果当天已经有一份主菜，这道更适合做清淡配汤，帮助把蔬菜、豆制品和水分补进同一餐。',
+      '12岁以上': '青少年阶段更适合把这道做成清淡配汤，优先保证主食和肉菜，再用汤品补足蔬菜和水分。'
+    };
+    return {
+      category: '汤品',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '豆腐提供蛋白质和部分钙来源，豌豆补一些蔬菜和膳食纤维，这道更适合作为正餐配汤，把汤、水分和豆制品一起补进一餐。'
+    };
+  }
+
+  if (title === '春笋肉末豆腐') {
+    const descriptionMap = {
+      '1-3岁': '春笋肉末豆腐更适合作为午餐主菜，豆腐提供软嫩蛋白质，肉末补足铁和能量，春笋煮透后更容易让低龄孩子接受。',
+      '3-6岁': '春笋肉末豆腐更适合午餐做主菜，和米饭、蔬菜一起安排，比单独当早餐更能把一餐吃完整。',
+      '6-12岁': '春笋肉末豆腐更适合学习日午餐或早晚餐主菜，豆腐、肉末和春笋同餐出现，主食和蛋白质一次补齐。',
+      '12岁以上': '春笋肉末豆腐适合青少年阶段做午餐主菜，配米饭和青菜更稳。'
+    };
+    const tipsMap = {
+      '1-3岁': '春笋煮透再和豆腐、肉末一起盛碗，先从小半碗开始，配软饭更稳。',
+      '3-6岁': '更适合放在午餐，和孩子平时爱吃的蔬菜一起搭配，比单独吃豆腐更容易接受。',
+      '6-12岁': '学习日或活动日更适合放在午餐，配一份绿叶菜，整餐更完整。',
+      '12岁以上': '青少年阶段更适合和米饭、青菜搭配，把蛋白质和蔬菜一起安排进正餐。'
+    };
+    return {
+      category: '午餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '豆腐提供蛋白质和部分钙来源，肉末补铁和能量，春笋补膳食纤维，这道更适合做午餐主菜而不是早餐快手替代。'
+    };
+  }
+
+  if (title === '韭菜鸡蛋饺子') {
+    const descriptionMap = {
+      '3-6岁': '韭菜鸡蛋饺子更适合午餐做主餐，搭配清汤或蔬菜后更容易把一餐吃完整，比放在晚餐更贴合学龄前阶段的消化节奏。',
+      '6-12岁': '韭菜鸡蛋饺子更适合午餐或早晚餐主食，一次吃完后再补一份蔬菜，执行起来比分散安排更稳。',
+      '12岁以上': '韭菜鸡蛋饺子适合青少年阶段做午餐主食，配清汤或炒菜后更容易把整餐收稳。'
+    };
+    const tipsMap = {
+      '3-6岁': '更适合放在午餐，先给孩子少盛几个，吃完再添，比一次性放很多更容易稳住节奏。搭配一小碗清汤更舒服。',
+      '6-12岁': '学习日或周末午间更适合安排，配一份青菜或汤品，整体更均衡。晚餐更适合清淡收口，不建议用饺子代替。',
+      '12岁以上': '青少年阶段更适合午餐安排，控制总量后和蔬菜、汤品搭配，避免餐后马上躺下。'
+    };
+    return {
+      category: '午餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '鸡蛋提供优质蛋白，韭菜补充部分维生素和纤维，饺子皮负责基础能量，这道更适合作为午餐主餐而不是晚餐收口。'
+    };
+  }
+
+  if (title === '菠菜鸡蛋饼') {
+    const descriptionMap = {
+      '1-3岁': '菠菜鸡蛋饼更适合早餐作为软嫩的蛋白质来源，菠菜切碎后和蛋液一起摊成小饼，比较适合低龄阶段的早晨节奏。',
+      '3-6岁': '菠菜鸡蛋饼适合早餐搭配主食，口感软嫩，上学前把蛋和蔬菜一起安排在早晨更稳。',
+      '6-12岁': '菠菜鸡蛋饼适合早餐作为蛋白质蔬菜二合一，和奶类、水果一起安排，上午能量更稳定。',
+      '12岁以上': '菠菜鸡蛋饼适合青少年早晨快捷蛋白质蔬菜搭配，和全麦主食一起更完整。'
+    };
+    const tipsMap = {
+      '1-3岁': '饼摊薄一点，菠菜切细碎，先从小份开始，和粥或软饭一起吃更稳。',
+      '3-6岁': '更适合早餐，配一小碗粥或牛奶，帮助孩子在上午活动前把蛋白质和蔬菜一次补上。',
+      '6-12岁': '学习日早晨更适合安排，配牛奶或豆浆，比单独吃饼更均衡。',
+      '12岁以上': '青少年阶段更适合和全麦面包、牛奶或酸奶搭配，做成早餐蛋白质蔬菜合一的快捷组合。'
+    };
+    return {
+      category: '早餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '鸡蛋提供优质蛋白，菠菜补充铁和维生素，这道更适合作为早餐蛋白质蔬菜来源，和主食、奶类搭配更完整。'
+    };
+  }
+
+  if (title === '毛豆肉末粥') {
+    const descriptionMap = {
+      '1-3岁': '毛豆肉末粥更适合早餐做温热主食，毛豆煮透后和肉末一起放进粥里，比单独白粥更有饱腹感，也更适合低龄阶段早晨建立进食节奏。',
+      '3-6岁': '毛豆肉末粥适合早餐打底，豆类、肉末和主食集中在一碗里，上学前的早晨执行起来更轻松。',
+      '6-12岁': '毛豆肉末粥适合早餐作为温热主食，豆类和肉末补足蛋白质和能量，学习日前半天更稳。',
+      '12岁以上': '毛豆肉末粥适合青少年早餐做温热主食，和蛋类或奶类搭配更完整。'
+    };
+    const tipsMap = {
+      '1-3岁': '毛豆煮透后再和肉末、粥一起盛碗，先从小半碗开始，配蒸蛋或豆腐更稳。',
+      '3-6岁': '更适合早餐，毛豆提前煮软，粥体保持稠而不黏，配一小份蛋更完整。',
+      '6-12岁': '学习日早餐更适合和鸡蛋或牛奶一起安排，豆类和肉末帮助上午饱腹感更稳定。',
+      '12岁以上': '青少年阶段更适合和蛋类、水果搭配，避免早餐只有碳水。'
+    };
+    return {
+      category: '早餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '毛豆提供植物蛋白和部分钙，肉末补足铁和动物蛋白，大米负责基础能量，这道更适合作为早餐温热主食。'
+    };
+  }
+
+  if (title === '红薯鸡肉粥') {
+    const descriptionMap = {
+      '1-3岁': '红薯鸡肉粥更适合早餐做温热主食，红薯的自然甜味和鸡肉的蛋白质放在一碗粥里，比较适合低龄孩子早晨建立进食意愿。',
+      '3-6岁': '红薯鸡肉粥适合早餐打底，红薯甜味做入口引导，鸡肉补蛋白质，上学前把主食和蛋白质一次安排好。',
+      '6-12岁': '红薯鸡肉粥适合早餐作为温热主食，和蛋类一起安排，学习日前半天能量更稳定。',
+      '12岁以上': '红薯鸡肉粥适合青少年早餐做温热主食，和蛋类、奶类搭配更均衡。'
+    };
+    const tipsMap = {
+      '1-3岁': '红薯切成小丁煮透，鸡肉撕成细丝，先从小半碗开始，配蒸蛋更接近完整一餐。',
+      '3-6岁': '更适合早餐，红薯甜味做自然引导，先保证孩子能吃完，再考虑是否需要搭蛋白质。',
+      '6-12岁': '学习日早晨更适合安排，和鸡蛋或牛奶搭配，帮助上午能量更平稳。',
+      '12岁以上': '青少年阶段更适合和蛋类或奶制品搭配，主食和蛋白质一起补齐。'
+    };
+    return {
+      category: '早餐',
+      description: descriptionMap[stageKey] || descriptionMap['3-6岁'],
+      tips: tipsMap[stageKey] || tipsMap['3-6岁'],
+      nutrientCombination: '红薯负责自然甜味和部分碳水，鸡肉提供优质蛋白，大米做基础能量，这道更适合早餐做温热主食，和蛋类或奶类搭配更完整。'
+    };
+  }
+
+  return null;
+}
+
+function sanitizeNutritionRecipeSource(recipe) {
+  if (!recipe || typeof recipe !== 'object') {
+    return null;
+  }
+  const ageRange = normalizeNutritionAgeQuery(recipe.ageRange || recipe.age_range || '');
+  if (ageRange === '0-1岁') {
+    return null;
+  }
+
+  const nextRecipe = Object.assign({}, recipe, {
+    ageRange: ageRange || recipe.ageRange,
+    description: sanitizeNutritionRecipeSourceText(recipe.description, ageRange, 'description'),
+    tips: sanitizeNutritionRecipeSourceText(recipe.tips, ageRange, 'tips'),
+    nutrientCombination: sanitizeNutritionRecipeSourceText(recipe.nutrientCombination, ageRange, 'nutrientCombination')
+  });
+
+  nextRecipe.category = inferNutritionServingCategory(nextRecipe);
+
+  nextRecipe.tags = Array.isArray(recipe.tags) ? recipe.tags.slice() : [];
+  nextRecipe.ingredients = Array.isArray(recipe.ingredients)
+    ? recipe.ingredients.map((item) => Object.assign({}, item))
+    : [];
+  nextRecipe.steps = Array.isArray(recipe.steps) ? recipe.steps.slice() : [];
+  nextRecipe.nutrition = Object.assign({}, recipe.nutrition || {});
+  nextRecipe.dailyNutritionPercent = recipe.dailyNutritionPercent || '';
+
+  if (nextRecipe.dailyNutritionPercent && typeof nextRecipe.dailyNutritionPercent === 'object') {
+    const parts = [];
+    if (nextRecipe.dailyNutritionPercent.protein !== undefined) parts.push('蛋白质 ' + nextRecipe.dailyNutritionPercent.protein + '%');
+    if (nextRecipe.dailyNutritionPercent.calcium !== undefined) parts.push('钙 ' + nextRecipe.dailyNutritionPercent.calcium + '%');
+    if (nextRecipe.dailyNutritionPercent.iron !== undefined) parts.push('铁 ' + nextRecipe.dailyNutritionPercent.iron + '%');
+    if (nextRecipe.dailyNutritionPercent.carbs !== undefined) parts.push('碳水化合物 ' + nextRecipe.dailyNutritionPercent.carbs + '%');
+    if (nextRecipe.dailyNutritionPercent.fat !== undefined) parts.push('脂肪 ' + nextRecipe.dailyNutritionPercent.fat + '%');
+    if (nextRecipe.dailyNutritionPercent.vitamin !== undefined) parts.push('维生素 ' + nextRecipe.dailyNutritionPercent.vitamin + '%');
+    if (nextRecipe.dailyNutritionPercent.mineral !== undefined) parts.push('矿物质 ' + nextRecipe.dailyNutritionPercent.mineral + '%');
+    if (nextRecipe.dailyNutritionPercent.fiber !== undefined) parts.push('膳食纤维 ' + nextRecipe.dailyNutritionPercent.fiber + '%');
+    if (nextRecipe.dailyNutritionPercent.energy !== undefined) parts.push('能量 ' + nextRecipe.dailyNutritionPercent.energy + '%');
+    nextRecipe.dailyNutritionPercent = parts.join('，');
+  }
+
+  if (nextRecipe.nutrition.highlight) {
+    nextRecipe.nutrition.highlight = sanitizeNutritionRecipeSourceText(nextRecipe.nutrition.highlight, ageRange, 'highlight');
+  }
+
+  const sourceOverride = getNutritionRecipeSourceOverride(nextRecipe, ageRange);
+  if (sourceOverride) {
+    Object.assign(nextRecipe, sourceOverride);
+  }
+
+  return nextRecipe;
+}
+
 function buildNutritionRecipeBase(recipe) {
   const image = getNutritionRecipeImage(recipe);
   return {
@@ -2002,22 +2398,46 @@ function normalizeNutritionRecipeImages(recipe, primaryImage) {
 }
 
 function normalizeNutritionRecipeSummary(recipe) {
-  const base = buildNutritionRecipeBase(recipe);
+  const normalizedRecipe = enrichNutritionRecipeForSelectedAge(recipe, recipe && (recipe.ageRange || recipe.age_range));
+  const deepContent = buildNutritionDeepContent(normalizedRecipe, normalizedRecipe && (normalizedRecipe.ageRange || normalizedRecipe.age_range));
+  const base = buildNutritionRecipeBase(normalizedRecipe);
   return Object.assign({}, base, {
     nutrition: {
-      highlight: recipe.nutrition && recipe.nutrition.highlight ? recipe.nutrition.highlight : ''
-    }
+      highlight: normalizedRecipe.nutrition && normalizedRecipe.nutrition.highlight ? normalizedRecipe.nutrition.highlight : ''
+    },
+    tips: normalizedRecipe.tips || '',
+    depthSummary: deepContent.depthSummary,
+    suitableScene: deepContent.suitableScene,
+    feedingAdvice: deepContent.feedingAdvice,
+    safetyWarnings: deepContent.safetyWarnings,
+    pairingAdvice: deepContent.pairingAdvice,
+    substitutionAdvice: deepContent.substitutionAdvice,
+    ageFocus: deepContent.ageFocus
   });
 }
 
-function normalizeNutritionRecipeDetail(recipe) {
-  return Object.assign({}, buildNutritionRecipeBase(recipe), {
-    ingredients: recipe.ingredients || [],
-    steps: recipe.steps || [],
-    nutrition: recipe.nutrition || {},
-    tips: recipe.tips || '',
-    nutrientCombination: recipe.nutrientCombination || '',
-    dailyNutritionPercent: recipe.dailyNutritionPercent || ''
+function normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange) {
+  const normalizedRecipe = enrichNutritionRecipeForSelectedAge(recipe, selectedAgeRange);
+  return normalizeNutritionRecipeSummary(normalizedRecipe);
+}
+
+function normalizeNutritionRecipeDetail(recipe, selectedAgeRange) {
+  const normalizedRecipe = enrichNutritionRecipeForSelectedAge(recipe, selectedAgeRange);
+  const deepContent = buildNutritionDeepContent(normalizedRecipe, selectedAgeRange || normalizedRecipe.ageRange || normalizedRecipe.age_range);
+  return Object.assign({}, buildNutritionRecipeBase(normalizedRecipe), {
+    ingredients: normalizedRecipe.ingredients || [],
+    steps: normalizedRecipe.steps || [],
+    nutrition: normalizedRecipe.nutrition || {},
+    tips: normalizedRecipe.tips || '',
+    nutrientCombination: normalizedRecipe.nutrientCombination || '',
+    dailyNutritionPercent: normalizedRecipe.dailyNutritionPercent || '',
+    depthSummary: deepContent.depthSummary,
+    suitableScene: deepContent.suitableScene,
+    ageFocus: deepContent.ageFocus,
+    feedingAdvice: deepContent.feedingAdvice,
+    safetyWarnings: deepContent.safetyWarnings,
+    pairingAdvice: deepContent.pairingAdvice,
+    substitutionAdvice: deepContent.substitutionAdvice
   });
 }
 
@@ -2045,17 +2465,619 @@ function normalizeNutritionAgeQuery(age) {
   const ageMap = {
     '全部': '全部年龄',
     'all': '全部年龄',
-    '6-12月': '0-1岁',
-    '0-1岁': '0-1岁',
-    'ling-yi-sui': '0-1岁',
+    '6-12月': '',
+    '0-1岁': '',
+    'ling-yi-sui': '',
+    '1-2岁': '1-2岁',
+    'yi-er-sui': '1-2岁',
+    '2-3岁': '2-3岁',
+    'er-san-sui': '2-3岁',
     '1-3岁': '1-3岁',
     'yi-san-sui': '1-3岁',
+    '3-4岁': '3-4岁',
+    'san-si-sui': '3-4岁',
+    '4-5岁': '4-5岁',
+    'si-wu-sui': '4-5岁',
+    '5-6岁': '5-6岁',
+    'wu-liu-sui': '5-6岁',
     '3-6岁': '3-6岁',
     'san-liu-sui': '3-6岁',
+    '6-7岁': '6-7岁',
+    'liu-qi-sui': '6-7岁',
+    '7-8岁': '7-8岁',
+    'qi-ba-sui': '7-8岁',
+    '8-12岁': '8-12岁',
+    'ba-shi-er-sui': '8-12岁',
     '6-12岁': '6-12岁',
-    'liu-shi-er-sui': '6-12岁'
+    'liu-shi-er-sui': '6-12岁',
+    '12岁以上': '12岁以上'
   };
   return ageMap[value] || value;
+}
+
+function getNutritionAgeBucketValues(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  const ageBucketMap = {
+    '1-3岁': ['1-2岁', '2-3岁'],
+    '3-6岁': ['3-4岁', '4-5岁', '5-6岁'],
+    '6-12岁': ['6-7岁', '7-8岁', '8-12岁'],
+    '12岁以上': ['12岁以上']
+  };
+  return ageBucketMap[normalizedAge] || [normalizedAge];
+}
+
+function getNutritionAgeStageKey(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  if (getNutritionAgeBucketValues('1-3岁').includes(normalizedAge)) {
+    return '1-3岁';
+  }
+  if (getNutritionAgeBucketValues('3-6岁').includes(normalizedAge)) {
+    return '3-6岁';
+  }
+  if (getNutritionAgeBucketValues('6-12岁').includes(normalizedAge)) {
+    return '6-12岁';
+  }
+  return normalizedAge;
+}
+
+function getNutritionAgeStageProfile(age) {
+  const stageKey = getNutritionAgeStageKey(age);
+  const profileMap = {
+    '1-3岁': {
+      stageTag: '质地过渡与稳定接受度',
+      summaryPrefix: '1-3岁更适合围绕软烂质地、稳定吞咽和基础咀嚼过渡来安排家庭做法。',
+      tipSuffix: '先稳住规律进餐和接受度，再逐步增加颗粒感、食物种类和自主拿勺机会。',
+      categoryWeights: { '早餐': 8, '加餐': 6, '汤品': 5 },
+      keywordBoosts: ['粥', '蒸', '羹', '豆腐', '蛋', '汤']
+    },
+    '3-6岁': {
+      stageTag: '自主进食与餐桌规则',
+      summaryPrefix: '3-6岁更适合围绕自主进食、规律三餐、食物多样性和基础餐桌规则来做搭配。',
+      tipSuffix: '这阶段适合保留清晰口感、控制加餐干扰，并让孩子参与简单分餐和收尾。',
+      categoryWeights: { '早餐': 8, '午餐': 5, '加餐': 6, '汤品': 4 },
+      keywordBoosts: ['粥', '蒸蛋', '豆腐', '饭', '面', '饺', '汤']
+    },
+    '6-12岁': {
+      stageTag: '学习活动能量与生长支持',
+      summaryPrefix: '6-12岁更关注稳定能量、优质蛋白、铁、钙和日常活动恢复，适合学习日常与运动消耗。',
+      tipSuffix: '这阶段优先保证主食、蛋白质、蔬菜同餐出现，同时减少高糖零食和只喝汤不吃主食。',
+      categoryWeights: { '早餐': 8, '午餐': 7, '晚餐': 6, '汤品': 4 },
+      keywordBoosts: ['牛', '鸡', '鱼', '排骨', '豆', '蛋', '饭', '面']
+    }
+  };
+  return profileMap[stageKey] || null;
+}
+
+function getNutritionRecipeIngredientNames(recipe) {
+  return (Array.isArray(recipe && recipe.ingredients) ? recipe.ingredients : []).map((item) => String((item && item.name) || '').trim()).filter(Boolean);
+}
+
+function nutritionRecipeContainsKeyword(recipe, keywords) {
+  const text = [recipe && recipe.title, recipe && recipe.description, Array.isArray(recipe && recipe.tags) ? recipe.tags.join(' ') : '', getNutritionRecipeIngredientNames(recipe).join(' ')].join(' ');
+  return (keywords || []).some((keyword) => text.includes(keyword));
+}
+
+function getNutritionBlockedKeywordsForAge(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  if (normalizedAge === '1-2岁') {
+    return ['腊肉', '腊肠', '香肠', '火腿', '培根', '辣椒', '蜂蜜', '红糖', '韭菜', '香椿', '蕨菜', '凉粉', '木姜子', '鱼头', '排骨'];
+  }
+  if (normalizedAge === '2-3岁') {
+    return ['腊肉', '腊肠', '香肠', '火腿', '培根', '辣椒', '蜂蜜', '红糖', '香椿', '蕨菜', '木姜子', '鱼头'];
+  }
+  return [];
+}
+
+function isNutritionRecipeSafeForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  if (!normalizedAge) {
+    return true;
+  }
+  if (nutritionRecipeContainsKeyword(recipe, getNutritionBlockedKeywordsForAge(normalizedAge))) {
+    return false;
+  }
+  return true;
+}
+
+function getNutritionMealLabel(category) {
+  const mealMap = {
+    '早餐': '早餐或上学前加能量',
+    '午餐': '午餐主菜或主食搭配',
+    '晚餐': '晚餐收口和全天营养补齐',
+    '加餐': '两餐之间的小份补充',
+    '汤品': '正餐里的配汤或补水搭配'
+  };
+  return mealMap[String(category || '').trim()] || '家庭日常一餐';
+}
+
+function inferNutritionServingCategory(recipe) {
+  const rawCategory = String((recipe && recipe.category) || '').trim();
+  const text = [recipe && recipe.title, recipe && recipe.description, getNutritionRecipeIngredientNames(recipe).join(' ')].join(' ');
+
+  if (['粥'].some((keyword) => text.includes(keyword))) {
+    return rawCategory === '加餐' ? '加餐' : '早餐';
+  }
+  if (['蒸蛋', '豆腐脑', '豆花', '蛋羹'].some((keyword) => text.includes(keyword))) {
+    return rawCategory === '加餐' ? '加餐' : '早餐';
+  }
+  if (['汤', '羹', '排骨', '鸡汤', '丸子汤', '鱼头'].some((keyword) => text.includes(keyword))) {
+    return rawCategory === '晚餐' ? '晚餐' : '汤品';
+  }
+  if (['饭', '面', '粉', '饺', '馄饨'].some((keyword) => text.includes(keyword))) {
+    return rawCategory === '晚餐' ? '晚餐' : '午餐';
+  }
+  if (['饼', '卷'].some((keyword) => text.includes(keyword))) {
+    return rawCategory === '午餐' ? '午餐' : '早餐';
+  }
+
+  return rawCategory;
+}
+
+function scoreNutritionRecipeCategoryFit(recipe) {
+  const category = inferNutritionServingCategory(recipe);
+  const text = [recipe && recipe.title, recipe && recipe.description, getNutritionRecipeIngredientNames(recipe).join(' ')].join(' ');
+  let score = 0;
+
+  if (['汤', '羹', '排骨', '鸡汤', '丸子汤', '鱼头'].some((keyword) => text.includes(keyword))) {
+    if (['午餐', '晚餐', '汤品'].includes(category)) {
+      score += 26;
+    }
+    if (category === '早餐') {
+      score -= 24;
+    }
+    if (category === '加餐') {
+      score -= 18;
+    }
+  }
+
+  if (['粥', '蒸蛋', '豆腐脑', '豆花', '蛋羹'].some((keyword) => text.includes(keyword))) {
+    if (['早餐', '加餐'].includes(category)) {
+      score += 22;
+    }
+    if (['午餐', '晚餐'].includes(category)) {
+      score += 4;
+    }
+    if (category === '汤品') {
+      score -= 10;
+    }
+  }
+
+  if (['饭', '面', '粉', '饺', '馄饨'].some((keyword) => text.includes(keyword))) {
+    if (['午餐', '晚餐'].includes(category)) {
+      score += 20;
+    }
+    if (category === '早餐') {
+      score -= 6;
+    }
+    if (category === '加餐') {
+      score -= 12;
+    }
+  }
+
+  if (['饼', '卷'].some((keyword) => text.includes(keyword))) {
+    if (['早餐', '午餐'].includes(category)) {
+      score += 16;
+    }
+    if (category === '晚餐') {
+      score += 6;
+    }
+  }
+
+  return score;
+}
+
+function getNutritionPortionGuidance(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  const map = {
+    '1-2岁': '单次分量控制在小半碗以内，先保证软烂、好吞咽，再看孩子是否愿意持续接受。',
+    '2-3岁': '可以做成小半碗到大半碗，重点看咀嚼节奏、坐定进食和是否能稳定吃完。',
+    '3-4岁': '一餐里保留这道搭配，再配一种熟悉主食，孩子更容易吃完。',
+    '4-5岁': '按幼儿园作息安排，避免加餐过多影响下一顿正餐。',
+    '5-6岁': '优先放在早餐或午餐，帮助白天活动和专注更稳定。',
+    '6-7岁': '适合上学日前半天或放学后安排，重在稳定能量和蛋白质。',
+    '7-8岁': '可作为活动日前后的补充，注意和蔬菜、主食一起搭配。',
+    '8-12岁': '适合学习日常与运动后恢复，主食、蛋白质、蔬菜三类尽量同餐出现。',
+    '12岁以上': '按青少年食量灵活调整，优先保证规律进餐和总量稳定。'
+  };
+  return map[normalizedAge] || '按孩子当天食量和接受度灵活调整，先少量试，再逐步稳定。';
+}
+
+function getNutritionMetricInsights(recipe) {
+  const metrics = [
+    { key: 'protein', label: '蛋白质', unit: 'g', value: parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.protein) },
+    { key: 'calcium', label: '钙', unit: 'mg', value: parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.calcium) },
+    { key: 'iron', label: '铁', unit: 'mg', value: parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.iron) },
+    { key: 'fiber', label: '膳食纤维', unit: 'g', value: parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.fiber) },
+    { key: 'vitaminC', label: '维生素C', unit: 'mg', value: parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.vitaminC) }
+  ].filter((item) => item.value > 0);
+  return metrics.sort((a, b) => b.value - a.value).slice(0, 2);
+}
+
+function getNutritionAgeFocusText(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  const focusMap = {
+    '1-2岁': '软烂质地、手抓进食、稳定接受度和基础餐次规律',
+    '2-3岁': '咀嚼练习、规律三餐、减少追喂和减少边吃边玩',
+    '3-4岁': '自主进食、基础咀嚼、早餐质量和餐桌规则',
+    '4-5岁': '稳定正餐、加餐节奏、食物多样性和午晚餐平衡',
+    '5-6岁': '白天活动能量、早餐质量、进餐独立性和挑食管理',
+    '6-7岁': '上学日能量稳定、优质蛋白、午餐饱腹感和放学后补给',
+    '7-8岁': '学习日常能量、蔬菜摄入、运动前后补给和零食控制',
+    '8-12岁': '生长高峰期的蛋白质、钙、铁、早餐稳定和规律进餐',
+    '12岁以上': '青少年阶段的总量稳定、饮食均衡和自我管理'
+  };
+  return focusMap[normalizedAge] || '规律进餐和营养均衡';
+}
+
+function getNutritionStageExecutionAdvice(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  const map = {
+    '1-2岁': '优先把一餐控制在20分钟左右，先给软烂主食和蛋白质，再补蔬菜，减少边走边喂。',
+    '2-3岁': '先固定早餐、午餐、晚餐和1次加餐，让孩子坐定吃完，再慢慢增加颗粒感和食物种类。',
+    '3-4岁': '早餐优先保证主食和蛋白质，午晚餐各留一道熟悉食物打底，新食物一次只加一种。',
+    '4-5岁': '加餐更适合放在正餐中间，量以不影响下一顿为准，晚餐尽量避免只喝汤或只吃主食。',
+    '5-6岁': '幼儿园日常更看重早餐质量和放学后补给节奏，先稳住正餐，再处理挑食问题。',
+    '6-7岁': '上学日早餐尽量同时有主食和蛋白质，放学后补给控制分量，避免直接影响晚餐。',
+    '7-8岁': '如果当天有运动或户外活动，优先把蛋白质和主食放在白天，晚餐以清淡收口更稳。',
+    '8-12岁': '学习日和运动日都要先稳住早餐、午餐和放学后补给，零食和含糖饮料尽量放到最低。',
+    '12岁以上': '青少年阶段更适合把三餐和运动后补给固定下来，再根据食量增减总量。'
+  };
+  return map[normalizedAge] || '先稳住规律三餐，再按孩子活动量和接受度做微调。';
+}
+
+function getNutritionStageRiskHint(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  const map = {
+    '1-2岁': '这一阶段重点避免追喂、边玩边吃和明显过硬、过大块食物。',
+    '2-3岁': '这一阶段重点避免零食顶替正餐，也要减少长时间含饭不咽。',
+    '3-4岁': '这一阶段重点避免用甜食奖励进餐，否则更容易打乱正餐节奏。',
+    '4-5岁': '这一阶段重点避免加餐过密和晚餐拖太晚，不然第二天早餐更难稳定。',
+    '5-6岁': '这一阶段重点避免早餐过简或放学后吃太多零食，不然正餐质量会明显下滑。',
+    '6-7岁': '这一阶段重点避免只吃主食或只喝汤，午晚餐都要留出蛋白质位置。',
+    '7-8岁': '这一阶段重点避免高糖饮料和高油零食占掉正餐空间。',
+    '8-12岁': '这一阶段重点避免早餐缺失、放学后暴食和长期蔬菜不足。',
+    '12岁以上': '这一阶段重点避免节食式控制和无节奏加餐。'
+  };
+  return map[normalizedAge] || '重点避免让零食和饮料占掉正餐空间。';
+}
+
+function buildNutritionDescriptionForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const ingredientNames = getNutritionRecipeIngredientNames(recipe);
+  const mealLabel = getNutritionMealLabel(recipe && recipe.category);
+  const focusText = getNutritionAgeFocusText(normalizedAge);
+  const ingredientsText = ingredientNames.length ? ingredientNames.slice(0, 3).join('、') : '常见家庭食材';
+  return `${String((recipe && (recipe.title || recipe.name)) || '这道搭配').trim()}更适合${normalizedAge || '当前年龄'}孩子安排在${mealLabel}，主要围绕${ingredientsText}做搭配，重点支持${focusText}。`;
+}
+
+function buildNutritionHighlightForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const topMetrics = getNutritionMetricInsights(recipe);
+  const metricText = topMetrics.length ? topMetrics.map((item) => `${item.label}${item.value}${item.unit}`).join('、') : '主食、蛋白质和蔬菜的基础搭配';
+  if (['1-2岁', '2-3岁'].includes(normalizedAge)) {
+    return `这道更适合先练接受度和吞咽安全，同时补充${metricText}。`;
+  }
+  if (['3-4岁', '4-5岁', '5-6岁'].includes(normalizedAge)) {
+    return `这道更适合在自主进食阶段补充${metricText}，同时帮助孩子把一餐吃得更完整。`;
+  }
+  return `这道更适合作为学习和活动日常里的稳定补给，重点补充${metricText}。`;
+}
+
+function buildNutritionCombinationForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const topMetrics = getNutritionMetricInsights(recipe);
+  const ingredientNames = getNutritionRecipeIngredientNames(recipe);
+  const firstIngredient = ingredientNames[0] || '这道食材';
+  const hasIron = topMetrics.some((item) => item.key === 'iron');
+  const hasCalcium = topMetrics.some((item) => item.key === 'calcium');
+  const hasProtein = topMetrics.some((item) => item.key === 'protein');
+  if (hasIron) {
+    return `${firstIngredient}这类搭配更适合同餐配一份富含维生素 C 的蔬果，帮助整餐更均衡，也方便家长把补铁安排进日常。`;
+  }
+  if (hasCalcium && hasProtein) {
+    return `这道同时覆盖了蛋白质和钙来源，更适合和清淡蔬菜、主食一起吃成完整一餐，家长执行起来也更稳定。`;
+  }
+  if (['1-2岁', '2-3岁'].includes(normalizedAge)) {
+    return `低龄阶段更适合把这道放进一顿简单的小份餐里，先看接受度，再慢慢增加食物种类。`;
+  }
+  return `这道更适合和蔬菜、主食一起搭配，比单独吃一道菜更容易把一餐吃完整。`;
+}
+
+function buildNutritionTipsForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const ingredientNames = getNutritionRecipeIngredientNames(recipe);
+  const notes = [getNutritionPortionGuidance(normalizedAge)];
+  notes.push(getNutritionStageExecutionAdvice(normalizedAge));
+  if (ingredientNames.length) {
+    notes.push(`先从孩子更容易接受的${ingredientNames[0]}口味开始，再逐步把其他食材加进来。`);
+  }
+  if (nutritionRecipeContainsKeyword(recipe, ['排骨', '鱼头', '鱼'])) {
+    notes.push('给孩子分餐前先确认没有明显骨头或刺，低龄阶段尤其要再检查一次。');
+  }
+  if (nutritionRecipeContainsKeyword(recipe, ['鸡蛋', '豆腐'])) {
+    notes.push('第一次连续吃这类高频食材时，先少量试 2-3 次，再决定是否放进常规菜单。');
+  }
+  if (['3-4岁', '4-5岁', '5-6岁'].includes(normalizedAge)) {
+    notes.push('这阶段更适合让孩子自己拿勺、自己收尾，家长主要负责节奏和分量。');
+  }
+  if (['6-7岁', '7-8岁', '8-12岁', '12岁以上'].includes(normalizedAge)) {
+    notes.push('如果当天活动量大，优先把这道放在早餐或午餐，晚餐尽量收口更清淡。');
+  }
+  return notes.slice(0, 3).join(' ');
+}
+
+function buildNutritionDeepContent(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const profile = getNutritionAgeStageProfile(normalizedAge) || { stageTag: '', summaryPrefix: '', tipSuffix: '' };
+  const ingredientNames = getNutritionRecipeIngredientNames(recipe);
+  const topMetrics = getNutritionMetricInsights(recipe);
+  const category = String((recipe && recipe.category) || '').trim();
+  const mealLabel = getNutritionMealLabel(category);
+  const riskWarnings = [];
+  const pairingAdvice = [];
+  const feedingAdvice = [];
+  const substitutionAdvice = [];
+  const metricText = topMetrics.map((item) => `${item.label}${item.value}${item.unit}`).join('、');
+
+  feedingAdvice.push(`${mealLabel}更合适，${getNutritionPortionGuidance(normalizedAge)}`);
+  if (profile.stageTag) {
+    feedingAdvice.push(`${normalizedAge}阶段先关注${profile.stageTag}，比单纯追求吃得多更重要。`);
+  }
+  if (ingredientNames.length) {
+    feedingAdvice.push(`这道的核心食材是${ingredientNames.slice(0, 3).join('、')}，先保留孩子最能接受的一样，再加新食材。`);
+  }
+  feedingAdvice.push(getNutritionStageExecutionAdvice(normalizedAge));
+
+  if (topMetrics.some((item) => item.key === 'iron')) {
+    pairingAdvice.push('如果今天这顿想重点补铁，同餐可搭配番茄、彩椒、橙子这类维生素 C 来源。');
+  }
+  if (topMetrics.some((item) => item.key === 'calcium')) {
+    pairingAdvice.push('如果今天这顿更看重补钙，整体口味尽量清淡，盐不要重。');
+  }
+  if (topMetrics.some((item) => item.key === 'protein')) {
+    pairingAdvice.push('如果蛋白质已经够了，另一道菜更适合补蔬菜和主食，不需要再叠很多肉。');
+  }
+
+  if (['1-2岁', '2-3岁'].includes(normalizedAge) && nutritionRecipeContainsKeyword(recipe, ['腊肉', '腊肠', '香肠', '火腿', '培根'])) {
+    riskWarnings.push('加工肉盐分偏高，这个年龄段不适合作为常规食谱，建议换成鲜肉、鸡蛋、豆腐或鱼肉。');
+    substitutionAdvice.push('把加工肉换成瘦猪肉、鸡胸肉、鱼肉或嫩豆腐，口味和盐分会更适合低龄孩子。');
+  }
+  if (nutritionRecipeContainsKeyword(recipe, ['排骨', '鱼头', '鱼'])) {
+    riskWarnings.push('带骨或带刺食材更适合先处理干净，再分给孩子，低龄阶段尤其要避免直接整块入口。');
+  }
+  if (nutritionRecipeContainsKeyword(recipe, ['鸡蛋'])) {
+    riskWarnings.push('鸡蛋相关食材第一次加量时先少量试，观察皮肤、呕吐和排便情况。');
+  }
+  riskWarnings.push(getNutritionStageRiskHint(normalizedAge));
+  if (!riskWarnings.length) {
+    riskWarnings.push('连续吃 2-3 次比一天换很多做法更容易判断孩子是否真正接受。');
+  }
+  if (!substitutionAdvice.length && ingredientNames.length) {
+    substitutionAdvice.push(`如果孩子暂时不接受${ingredientNames[0]}，可以先用熟悉口味做替换，再逐步回到原配方。`);
+  }
+
+  return {
+    ageFocus: normalizedAge ? `${normalizedAge}当前更该关注${profile.stageTag || '稳定进餐和营养均衡'}` : '当前更该关注稳定进餐和营养均衡',
+    suitableScene: `${mealLabel}。${ingredientNames.length ? `这道主要围绕${ingredientNames.slice(0, 2).join('、')}来搭配。` : ''}`.trim(),
+    depthSummary: `${normalizedAge || '当前年龄'}更适合把这道放在${mealLabel}，重点看${profile.stageTag || '孩子接受度'}。${metricText ? `这一餐更有价值的营养点主要是${metricText}。` : ''}`.trim(),
+    feedingAdvice: feedingAdvice.slice(0, 3),
+    safetyWarnings: riskWarnings.slice(0, 3),
+    pairingAdvice: pairingAdvice.slice(0, 3),
+    substitutionAdvice: substitutionAdvice.slice(0, 2).join(' ')
+  };
+}
+
+function parseNutritionMetricNumber(value) {
+  const match = String(value || '').match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function getNutritionAgeTargetMidpoint(age) {
+  const normalizedAge = normalizeNutritionAgeQuery(age);
+  if (normalizedAge === '3-6岁') {
+    return 4.5;
+  }
+  if (normalizedAge === '6-12岁') {
+    return 9;
+  }
+  if (normalizedAge === '1-3岁') {
+    return 2;
+  }
+  const range = parseAgeRangeValue(normalizedAge);
+  if (!range) {
+    return 0;
+  }
+  return (range.min + range.max) / 2;
+}
+
+function scoreNutritionRecipeForAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  const profile = getNutritionAgeStageProfile(normalizedAge);
+  if (!profile) {
+    return Number(recipe && recipe.viewCount) || 0;
+  }
+  const recipeAgeRange = String((recipe && (recipe.ageRange || recipe.age_range)) || '').trim();
+  const category = inferNutritionServingCategory(recipe);
+  const text = [recipe && recipe.title, recipe && recipe.description, category, Array.isArray(recipe && recipe.ingredients) ? recipe.ingredients.map((item) => item && item.name).join(' ') : ''].join(' ');
+  const protein = parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.protein);
+  const iron = parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.iron);
+  const calcium = parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.calcium);
+  const fiber = parseNutritionMetricNumber(recipe && recipe.nutrition && recipe.nutrition.fiber);
+  const cookTime = parseNutritionMetricNumber(recipe && recipe.cookTime);
+  let score = Number(recipe && recipe.viewCount) || 0;
+
+  if (recipeAgeRange === normalizedAge) {
+    score += 160;
+  } else if (getNutritionAgeBucketValues(normalizedAge).includes(recipeAgeRange)) {
+    score += 120;
+  }
+
+  if (recipeAgeRange && normalizedAge && recipeAgeRange !== normalizedAge && !getNutritionAgeBucketValues(normalizedAge).includes(recipeAgeRange)) {
+    score -= 80;
+  }
+
+  score += Number(profile.categoryWeights[category] || 0) * 10;
+  score += scoreNutritionRecipeCategoryFit(recipe);
+  score += protein * (normalizedAge === '6-12岁' ? 6 : 4);
+  score += iron * 18;
+  score += calcium / (normalizedAge === '6-12岁' ? 4 : 5);
+  score += fiber * (normalizedAge === '3-6岁' ? 8 : 5);
+
+  if (cookTime > 0 && cookTime <= 30) {
+    score += 12;
+  }
+  if (String((recipe && recipe.difficulty) || '').trim() === '简单') {
+    score += 10;
+  }
+
+  profile.keywordBoosts.forEach((keyword) => {
+    if (text.includes(keyword)) {
+      score += 9;
+    }
+  });
+
+  return score;
+}
+
+function pickBestNutritionRecipeVariant(recipes, selectedAgeRange) {
+  if (!Array.isArray(recipes) || !recipes.length) {
+    return null;
+  }
+  const targetMidpoint = getNutritionAgeTargetMidpoint(selectedAgeRange);
+  return recipes.slice().sort((a, b) => {
+    const scoreDiff = scoreNutritionRecipeForAge(b, selectedAgeRange) - scoreNutritionRecipeForAge(a, selectedAgeRange);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+    const ageDiffA = Math.abs(getNutritionAgeTargetMidpoint(a.ageRange || a.age_range) - targetMidpoint);
+    const ageDiffB = Math.abs(getNutritionAgeTargetMidpoint(b.ageRange || b.age_range) - targetMidpoint);
+    if (ageDiffA !== ageDiffB) {
+      return ageDiffA - ageDiffB;
+    }
+    return String(a.id).localeCompare(String(b.id));
+  })[0];
+}
+
+function curateNutritionRecipesForAge(recipes, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  if (!normalizedAge || normalizedAge === '全部年龄') {
+    return Array.isArray(recipes) ? recipes.slice() : [];
+  }
+  const safeRecipes = (recipes || []).filter((recipe) => isNutritionRecipeSafeForAge(recipe, normalizedAge));
+  const recipeGroups = new Map();
+  safeRecipes.forEach((recipe) => {
+    const key = String((recipe && recipe.title) || '').trim() || String((recipe && recipe.id) || '');
+    if (!recipeGroups.has(key)) {
+      recipeGroups.set(key, []);
+    }
+    recipeGroups.get(key).push(recipe);
+  });
+  return Array.from(recipeGroups.values())
+    .map((group) => pickBestNutritionRecipeVariant(group, normalizedAge))
+    .filter(Boolean)
+    .sort((a, b) => scoreNutritionRecipeForAge(b, normalizedAge) - scoreNutritionRecipeForAge(a, normalizedAge));
+}
+
+function diversifyNutritionRecommendationPool(recipes, selectedAgeRange, limit) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  const source = Array.isArray(recipes) ? recipes.slice() : [];
+  if (!source.length) {
+    return [];
+  }
+  const count = Math.max(Number(limit) || source.length, 1);
+  const picked = [];
+  const usedCategories = new Set();
+  const sorted = source.slice().sort((a, b) => scoreNutritionRecipeForAge(b, normalizedAge) - scoreNutritionRecipeForAge(a, normalizedAge));
+
+  sorted.forEach((recipe) => {
+    if (picked.length >= count) {
+      return;
+    }
+    const category = String((recipe && recipe.category) || '').trim();
+    if (!category || usedCategories.has(category)) {
+      return;
+    }
+    picked.push(recipe);
+    usedCategories.add(category);
+  });
+
+  sorted.forEach((recipe) => {
+    if (picked.length >= count) {
+      return;
+    }
+    if (!picked.includes(recipe)) {
+      picked.push(recipe);
+    }
+  });
+
+  return picked;
+}
+
+function resolveNutritionRecipeForDetail(recipeId, selectedAgeRange) {
+  const recipe = NUTRITION_RECIPES.find((item) => item.id === recipeId);
+  if (!recipe) {
+    return null;
+  }
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange);
+  if (!normalizedAge || normalizedAge === '全部年龄') {
+    return {
+      recipe,
+      notice: ''
+    };
+  }
+  const title = String(recipe.title || '').trim();
+  const sameTitleRecipes = (NUTRITION_RECIPES || []).filter((item) => String(item.title || '').trim() === title && isNutritionAgeMatch(item.ageRange || item.age_range, normalizedAge));
+  const curated = curateNutritionRecipesForAge(sameTitleRecipes.length ? sameTitleRecipes : [recipe], normalizedAge);
+  if (curated.length) {
+    const resolvedRecipe = curated[0];
+    if (resolvedRecipe.id !== recipe.id) {
+      return {
+        recipe: Object.assign({}, resolvedRecipe, { id: recipe.id }),
+        notice: `已按${normalizedAge}自动切换为更适合当前年龄的同主题搭配。`
+      };
+    }
+    return {
+      recipe: resolvedRecipe,
+      notice: ''
+    };
+  }
+  const fallbackPool = curateNutritionRecipesForAge((NUTRITION_RECIPES || []).filter((item) => String((item.category || '')).trim() === String((recipe.category || '')).trim()), normalizedAge);
+  if (fallbackPool.length) {
+    return {
+      recipe: Object.assign({}, fallbackPool[0], { id: recipe.id }),
+      notice: `原食谱不适合${normalizedAge}阶段，已切换为同类更稳妥的搭配建议。`
+    };
+  }
+  return {
+    recipe,
+    notice: ''
+  };
+}
+
+function enrichNutritionRecipeForSelectedAge(recipe, selectedAgeRange) {
+  const normalizedAge = normalizeNutritionAgeQuery(selectedAgeRange || (recipe && (recipe.ageRange || recipe.age_range)) || '');
+  const profile = getNutritionAgeStageProfile(normalizedAge);
+  if (!normalizedAge || !recipe) {
+    return recipe;
+  }
+  const nextRecipe = Object.assign({}, recipe);
+  nextRecipe.category = inferNutritionServingCategory(recipe);
+  const tags = Array.isArray(recipe.tags) ? recipe.tags.slice() : [];
+  if (normalizedAge && !tags.includes(normalizedAge)) {
+    tags.unshift(normalizedAge);
+  }
+  if (profile && profile.stageTag && !tags.includes(profile.stageTag)) {
+    tags.push(profile.stageTag);
+  }
+  nextRecipe.tags = tags;
+  nextRecipe.ageRange = normalizedAge;
+  nextRecipe.description = buildNutritionDescriptionForAge(recipe, normalizedAge);
+  nextRecipe.tips = buildNutritionTipsForAge(recipe, normalizedAge);
+  nextRecipe.nutrientCombination = buildNutritionCombinationForAge(recipe, normalizedAge);
+  nextRecipe.nutrition = Object.assign({}, recipe.nutrition || {}, {
+    highlight: buildNutritionHighlightForAge(recipe, normalizedAge)
+  });
+  return nextRecipe;
 }
 
 function isNutritionAgeMatch(recipeAgeRange, selectedAgeRange) {
@@ -2070,16 +3092,22 @@ function isNutritionAgeMatch(recipeAgeRange, selectedAgeRange) {
 }
 
 function nutritionRecommendationsHandler(req, res) {
-  const shuffled = [...NUTRITION_RECIPES].sort(() => 0.5 - Math.random());
-  res.json({ success: true, data: shuffled.slice(0, 6).map(normalizeNutritionRecipeSummary) });
+  const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
+  const count = Math.min(Math.max(Number((req.query && req.query.count) || 7) || 7, 1), 12);
+  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query), selectedAgeRange);
+  const source = filtered.length ? filtered : curateNutritionRecipesForAge(NUTRITION_RECIPES, selectedAgeRange);
+  const diversified = diversifyNutritionRecommendationPool(source, selectedAgeRange, count);
+  const recipes = diversified.map((recipe) => normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange));
+  res.json({ success: true, data: recipes });
 }
 
 function nutritionRecipesHandler(req, res) {
   const page = Math.max(Number(req.query.page || 1), 1);
   const pageSize = Math.min(Math.max(Number(req.query.page_size || req.query.pageSize || 10), 1), 30);
-  const filtered = filterNutritionRecipes(req.query);
+  const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
+  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query), selectedAgeRange);
   const offset = (page - 1) * pageSize;
-  const recipes = filtered.slice(offset, offset + pageSize).map(normalizeNutritionRecipeSummary);
+  const recipes = filtered.slice(offset, offset + pageSize).map((recipe) => normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange));
   res.json({
     success: true,
     data: {
@@ -2095,12 +3123,17 @@ function nutritionRecipesHandler(req, res) {
 }
 
 function nutritionRecipeDetailHandler(req, res) {
-  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
-  if (!recipe) {
+  const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
+  const resolved = resolveNutritionRecipeForDetail(req.params.id, selectedAgeRange);
+  if (!resolved || !resolved.recipe) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
   }
-  res.json({ success: true, data: normalizeNutritionRecipeDetail(recipe) });
+  const detail = normalizeNutritionRecipeDetail(resolved.recipe, selectedAgeRange);
+  if (resolved.notice) {
+    detail.contentNotice = resolved.notice;
+  }
+  res.json({ success: true, data: detail });
 }
 
 function nutritionRecipeFavoriteHandler(req, res) {

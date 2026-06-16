@@ -14,7 +14,8 @@ Page({
     // 图片加载状态
     imageLoaded: false
     ,
-    offlineFallback: false
+    offlineFallback: false,
+    selectedAgeGroup: ''
   },
 
   getLocalRecipeDetail: function(id) {
@@ -128,6 +129,14 @@ Page({
     item.visualIcon = item.visualIcon || this.getRecipeVisualIcon(item);
     item.hasImage = !!item.image;
     item.isFavorite = !!(item.is_favorited || item.isFavorite);
+    item.depthSummary = item.depthSummary || '';
+    item.suitableScene = item.suitableScene || '';
+    item.ageFocus = item.ageFocus || '';
+    item.contentNotice = item.contentNotice || '';
+    item.feedingAdvice = Array.isArray(item.feedingAdvice) ? item.feedingAdvice : [];
+    item.safetyWarnings = Array.isArray(item.safetyWarnings) ? item.safetyWarnings : [];
+    item.pairingAdvice = Array.isArray(item.pairingAdvice) ? item.pairingAdvice : [];
+    item.substitutionAdvice = item.substitutionAdvice || '';
     if (item.dailyNutritionPercent && typeof item.dailyNutritionPercent === 'object') {
       var parts = [];
       if (item.dailyNutritionPercent.protein !== undefined) {
@@ -176,6 +185,7 @@ Page({
 
   onLoad: function(options) {
     var recipeId = options && options.id;
+    var selectedAgeGroup = options && (options.age_group || options.ageGroup || options.age) ? decodeURIComponent(options.age_group || options.ageGroup || options.age) : '';
     if (!recipeId) {
       this.setData({
         loading: false,
@@ -192,7 +202,8 @@ Page({
     }
 
     this.setData({
-      recipeId: recipeId
+      recipeId: recipeId,
+      selectedAgeGroup: selectedAgeGroup
     });
     if (app.shouldUseMockFallback()) {
       var mockRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(recipeId));
@@ -268,6 +279,7 @@ Page({
     app.request({
       url: '/nutrition/recipes/' + that.data.recipeId,
       method: 'GET',
+      data: that.data.selectedAgeGroup ? { age_group: that.data.selectedAgeGroup } : {},
       timeout: 30000
     }).then(function(recipe) {
       recipe = that.normalizeRecipeForDisplay(recipe || {});

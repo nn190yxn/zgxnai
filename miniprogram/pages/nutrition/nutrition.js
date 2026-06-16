@@ -5,6 +5,19 @@ Page({
   data: {
     // 搜索关键词
     searchKeyword: '',
+    currentAgeGroup: '',
+    ageOptions: [
+      { id: 'all', name: '全部年龄', value: '' },
+      { id: '1-2', name: '1-2岁', value: '1-2岁' },
+      { id: '2-3', name: '2-3岁', value: '2-3岁' },
+      { id: '3-4', name: '3-4岁', value: '3-4岁' },
+      { id: '4-5', name: '4-5岁', value: '4-5岁' },
+      { id: '5-6', name: '5-6岁', value: '5-6岁' },
+      { id: '6-7', name: '6-7岁', value: '6-7岁' },
+      { id: '7-8', name: '7-8岁', value: '7-8岁' },
+      { id: '8-12', name: '8-12岁', value: '8-12岁' },
+      { id: '12+', name: '12岁以上', value: '12岁以上' }
+    ],
     // 分类列表
     categoryList: [
       {
@@ -42,6 +55,7 @@ Page({
     todayRecommend: null,
     // 热门食谱列表
     hotRecipes: [],
+    nutritionAdviceList: [],
     // 加载状态
     loading: true,
     initialized: false,
@@ -93,6 +107,97 @@ Page({
         isFavorite: false
       }
     ];
+  },
+
+  getSelectedAgeLabel: function() {
+    var ageGroup = this.data.currentAgeGroup || '';
+    var option = (this.data.ageOptions || []).find(function(item) {
+      return item.value === ageGroup;
+    });
+    return option ? option.name : '全部年龄';
+  },
+
+  syncAgeGroupFromCurrentChild: function() {
+    var child = app.getCurrentChild ? app.getCurrentChild() : null;
+    var nextAgeGroup = app.inferNutritionAgeGroup ? app.inferNutritionAgeGroup(child) : '';
+    if (nextAgeGroup === this.data.currentAgeGroup) {
+      return false;
+    }
+    this.setData({
+      currentAgeGroup: nextAgeGroup
+    });
+    return true;
+  },
+
+  getNutritionAdviceProfile: function(ageGroup) {
+    var value = String(ageGroup || '').trim();
+    if (!value) {
+      return {
+        title: '先按孩子年龄切换，再看更贴近的搭配',
+        focus: '先确定年龄段，再看对应食谱和提醒，执行会更稳。',
+        action: '先保留孩子愿意吃的一类食物，再补主食、蛋白质和蔬菜。'
+      };
+    }
+    if (value === '1-2岁' || value === '2-3岁') {
+      return {
+        title: value + '更看重质地过渡、稳定接受和规律进餐',
+        focus: '这阶段先稳住软烂质地、咀嚼过渡和固定餐次，比追求吃得多更重要。',
+        action: '优先保留1种孩子熟悉食物，再补1种蛋白质和1种蔬菜，连续观察接受度再扩种类。'
+      };
+    }
+    if (value === '3-4岁' || value === '4-5岁' || value === '5-6岁') {
+      return {
+        title: value + '更适合练自主进食、餐桌规则和食物多样性',
+        focus: '这阶段适合保留可咀嚼口感，稳定早餐和正餐节奏，让孩子练习自己收尾一餐。',
+        action: '早餐先稳主食加蛋白，午晚餐保留熟悉食物打底，再加入1种新蔬菜或新做法。'
+      };
+    }
+    return {
+      title: value + '更需要稳定能量、优质蛋白和生长支持',
+      focus: '这阶段饮食更适合覆盖学习日常、户外活动、持续饱腹感和骨骼发育支持。',
+      action: '每餐优先保证主食、蛋白质、蔬菜同餐出现，早餐和放学后补给都要控制高糖零食占比。'
+    };
+  },
+
+  buildNutritionAdviceList: function(recipes) {
+    var list = recipes || [];
+    var ageLabel = this.getSelectedAgeLabel();
+    var profile = this.getNutritionAdviceProfile(this.data.currentAgeGroup);
+    var adviceList = [
+      {
+        id: 'profile',
+        badge: ageLabel,
+        title: profile.title,
+        content: profile.focus
+      },
+      {
+        id: 'routine',
+        badge: '执行建议',
+        title: '今天先抓一顿最容易落地的饭',
+        content: profile.action
+      }
+    ];
+    if (list[0]) {
+      adviceList.push({
+        id: 'recipe-highlight',
+        badge: list[0].category || '推荐食谱',
+        title: '优先试试：' + (list[0].name || list[0].title || '家常搭配'),
+        content: list[0].depthSummary || (list[0].feedingAdvice && list[0].feedingAdvice[0]) || (list[0].nutrition && list[0].nutrition.highlight) || list[0].tips || list[0].description || '先从孩子接受度更高的食材开始。'
+      });
+    }
+    if (list[1]) {
+      adviceList.push({
+        id: 'recipe-tip',
+        badge: '家长提醒',
+        title: '第二选择：' + (list[1].name || list[1].title || '家庭补充搭配'),
+        content: (list[1].safetyWarnings && list[1].safetyWarnings[0]) || (list[1].pairingAdvice && list[1].pairingAdvice[0]) || list[1].tips || (list[1].nutrition && list[1].nutrition.highlight) || list[1].description || '连续观察 3 天，比一天换很多做法更容易判断效果。'
+      });
+    }
+    return adviceList.slice(0, 3);
+  },
+
+  buildAgeQueryString: function() {
+    return this.data.currentAgeGroup ? ('?age_group=' + encodeURIComponent(this.data.currentAgeGroup)) : '';
   },
 
   buildRecipeTrackPayload: function(recipe, extra) {
@@ -154,6 +259,14 @@ Page({
       image: item.image,
       hasImage: item.hasImage,
       nutrition: item.nutrition ? { highlight: item.nutrition.highlight || '' } : { highlight: '' },
+      tips: item.tips || '',
+      depthSummary: item.depthSummary || '',
+      suitableScene: item.suitableScene || '',
+      feedingAdvice: item.feedingAdvice || [],
+      safetyWarnings: item.safetyWarnings || [],
+      pairingAdvice: item.pairingAdvice || [],
+      substitutionAdvice: item.substitutionAdvice || '',
+      ageFocus: item.ageFocus || '',
       is_favorited: item.is_favorited,
       isFavorite: item.isFavorite,
       viewCount: item.viewCount || 0,
@@ -183,6 +296,13 @@ Page({
       nutrition: recipe.nutrition,
       ingredients: recipe.ingredients,
       tips: recipe.tips,
+      depthSummary: recipe.depthSummary,
+      suitableScene: recipe.suitableScene,
+      feedingAdvice: recipe.feedingAdvice,
+      safetyWarnings: recipe.safetyWarnings,
+      pairingAdvice: recipe.pairingAdvice,
+      substitutionAdvice: recipe.substitutionAdvice,
+      ageFocus: recipe.ageFocus,
       nutrientCombination: recipe.nutrientCombination,
       dailyNutritionPercent: recipe.dailyNutritionPercent,
       is_favorited: recipe.is_favorited,
@@ -199,12 +319,18 @@ Page({
   },
 
   onLoad: function() {
+    this.syncAgeGroupFromCurrentChild();
     this.loadData();
   },
 
   onShow: function() {
+    var ageChanged = this.syncAgeGroupFromCurrentChild();
     // 避免首屏 onLoad + onShow 重复请求
     if (!this.data.initialized) {
+      return;
+    }
+    if (ageChanged) {
+      this.loadData();
       return;
     }
     this.loadData();
@@ -225,7 +351,8 @@ Page({
       });
       that.setData({
         todayRecommend: fallback[0] || null,
-        hotRecipes: fallback,
+        hotRecipes: fallback.slice(1, 7),
+        nutritionAdviceList: that.buildNutritionAdviceList(fallback),
         loadError: '',
         loading: false,
         initialized: true
@@ -238,7 +365,8 @@ Page({
 
     app.request({
       url: '/nutrition/recommendations',
-      method: 'GET'
+      method: 'GET',
+      data: Object.assign({ count: 8 }, that.data.currentAgeGroup ? { age_group: that.data.currentAgeGroup } : {})
     }).then(function(list) {
       list = list || [];
       if (!Array.isArray(list)) {
@@ -249,7 +377,8 @@ Page({
       });
       that.setData({
         todayRecommend: list[0] || null,
-        hotRecipes: list.slice(0, 6),
+        hotRecipes: list.slice(1, 7),
+        nutritionAdviceList: that.buildNutritionAdviceList(list),
         loadError: ''
       });
     }).catch(function(err) {
@@ -258,6 +387,7 @@ Page({
         that.setData({
           todayRecommend: null,
           hotRecipes: [],
+          nutritionAdviceList: [],
           loadError: message
         });
         return;
@@ -267,7 +397,8 @@ Page({
       });
       that.setData({
         todayRecommend: fallback[0] || null,
-        hotRecipes: fallback,
+        hotRecipes: fallback.slice(1, 7),
+        nutritionAdviceList: that.buildNutritionAdviceList(fallback),
         loadError: ''
       });
     }).finally(function() {
@@ -285,6 +416,17 @@ Page({
     this.loadData(true);
   },
 
+  onAgeOptionTap: function(e) {
+    var ageGroup = e.currentTarget.dataset.value || '';
+    if (ageGroup === this.data.currentAgeGroup) {
+      return;
+    }
+    this.setData({
+      currentAgeGroup: ageGroup
+    });
+    this.loadData();
+  },
+
   // 搜索输入
   onSearchInput: function(e) {
     this.setData({
@@ -297,7 +439,7 @@ Page({
     var keyword = this.data.searchKeyword.trim();
     if (keyword) {
       wx.navigateTo({
-        url: '/pages/nutrition/recipe-list/recipe-list?keyword=' + encodeURIComponent(keyword),
+        url: '/pages/nutrition/recipe-list/recipe-list?keyword=' + encodeURIComponent(keyword) + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
         fail: function() {
           wx.showToast({ title: '页面跳转失败', icon: 'none' });
         }
@@ -308,7 +450,7 @@ Page({
   // 点击搜索框
   onSearchTap: function() {
     wx.navigateTo({
-      url: '/pages/nutrition/recipe-list/recipe-list',
+      url: '/pages/nutrition/recipe-list/recipe-list' + this.buildAgeQueryString(),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -320,7 +462,7 @@ Page({
     var id = e.currentTarget.dataset.id;
     var name = e.currentTarget.dataset.name;
     wx.navigateTo({
-      url: '/pages/nutrition/recipe-list/recipe-list?categoryId=' + id + '&categoryName=' + encodeURIComponent(name),
+      url: '/pages/nutrition/recipe-list/recipe-list?categoryId=' + id + '&categoryName=' + encodeURIComponent(name) + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -339,7 +481,7 @@ Page({
       }));
       this.cacheRecipeSnapshot(recipe);
       wx.navigateTo({
-        url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id,
+        url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
         fail: function() {
           wx.showToast({ title: '页面跳转失败', icon: 'none' });
         }
@@ -360,7 +502,7 @@ Page({
     }));
     this.cacheRecipeSnapshot(recipe);
     wx.navigateTo({
-      url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id,
+      url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
@@ -411,7 +553,7 @@ Page({
   // 查看更多热门食谱
   onMoreHotTap: function() {
     wx.navigateTo({
-      url: '/pages/nutrition/recipe-list/recipe-list?type=hot',
+      url: '/pages/nutrition/recipe-list/recipe-list?type=hot' + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

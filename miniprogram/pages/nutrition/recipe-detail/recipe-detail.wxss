@@ -410,6 +410,46 @@
   line-height: 1.8;
 }
 
+.advice-points {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.advice-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 18rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #EEF1F4;
+}
+
+.advice-point-index {
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  border-radius: 20rpx;
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #D65A28;
+  background: #FFF3ED;
+  flex-shrink: 0;
+}
+
+.advice-point-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #5C6470;
+  line-height: 1.7;
+}
+
+.warning-block {
+  background: #FFF8F4;
+}
+
 /* 食材清单 */
 .ingredient-list {
   display: flex;

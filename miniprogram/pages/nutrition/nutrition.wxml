@@ -29,6 +29,26 @@
     </view>
   </view>
 
+  <view class="age-switch-section">
+    <view class="section-header compact-header">
+      <text class="section-title">按年龄看搭配</text>
+      <text class="section-subtext">当前：{{currentAgeGroup || '全部年龄'}}</text>
+    </view>
+    <scroll-view class="age-switch-scroll" scroll-x>
+      <view class="age-switch-list">
+        <view
+          class="age-switch-item {{currentAgeGroup === item.value ? 'active' : ''}}"
+          wx:for="{{ageOptions}}"
+          wx:key="id"
+          data-value="{{item.value}}"
+          bindtap="onAgeOptionTap"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
   <!-- 分类入口 -->
   <view class="section">
     <view class="section-header">
@@ -82,6 +102,20 @@
           <text class="info-item">⏱️ {{todayRecommend.cookTime || '30分钟'}}</text>
           <text class="info-item">🔥 {{todayRecommend.calories || '200卡'}}</text>
         </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{nutritionAdviceList.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">营养建议</text>
+      <text class="section-tag">更贴近年龄段</text>
+    </view>
+    <view class="advice-list">
+      <view class="advice-card" wx:for="{{nutritionAdviceList}}" wx:key="id">
+        <text class="advice-badge">{{item.badge}}</text>
+        <text class="advice-title">{{item.title}}</text>
+        <text class="advice-content">{{item.content}}</text>
       </view>
     </view>
   </view>

@@ -540,6 +540,54 @@ onError: function(error) {
     return item;
   },
 
+  calculateAgeYears: function(birthday) {
+    var value = String(birthday || '').trim();
+    if (!value) {
+      return null;
+    }
+    var birthDate = new Date(value + 'T00:00:00');
+    if (Number.isNaN(birthDate.getTime())) {
+      return null;
+    }
+    return Math.max(0, Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
+  },
+
+  inferNutritionAgeGroup: function(child) {
+    var normalizedChild = this.normalizeChild(child || {});
+    var ageYears = this.calculateAgeYears(normalizedChild.birthday);
+    if (ageYears === null) {
+      return '';
+    }
+    if (ageYears <= 0) {
+      return '';
+    }
+    if (ageYears === 1) {
+      return '1-2岁';
+    }
+    if (ageYears === 2) {
+      return '2-3岁';
+    }
+    if (ageYears === 3) {
+      return '3-4岁';
+    }
+    if (ageYears === 4) {
+      return '4-5岁';
+    }
+    if (ageYears === 5) {
+      return '5-6岁';
+    }
+    if (ageYears === 6) {
+      return '6-7岁';
+    }
+    if (ageYears === 7) {
+      return '7-8岁';
+    }
+    if (ageYears <= 12) {
+      return '8-12岁';
+    }
+    return '12岁以上';
+  },
+
   normalizeStringArray: function(value) {
     if (Array.isArray(value)) {
       return value.filter(function(item) {
