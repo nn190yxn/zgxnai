@@ -16,8 +16,8 @@ Page({
     previewText: '',
       shareCard: {
         badge: '宝妈育儿工具箱',
-        headline: '3分钟看懂孩子近况',
-        subline: '专注、表达、阅读、吃饭睡眠，都有对应建议',
+        headline: '3分钟看懂孩子哪一项需要先抓',
+        subline: '专注、表达、阅读、吃饭睡眠都有对应建议，家长更快知道先做什么',
       heroMetric: '3分钟',
       heroLabel: '快速了解孩子近期表现',
       chips: [],
@@ -95,8 +95,8 @@ Page({
     if (data.type === 'app_intro' || data.type === 'home_intro') {
       return {
         badge: '宝妈育儿工具箱',
-        headline: '3分钟看懂孩子近况',
-        subline: '专注、表达、阅读、吃饭睡眠，都有对应建议',
+        headline: '看懂孩子当前成长短板',
+        subline: '少走弯路，带娃更省心，专注表达阅读吃饭睡眠都有对应建议',
         heroMetric: '4合1',
         heroLabel: '成长观察 + AI答疑 + 育儿知识 + 营养食谱',
         chips: [
@@ -104,16 +104,16 @@ Page({
           { value: '随时问', label: 'AI答疑' },
           { value: '分龄看', label: '育儿营养' }
         ],
-        cta: '一起看看孩子近况',
-        copyText: '我在用小牛育儿AI助理，3分钟看懂孩子近况，专注、表达、阅读、吃饭睡眠都有对应建议。'
+        cta: '现在就看孩子近况',
+        copyText: '我在用小牛育儿AI助理，看懂孩子当前成长短板，少走弯路，带娃更省心，专注、表达、阅读、吃饭睡眠都有对应建议。'
       };
     }
 
     if (isWeekly) {
       return {
         badge: '本周成果',
-        headline: streakDays > 0 ? ('坚持 ' + streakDays + ' 天') : '开始积累成长力',
-        subline: '每天10分钟，阅读表达和专注力都在积累',
+        headline: streakDays > 0 ? ('坚持 ' + streakDays + ' 天，进步看得见') : '开始积累成长力',
+        subline: '每天10分钟就能练，家长更容易看见变化',
         heroMetric: completionRate + '%',
         heroLabel: '任务完成率',
         chips: [
@@ -121,15 +121,15 @@ Page({
           { value: streakDays + '天', label: '连续打卡' },
           { value: recordingCount + '次', label: '复述练习' }
         ],
-        cta: '一起坚持10分钟',
-        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟，阅读表达和专注力都在一点点积累。'
+        cta: '现在就试试10分钟训练',
+        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟就能练，家长更容易看见孩子一点点进步。'
       };
     }
 
     return {
       badge: '今日打卡',
-      headline: '每天10分钟，稳步积累成长力',
-      subline: '把阅读、表达和专注训练放进日常',
+      headline: '每天10分钟，孩子进步更容易看见',
+      subline: '把阅读、表达和专注训练放进日常，家长更知道怎么陪',
       heroMetric: '+1',
       heroLabel: data.title || '能力成长任务',
       chips: [
@@ -137,8 +137,8 @@ Page({
         { value: streakDays + '天', label: '连续坚持' },
         { value: recordingCount + '次', label: '复述录音' }
       ],
-      cta: '一起开始10分钟训练',
-      copyText: '今天完成一个能力成长任务。每天10分钟，阅读表达和专注力都在慢慢积累。'
+      cta: '现在就开始10分钟训练',
+      copyText: '今天完成一个能力成长任务。每天10分钟就能练，家长更容易看见孩子慢慢进步。'
     };
   },
 
