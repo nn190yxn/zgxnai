@@ -298,7 +298,7 @@ Page({
           // 图片相关
           coverImage: coverImage,
           iconUrl: iconUrl,
-          imageUrl: task.image_url || '',
+          imageUrl: task.image_url || '/images/default-article.png',
           // 音频视频
           ttsUrl: task.audio_url || '',
           hasTts: !!(task.audio_url && task.audio_url.length > 0),
@@ -357,7 +357,7 @@ Page({
         content: '',
         coverImage: '',
         iconUrl: '',
-        imageUrl: '',
+        imageUrl: '/images/default-article.png',
         ttsUrl: '',
         hasTts: false,
         audioUrl: '',
@@ -387,7 +387,7 @@ Page({
         content: '',
         coverImage: '',
         iconUrl: '',
-        imageUrl: '',
+        imageUrl: '/images/default-article.png',
         ttsUrl: '',
         hasTts: false,
         audioUrl: '',
@@ -415,7 +415,7 @@ Page({
         content: '',
         coverImage: '',
         iconUrl: '',
-        imageUrl: '',
+        imageUrl: '/images/default-article.png',
         ttsUrl: '',
         hasTts: false,
         audioUrl: '',
@@ -445,7 +445,7 @@ Page({
         content: '',
         coverImage: '',
         iconUrl: '',
-        imageUrl: '',
+        imageUrl: '/images/default-article.png',
         ttsUrl: '',
         hasTts: false,
         audioUrl: '',
@@ -1227,8 +1227,9 @@ Page({
   // 分享
   onShareAppMessage: function() {
     return {
-      title: '阅读与专注提升：每天10分钟，周周看见进步',
-      path: '/pages/textbook/textbook'
+      title: app.buildShareTitle('textbook'),
+      path: '/pages/textbook/textbook',
+      imageUrl: '/images/default-article.png'
     };
   }
 });

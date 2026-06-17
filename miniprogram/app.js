@@ -249,14 +249,76 @@ onError: function(error) {
     var streakDays = metrics.streakDays || 0;
 
     if (data.type === 'weekly_report') {
-      return '这周坚持了' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟，孩子的变化看得见。';
+      return '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟，阅读表达和专注力都在一点点积累。';
     }
 
     if (data.type === 'app_intro' || data.type === 'home_intro') {
-      return '孩子专注、表达、阅读、吃饭睡眠有困惑？小牛育儿AI助理，帮妈妈先找到切入口。';
+      return '我在用小牛育儿AI助理，3分钟看懂孩子近况，专注、表达、阅读、吃饭睡眠都有对应建议。';
     }
 
-    return '小牛育儿AI助理：成长观察、AI答疑、育儿知识、营养食谱，帮妈妈把问题拆成可执行的小建议。';
+    return '我在用小牛育儿AI助理记录孩子变化，遇到吃饭睡眠、表达专注问题时，能更快找到合适做法。';
+  },
+
+  buildShareTitle: function(scene, payload) {
+    var data = payload || {};
+
+    if (scene === 'membership_invite') {
+      return '送你7天成长服务，一起看懂孩子近况';
+    }
+
+    if (scene === 'assessment') {
+      return '3分钟成长观察，快速看懂孩子近期表现';
+    }
+
+    if (scene === 'assessment_result') {
+      return (data.assessmentName || '成长观察') + '结果已生成，看看下一步怎么练';
+    }
+
+    if (scene === 'assessment_history') {
+      return '成长记录都在这里，孩子变化更清楚';
+    }
+
+    if (scene === 'chat') {
+      return '孩子吃饭睡眠专注表达问题，这里有答案';
+    }
+
+    if (scene === 'nutrition') {
+      return '分龄营养建议和食谱，做饭更省心';
+    }
+
+    if (scene === 'recipe_list') {
+      return '孩子吃什么更合适，这里有分龄食谱';
+    }
+
+    if (scene === 'recipe_detail') {
+      return (data.name || '这道食谱') + '，孩子更愿意吃';
+    }
+
+    if (scene === 'parenting') {
+      return '从吃饭睡眠到表达专注，这里有方法';
+    }
+
+    if (scene === 'article_list') {
+      return '育儿高频难题，这里有分龄实用方法';
+    }
+
+    if (scene === 'article_detail') {
+      return (data.title || '这篇育儿方法') + '，很多家长都在看';
+    }
+
+    if (scene === 'textbook') {
+      return '每天10分钟，帮孩子稳步提升阅读表达';
+    }
+
+    if (scene === 'knowledge_list') {
+      return (data.subjectName || '能力成长') + '训练方法，每天10分钟就能练';
+    }
+
+    if (scene === 'knowledge_detail') {
+      return (data.pointName || '这个训练点') + '，在家就能开始练';
+    }
+
+    return '3分钟看懂孩子近况，育儿更省心';
   },
 
   appendShareEventLog: function(event) {

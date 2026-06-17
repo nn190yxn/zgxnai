@@ -474,7 +474,9 @@ Page({
   onShareAppMessage: function() {
     var that = this;
     return {
-      title: that.data.subjectName + ' - 知识点学习',
+      title: app.buildShareTitle('knowledge_list', {
+        subjectName: that.data.subjectName
+      }),
       path: '/pages/textbook/knowledge-list/knowledge-list?subjectCode=' + that.data.subjectCode + '&subjectName=' + encodeURIComponent(that.data.subjectName) + '&grade=' + that.data.grade
     };
   }

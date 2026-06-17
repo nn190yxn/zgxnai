@@ -678,7 +678,9 @@ Page({
   onShareAppMessage: function() {
     var that = this;
     return {
-      title: that.data.childName + '的' + that.data.assessmentName + '报告',
+      title: app.buildShareTitle('assessment_result', {
+        assessmentName: that.data.assessmentName
+      }),
       path: '/pages/assessment/assessment'
     };
   }

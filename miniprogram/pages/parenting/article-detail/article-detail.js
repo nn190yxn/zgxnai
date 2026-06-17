@@ -476,20 +476,21 @@ Page({
   onShareAppMessage: function() {
     if (this.data.offlineFallback) {
       return {
-        title: '小牛育儿锦囊',
+        title: app.buildShareTitle('parenting'),
         path: '/pages/parenting/parenting'
       };
     }
     var article = this.data.article;
     if (article) {
-      return {
-        title: article.title + ' - 小牛育儿锦囊',
+      var payload = {
+        title: app.buildShareTitle('article_detail', { title: article.title }),
         path: '/pages/parenting/article-detail/article-detail?id=' + article.id,
-        imageUrl: article.cover || ''
+        imageUrl: article.cover || '/images/default-article.png'
       };
+      return payload;
     }
     return {
-      title: '小牛育儿锦囊',
+      title: app.buildShareTitle('parenting'),
       path: '/pages/parenting/parenting'
     };
   },
@@ -498,19 +499,20 @@ Page({
   onShareTimeline: function() {
     if (this.data.offlineFallback) {
       return {
-        title: '小牛育儿锦囊'
+        title: app.buildShareTitle('parenting')
       };
     }
     var article = this.data.article;
     if (article) {
-      return {
-        title: article.title + ' - 小牛育儿锦囊',
+      var payload = {
+        title: app.buildShareTitle('article_detail', { title: article.title }),
         query: 'id=' + article.id,
-        imageUrl: article.cover || ''
+        imageUrl: article.cover || '/images/default-article.png'
       };
+      return payload;
     }
     return {
-      title: '小牛育儿锦囊'
+      title: app.buildShareTitle('parenting')
     };
   },
 

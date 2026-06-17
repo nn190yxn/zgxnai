@@ -632,7 +632,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: app.buildShareTitle('recipe_list'),
       path: '/pages/index/index'
     };
   }

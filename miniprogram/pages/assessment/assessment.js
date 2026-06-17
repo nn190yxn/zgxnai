@@ -324,7 +324,7 @@ Page({
   // 分享
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿成长观察 - 看懂孩子近期表现',
+      title: app.buildShareTitle('assessment'),
       path: '/pages/assessment/assessment'
     };
   }

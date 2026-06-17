@@ -888,7 +888,7 @@ loadQuestionsFromServer: function(code) {
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: app.buildShareTitle('assessment'),
       path: '/pages/index/index'
     };
   }

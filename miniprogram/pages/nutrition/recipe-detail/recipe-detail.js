@@ -378,20 +378,21 @@ Page({
   onShareAppMessage: function() {
     if (this.data.offlineFallback) {
       return {
-        title: '小牛育儿营养食谱',
+        title: app.buildShareTitle('nutrition'),
         path: '/pages/nutrition/nutrition'
       };
     }
     var recipe = this.data.recipe;
     if (recipe) {
-      return {
-        title: recipe.name + ' - 小牛育儿营养食谱',
+      var payload = {
+        title: app.buildShareTitle('recipe_detail', { name: recipe.name }),
         path: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id,
-        imageUrl: recipe.image || ''
+        imageUrl: recipe.image || '/images/default-recipe.png'
       };
+      return payload;
     }
     return {
-      title: '小牛育儿营养食谱',
+      title: app.buildShareTitle('nutrition'),
       path: '/pages/nutrition/nutrition'
     };
   },
@@ -400,19 +401,20 @@ Page({
   onShareTimeline: function() {
     if (this.data.offlineFallback) {
       return {
-        title: '小牛育儿营养食谱'
+        title: app.buildShareTitle('nutrition')
       };
     }
     var recipe = this.data.recipe;
     if (recipe) {
-      return {
-        title: recipe.name + ' - 小牛育儿营养食谱',
+      var payload = {
+        title: app.buildShareTitle('recipe_detail', { name: recipe.name }),
         query: 'id=' + recipe.id,
-        imageUrl: recipe.image || ''
+        imageUrl: recipe.image || '/images/default-recipe.png'
       };
+      return payload;
     }
     return {
-      title: '小牛育儿营养食谱'
+      title: app.buildShareTitle('nutrition')
     };
   },
 

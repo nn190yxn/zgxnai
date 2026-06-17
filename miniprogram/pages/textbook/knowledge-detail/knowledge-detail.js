@@ -1301,7 +1301,9 @@ Page({
   onShareAppMessage: function() {
     var that = this;
     return {
-      title: that.data.pointName + ' - 知识点学习',
+      title: app.buildShareTitle('knowledge_detail', {
+        pointName: that.data.pointName
+      }),
       path: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + that.data.pointId + '&subjectCode=' + that.data.subjectCode + '&pointName=' + encodeURIComponent(that.data.pointName)
     };
   }

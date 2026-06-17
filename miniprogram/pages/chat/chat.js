@@ -264,7 +264,7 @@ Page({
   // 分享
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理 - 儿童成长与家庭养育支持',
+      title: app.buildShareTitle('chat'),
       path: '/pages/index/index'
     };
   },

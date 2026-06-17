@@ -324,8 +324,8 @@ Page({
 
   onShareAppMessage() {
     const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
-      return {
-      title: '小牛育儿AI助理，邀请你领取7天成长服务',
+    return {
+      title: app.buildShareTitle('membership_invite'),
       path: '/pages/index/index?invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_invite',
       imageUrl: '/images/default-article.png'
     };
@@ -334,7 +334,7 @@ Page({
   onShareTimeline() {
     const inviteCode = this.data.inviteCode || this.getFallbackInviteCode();
     return {
-      title: '小牛育儿AI助理，邀请你领取7天成长服务',
+      title: app.buildShareTitle('membership_invite'),
       query: 'invite_code=' + encodeURIComponent(inviteCode) + '&shareSource=membership_timeline',
       imageUrl: '/images/default-article.png'
     };

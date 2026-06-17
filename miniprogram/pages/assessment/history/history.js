@@ -447,7 +447,7 @@ Page({
   // 分享
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿成长记录',
+      title: app.buildShareTitle('assessment_history'),
       path: '/pages/assessment/assessment'
     };
   }
