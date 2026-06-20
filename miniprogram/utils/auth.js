@@ -3,8 +3,8 @@ function checkLoginStatus(app) {
   var userInfo = wx.getStorageSync('userInfo');
   var token = wx.getStorageSync('token');
   var refreshToken = wx.getStorageSync('refreshToken');
-  if (userInfo && token) {
-    app.globalData.userInfo = userInfo;
+  if (token) {
+    app.globalData.userInfo = userInfo || null;
     app.globalData.isLoggedIn = true;
   }
   if (refreshToken) {

@@ -69,6 +69,7 @@ App({
     // 登录刷新互斥锁（防止并发401触发登录风暴）
     _loginPromise: null,
     _refreshTokenPromise: null,
+    _lastLoginPromptAt: 0,
 
     // 网络状态
     networkType: 'unknown',
@@ -346,9 +347,77 @@ onError: function(error) {
       method: 'GET'
     }).then(function(data) {
       that.globalData.userInfo = data;
+      that.globalData.isLoggedIn = true;
       wx.setStorageSync('userInfo', data);
       return data;
     });
+  },
+
+  restoreCurrentChildFromStorage: function() {
+    var children = this.normalizeChildren(wx.getStorageSync('childrenList') || []);
+    var currentChild = this.normalizeChild(wx.getStorageSync('currentChild') || null);
+
+    if ((!currentChild || !currentChild.id) && children.length) {
+      currentChild = children.find(function(child) {
+        return child.is_default || child.isDefault;
+      }) || children[0];
+    }
+
+    this.globalData.childrenList = children;
+    this.globalData.currentChild = currentChild || null;
+
+    if (currentChild && currentChild.id) {
+      wx.setStorageSync('currentChild', currentChild);
+    }
+
+    return currentChild || null;
+  },
+
+  syncChildrenFromServer: function() {
+    var that = this;
+    if (that.shouldUseMockFallback && that.shouldUseMockFallback()) {
+      return Promise.resolve(that.restoreCurrentChildFromStorage());
+    }
+    if (!wx.getStorageSync('token')) {
+      return Promise.resolve(that.restoreCurrentChildFromStorage());
+    }
+
+    return that.request({
+      url: '/children',
+      method: 'GET',
+      _skipAuthRetry: true
+    }).then(function(res) {
+      var children = that.normalizeChildren(Array.isArray(res) ? res : []);
+      var currentChild = children.find(function(child) {
+        return child.is_default || child.isDefault;
+      }) || children[0] || null;
+
+      that.globalData.childrenList = children;
+      that.globalData.currentChild = currentChild;
+      wx.setStorageSync('childrenList', children);
+      wx.setStorageSync('currentChild', currentChild);
+      return currentChild;
+    }).catch(function(err) {
+      return that.restoreCurrentChildFromStorage() || Promise.reject(err);
+    });
+  },
+
+  ensureCurrentChild: function() {
+    var currentChild = this.getCurrentChild();
+    if (currentChild && currentChild.id) {
+      return Promise.resolve(currentChild);
+    }
+
+    currentChild = this.restoreCurrentChildFromStorage();
+    if (currentChild && currentChild.id) {
+      return Promise.resolve(currentChild);
+    }
+
+    if (this.globalData.isLoggedIn || wx.getStorageSync('token')) {
+      return this.syncChildrenFromServer();
+    }
+
+    return Promise.resolve(null);
   },
 
   // 登录
@@ -398,7 +467,11 @@ onError: function(error) {
         if (inviteCode) {
           wx.removeStorageSync('inviteCode');
         }
-        resolve(data);
+        that.syncChildrenFromServer().catch(function() {
+          return null;
+        }).finally(function() {
+          resolve(data);
+        });
       }).catch(function(err) {
         reject(err);
       });
@@ -561,21 +634,32 @@ onError: function(error) {
     });
   },
 
-  ensureLogin: function() {
+  promptLogin: function(message) {
+    var now = Date.now();
+    if (!this.globalData._lastLoginPromptAt || now - this.globalData._lastLoginPromptAt > 1500) {
+      this.globalData._lastLoginPromptAt = now;
+      wx.showToast({
+        title: message || '请先到“我的”完成微信登录',
+        icon: 'none'
+      });
+    }
+    wx.switchTab({
+      url: '/pages/profile/profile'
+    });
+  },
+
+  ensureLogin: function(message) {
     if (this.globalData.isLoggedIn && wx.getStorageSync('token')) {
       return Promise.resolve(this.globalData.userInfo);
     }
-    return this.login();
+    this.promptLogin(message);
+    return Promise.reject(new Error('LOGIN_REQUIRED'));
   },
 
   requireLoginForAction: function(message) {
-    return this.ensureLogin().then(function() {
+    return this.ensureLogin(message).then(function() {
       return true;
     }).catch(function() {
-      wx.showToast({
-        title: message || '请先登录后再操作',
-        icon: 'none'
-      });
       return false;
     });
   },

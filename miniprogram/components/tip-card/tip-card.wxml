@@ -1,0 +1,23 @@
+<!-- action 型锦囊卡片 -->
+<view wx:if="{{type === 'action'}}" class="tip-card tip-card-action">
+  <view class="tip-card-title">{{title}}</view>
+  <view class="tip-card-text">{{text}}</view>
+  <view class="tip-card-why" wx:if="{{rationale}}" bindtap="onToggleWhy">
+    <text class="tip-card-why-label">{{whyExpanded ? '▲ 为什么这样有效？' : '▼ 为什么这样有效？'}}</text>
+  </view>
+  <view class="tip-card-rationale" wx:if="{{whyExpanded && rationale}}">
+    <text>{{rationale}}</text>
+  </view>
+  <view class="tip-card-source" wx:if="{{sourceTitle}}" bindtap="onTapSource">
+    <text>查看全文：{{sourceTitle}}</text>
+  </view>
+</view>
+
+<!-- insight 型锦囊卡片 -->
+<view wx:elif="{{type === 'insight'}}" class="tip-card tip-card-insight">
+  <view class="tip-card-title">{{title}}</view>
+  <view class="tip-card-text">{{text}}</view>
+  <view class="tip-card-source" wx:if="{{sourceTitle}}" bindtap="onTapSource">
+    <text>阅读全文：{{sourceTitle}}</text>
+  </view>
+</view>

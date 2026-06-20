@@ -82,7 +82,7 @@ Page({
 
   bootstrap: function(options) {
     var childId = Number((options && options.childId) || this.data.childId || 0);
-    var child = app.getCurrentChild ? app.getCurrentChild() : app.normalizeChild(wx.getStorageSync('currentChild') || null);
+    var child = app.restoreCurrentChildFromStorage ? app.restoreCurrentChildFromStorage() : (app.getCurrentChild ? app.getCurrentChild() : app.normalizeChild(wx.getStorageSync('currentChild') || null));
     if (!childId && child && child.id) {
       childId = Number(child.id || 0);
     }
@@ -93,6 +93,15 @@ Page({
         loading: false,
         summary: null
       });
+      if (app.ensureCurrentChild) {
+        app.ensureCurrentChild().then(function(nextChild) {
+          if (nextChild && nextChild.id) {
+            this.bootstrap(options);
+          }
+        }.bind(this)).catch(function() {
+          return null;
+        });
+      }
       return;
     }
     this.setData({
@@ -168,6 +177,11 @@ Page({
   },
 
   goToChildSetup: function() {
-    wx.navigateTo({ url: '/pages/profile/child-edit/child-edit' });
+    app.requireLoginForAction('请先完成微信登录，再添加孩子档案').then(function(canOperate) {
+      if (!canOperate) {
+        return;
+      }
+      wx.navigateTo({ url: '/pages/profile/child-edit/child-edit' });
+    });
   }
 });

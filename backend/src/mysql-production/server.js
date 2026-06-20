@@ -25,6 +25,14 @@ const ADMIN_API_PREFIX = process.env.ADMIN_API_PREFIX || '/admin-api/v1';
 const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
+const WECHAT_REQUEST_TIMEOUT_MS = Math.max(1000, Number(process.env.WECHAT_REQUEST_TIMEOUT_MS || 10000) || 10000);
+const CHAT_AI_TIMEOUT_MS = Math.max(1000, Number(process.env.CHAT_AI_TIMEOUT_MS || 8000) || 8000);
+const CHAT_RATE_LIMIT_WINDOW_MS = Math.max(1000, Number(process.env.CHAT_RATE_LIMIT_WINDOW_MS || 60000) || 60000);
+const CHAT_RATE_LIMIT_MAX = Math.max(1, Number(process.env.CHAT_RATE_LIMIT_MAX || 12) || 12);
+const SCENE_TAGS_CACHE_TTL_MS = Math.max(1000, Number(process.env.SCENE_TAGS_CACHE_TTL_MS || 30000) || 30000);
+const PARENTING_ARTICLES_CACHE_TTL_MS = Math.max(1000, Number(process.env.PARENTING_ARTICLES_CACHE_TTL_MS || 30000) || 30000);
+const REQUEST_SLOW_LOG_MS = Math.max(100, Number(process.env.REQUEST_SLOW_LOG_MS || 800) || 800);
+const DB_POOL_CONNECTION_LIMIT = Math.max(1, Number(process.env.DB_POOL_CONNECTION_LIMIT || 20) || 20);
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
 const SIGNUP_REWARD_DAYS = 7;
 const SIGNUP_REWARD_PLAN_CODE = 'signup_reward';
@@ -58,7 +66,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: DB_POOL_CONNECTION_LIMIT,
   queueLimit: 0
 });
 
@@ -83,6 +91,12 @@ const READING_TASK_ALIAS_MAP = buildReadingTaskAliasMap();
 const VALID_PARENTING_CATEGORIES = new Set(['情绪管理', '行为习惯', '认知发展', '社交能力', '营养健康']);
 const VALID_PARENTING_AGE_GROUPS = new Set(['2-3岁', '3-4岁', '4-5岁', '5-6岁', '6-9岁']);
 const VALID_SUBJECT_CODES = new Set(['logical_thinking', 'reading_comprehension', 'expression_communication', 'learning_metacognition', 'inquiry_creativity']);
+const chatRateLimitStore = new Map();
+let sceneTagsCache = {
+  expiresAt: 0,
+  data: null
+};
+const parentingArticlesCache = new Map();
 
 function buildReadingTaskAliasMap() {
   const aliasMap = {};
@@ -185,6 +199,7 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/auth/login`, asyncHandler(loginHandler));
   app.post(`${prefix}/auth/refresh`, asyncHandler(refreshHandler));
   app.get(`${prefix}/auth/me`, authenticateToken, asyncHandler(meHandler));
+  app.post(`${prefix}/auth/bind-phone`, authenticateToken, asyncHandler(bindPhoneHandler));
   app.post(`${prefix}/auth/account-deletion`, authenticateToken, asyncHandler(accountDeletionHandler));
   app.get(`${prefix}/membership/info`, authenticateToken, asyncHandler(membershipInfoHandler));
   app.post(`${prefix}/membership/trial/activate`, authenticateToken, asyncHandler(trialHandler));
@@ -1353,78 +1368,511 @@ function clampAdminLimit(value, fallback) {
   return Math.max(1, Math.min(parsed, 100));
 }
 
+function cleanupExpiredChatRateLimits(now) {
+  for (const [key, value] of chatRateLimitStore.entries()) {
+    if (!value || value.resetAt <= now) {
+      chatRateLimitStore.delete(key);
+    }
+  }
+}
+
+function consumeChatRateLimit(userId) {
+  const now = Date.now();
+  cleanupExpiredChatRateLimits(now);
+  const key = String(userId || 'guest');
+  const current = chatRateLimitStore.get(key);
+  if (!current || current.resetAt <= now) {
+    const next = { count: 1, resetAt: now + CHAT_RATE_LIMIT_WINDOW_MS };
+    chatRateLimitStore.set(key, next);
+    return {
+      allowed: true,
+      remaining: Math.max(0, CHAT_RATE_LIMIT_MAX - next.count),
+      retryAfterMs: CHAT_RATE_LIMIT_WINDOW_MS
+    };
+  }
+  if (current.count >= CHAT_RATE_LIMIT_MAX) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfterMs: Math.max(0, current.resetAt - now)
+    };
+  }
+  current.count += 1;
+  return {
+    allowed: true,
+    remaining: Math.max(0, CHAT_RATE_LIMIT_MAX - current.count),
+    retryAfterMs: Math.max(0, current.resetAt - now)
+  };
+}
+
+function logRequestDuration(name, startedAt, meta) {
+  const durationMs = Date.now() - startedAt;
+  if (durationMs < REQUEST_SLOW_LOG_MS) {
+    return;
+  }
+  console.log(`[Perf] ${name} ${durationMs}ms`, meta || {});
+}
+
+function buildParentingArticlesCacheKey(query) {
+  return JSON.stringify({
+    page: normalizeBoundedInt(query.page, 1, 1, 1000000),
+    page_size: normalizeBoundedInt(query.page_size, 10, 1, 20),
+    category: String(query.category || '').trim(),
+    age_group: String(query.age_group || '').trim(),
+    keyword: String(query.keyword || '').trim(),
+    content_form: String(query.content_form || '').trim()
+  });
+}
+
+function getCachedParentingArticles(key) {
+  const cached = parentingArticlesCache.get(key);
+  if (!cached) {
+    return null;
+  }
+  if (cached.expiresAt <= Date.now()) {
+    parentingArticlesCache.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+
+function setCachedParentingArticles(key, value) {
+  parentingArticlesCache.set(key, {
+    expiresAt: Date.now() + PARENTING_ARTICLES_CACHE_TTL_MS,
+    value
+  });
+}
+
+async function generateChatAIResultWithTimeout(prompt, options) {
+  return Promise.race([
+    generateAIAnswer(prompt, options),
+    new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({ success: false, code: 'AI_TIMEOUT', answer: '' });
+      }, CHAT_AI_TIMEOUT_MS);
+    })
+  ]);
+}
+
+async function getCachedSceneTags() {
+  if (sceneTagsCache.data && sceneTagsCache.expiresAt > Date.now()) {
+    return sceneTagsCache.data;
+  }
+  const [rows] = await pool.execute(
+    `SELECT scene_key, scene_title, scene_category, principle_text, suggested_action
+     FROM parenting_scene_tags
+     WHERE status = 'active'
+     ORDER BY sort_order ASC, id ASC`
+  );
+  const data = rows.map((row) => ({
+    sceneKey: row.scene_key,
+    sceneTitle: row.scene_title,
+    sceneCategory: row.scene_category,
+    principleText: row.principle_text || '',
+    suggestedAction: row.suggested_action || ''
+  }));
+  sceneTagsCache = {
+    expiresAt: Date.now() + SCENE_TAGS_CACHE_TTL_MS,
+    data
+  };
+  return data;
+}
+
+function buildStructuredResponse(answer, references, chatAnalysis) {
+  try {
+    const tipRefs = references.filter((ref) => ref.sourceType === 'tip' && ref.extra);
+    if (!tipRefs.length) return { available: false };
+
+    const tips = tipRefs
+      .sort((a, b) => (b.extra.display_priority || 0) - (a.extra.display_priority || 0))
+      .slice(0, 3)
+      .map((ref) => ({
+        id: ref.extra.id,
+        type: ref.extra.display_type || 'raw',
+        title: ref.extra.display_title || ref.title || '',
+        text: ref.extra.display_text || ref.content || '',
+        rationale: ref.extra.content || '',
+        source_type: ref.extra.display_source_type || 'article',
+        source_id: ref.extra.display_source_id || null,
+        source_title: ref.extra.source_article_title || ref.title || ''
+      }))
+      .filter((tip) => tip.type !== 'raw' && tip.title);
+
+    if (!tips.length) return { available: false };
+
+    const judgment = extractJudgment(answer);
+
+    const followups = generateFollowups(chatAnalysis);
+
+    return {
+      available: true,
+      judgment,
+      tips,
+      followups
+    };
+  } catch (err) {
+    console.error('[structured-response] build failed:', err.message);
+    return { available: false };
+  }
+}
+
+function extractJudgment(answer) {
+  const text = String(answer || '').trim();
+  if (!text) return '';
+  const headerMatch = text.match(/^#{1,3}\s+(.+?)(?:\n|$)/m);
+  if (headerMatch) return headerMatch[1].slice(0, 50);
+  const firstLine = text.split('\n')[0].replace(/^[#{}\[\]*>\-`~\s]+/, '').trim();
+  if (firstLine.length >= 6 && firstLine.length <= 60) return firstLine;
+  return firstLine.slice(0, 50);
+}
+
+function generateFollowups(chatAnalysis) {
+  const base = ['为什么这样做有效？', '还有更简单的做法吗？'];
+  const subIntent = String((chatAnalysis && chatAnalysis.subIntent) || '').toLowerCase();
+  if (subIntent.includes('emotion') || subIntent.includes('meltdown') || subIntent.includes('anxiety')) {
+    base.push('孩子多大的时候会好转？');
+  }
+  if (subIntent.includes('sleep') || subIntent.includes('bedtime')) {
+    base.push('如果试了一周还是没效果怎么办？');
+  }
+  return base;
+}
+
 async function chatHandler(req, res) {
   const message = String((req.body && req.body.message) || '').trim();
   if (!message) {
     res.status(400).json({ success: false, message: '缺少提问内容' });
     return;
   }
-
-  const childProfile = req.body && req.body.child_profile ? req.body.child_profile : null;
-  const ageGroup = childProfile && childProfile.ageGroup
-    ? String(childProfile.ageGroup).trim()
-    : (childProfile && childProfile.age_range ? String(childProfile.age_range).trim() : '');
-  const childName = (childProfile && childProfile.name) || '';
-
-  const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
-  const intent = analyzeChatIntent(message);
-  const references = collectChatReferences(intent, message, ageGroup);
-  const fallbackAnswer = buildChatAnswer(message, intent, references, ageGroup, childName);
-  const aiResult = await generateAIAnswer(buildChatPrompt(message, intent, references, ageGroup, childName), {
-    systemPrompt: getChatSystemPrompt(intent, ageGroup),
-    temperature: 0.6,
-    maxTokens: 1200
-  });
-  const answer = aiResult.success ? aiResult.answer : fallbackAnswer;
-  const aiStatus = getAIStatus();
-
-  res.json({
-    success: true,
-    data: {
-      answer,
-      sources: references.map((item) => item.title).slice(0, 5),
-      session_id: sessionId,
-      intent,
-      answer_source: aiResult.success ? 'ai' : 'seed_knowledge',
-      ai_status: aiStatus,
-      fallback_reason: aiResult.success ? null : aiResult.code || null
+  const startedAt = Date.now();
+  try {
+    const rateLimit = consumeChatRateLimit(getUserId(req));
+    if (!rateLimit.allowed) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rateLimit.retryAfterMs / 1000))));
+      res.status(429).json({ success: false, message: '提问过于频繁，请稍后再试', code: 'CHAT_RATE_LIMITED' });
+      return;
     }
-  });
+
+    const chatChildContext = await resolveChatChildContext(req);
+    const ageGroup = chatChildContext.ageGroup;
+    const childName = chatChildContext.childName;
+    const intent = analyzeChatIntent(message);
+    const subIntent = analyzeChatSubIntent(message, intent);
+    const riskLevel = analyzeChatRiskLevel(message);
+    const chatAnalysis = { intent, subIntent, riskLevel };
+
+    const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
+    if (!ageGroup) {
+      const clarificationAnswer = buildChatAgeClarificationAnswer(chatChildContext);
+      res.json({
+        success: true,
+        data: {
+          answer: clarificationAnswer,
+          sources: [],
+          matched_types: [],
+          age_group_used: '',
+          session_id: sessionId,
+          intent,
+          sub_intent: subIntent,
+          risk_level: riskLevel,
+          answer_source: 'age_clarification',
+          ai_status: getAIStatus(),
+          fallback_reason: 'AGE_REQUIRED',
+          needs_child_age: true,
+          child_context_source: chatChildContext.source,
+          child_profile_missing: chatChildContext.profileMissing
+        }
+      });
+      return;
+    }
+
+    const references = await collectChatReferences(chatAnalysis, message, ageGroup);
+    const fallbackAnswer = buildChatAnswer(message, chatAnalysis, references, ageGroup, childName);
+    const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, childName), {
+      systemPrompt: getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel),
+      temperature: 0.6,
+      maxTokens: 1200
+    });
+    const answer = aiResult.success ? aiResult.answer : fallbackAnswer;
+    const aiStatus = getAIStatus();
+    const fallbackSource = getChatFallbackSource(references);
+    const matchedTypes = getChatMatchedTypes(references);
+
+    const structured = buildStructuredResponse(answer, references, chatAnalysis);
+
+    res.json({
+      success: true,
+      data: {
+        answer,
+        sources: references.map((item) => item.title).slice(0, 5),
+        matched_types: matchedTypes,
+        age_group_used: ageGroup || '',
+        session_id: sessionId,
+        intent,
+        sub_intent: subIntent,
+        risk_level: riskLevel,
+        answer_source: aiResult.success ? 'ai' : fallbackSource,
+        ai_status: aiStatus,
+        fallback_reason: aiResult.success ? null : aiResult.code || null,
+        needs_child_age: false,
+        child_context_source: chatChildContext.source,
+        child_profile_missing: false,
+        structured
+      }
+    });
+  } finally {
+    logRequestDuration('chatHandler', startedAt, {
+      userId: getUserId(req),
+      messageLength: message.length,
+      statusCode: res.statusCode
+    });
+  }
 }
 
-function getChatSystemPrompt(intent, ageGroup) {
+function buildChatAgeClarificationAnswer(chatChildContext) {
+  if (chatChildContext.profileMissing) {
+    return [
+      '我需要先知道孩子多大，才能按对应年龄段给你更准确的说明和建议。',
+      '你可以直接告诉我孩子现在的年龄，比如“2-3岁”或“4岁”。',
+      '如果你已经建了孩子档案，也可以先补全生日，我会优先按档案年龄来回答。'
+    ].join('\n\n');
+  }
+
+  return [
+    `我已经找到${chatChildContext.childName ? `${chatChildContext.childName}的` : '孩子的'}档案，但当前还缺少可用的年龄信息。`,
+    '你可以直接告诉我孩子现在多大了，比如“1-2岁”或“5岁”。',
+    '补上年龄后，我会按这个年龄段的发育特点给你说明原因和家庭建议。'
+  ].join('\n\n');
+}
+
+async function resolveChatChildContext(req) {
+  const bodyProfile = req.body && req.body.child_profile ? req.body.child_profile : null;
+  if (bodyProfile) {
+    return buildChatChildContext(bodyProfile, 'request_child_profile');
+  }
+
+  const rawChildId = req.body && (req.body.child_id !== undefined ? req.body.child_id : req.body.childId);
+  const childId = Number(rawChildId || 0);
+  if (childId > 0) {
+    const child = await getOwnedChild(getUserId(req), childId);
+    if (child) {
+      return buildChatChildContext(child, 'request_child_id');
+    }
+  }
+
+  const defaultChild = await getDefaultChildForUser(getUserId(req));
+  if (defaultChild) {
+    return buildChatChildContext(defaultChild, 'default_child_profile');
+  }
+
+  return {
+    ageGroup: '',
+    childName: '',
+    source: 'missing_child_profile',
+    profileMissing: true
+  };
+}
+
+function buildChatChildContext(childProfile, source) {
+  const childName = String((childProfile && (childProfile.name || childProfile.nickname)) || '').trim();
+  const ageGroup = normalizeChatAgeGroup(childProfile);
+  return {
+    ageGroup,
+    childName,
+    source,
+    profileMissing: false
+  };
+}
+
+function normalizeChatAgeGroup(childProfile) {
+  const directAgeGroup = String((childProfile && (childProfile.ageGroup || childProfile.age_group || childProfile.age_range)) || '').trim();
+  if (directAgeGroup) {
+    return normalizeExplicitAgeGroup(directAgeGroup);
+  }
+
+  const birthday = String((childProfile && (childProfile.birthday || childProfile.birth_date)) || '').trim();
+  if (!birthday) {
+    return '';
+  }
+
+  const birthdayDate = new Date(`${birthday}T00:00:00Z`);
+  if (Number.isNaN(birthdayDate.getTime())) {
+    return '';
+  }
+
+  return mapBirthdayToAgeGroup(birthdayDate, new Date());
+}
+
+function normalizeExplicitAgeGroup(rawAgeGroup) {
+  const value = String(rawAgeGroup || '').trim();
+  if (!value) {
+    return '';
+  }
+  if (/^\d+-\d+岁$/.test(value)) {
+    return value;
+  }
+  const ageMatch = value.match(/(\d+(?:\.\d+)?)\s*岁/);
+  if (!ageMatch) {
+    return value;
+  }
+
+  const age = Number(ageMatch[1]);
+  if (!Number.isFinite(age) || age < 0) {
+    return value;
+  }
+  if (age < 1) {
+    return '0-1岁';
+  }
+  if (age < 2) {
+    return '1-2岁';
+  }
+  if (age < 3) {
+    return '2-3岁';
+  }
+  if (age < 4) {
+    return '3-4岁';
+  }
+  if (age < 5) {
+    return '4-5岁';
+  }
+  if (age < 6) {
+    return '5-6岁';
+  }
+  if (age < 9) {
+    return '6-9岁';
+  }
+  return '9-12岁';
+}
+
+function mapBirthdayToAgeGroup(birthday, now) {
+  const months = getMonthDiff(birthday, now);
+  if (months < 0) {
+    return '';
+  }
+  if (months < 12) {
+    return '0-1岁';
+  }
+  if (months < 24) {
+    return '1-2岁';
+  }
+  if (months < 36) {
+    return '2-3岁';
+  }
+  if (months < 48) {
+    return '3-4岁';
+  }
+  if (months < 60) {
+    return '4-5岁';
+  }
+  if (months < 72) {
+    return '5-6岁';
+  }
+  if (months < 108) {
+    return '6-9岁';
+  }
+  return '9-12岁';
+}
+
+function getMonthDiff(startDate, endDate) {
+  const startYear = startDate.getUTCFullYear();
+  const startMonth = startDate.getUTCMonth();
+  const startDay = startDate.getUTCDate();
+  const endYear = endDate.getUTCFullYear();
+  const endMonth = endDate.getUTCMonth();
+  const endDay = endDate.getUTCDate();
+
+  let months = (endYear - startYear) * 12 + (endMonth - startMonth);
+  if (endDay < startDay) {
+    months -= 1;
+  }
+  return months;
+}
+
+function getChatFallbackSource(references) {
+  if (references.some((item) => item.sourceType === 'article' || item.sourceType === 'task' || item.sourceType === 'scene')) {
+    return 'knowledge_fallback';
+  }
+  return 'seed_knowledge';
+}
+
+function getChatMatchedTypes(references) {
+  const matchedTypes = [];
+  for (const item of references) {
+    const sourceType = String((item && item.sourceType) || '').trim();
+    if (!sourceType || matchedTypes.includes(sourceType)) {
+      continue;
+    }
+    matchedTypes.push(sourceType);
+  }
+  return matchedTypes;
+}
+
+const CHAT_SUB_INTENT_RULES = [
+  { key: 'homework_start', label: '写作业启动', intents: ['focus', 'general'], patterns: [/(写作业|作业)/, /(拖拉|磨蹭|不肯写|坐不住)/], keywords: ['写作业', '作业', '拖拉', '磨蹭'] },
+  { key: 'bedtime_routine', label: '睡前洗漱', intents: ['emotion', 'focus', 'general'], patterns: [/(睡前|洗漱|刷牙|上床)/], keywords: ['睡前', '洗漱', '刷牙', '上床'] },
+  { key: 'classroom_focus', label: '上课坐不住', intents: ['focus', 'general'], patterns: [/(上课|课堂)/, /(坐不住|动来动去|走神|注意力)/], keywords: ['上课', '课堂', '坐不住', '动来动去', '走神', '注意力'] },
+  { key: 'shared_reading_retell', label: '亲子共读复述', intents: ['reading', 'general'], patterns: [/(亲子共读|共读|绘本|阅读)/, /(复述|讲不出来|不会说)/], keywords: ['亲子共读', '共读', '绘本', '阅读', '复述'] },
+  { key: 'meal_refusal', label: '吃饭挑食', intents: ['nutrition', 'general'], patterns: [/(吃饭|吃什么|挑食|不好好吃)/], keywords: ['吃饭', '挑食', '吃什么', '进食'] },
+  { key: 'emotional_outburst', label: '情绪爆发', intents: ['emotion', 'general'], patterns: [/(发脾气|哭闹|情绪|生气|吼叫)/], keywords: ['发脾气', '哭闹', '情绪', '生气', '吼叫'] }
+];
+
+const CHAT_RISK_PATTERNS = {
+  high: /(自伤|伤人|打自己|打别人|不想活|发育倒退|退步很明显|连续高烧|抽搐|呼吸困难|拒食很多天|几乎不吃|整夜不睡)/,
+  medium: /(持续.*(哭闹|发脾气|睡不好|拒食)|明显影响.*(睡眠|上学|社交|吃饭)|怀疑.*(多动|自闭|发育迟缓|抑郁|焦虑)|需要就医|要不要看医生)/
+};
+
+function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
   const ageContext = ageGroup ? `当前对话的孩子年龄为${ageGroup}。请确保所有建议、活动时长、食材选择和能力预期都严格匹配这个年龄段。` : '如果用户提到孩子的年龄，请确保建议和预期严格匹配该年龄段。';
+  const scenarioRule = getChatSubIntentRule(subIntent);
+  const scenarioContext = scenarioRule ? `当前核心场景是${scenarioRule.label}。回答时优先围绕这个家庭场景组织建议。` : '优先识别用户描述的家庭场景，把建议落到具体场景里。';
+  const riskContext = riskLevel === 'high'
+    ? '当前问题带有高风险信号。必须先提示尽快线下咨询医生、心理或发育专业人士，再给家庭临时观察建议。'
+    : riskLevel === 'medium'
+      ? '当前问题带有中等风险信号。回答中要加入持续观察与必要时线下求助的提醒。'
+      : '回答中保持边界意识，当问题涉及明显异常或持续恶化时提醒线下咨询专业人士。';
 
   const basePrompts = {
-    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}回答要结合家庭执行成本和连续观察方法，优先给家长能当场执行的建议。`,
-    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练，优先给短时高频的训练建议。`,
-    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
-    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}回答要关注场景拆解、家长提示语和任务节奏控制。`,
-    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
-    general: `你是小牛育儿AI助理。${ageContext}回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
+    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
+    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
+    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
+    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
+    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
+    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
   };
   return basePrompts[intent] || basePrompts.general;
 }
 
-function buildChatPrompt(message, intent, references, ageGroup, childName) {
+function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName) {
   const referenceBlock = references.length
-    ? references.map((item, index) => `${index + 1}. ${item.title}\n${String(item.content || '').slice(0, 220)}`).join('\n\n')
-    : '当前没有直接匹配的知识库条目，请基于儿童发展与家庭养育常识给出稳妥建议。';
+    ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 260)}`).join('\n\n')
+    : '当前没有直接匹配的知识库条目。请明确告诉用户还需要补充年龄、场景或行为细节后才能给更准确建议。';
+
+  const scenarioRule = getChatSubIntentRule(chatAnalysis.subIntent);
+  const riskInstruction = chatAnalysis.riskLevel === 'high'
+    ? '当前问题存在高风险信号，必须明确提醒尽快线下就医或咨询专业人士。'
+    : chatAnalysis.riskLevel === 'medium'
+      ? '当前问题存在中等风险信号，需要加入持续观察与必要时线下求助提醒。'
+      : '当前问题风险等级较低，仍需保留边界提示。';
 
   const parts = [
     `用户问题：${message}`,
-    `问题类型：${intent}`
+    `问题类型：${chatAnalysis.intent}`
   ];
+  if (scenarioRule) {
+    parts.push(`子场景：${scenarioRule.label}`);
+  }
+  parts.push(`风险等级：${chatAnalysis.riskLevel}`);
   if (childName || ageGroup) {
     parts.push(`孩子信息：${[childName ? `名字${childName}` : '', ageGroup ? `年龄${ageGroup}` : ''].filter(Boolean).join('，')}`);
   }
   parts.push(
     '回答要求：',
-    '1. 先给判断，再给家庭可执行方案。',
-    '2. 优先使用清晰短句和分步骤建议。',
-    ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动和食材。` : '3. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。',
-    ageGroup ? '4. 当问题涉及就医、发育异常或持续恶化时，明确提醒线下咨询专业人士。' : '4. 不编造产品能力，不输出无法执行的空泛表述。',
-    '5. 不编造产品能力，不输出无法执行的空泛表述。',
+    '1. 只允许基于参考资料回答，不补充参考资料之外的育儿结论。',
+    '2. 回答结构固定为：先判断，再解释原因或原则，再给家庭可执行步骤，最后给观察点或边界提醒。',
+    ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
+    '4. 优先使用清晰短句和分步骤建议，不输出空泛口号。',
+    `5. ${riskInstruction}`,
+    '6. 如果参考资料命中较弱，优先提示用户补充更具体的场景信息。',
     '参考资料：',
     referenceBlock
   );
@@ -1439,30 +1887,515 @@ function analyzeChatIntent(message) {
   if (/(阅读|绘本|复述|识字|共读)/.test(text)) {
     return 'reading';
   }
+  if (/(评估|测评|观察|感统|学习适应|多元智能|adhd|多动|发育迟缓|发育问题|自闭|孤独症)/.test(text) || (/(看医生|就医)/.test(text) && /(发育|多动|注意力|感统|语言|社交)/.test(text))) {
+    return 'assessment';
+  }
   if (/(情绪|脾气|哭闹|发火|生气)/.test(text)) {
     return 'emotion';
   }
   if (/(专注|注意力|走神|拖拉)/.test(text)) {
     return 'focus';
   }
-  if (/(评估|测评|观察|感统|学习适应|多元智能|adhd)/.test(text)) {
-    return 'assessment';
-  }
   return 'general';
 }
 
-function collectChatReferences(intent, message, ageGroup) {
-  const keywords = String(message || '').split(/[\s，。！？、,.!?]+/).filter(Boolean);
-  const lowerKeywords = keywords.map((item) => item.toLowerCase());
+function analyzeChatSubIntent(message, intent) {
+  const text = String(message || '');
+  for (const rule of CHAT_SUB_INTENT_RULES) {
+    if (rule.intents.indexOf(intent) < 0 && rule.intents.indexOf('general') < 0) {
+      continue;
+    }
+    const matched = rule.patterns.every((pattern) => pattern.test(text));
+    if (matched) {
+      return rule.key;
+    }
+  }
+  return '';
+}
 
-  function scoreText(text) {
-    const source = String(text || '').toLowerCase();
-    return lowerKeywords.reduce((total, keyword) => total + (source.includes(keyword) ? 1 : 0), 0);
+function analyzeChatRiskLevel(message) {
+  const text = String(message || '');
+  if (CHAT_RISK_PATTERNS.high.test(text)) {
+    return 'high';
+  }
+  if (CHAT_RISK_PATTERNS.medium.test(text)) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function getChatSubIntentRule(subIntent) {
+  if (!subIntent) {
+    return null;
+  }
+  return CHAT_SUB_INTENT_RULES.find((rule) => rule.key === subIntent) || null;
+}
+
+function extractChatKeywords(message) {
+  const terms = String(message || '')
+    .split(/[\s，。！？、,.!?：:；;（）()【】\[\]"'“”‘’]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  const uniqueTerms = [];
+
+  function pushTerm(term) {
+    if (!term || term.length < 2 || uniqueTerms.indexOf(term) >= 0) {
+      return;
+    }
+    uniqueTerms.push(term);
   }
 
+  for (const term of terms) {
+    pushTerm(term);
+    if (hasEnoughChatKeywords(uniqueTerms)) {
+      break;
+    }
+
+    const chineseFragments = extractChineseSearchFragments(term);
+    for (const fragment of chineseFragments) {
+      pushTerm(fragment);
+      if (hasEnoughChatKeywords(uniqueTerms)) {
+        break;
+      }
+    }
+
+    if (uniqueTerms.length >= 8) {
+      break;
+    }
+  }
+  if (!uniqueTerms.length && String(message || '').trim()) {
+    uniqueTerms.push(String(message || '').trim().toLowerCase());
+  }
+  return uniqueTerms;
+}
+
+function hasEnoughChatKeywords(keywords) {
+  return keywords.length >= 12;
+}
+
+function extractChineseSearchFragments(term) {
+  const normalized = String(term || '')
+    .replace(/(怎么办|怎么做|怎么说|怎么引导|怎么|如何做|如何引导|如何|怎样|什么|可以吗|有没有|为什么|是不是|总是|一直|一下|这个|那个|然后|之后|以后|进行|一起|可以|能够|需要|已经|还是|还有|以及|和|跟|给|把|用|做|前|后|让)/g, ' ')
+    .replace(/(孩子|宝宝|小朋友)/g, ' ')
+    .replace(/\s+/g, '');
+
+  if (!/[\u4e00-\u9fff]/.test(normalized) || normalized.length < 2) {
+    return [];
+  }
+
+  const fragments = [];
+  const maxWindow = Math.min(4, normalized.length);
+  fragments.push(normalized);
+
+  const preferredMatches = normalized.match(/(坐不住|动来动去|不听话|亲子共读|共读|复述|道德教育|说出情绪|说出|表达|上课|注意力|专注|挑食|吃饭|洗漱|写作业|情绪崩溃|情绪|哭闹|发火|拖拉|睡前|流程图|就寝|安睡|阅读|绘本|手语|冷处理|转盘|角色扮演|按摩|纪律|奖励|惩罚|自由|运动|户外活动|蒙台梭利|孕期|孕妇|怀孕|胎儿|妊娠|三岁|四岁|五岁|六岁)/g) || [];
+  for (const match of preferredMatches) {
+    if (!fragments.includes(match)) {
+      fragments.push(match);
+    }
+  }
+
+  for (let size = maxWindow; size >= 3; size -= 1) {
+    for (let index = 0; index <= normalized.length - size; index += 1) {
+      const fragment = normalized.slice(index, index + size);
+      if (!fragments.includes(fragment)) {
+        fragments.push(fragment);
+      }
+      if (fragments.length >= 12) {
+        return fragments;
+      }
+    }
+  }
+
+  return fragments;
+}
+
+function createChatScoreText(keywords) {
+  return function scoreText(text) {
+    const source = String(text || '').toLowerCase();
+    return keywords.reduce((total, keyword) => total + (source.includes(keyword) ? 1 : 0), 0);
+  };
+}
+
+function countChatKeywordHits(text, keywords) {
+  const source = String(text || '').toLowerCase();
+  const terms = Array.isArray(keywords) ? keywords : [];
+  if (!source) {
+    return 0;
+  }
+  return terms.reduce((total, keyword) => total + (source.includes(keyword) ? 1 : 0), 0);
+}
+
+function buildChatSearchCondition(fields, keywords) {
+  const conditions = [];
+  const params = [];
+  for (const keyword of keywords) {
+    const likeValue = `%${keyword}%`;
+    const fieldConditions = fields.map((field) => `${field} LIKE ?`);
+    conditions.push(`(${fieldConditions.join(' OR ')})`);
+    for (let index = 0; index < fields.length; index++) {
+      params.push(likeValue);
+    }
+  }
+  return {
+    sql: conditions.length ? ` AND (${conditions.join(' OR ')})` : '',
+    params
+  };
+}
+
+function getChatArticleCategoryFilters(intent) {
+  if (intent === 'emotion') {
+    return ['情绪管理', '社交能力'];
+  }
+  if (intent === 'focus') {
+    return ['认知发展', '行为习惯'];
+  }
+  return [];
+}
+
+function getChatTaskSubjectFilters(intent, subIntent) {
+  if (intent === 'reading' || subIntent === 'shared_reading_retell') {
+    return ['reading', 'expression', 'logic'];
+  }
+  if (intent === 'emotion' || intent === 'focus' || intent === 'general' || subIntent) {
+    return ['expression', 'reading', 'logic'];
+  }
+  return [];
+}
+
+function isReferenceAgeCompatible(reference, ageGroup) {
+  if (!ageGroup || !reference || !reference.extra) {
+    return false;
+  }
+  const ageValue = String(reference.extra.age_group || reference.extra.age_range || '').trim();
+  if (!ageValue) {
+    return false;
+  }
+  return ageValue === ageGroup || ageValue.indexOf(ageGroup) >= 0;
+}
+
+function getChatSourceWeight(chatAnalysis, reference) {
+  const sourceType = reference.sourceType;
+  if (chatAnalysis.intent === 'reading') {
+    if (sourceType === 'task') return 18;
+    if (sourceType === 'article') return 12;
+    if (sourceType === 'scene') return 8;
+  }
+  if (chatAnalysis.intent === 'nutrition') {
+    if (sourceType === 'recipe') return 18;
+    if (sourceType === 'article') return 12;
+    if (sourceType === 'scene') return 6;
+  }
+  if (chatAnalysis.intent === 'assessment') {
+    if (sourceType === 'assessment') return 18;
+    if (sourceType === 'article') return 8;
+  }
+  if (chatAnalysis.intent === 'emotion' || chatAnalysis.intent === 'focus') {
+    if (sourceType === 'scene') return 18;
+    if (sourceType === 'article') return 14;
+    if (sourceType === 'task') return 22;
+  }
+  if (chatAnalysis.intent === 'general') {
+    if (sourceType === 'scene') return 14;
+    if (sourceType === 'article') return 12;
+    if (sourceType === 'task') return 18;
+    if (sourceType === 'tip') return 10;
+  }
+  if (sourceType === 'tip') return 8;
+  return 0;
+}
+
+function isPregnancyContext(keywords) {
+  const terms = Array.isArray(keywords) ? keywords : [];
+  return terms.some((keyword) => /(孕期|孕妇|怀孕|胎儿|妊娠)/.test(String(keyword || '')));
+}
+
+function getPregnancyReferenceBonus(reference) {
+  const sourceText = [
+    reference.title,
+    reference.content,
+    reference.extra && reference.extra.summary,
+    reference.extra && reference.extra.tags,
+    reference.extra && reference.extra.aliases
+  ].filter(Boolean).join(' ');
+
+  if (!/(孕期|孕妇|怀孕|胎儿|妊娠)/.test(sourceText)) {
+    return 0;
+  }
+
+  let score = 24;
+  if (/(孕期|孕妇|怀孕|胎儿|妊娠)/.test(String(reference.title || ''))) {
+    score += 12;
+  }
+  if (reference.sourceType === 'article') {
+    score += 8;
+  }
+  return score;
+}
+
+function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords) {
+  let score = Number(reference.score || 0);
+  const pregnancyContext = isPregnancyContext(keywords);
+  const titleText = String(reference.title || '');
+  const summaryText = String(reference.extra && reference.extra.summary || '');
+  const tagsText = String(reference.extra && reference.extra.tags || '');
+  const aliasesText = String(reference.extra && reference.extra.aliases || '');
+  const contentText = String(reference.content || '');
+  const sourceText = [
+    titleText,
+    contentText,
+    summaryText,
+    tagsText,
+    aliasesText,
+    reference.extra && reference.extra.principle_text,
+    reference.extra && reference.extra.suggested_action,
+    reference.extra && reference.extra.parent_prompt,
+    reference.extra && reference.extra.steps
+  ].filter(Boolean).join(' ');
+
+  const titleHits = countChatKeywordHits(titleText, keywords);
+  const summaryHits = countChatKeywordHits(summaryText, keywords);
+  const tagsHits = countChatKeywordHits(tagsText, keywords);
+  const aliasHits = countChatKeywordHits(aliasesText, keywords);
+  const contentHits = countChatKeywordHits(contentText, keywords);
+
+  score += titleHits * 8;
+  score += summaryHits * 4;
+  score += tagsHits * 5;
+  score += aliasHits * 5;
+  score += Math.max(0, contentHits - titleHits) * 2;
+
+  if (chatAnalysis.intent === 'general' && titleHits === 0 && tagsHits === 0 && aliasHits === 0) {
+    score -= 18;
+  }
+
+  if (ageGroup && !pregnancyContext) {
+    if (isReferenceAgeCompatible(reference, ageGroup)) {
+      score += 40;
+    } else if (!(reference.extra && (reference.extra.age_group || reference.extra.age_range))) {
+      score += 10;
+    }
+  }
+
+  if (pregnancyContext) {
+    score += getPregnancyReferenceBonus(reference);
+  }
+
+  const scenarioRule = getChatSubIntentRule(chatAnalysis.subIntent);
+  if (scenarioRule) {
+    const scenarioHits = scenarioRule.keywords.reduce((total, keyword) => total + (sourceText.includes(keyword) ? 1 : 0), 0);
+    score += scenarioHits * 10;
+  }
+
+  if (chatAnalysis.riskLevel !== 'low' && /(就医|医生|专业|评估|持续|明显影响)/.test(sourceText)) {
+    score += 8;
+  }
+
+  if (reference.sourceType === 'task' && reference.extra && reference.extra.steps) {
+    score += 15;
+  }
+
+  if (reference.sourceType === 'scene' && reference.extra && (reference.extra.principle_text || reference.extra.suggested_action)) {
+    score += 10;
+  }
+
+  score += getChatSourceWeight(chatAnalysis, reference);
+  return score;
+}
+
+function finalizeChatReferences(references, chatAnalysis, ageGroup, keywords) {
+  const deduped = [];
+  const seen = new Set();
+  for (const reference of references) {
+    const dedupeKey = `${reference.sourceType}:${reference.title}`;
+    if (seen.has(dedupeKey)) {
+      continue;
+    }
+    seen.add(dedupeKey);
+    reference.score = getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords);
+    deduped.push(reference);
+  }
+  deduped.sort((a, b) => b.score - a.score);
+
+  const topN = 8;
+  const result = [];
+  const includedTypes = new Set();
+
+  for (const reference of deduped) {
+    if (result.length >= topN) break;
+    if (!includedTypes.has(reference.sourceType)) {
+      includedTypes.add(reference.sourceType);
+      result.push(reference);
+    }
+  }
+
+  for (const reference of deduped) {
+    if (result.length >= topN) break;
+    if (!result.includes(reference)) {
+      result.push(reference);
+    }
+  }
+
+  return result;
+}
+
+async function collectArticleReferences(keywords, scoreText, intent, ageGroup) {
+  const searchCondition = buildChatSearchCondition(['title', 'summary', 'content', 'tags'], keywords);
+  const categoryFilters = getChatArticleCategoryFilters(intent);
+  let sql = 'SELECT * FROM articles WHERE is_published = 1';
+  const params = [];
+  if (categoryFilters.length) {
+    sql += ` AND category IN (${categoryFilters.map(() => '?').join(',')})`;
+    params.push.apply(params, categoryFilters);
+  }
+  if (ageGroup) {
+    sql += ' AND (age_group = ? OR age_group = "" OR age_group IS NULL)';
+    params.push(ageGroup);
+  }
+  sql += searchCondition.sql;
+  params.push.apply(params, searchCondition.params);
+  sql += ' ORDER BY updated_at DESC, created_at DESC, read_count DESC LIMIT 36';
+
+  const [rows] = await pool.execute(sql, params);
+  return rows.map((article) => {
+    const score = scoreText([article.title, article.summary, article.content, article.tags].join(' '));
+    return {
+      title: article.title,
+      score,
+      content: article.content || article.summary || '',
+      extra: article,
+      sourceType: 'article'
+    };
+  }).filter((item) => item.score > 0);
+}
+
+async function collectReadingTaskReferences(keywords, scoreText, ageGroup, chatAnalysis) {
+  const searchCondition = buildChatSearchCondition(['title', 'objective', 'content', 'parent_prompt', 'steps', 'tips'], keywords);
+  const subjectFilters = getChatTaskSubjectFilters(chatAnalysis && chatAnalysis.intent, chatAnalysis && chatAnalysis.subIntent);
+  let sql = 'SELECT * FROM reading_tasks WHERE 1 = 1';
+  const params = [];
+  if (subjectFilters.length) {
+    sql += ` AND subject_code IN (${subjectFilters.map(() => '?').join(',')})`;
+    params.push.apply(params, subjectFilters);
+  }
+  if (ageGroup) {
+    sql += ' AND (age_range LIKE ? OR age_range IS NULL OR age_range = "")';
+    params.push(`%${ageGroup}%`);
+  }
+  sql += searchCondition.sql;
+  params.push.apply(params, searchCondition.params);
+  sql += ' ORDER BY difficulty ASC, updated_at DESC, created_at DESC LIMIT 10';
+
+  const [rows] = await pool.execute(sql, params);
+  return rows.map((task) => {
+    const score = scoreText([task.title, task.objective, task.content, task.parent_prompt, task.steps, task.tips].join(' '));
+    return {
+      title: task.title,
+      score,
+      content: task.content || task.objective || '',
+      extra: task,
+      sourceType: 'task'
+    };
+  }).filter((item) => item.score > 0);
+}
+
+async function collectSceneReferences(keywords, scoreText, ageGroup) {
+  const [rows] = await pool.execute(
+    `SELECT t.scene_key, t.scene_title, t.scene_category, t.principle_text, t.suggested_action,
+            GROUP_CONCAT(DISTINCT a.alias_text ORDER BY a.sort_order SEPARATOR '、') AS aliases,
+            GROUP_CONCAT(DISTINCT r.summary ORDER BY r.sort_order SEPARATOR '\n') AS recommendation_summaries
+       FROM parenting_scene_tags t
+       LEFT JOIN parenting_scene_aliases a ON a.scene_key = t.scene_key AND a.status = 'active'
+       LEFT JOIN parenting_scene_recommendations r ON r.scene_key = t.scene_key AND (r.age_group = '' OR r.age_group = ?)
+      WHERE t.status = 'active'
+      GROUP BY t.scene_key, t.scene_title, t.scene_category, t.principle_text, t.suggested_action
+      ORDER BY t.sort_order ASC`,
+    [ageGroup || '']
+  );
+  return rows.map((scene) => {
+    const score = scoreText([
+      scene.scene_title,
+      scene.scene_category,
+      scene.aliases,
+      scene.principle_text,
+      scene.suggested_action,
+      scene.recommendation_summaries
+    ].join(' '));
+    return {
+      title: scene.scene_title,
+      score,
+      content: [scene.principle_text, scene.suggested_action, scene.recommendation_summaries].filter(Boolean).join('\n'),
+      extra: scene,
+      sourceType: 'scene'
+    };
+  }).filter((item) => item.score > 0);
+}
+
+async function collectParentingTipReferences(keywords, scoreText, ageGroup, chatAnalysis, message) {
+  const searchCondition = buildChatSearchCondition(['title', 'content'], keywords);
+  let sql = 'SELECT * FROM parenting_tips WHERE is_active = 1';
+  const params = [];
+  if (ageGroup) {
+    sql += ' AND (age_group = ? OR age_group = "" OR age_group IS NULL)';
+    params.push(ageGroup);
+  }
+  sql += searchCondition.sql;
+  params.push.apply(params, searchCondition.params);
+  sql += ' ORDER BY created_at DESC LIMIT 20';
+
+  const queryType = detectQueryType(message);
+
+  const [rows] = await pool.execute(sql, params);
+  return rows.map((tip) => {
+    let sceneTagsText = '';
+    try {
+      if (tip.scene_tags) {
+        const parsed = typeof tip.scene_tags === 'string' ? JSON.parse(tip.scene_tags) : tip.scene_tags;
+        if (Array.isArray(parsed)) sceneTagsText = parsed.join('、');
+      }
+    } catch (e) { /**/ }
+    let score = scoreText([tip.title, tip.content, tip.category, sceneTagsText].join(' '));
+    score += getContentTypeBonus(queryType, tip.content_type);
+    return {
+      title: tip.title,
+      score,
+      content: tip.content || '',
+      extra: Object.assign({}, tip, { scene_tags_text: sceneTagsText }),
+      sourceType: 'tip'
+    };
+  }).filter((item) => item.score > 0);
+}
+
+function detectQueryType(message) {
+  const m = String(message || '');
+
+  // Caution must be checked before howto to catch "不要...怎么做" correctly
+  if (/不要|别让|避免|注意(什么|哪些)|小心|警惕|危险|风险|不该|误区|陷阱/.test(m)) return 'caution';
+
+  if (/(步骤|第一步|第二步|流程|先后|顺序|先.*再.*然后)/.test(m)) return 'stepwise';
+
+  if (/怎么(做|办|处理|应对|解决|改善|培养|训练|引导|教)|如何(做|处理|应对|培养|训练|引导|改善|提高|提升)|应该?(怎么|如何)/.test(m)) return 'howto';
+  if (/(有什么|有哪些|有啥).*(方法|办法|技巧|步骤|建议|策略|妙招|窍门)/.test(m)) return 'howto';
+  if (/(方法|办法|技巧|步骤|建议|策略|妙招|窍门).*(有什么|有哪些|有啥)/.test(m)) return 'howto';
+
+  if (/什么是|是什么(意思|原因|概念|含义)|为什么|什么原因|什么意思|解释一下|什么叫|指的是|含义/.test(m)) return 'whatis';
+
+  return 'general';
+}
+
+function getContentTypeBonus(queryType, contentType) {
+  if (queryType === 'howto' && (contentType === 'actionable' || contentType === 'stepwise')) return 12;
+  if (queryType === 'stepwise' && contentType === 'stepwise') return 18;
+  if (queryType === 'whatis' && (contentType === 'knowledge' || contentType === 'evidence')) return 12;
+  if (queryType === 'caution' && contentType === 'caution') return 12;
+  return 0;
+}
+
+async function collectChatReferences(chatAnalysis, message, ageGroup) {
+  const keywords = extractChatKeywords(message);
+  const scoreText = createChatScoreText(keywords);
   const references = [];
 
-  if (intent === 'nutrition') {
+  if (chatAnalysis.intent === 'nutrition') {
     for (const recipe of NUTRITION_RECIPES.slice(0, 120)) {
       if (ageGroup && !isRecipeAgeCompatible(recipe.ageRange || recipe.age_range, ageGroup)) continue;
       const score = scoreText([recipe.title, recipe.description, (recipe.ingredients || []).join(' ')].join(' '));
@@ -1471,107 +2404,194 @@ function collectChatReferences(intent, message, ageGroup) {
           title: recipe.title,
           score,
           content: recipe.description || '',
-          extra: recipe
+          extra: recipe,
+          sourceType: 'recipe'
         });
       }
     }
   }
 
-  for (const article of PARENTING_ARTICLES) {
-    const score = scoreText([article.title, article.summary, article.content, article.tags].join(' '));
-    if (score > 0 || (intent === 'emotion' && article.category === '情绪管理') || (intent === 'focus' && article.sub_category === '专注训练')) {
-      references.push({
-        title: article.title,
-        score: Math.max(score, 1),
-        content: article.content,
-        extra: article
-      });
+  try {
+    const articleReferences = await collectArticleReferences(keywords, scoreText, chatAnalysis.intent, ageGroup);
+    references.push.apply(references, articleReferences);
+  } catch (err) {
+    console.error('[Chat] collectArticleReferences failed:', err.message);
+  }
+
+  if (chatAnalysis.intent === 'reading' || chatAnalysis.intent === 'emotion' || chatAnalysis.intent === 'focus' || chatAnalysis.intent === 'general' || chatAnalysis.subIntent) {
+    try {
+      const taskReferences = await collectReadingTaskReferences(keywords, scoreText, ageGroup, chatAnalysis);
+      references.push.apply(references, taskReferences);
+    } catch (err) {
+      console.error('[Chat] collectReadingTaskReferences failed:', err.message);
     }
   }
 
-  if (intent === 'reading') {
-    for (const task of READING_TASKS) {
-      const score = scoreText([task.title, task.objective, task.content, task.parent_prompt].join(' '));
-      references.push({
-        title: task.title,
-        score: Math.max(score, 1),
-        content: task.content,
-        extra: task
-      });
+  if (chatAnalysis.intent === 'emotion' || chatAnalysis.intent === 'focus' || chatAnalysis.intent === 'general' || chatAnalysis.subIntent) {
+    try {
+      const sceneReferences = await collectSceneReferences(keywords, scoreText, ageGroup);
+      references.push.apply(references, sceneReferences);
+    } catch (err) {
+      console.error('[Chat] collectSceneReferences failed:', err.message);
     }
   }
 
-  if (intent === 'assessment') {
+  try {
+    const tipReferences = await collectParentingTipReferences(keywords, scoreText, ageGroup, chatAnalysis, message);
+    references.push.apply(references, tipReferences);
+  } catch (err) {
+    console.error('[Chat] collectParentingTipReferences failed:', err.message);
+  }
+
+  if (chatAnalysis.intent === 'assessment') {
     for (const [code, meta] of Object.entries(ASSESSMENT_META)) {
       const score = scoreText([code, meta.name, (meta.age_groups || []).join(' ')].join(' '));
       references.push({
         title: meta.name,
         score: Math.max(score, 1),
         content: `${meta.name}，约${meta.duration}分钟，${meta.total_questions}题，适用年龄${(meta.age_groups || []).join('、')}`,
-        extra: { code, meta }
+        extra: { code, meta },
+        sourceType: 'assessment'
       });
     }
   }
 
-  references.sort((a, b) => b.score - a.score);
-  return references.slice(0, 5);
+  return finalizeChatReferences(references, chatAnalysis, ageGroup, keywords);
 }
 
-function buildChatAnswer(message, intent, references, ageGroup, childName) {
+function buildChatSections(sections) {
+  return sections.filter(Boolean).join('\n\n');
+}
+
+function getChatBoundaryText(riskLevel) {
+  if (riskLevel === 'high') {
+    return '这个问题已经带有较高风险信号，建议尽快线下咨询儿科、儿童保健、发育行为或心理相关专业人士。';
+  }
+  if (riskLevel === 'medium') {
+    return '如果这种情况持续存在，或者已经明显影响睡眠、吃饭、上学或亲子互动，建议尽快线下咨询专业人士。';
+  }
+  return '如果后续持续加重，或者已经明显影响睡眠、社交、吃饭或学习，再考虑线下咨询专业人士。';
+}
+
+function getChatScenarioLabel(chatAnalysis) {
+  const rule = getChatSubIntentRule(chatAnalysis.subIntent);
+  return rule ? rule.label : '';
+}
+
+function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName) {
+  const intent = chatAnalysis.intent;
+  const scenarioLabel = getChatScenarioLabel(chatAnalysis);
+  const boundaryText = getChatBoundaryText(chatAnalysis.riskLevel);
+
   if (intent === 'nutrition') {
     const recipe = references[0] && references[0].extra;
     const article = references.find((item) => item.extra && item.extra.summary);
     const ageNote = ageGroup ? `（${ageGroup}）` : '';
-    return [
-      `关于${ageNote}“${message}”，我建议先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
-      recipe ? `优先参考 ${recipe.title}：${recipe.description || '这道搭配更适合孩子接受，能同时补充主食、蛋白质和蔬菜。'}` : '每餐优先保证主食、蛋白质、蔬菜三类食物同时出现。',
-      recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `这类搭配可以从 ${recipe.ingredients.slice(0, 4).join('、')} 开始，先做孩子熟悉的口味。` : '先保留一种孩子愿意吃的安全食物，再增加一种少量新食物。',
-      article ? `家庭执行要点：${article.extra.summary}` : '家长负责提供，孩子负责决定吃多少，连续多次接触比一次吃很多更有效。',
-      '连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。'
-    ].join('\n\n');
+    return buildChatSections([
+      `关于${ageNote}“${message}”，当前更适合先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
+      recipe ? `先看知识库里最接近的一条做法：${recipe.title}。${recipe.description || '这类搭配更容易让孩子接受，也更方便家里连续执行。'}` : '先解释原则：每餐优先保证主食、蛋白质、蔬菜三类食物同时出现，先稳节奏，再慢慢扩食物种类。',
+      recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `家庭做法可以先从这些熟悉食材开始：${recipe.ingredients.slice(0, 4).join('、')}。一次只增加一种少量新食物，更容易坚持。` : '家庭做法上，先保留一种孩子愿意吃的安全食物，再增加一种少量新食物，不追求一顿吃很多。',
+      article ? `补充提醒：${article.extra.summary}` : '补充提醒：家长负责提供和安排，孩子负责决定吃多少，连续多次接触比一次强行吃完更有效。',
+      `观察点：连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。${boundaryText}`
+    ]);
   }
 
   if (intent === 'reading') {
-    const task = references[0] && references[0].extra;
-    return [
-      `关于“${message}”，我建议先做短时、高频、能马上开始的阅读训练。`,
-      task ? `可以先用“${task.title}”这类任务：${task.objective}` : '先从看图说信息、复述一句话这类低门槛任务开始。',
-      task ? `家庭操作步骤：${String(task.steps || '').split('\n').slice(0, 3).join('；')}` : '每次10分钟以内，先看图，再追问，再让孩子自己说。',
-      task ? `家长提示语可以直接用：${task.parent_prompt}` : '家长的问题越具体，孩子越容易回答。',
-      '连续练2周后，再逐步增加复述长度和表达难度。'
-    ].join('\n\n');
+    const taskReference = references.find((item) => item.sourceType === 'task');
+    const articleReference = references.find((item) => item.sourceType === 'article');
+    const task = taskReference && taskReference.extra;
+    const article = articleReference && articleReference.extra;
+    return buildChatSections([
+      `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先做短时、高频、能马上开始的阅读训练。`,
+      task
+        ? `先判断重点：优先用知识库任务“${task.title}”做切入，目标是${task.objective || '让孩子先把读到的内容说出来。'}`
+        : article
+          ? `先判断重点：可以先从“${article.title}”对应的阅读引导开始，核心是${article.summary || '先把共读拆成更短的表达练习。'}`
+          : '先判断重点：先从看图说信息、复述一句话这类低门槛任务开始。',
+      task
+        ? `家庭步骤：${String(task.steps || '').split('\n').slice(0, 3).join('；')}`
+        : article && article.content
+          ? `家庭步骤：${article.content.split('\n\n').slice(0, 2).join('；')}`
+          : '家庭步骤：每次控制在10分钟以内，先看图，再追问，再让孩子自己说。',
+      task
+        ? `家长提示语：${task.parent_prompt || '你先说第一句，我帮你接第二句。'}`
+        : article && article.summary
+          ? `家长提示语：${article.summary}`
+          : '家长提示语：问题越具体，孩子越容易回答。',
+      `观察点：连续练2周后，再逐步增加复述长度和表达难度。${boundaryText}`
+    ]);
   }
 
   if (intent === 'assessment') {
     const assessment = references[0] && references[0].extra;
     const meta = assessment && assessment.meta;
-    return [
-      `关于“${message}”，我建议先用观察工具把问题具体化，再决定训练重点。`,
-      meta ? `当前最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，${meta.total_questions} 题，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的成长观察开始。',
-      '做评估前先回想孩子最近2周在家庭、外出、任务场景中的稳定表现，按常态作答。',
-      '拿到结果后先看最需要支持的1到2个维度，再把训练拆成每天能执行的小动作。',
-      '如果你愿意继续描述孩子年龄和主要困扰，我建议你优先做更匹配的一类观察。'
-    ].join('\n\n');
+    return buildChatSections([
+      `关于“${message}”，当前更适合先用成长观察工具把问题具体化，再决定训练重点。`,
+      meta ? `知识库里最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，${meta.total_questions} 题，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的成长观察开始。',
+      '家庭做法：做评估前先回想孩子最近2周在家庭、外出、任务场景中的稳定表现，按常态作答。',
+      '结果使用：拿到结果后先看最需要支持的1到2个维度，再把训练拆成每天能执行的小动作。',
+      `补充提醒：如果你继续描述孩子年龄和主要困扰，我可以帮你缩小到更匹配的一类观察。${boundaryText}`
+    ]);
   }
 
   if (intent === 'emotion' || intent === 'focus') {
-    const article = references[0] && references[0].extra;
-    return [
-      `关于“${message}”，我建议先从家庭回应方式入手，再看训练安排。`,
-      article ? article.summary : '先降低对抗，再把家长提示语缩短，孩子会更容易进入配合状态。',
-      article ? article.content.split('\n\n').slice(0, 2).join('\n\n') : '先命名情绪或任务，再给出一个清晰的小步骤。',
-      '先连续执行7天，记录问题最常出现的时间、场景和触发点。',
-      '如果问题已经明显影响睡眠、社交或学习，再考虑配合专业评估。'
-    ].join('\n\n');
+    const sceneReference = references.find((item) => item.sourceType === 'scene');
+    const articleReference = references.find((item) => item.sourceType === 'article');
+    const taskReference = references.find((item) => item.sourceType === 'task');
+    const scene = sceneReference && sceneReference.extra;
+    const article = articleReference && articleReference.extra;
+    const task = taskReference && taskReference.extra;
+    const summaryText = scene && (scene.principle_text || scene.suggested_action)
+      ? [scene.principle_text, scene.suggested_action].filter(Boolean).join('；')
+      : article && (article.summary || article.principle_text || article.suggested_action)
+        ? (article.summary || article.principle_text || article.suggested_action)
+        : '';
+    const actionText = task && task.steps
+      ? String(task.steps).split('\n').slice(0, 3).join('；')
+      : article && article.content
+        ? article.content.split('\n\n').slice(0, 2).join('；')
+        : '';
+    return buildChatSections([
+      `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先从家庭回应方式入手，再看训练安排。`,
+      `先判断原则：${summaryText || '先降低对抗，再把家长提示语缩短，孩子会更容易进入配合状态。'}`,
+      `家庭做法：${actionText || '先命名情绪或任务，再给出一个清晰的小步骤；一次只推进一个可执行动作。'}${task && task.parent_prompt ? ` 家长提示语可以直接用：${task.parent_prompt}` : ''}`,
+      '观察点：先连续执行7天，记录问题最常出现的时间、场景和触发点。',
+      `边界提醒：${boundaryText}`
+    ]);
   }
 
-  const article = references[0] && references[0].extra;
-  return [
-    `关于“${message}”，我建议先把问题落到一个具体场景里处理。`,
-    article ? article.summary : '先描述孩子的年龄、典型场景和你最困扰的表现，建议会更准确。',
-    article ? article.content.split('\n\n').slice(0, 2).join('\n\n') : '先观察频率、触发点和持续时间，再决定是调环境、调回应还是做训练。',
-    '先稳定执行1周，再看变化决定下一步。'
-  ].join('\n\n');
+  const sceneReference = references.find((item) => item.sourceType === 'scene');
+  const articleReference = references.find((item) => item.sourceType === 'article');
+  const taskReference = references.find((item) => item.sourceType === 'task');
+  const scene = sceneReference && sceneReference.extra;
+  const article = articleReference && articleReference.extra;
+  const task = taskReference && taskReference.extra;
+  const generalSummaryText = scene && (scene.principle_text || scene.suggested_action)
+    ? [scene.principle_text, scene.suggested_action].filter(Boolean).join('；')
+    : article && (article.summary || article.principle_text || article.suggested_action)
+      ? (article.summary || article.principle_text || article.suggested_action)
+      : '';
+  const generalActionText = task && task.steps
+    ? String(task.steps).split('\n').slice(0, 3).join('；')
+    : article && article.content
+      ? article.content.split('\n\n').slice(0, 2).join('；')
+      : '';
+
+  if (!references.length) {
+    return buildChatSections([
+      `关于“${message}”，我还缺少能直接匹配的知识库内容。`,
+      '请尽量补充孩子年龄、典型场景、最困扰的表现和已经试过的方法，我才能按知识库里更接近的内容给你整理建议。',
+      `边界提醒：${boundaryText}`
+    ]);
+  }
+
+  return buildChatSections([
+    `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先把问题落到一个具体家庭场景里处理。`,
+    `先判断原则：${generalSummaryText || '先描述孩子年龄、典型场景和最困扰的表现，建议会更准确。'}`,
+    `家庭做法：${generalActionText || '先观察频率、触发点和持续时间，再决定是调环境、调回应还是做训练。'}`,
+    '观察点：先稳定执行1周，再看变化决定下一步。',
+    `边界提醒：${boundaryText}`
+  ]);
 }
 
 async function loginHandler(req, res) {
@@ -1580,39 +2600,55 @@ async function loginHandler(req, res) {
     res.status(400).json({ success: false, message: '缺少微信登录code' });
     return;
   }
-  const session = await getWechatSession(code);
-  const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {});
-  let signupReward = null;
-  let referralReward = null;
-
-  if (isNewUser) {
+  const startedAt = Date.now();
+  try {
+    let session = null;
     try {
-      signupReward = await grantSignupReward(user.id);
+      session = await getWechatSession(code);
     } catch (err) {
-      console.error('[Membership] Signup reward failed:', err.message);
+      if (/timeout/i.test(String(err && err.message))) {
+        res.status(504).json({ success: false, message: '微信登录请求超时，请稍后重试' });
+        return;
+      }
+      throw err;
     }
-  }
+    const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {});
+    let signupReward = null;
+    let referralReward = null;
 
-  // 处理邀请码（新用户注册时）
-  if (isNewUser && req.body.invite_code) {
-    try {
-      referralReward = await handleReferralSignup(user.id, req.body.invite_code);
-    } catch (err) {
-      console.error('[Referral] Signup reward failed:', err.message);
+    if (isNewUser) {
+      try {
+        signupReward = await grantSignupReward(user.id);
+      } catch (err) {
+        console.error('[Membership] Signup reward failed:', err.message);
+      }
     }
-  }
 
-  const payload = { userId: user.id, openid: user.openid, username: user.nickname || '微信用户' };
-  res.json({
-    success: true,
-    data: {
-      user,
-      token: signToken(payload),
-      refresh_token: signToken(Object.assign({}, payload, { tokenType: 'refresh' })),
-      signup_reward: signupReward,
-      referral_reward: referralReward
+    if (isNewUser && req.body.invite_code) {
+      try {
+        referralReward = await handleReferralSignup(user.id, req.body.invite_code);
+      } catch (err) {
+        console.error('[Referral] Signup reward failed:', err.message);
+      }
     }
-  });
+
+    const payload = { userId: user.id, openid: user.openid, username: user.nickname || '微信用户' };
+    res.json({
+      success: true,
+      data: {
+        user,
+        token: signToken(payload),
+        refresh_token: signToken(Object.assign({}, payload, { tokenType: 'refresh' })),
+        signup_reward: signupReward,
+        referral_reward: referralReward
+      }
+    });
+  } finally {
+    logRequestDuration('loginHandler', startedAt, {
+      hasInviteCode: Boolean(req.body && req.body.invite_code),
+      statusCode: res.statusCode
+    });
+  }
 }
 
 async function refreshHandler(req, res) {
@@ -1627,11 +2663,40 @@ async function refreshHandler(req, res) {
 }
 
 async function meHandler(req, res) {
-  const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, created_at, updated_at FROM users WHERE id = ?', [req.user.userId]);
+  const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE id = ?', [req.user.userId]);
   if (!rows.length) {
     res.status(404).json({ success: false, message: '用户不存在' });
     return;
   }
+  res.json({ success: true, data: rows[0] });
+}
+
+async function bindPhoneHandler(req, res) {
+  const code = String((req.body && req.body.code) || '').trim();
+  if (!code) {
+    res.status(400).json({ success: false, message: '缺少手机号授权code' });
+    return;
+  }
+
+  const phoneInfo = await getWechatPhoneNumber(code);
+  const phoneNumber = String((phoneInfo && (phoneInfo.phoneNumber || phoneInfo.purePhoneNumber)) || '').trim();
+  if (!phoneNumber) {
+    res.status(400).json({ success: false, message: '微信手机号获取失败' });
+    return;
+  }
+
+  const [exists] = await pool.execute('SELECT id FROM users WHERE phone_number = ? AND id <> ? LIMIT 1', [phoneNumber, req.user.userId]);
+  if (exists.length) {
+    res.status(409).json({ success: false, message: '该手机号已绑定其他账号' });
+    return;
+  }
+
+  await pool.execute(
+    'UPDATE users SET phone_number = ?, phone_bound_at = NOW() WHERE id = ?',
+    [phoneNumber, req.user.userId]
+  );
+
+  const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE id = ?', [req.user.userId]);
   res.json({ success: true, data: rows[0] });
 }
 
@@ -1654,7 +2719,7 @@ async function getWechatSession(code) {
 
 function requestJson(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
+    const request = https.get(url, (response) => {
       let body = '';
       response.on('data', (chunk) => { body += chunk; });
       response.on('end', () => {
@@ -1669,21 +2734,172 @@ function requestJson(url) {
           reject(err);
         }
       });
-    }).on('error', reject);
+    });
+    request.setTimeout(WECHAT_REQUEST_TIMEOUT_MS, () => {
+      request.destroy(new Error('wechat request timeout'));
+    });
+    request.on('error', reject);
   });
 }
 
-async function findOrCreateUser(openid, profile) {
-  const [existing] = await pool.execute('SELECT id, openid, nickname, avatar_url, created_at, updated_at FROM users WHERE openid = ?', [openid]);
-  if (existing.length) {
-    return { user: existing[0], isNew: false };
+let wechatAccessTokenCache = {
+  token: '',
+  expiresAt: 0
+};
+
+function requestWechatJson(options, body) {
+  const payload = body ? JSON.stringify(body) : '';
+  return new Promise((resolve, reject) => {
+    const request = https.request(Object.assign({}, options, {
+      headers: Object.assign({
+        Accept: 'application/json'
+      }, options.headers || {}, payload ? {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      } : {}),
+      timeout: 10000
+    }), (response) => {
+      let responseBody = '';
+      response.on('data', (chunk) => { responseBody += chunk; });
+      response.on('end', () => {
+        let parsed = {};
+        if (responseBody) {
+          try {
+            parsed = JSON.parse(responseBody);
+          } catch (err) {
+            reject(err);
+            return;
+          }
+        }
+        if (response.statusCode >= 200 && response.statusCode < 300 && !parsed.errcode) {
+          resolve(parsed);
+          return;
+        }
+        reject(new Error(parsed.errmsg || parsed.message || 'wechat request failed'));
+      });
+    });
+    request.on('timeout', () => request.destroy(new Error('wechat request timeout')));
+    request.on('error', reject);
+    if (payload) {
+      request.write(payload);
+    }
+    request.end();
+  });
+}
+
+async function getWechatAccessToken() {
+  if (wechatAccessTokenCache.token && wechatAccessTokenCache.expiresAt > Date.now() + 60 * 1000) {
+    return wechatAccessTokenCache.token;
   }
-  const [result] = await pool.execute(
-    'INSERT INTO users (openid, nickname, avatar_url) VALUES (?, ?, ?)',
-    [openid, profile.nickName || profile.nickname || '微信用户', profile.avatarUrl || profile.avatar_url || '']
+
+  const appid = process.env.WECHAT_APPID;
+  const secret = process.env.WECHAT_APP_SECRET;
+  if (!appid || !secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('WECHAT_APPID and WECHAT_APP_SECRET must be configured');
+    }
+    return 'dev-access-token';
+  }
+
+  const data = await requestWechatJson({
+    hostname: 'api.weixin.qq.com',
+    path: '/cgi-bin/stable_token',
+    method: 'POST'
+  }, {
+    grant_type: 'client_credential',
+    appid,
+    secret,
+    force_refresh: false
+  });
+
+  wechatAccessTokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + (Number(data.expires_in || 7200) * 1000)
+  };
+  return wechatAccessTokenCache.token;
+}
+
+async function getWechatPhoneNumber(code) {
+  const appid = process.env.WECHAT_APPID;
+  const secret = process.env.WECHAT_APP_SECRET;
+  if ((!appid || !secret) && process.env.NODE_ENV !== 'production') {
+    return {
+      phoneNumber: '13800138000',
+      purePhoneNumber: '13800138000'
+    };
+  }
+
+  const accessToken = await getWechatAccessToken();
+  const data = await requestWechatJson({
+    hostname: 'api.weixin.qq.com',
+    path: `/wxa/business/getuserphonenumber?access_token=${encodeURIComponent(accessToken)}`,
+    method: 'POST'
+  }, { code });
+
+  return (data && data.phone_info) || {};
+}
+
+async function findOrCreateUser(openid, profile) {
+  const nickname = profile.nickName || profile.nickname || '微信用户';
+  const avatarUrl = profile.avatarUrl || profile.avatar_url || '';
+  const [existing] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE openid = ?', [openid]);
+  if (existing.length) {
+    const currentUser = existing[0];
+    if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url)) {
+      await pool.execute(
+        'UPDATE users SET nickname = ?, avatar_url = ? WHERE id = ?',
+        [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, currentUser.id]
+      );
+      currentUser.nickname = nickname || currentUser.nickname;
+      currentUser.avatar_url = avatarUrl || currentUser.avatar_url;
+    }
+    return { user: currentUser, isNew: false };
+  }
+  try {
+    const [result] = await pool.execute(
+      'INSERT INTO users (openid, nickname, avatar_url) VALUES (?, ?, ?)',
+      [openid, nickname, avatarUrl]
+    );
+    const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
+    return { user: rows[0], isNew: true };
+  } catch (err) {
+    if (err && err.code === 'ER_DUP_ENTRY') {
+      const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE openid = ? LIMIT 1', [openid]);
+      if (rows.length) {
+        const currentUser = rows[0];
+        if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url)) {
+          await pool.execute(
+            'UPDATE users SET nickname = ?, avatar_url = ? WHERE id = ?',
+            [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, currentUser.id]
+          );
+          currentUser.nickname = nickname || currentUser.nickname;
+          currentUser.avatar_url = avatarUrl || currentUser.avatar_url;
+        }
+        return { user: currentUser, isNew: false };
+      }
+    }
+    throw err;
+  }
+}
+
+async function ensureColumnExists(tableName, columnName, definition) {
+  const [rows] = await pool.execute(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1`,
+    [tableName, columnName]
   );
-  const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
-  return { user: rows[0], isNew: true };
+  if (!rows.length) {
+    await pool.execute(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
+async function ensureIndexExists(tableName, indexName, definition) {
+  const [rows] = await pool.execute(
+    `SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1`,
+    [tableName, indexName]
+  );
+  if (!rows.length) {
+    await pool.execute(`ALTER TABLE ${tableName} ADD ${definition}`);
+  }
 }
 
 async function handleReferralSignup(inviteeId, inviteCode) {
@@ -4509,6 +5725,151 @@ function buildReadingTaskPractices(row, keyPoints) {
 
 async function ensureProductionTables() {
   await pool.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      openid VARCHAR(128) NOT NULL UNIQUE,
+      nickname VARCHAR(255),
+      avatar_url TEXT,
+      phone_number VARCHAR(32) DEFAULT NULL,
+      phone_bound_at DATETIME NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await ensureColumnExists('users', 'phone_number', 'VARCHAR(32) DEFAULT NULL');
+  await ensureColumnExists('users', 'phone_bound_at', 'DATETIME NULL');
+  await ensureIndexExists('users', 'uniq_users_phone_number', 'UNIQUE KEY uniq_users_phone_number (phone_number)');
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS plans (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      code VARCHAR(64) NOT NULL UNIQUE,
+      name VARCHAR(128) NOT NULL,
+      duration_days INT NOT NULL,
+      price_yuan INT NOT NULL,
+      original_price INT,
+      description TEXT,
+      sort_order INT DEFAULT 0,
+      is_active TINYINT DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    INSERT INTO plans (code, name, duration_days, price_yuan, original_price, description, sort_order, is_active) VALUES
+      ('trial', '免费试用', 15, 0, 0, '新用户15天全功能试用', 0, 1),
+      ('month', '月卡', 30, 3900, 5900, '每天不到2元，畅享会员权益', 1, 1),
+      ('quarter', '季卡', 90, 6900, 9900, '省40%，更划算', 2, 1),
+      ('year', '年卡', 365, 16900, 19900, '省60%，最超值', 3, 1)
+    ON DUPLICATE KEY UPDATE
+      name = VALUES(name),
+      duration_days = VALUES(duration_days),
+      price_yuan = VALUES(price_yuan),
+      original_price = VALUES(original_price),
+      description = VALUES(description),
+      sort_order = VALUES(sort_order),
+      is_active = VALUES(is_active)
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      plan_code VARCHAR(64) NOT NULL,
+      status VARCHAR(32) DEFAULT 'active',
+      start_date DATETIME,
+      end_date DATETIME,
+      auto_renew TINYINT DEFAULT 0,
+      wx_agreement_id VARCHAR(255),
+      pay_method VARCHAR(64),
+      order_no VARCHAR(128),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_subscriptions_user (user_id),
+      INDEX idx_subscriptions_status (status),
+      INDEX idx_subscriptions_end_date (end_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS user_memberships (
+      user_id BIGINT PRIMARY KEY,
+      is_trial_used TINYINT DEFAULT 0,
+      trial_end_date DATETIME,
+      current_plan VARCHAR(64),
+      current_end_date DATETIME,
+      auto_renew TINYINT DEFAULT 1,
+      membership_type VARCHAR(64) DEFAULT 'free',
+      status VARCHAR(32) DEFAULT 'free',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS promo_batches (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      batch_code VARCHAR(128) NOT NULL UNIQUE,
+      description TEXT,
+      duration_days INT NOT NULL,
+      total_count INT DEFAULT 0,
+      used_count INT DEFAULT 0,
+      valid_from DATETIME,
+      valid_to DATETIME,
+      is_active TINYINT DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    INSERT INTO promo_batches (batch_code, description, duration_days, total_count, valid_from, valid_to, is_active) VALUES
+      ('LEGACY_2025', '老用户免费3个月', 90, 999999, '2025-01-01', '2025-12-31', 1)
+    ON DUPLICATE KEY UPDATE
+      description = VALUES(description),
+      duration_days = VALUES(duration_days),
+      total_count = VALUES(total_count),
+      valid_from = VALUES(valid_from),
+      valid_to = VALUES(valid_to),
+      is_active = VALUES(is_active)
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS promo_codes (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      batch_id BIGINT,
+      code VARCHAR(128) NOT NULL UNIQUE,
+      status VARCHAR(32) DEFAULT 'unused',
+      user_id BIGINT,
+      used_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_promo_codes_batch (batch_id),
+      INDEX idx_promo_codes_status (status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS referrals (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      inviter_id BIGINT NOT NULL,
+      invitee_id BIGINT,
+      invitee_order_id BIGINT,
+      reward_days INT DEFAULT 7,
+      status VARCHAR(32) DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_referrals_inviter (inviter_id),
+      INDEX idx_referrals_invitee (invitee_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS payment_orders (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      plan_code VARCHAR(64) NOT NULL,
+      order_no VARCHAR(128) NOT NULL UNIQUE,
+      amount INT NOT NULL,
+      status VARCHAR(32) DEFAULT 'pending',
+      wx_prepay_id VARCHAR(255),
+      wx_transaction_id VARCHAR(255),
+      auto_renew TINYINT DEFAULT 1,
+      wx_agreement_id VARCHAR(255),
+      paid_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_payment_orders_user (user_id),
+      INDEX idx_payment_orders_order_no (order_no)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
     CREATE TABLE IF NOT EXISTS children (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
       user_id BIGINT NOT NULL,
@@ -4960,6 +6321,40 @@ async function ensureProductionTables() {
       INDEX idx_parenting_scene_recommendations_key (scene_key)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS parenting_tips (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(200) NOT NULL,
+      content TEXT NOT NULL,
+      category VARCHAR(50) DEFAULT '',
+      content_type VARCHAR(20) DEFAULT '',
+      concise_domain VARCHAR(30) DEFAULT '',
+      age_group VARCHAR(20) DEFAULT '',
+      scene_tags JSON DEFAULT NULL,
+      source_article_id INT DEFAULT NULL,
+      source_article_title VARCHAR(200) DEFAULT '',
+      source_author VARCHAR(100) DEFAULT '',
+      evidence_level VARCHAR(20) DEFAULT 'expert',
+      is_active TINYINT(1) DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_pt_category (category),
+      INDEX idx_pt_content_type (content_type),
+      INDEX idx_pt_concise_domain (concise_domain),
+      INDEX idx_pt_age_group (age_group),
+      INDEX idx_pt_source_article (source_article_id),
+      FULLTEXT KEY ft_pt_content (title, content)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await ensureColumnExists('parenting_tips', 'display_title', 'VARCHAR(200) DEFAULT NULL');
+  await ensureColumnExists('parenting_tips', 'display_text', 'VARCHAR(400) DEFAULT NULL');
+  await ensureColumnExists('parenting_tips', 'display_type', "VARCHAR(20) NOT NULL DEFAULT 'raw'");
+  await ensureColumnExists('parenting_tips', 'display_source_type', 'VARCHAR(20) DEFAULT NULL');
+  await ensureColumnExists('parenting_tips', 'display_source_id', 'INT DEFAULT NULL');
+  await ensureColumnExists('parenting_tips', 'display_priority', 'INT NOT NULL DEFAULT 0');
+  await ensureIndexExists('parenting_tips', 'idx_pt_display_type', 'INDEX idx_pt_display_type (is_active, display_type)');
+  await ensureColumnExists('articles', 'content_form', 'VARCHAR(10) DEFAULT NULL');
+  await ensureIndexExists('articles', 'idx_articles_content_form', 'INDEX idx_articles_content_form (is_published, content_form)');
   await seedContentIfNeeded();
 }
 
@@ -5106,6 +6501,46 @@ async function seedContentIfNeeded() {
           [L.g[0], L.g[1], 'good', '学习适应能力强，主动性和坚持性都不错。', '能主动规划和完成学习任务，遇到困难会尝试自己解决。', '引入自主学习管理工具，如周计划表和目标追踪表。', '深化自主学习能力，为更高年级的学习做准备。'],
           [L.e[0], L.e[1], 'excellent', '学习习惯和能力都非常出色。', '自主性强，善于时间管理和目标设定，学习效率高。', '可尝试探究式学习和跨学科项目，进一步拓展学习深度。', '保持优秀的学习品质和习惯。']
         ]
+      },
+      gross_motor: {
+        dimension: '大运动发育',
+        rows: [
+          [L.i[0], L.i[1], 'intervention', '大运动发育需要重点关注，当前多个里程碑存在明显延迟。', '与同月龄相比，抬头、翻身、坐、爬、站、走等关键动作出现较晚或质量偏低。', '每天安排2-3次5-10分钟的地面活动时间，从当前已掌握的姿势开始逐步推进。', '建议同步进行儿童保健科发育评估，排除器质性因素。'],
+          [L.a[0], L.a[1], 'attention', '大运动发育处于追赶期，部分里程碑需要更多练习机会。', '核心动作已出现但不够流畅，切换姿势时需要较多努力。', '增加每日趴玩和地面自由活动时间，减少抱着或限制在设备里的时长。', '连续观察4周，大部分动作质量和频率会有明显提升。'],
+          [L.m[0], L.m[1], 'medium', '大运动发育基本符合月龄规律。', '核心里程碑在正常范围内达成，部分高阶动作还需练习。', '保持每天充足的地面活动时间，提供安全的探索空间和适龄的运动玩具。', '持续观察并按月龄调整活动难度。'],
+          [L.g[0], L.g[1], 'good', '大运动发育良好，动作协调性和力量都不错。', '在大多数运动项目中表现积极，动作完成质量较高。', '适当增加难度（如不同地面、斜坡、障碍），丰富运动体验。', '保持积极运动习惯，为上幼儿园做准备。'],
+          [L.e[0], L.e[1], 'excellent', '大运动发育优秀，运动能力和协调性超出同龄水平。', '动作敏捷、协调性好，敢于尝试新的运动挑战。', '提供丰富的户外探索和适龄的运动器械，鼓励自由探索。', '持续发展运动潜能。']
+        ]
+      },
+      fine_motor: {
+        dimension: '精细动作',
+        rows: [
+          [L.i[0], L.i[1], 'intervention', '精细动作发育需要重点关注，手部操作能力明显低于月龄预期。', '抓握力量弱、指尖操作困难、双手配合不协调，影响自主进食和操作玩具。', '每天安排触觉和抓握练习，从大物件逐步过渡到小物件，先保证成功体验再增加难度。', '建议结合儿童保健科评估，排除肌张力或感觉处理异常。'],
+          [L.a[0], L.a[1], 'attention', '精细动作处于发展中，部分手部技能需要更多练习。', '大把抓握已建立，但指尖捏取和双手协调还不太熟练。', '多提供撕纸、捏豆子、串珠、搭积木等手部操作机会，每次5-10分钟。', '持续练习4-6周后，手部精细度和协调性会有明显进步。'],
+          [L.m[0], L.m[1], 'medium', '精细动作发展基本符合月龄水平。', '大部分手部操作能完成，精细度和速度还有提升空间。', '保持每日手工游戏时间，逐步引入涂鸦、折纸、使用工具等更复杂的操作。', '按月龄调整活动材料的大小和复杂度。'],
+          [L.g[0], L.g[1], 'good', '精细动作发展良好，手眼协调和指尖控制都在线。', '喜欢并擅长手工操作类活动，能够较长时间投入。', '引入更多创意手工项目（如粘贴画、穿珠子做项链），适当延长每次活动时间。', '保持每日手工时间，为上幼儿园的书写做准备。'],
+          [L.e[0], L.e[1], 'excellent', '精细动作能力出色，手部操作精细度和速度超过同龄水平。', '握笔、用剪刀、搭积木、穿珠子等技能都能熟练完成。', '提供更复杂的构建类玩具和艺术材料，支持深度探索。', '继续保持手部活动的多样性和挑战性。']
+        ]
+      },
+      language_dev: {
+        dimension: '语言发育',
+        rows: [
+          [L.i[0], L.i[1], 'intervention', '语言发育需要重点关注，表达和理解均明显落后于月龄预期。', '发音少、词汇量极小、不理解简单指令、缺乏交流意图。', '每天保证至少30分钟的高质量面对面互动，用简单清晰的语言描述正在做的事。', '建议同步进行听力筛查和语言发育评估。'],
+          [L.a[0], L.a[1], 'attention', '语言发育稍落后，需要更多语言输入和互动刺激。', '有交流意愿但表达有限，理解能力也偏弱。', '增加亲子共读时间，日常多进行命名和描述，给孩子充足的回应时间。', '连续4-8周密集互动后，词汇量和句式会有明显增加。'],
+          [L.m[0], L.m[1], 'medium', '语言发展基本符合月龄水平。', '能表达基本需求，理解和表达能力在正常范围内。', '保持每天固定的亲子阅读时间，多进行开放式提问，鼓励孩子用句子回答。', '逐步扩展词汇量和句式复杂度。'],
+          [L.g[0], L.g[1], 'good', '语言能力发展良好，表达和理解都比较好。', '词汇丰富、句式多样、能主动发起和维持对话。', '引入更多叙述和讨论类活动，鼓励孩子讲故事、描述经历。', '保持丰富的语言环境，逐步引入识字和书写前备技能。'],
+          [L.e[0], L.e[1], 'excellent', '语言能力优秀，表达流畅丰富，理解力强。', '词汇量大、语言逻辑清晰、能进行较复杂的叙述和讨论。', '鼓励孩子讲故事、编故事、参与角色扮演，进一步丰富语言表达形式。', '可开始接触更复杂的语言活动如背诵、复述和简单辩论。']
+        ]
+      },
+      social_emotion: {
+        dimension: '社交情绪',
+        rows: [
+          [L.i[0], L.i[1], 'intervention', '社交情绪发展需要重点关注，互动和情绪调节存在明显困难。', '回避目光接触、对人不感兴趣、情绪反应极端或淡漠、难以被安抚。', '优先建立安全依恋关系，减少环境和照护者的频繁变动，确保回应的一致性和可预测性。', '建议进行社交沟通和情绪行为的专项评估。'],
+          [L.a[0], L.a[1], 'attention', '社交情绪发展稍显滞后，需要更多积极的互动体验。', '对人有关注但互动质量不够高，情绪表达和调节能力偏弱。', '每天安排1-2段专属的一对一互动时间，跟随孩子的兴趣做互动，多回应积极情绪。', '连续4-6周后社交回应和情绪调节会有改善。'],
+          [L.m[0], L.m[1], 'medium', '社交情绪发展基本符合月龄。', '能与人互动、表达基本情绪，在熟悉环境中情绪较稳定。', '创造与小同伴互动的机会，帮助孩子理解和表达更复杂的情绪。', '提供安全的社交环境，支持孩子逐渐扩展社交圈。'],
+          [L.g[0], L.g[1], 'good', '社交情绪能力发展良好。', '喜欢与人互动、共情能力较好、在大多数社交场景中表现积极。', '提供更多样化的社交机会，引导孩子理解他人的观点和感受。', '保持积极的社交体验和情绪对话。'],
+          [L.e[0], L.e[1], 'excellent', '社交情绪能力优秀，共情和社交技巧都很出色。', '主动交朋友、善于识别和回应他人的情绪、在群体中受欢迎。', '鼓励孩子在小组中承担一些小组长或帮助者的角色练习。', '持续发展社交领导力和情绪智慧。']
+        ]
       }
     };
 
@@ -5188,6 +6623,46 @@ async function seedContentIfNeeded() {
           ['medium', '自主学习管理', '培养孩子独立规划和管理学习的能力。', '1.每周日和孩子一起做周学习计划\n2.让孩子自己预估每项任务的时长\n3.用完成清单自主追踪\n4.周末回顾计划和实际的差异', '8周', '每周日做计划'],
           ['good', '深度学习与元认知', '培养学习策略意识和自我反思能力。', '1.学习后讨论：我是怎么学会的？\n2.比较不同学习方法的效率\n3.尝试用自己的话教别人\n4.建立个人的"最佳学习方式清单"', '持续', '每周1-2次复盘'],
           ['excellent', '学术探究与创新', '在扎实的学习能力基础上进行学术性深度探索。', '1.选择一个感兴趣的学科领域做专题研究\n2.学习论文写作或学术展示的基本方法\n3.参加学科竞赛或科技创新活动\n4.建立个人知识管理系统，培养终身学习习惯', '持续', '每周3-4次']
+        ]
+      },
+      gross_motor: {
+        dimension: '大运动发育',
+        rows: [
+          ['intervention', '趴玩时间增加', '从孩子当前能接受的趴姿时间开始逐步延长。', '1.每次趴玩从30秒起，每天累计至少30分钟\n2.在孩子前方放有趣的玩具吸引抬头\n3.家长趴在对面做表情和声音互动\n4.在硬实的地垫上进行效果更好', '4周', '每天累计30分钟以上'],
+          ['intervention', '被动运动与抚触', '通过轻柔的被动运动和抚触促进本体感觉发展。', '1.每天洗澡后做5分钟婴儿抚触\n2.轻轻活动四肢做关节被动运动\n3.抱着缓慢摇摆和旋转\n4.在不同质感的垫子上活动', '持续', '每天2-3次'],
+          ['attention', '姿势转换练习', '重点练习当前卡住的姿势转换环节。', '1.确定孩子当前能完成的最高难度姿势\n2.在略低一级的姿势基础上练习向上一级转换\n3.每次练习不超过孩子疲劳点\n4.用玩具诱导主动移动而非被动摆放', '4周', '每天15-20分钟'],
+          ['attention', '核心力量游戏', '通过趣味游戏增强躯干核心肌群。', '1.坐姿接球游戏（需有人在背后保护）\n2.趴在大球上前后左右轻轻滚动\n3.仰卧起坐式拉手坐起\n4.隧道爬行游戏', '6周', '每天10-15分钟'],
+          ['medium', '户外大运动探索', '丰富户外运动体验促进协调和平衡。', '1.每周至少3次户外活动\n2.公园的滑梯、秋千、攀爬架轮流体验\n3.不同地面行走练习（草地、沙地、坡道）\n4.和小伙伴一起跑跳追逐', '持续', '每周3-5次每次30分钟']
+        ]
+      },
+      fine_motor: {
+        dimension: '精细动作',
+        rows: [
+          ['intervention', '感官触觉唤醒', '从基础的触觉和抓握练习开始。', '1.每天安排不同质感的触摸材料（布、毛刷、温水、米）\n2.从大而易抓的玩具开始（摇铃、软球）\n3.手把手辅助完成抓握动作\n4.鼓励用整只手探索和操作物体', '6周', '每天10分钟'],
+          ['intervention', '手眼协调基础', '建立手-眼-物体的基本连接。', '1.悬挂可拍打的玩具让宝宝伸手触碰\n2.示范把玩具放进容器再倒出来\n3.玩拍手游戏和手指谣\n4.提供安全的敲打玩具', '4周', '每天5-10分钟'],
+          ['attention', '指尖捏取训练', '重点发展拇指和食指的精确配合。', '1.提供小泡芙或安全的手指食物练习捏取\n2.玩按、抠、撕的游戏（如泡泡膜）\n3.大珠子串绳练习\n4.用粗蜡笔涂鸦', '4周', '每天10分钟'],
+          ['attention', '生活自理练习', '在日常生活中有意识地锻炼手部操作。', '1.鼓励自己用手抓食物吃\n2.练习用敞口杯喝水\n3.尝试自己脱袜子脱鞋\n4.帮忙做简单的家务（撕菜叶、擦拭）', '持续', '日常融入'],
+          ['medium', '建构和创意手工', '提升手部操作的复杂度和创造性。', '1.搭积木从2块逐步增加到6-8块\n2.简单的折纸和撕纸拼贴\n3.用橡皮泥做捏、搓、压等动作\n4.儿童安全剪刀剪纸条', '持续', '每周3-4次每次15-20分钟']
+        ]
+      },
+      language_dev: {
+        dimension: '语言发育',
+        rows: [
+          ['intervention', '面对面语言互动', '建立每日固定的高质量语言互动时间。', '1.每天至少30分钟面对面的专注互动\n2.用简单清晰的语言描述正在做的事\n3.模仿宝宝的发音并扩展成正确词汇\n4.减少背景噪音和屏幕时间', '8周', '每天累计30分钟以上'],
+          ['intervention', '亲子共读启动', '从最简单的绘本开始建立阅读习惯。', '1.选择色彩鲜明、画面简单、材质安全的绘本\n2.每天固定时段共读5-10分钟\n3.指图命名、学动物叫、做动作互动\n4.同一本书反复读建立熟悉感', '持续', '每天5-10分钟'],
+          ['attention', '词汇扩展输入', '有意识地增加词汇输入的量和质。', '1.外出时命名看到的物品、人和动作\n2.用形容词描述物品的属性（大、红、软）\n3.在日常对话中加入新词汇并重复使用\n4.唱儿歌和手指谣帮助记忆', '4周', '日常融入'],
+          ['attention', '对话促进技巧', '用提问和等待帮助孩子从单词过渡到短句。', '1.给孩子至少5秒的回应等待时间\n2.在孩子说的单词基础上扩展成短句\n3.少问是不是，多问在哪里、是什么\n4.对孩子说的话表现出真实的兴趣和回应', '6周', '日常融入'],
+          ['medium', '叙述和复述能力', '培养更长的语言表达和故事叙述能力。', '1.让孩子描述刚刚发生的事情\n2.一起看照片回忆并讲述经历\n3.讲一半故事让孩子猜结局\n4.玩角色扮演说不同的台词', '持续', '每天5-10分钟']
+        ]
+      },
+      social_emotion: {
+        dimension: '社交情绪',
+        rows: [
+          ['intervention', '安全依恋建立', '优先巩固照护者与孩子之间的安全感和信任。', '1.确保主要照护者稳定且回应一致\n2.每天至少30分钟一对一专注陪伴\n3.跟随孩子的兴趣不做主导\n4.多回应积极情绪减少过度纠正', '8周', '每天'],
+          ['intervention', '基础社交回应训练', '通过模仿和轮流游戏建立社交互动的基础。', '1.面对面模仿孩子的发声和表情\n2.玩轮流游戏（如你推我接球）\n3.用夸张的表情和语调吸引注意\n4.每次互动结束时给孩子微笑和拥抱', '6周', '每天10-15分钟'],
+          ['attention', '情绪命名与表达', '帮助孩子识别并用简单方式表达情绪。', '1.制作开心、难过、生气的表情卡片\n2.当孩子有情绪时帮他说出来\n3.读关于情绪的绘本并讨论\n4.用玩偶演示不同的情绪场景', '4周', '每天5-10分钟'],
+          ['attention', '同伴社交入门', '创造安全的同伴互动环境。', '1.从1-2个熟悉的小朋友开始\n2.准备双份相同玩具减少争抢\n3.安排结构化的合作游戏\n4.事后简单回顾好的互动时刻', '6周', '每周2-3次'],
+          ['medium', '共情能力培养', '引导孩子关注和理解他人的感受。', '1.读绘本时讨论角色的感受\n2.看到他人有情绪时帮孩子描述\n3.鼓励孩子说安慰别人的话\n4.玩角色互换的假装游戏', '6周', '每天日常融入']
         ]
       }
     };
@@ -5496,6 +6971,17 @@ async function getOwnedChild(userId, childId) {
   return rows[0] || null;
 }
 
+async function getDefaultChildForUser(userId) {
+  if (!userId) {
+    return null;
+  }
+  const [rows] = await pool.execute(
+    `${buildChildSelectSql()} WHERE user_id = ? ORDER BY is_default DESC, updated_at DESC, id DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0] || null;
+}
+
 function buildChildSelectSql() {
   return `SELECT id, user_id, name, nickname, gender, DATE_FORMAT(birthday, '%Y-%m-%d') AS birthday, avatar, is_default, current_height, current_weight, allergies, special_notes, tags, created_at, updated_at FROM children`;
 }
@@ -5651,7 +7137,27 @@ function getSceneProfileByKey(sceneKey) {
     meal_picky: { articleCategory: '营养健康', articleKeyword: '挑食', recipeKeyword: '补铁', subjectCode: 'reading_comprehension' },
     homework_focus: { articleCategory: '认知发展', articleKeyword: '专注', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
     peer_conflict: { articleCategory: '社交能力', articleKeyword: '同伴', recipeKeyword: '能量', subjectCode: 'expression_communication' },
-    morning_rush: { articleCategory: '行为习惯', articleKeyword: '习惯', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' }
+    morning_rush: { articleCategory: '行为习惯', articleKeyword: '习惯', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    kindergarten_separation_anxiety: { articleCategory: '情绪养育', articleKeyword: '分离', recipeKeyword: '早餐', subjectCode: 'expression_communication' },
+    screen_time_boundary: { articleCategory: '行为习惯', articleKeyword: '屏幕', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    night_waking_repeat: { articleCategory: '睡眠管理', articleKeyword: '夜醒', recipeKeyword: '晚餐', subjectCode: 'learning_metacognition' },
+    backtalk_defiance: { articleCategory: '情绪管理', articleKeyword: '顶嘴', recipeKeyword: '镁', subjectCode: 'expression_communication' },
+    turn_taking_boundary: { articleCategory: '社交能力', articleKeyword: '分享', recipeKeyword: '能量', subjectCode: 'expression_communication' },
+    sore_loser_meltdown: { articleCategory: '情绪管理', articleKeyword: '挫折', recipeKeyword: '镁', subjectCode: 'expression_communication' },
+    peer_exclusion_support: { articleCategory: '社交能力', articleKeyword: '同伴', recipeKeyword: '能量', subjectCode: 'expression_communication' },
+    reward_system_fatigue: { articleCategory: '纪律管理', articleKeyword: '奖励', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    repeated_rule_ignoring: { articleCategory: '行为习惯', articleKeyword: '规则', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    homework_start_resistance: { articleCategory: '认知发展', articleKeyword: '作业', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    task_freeze_at_first_question: { articleCategory: '认知发展', articleKeyword: '不会', recipeKeyword: '早餐', subjectCode: 'reading_comprehension' },
+    prolonged_mealtime_delay: { articleCategory: '营养健康', articleKeyword: '吃饭', recipeKeyword: '补铁', subjectCode: 'learning_metacognition' },
+    leave_table_after_two_bites: { articleCategory: '营养健康', articleKeyword: '进餐', recipeKeyword: '补铁', subjectCode: 'learning_metacognition' },
+    fall_asleep_delay: { articleCategory: '睡眠管理', articleKeyword: '入睡', recipeKeyword: '晚餐', subjectCode: 'learning_metacognition' },
+    rejected_request_meltdown: { articleCategory: '情绪管理', articleKeyword: '情绪', recipeKeyword: '镁', subjectCode: 'expression_communication' },
+    chasing_feed_loop: { articleCategory: '营养健康', articleKeyword: '喂养', recipeKeyword: '补铁', subjectCode: 'learning_metacognition' },
+    wakeup_activation_delay: { articleCategory: '行为习惯', articleKeyword: '起床', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    peer_join_hesitation: { articleCategory: '社交能力', articleKeyword: '同伴', recipeKeyword: '能量', subjectCode: 'expression_communication' },
+    boundary_breaks_in_the_moment: { articleCategory: '纪律管理', articleKeyword: '规则', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    slow_emotional_recovery_after_no: { articleCategory: '情绪管理', articleKeyword: '失落', recipeKeyword: '镁', subjectCode: 'expression_communication' }
   };
   return profiles[sceneKey] || { articleCategory: '行为习惯', articleKeyword: '', recipeKeyword: '', subjectCode: 'learning_metacognition' };
 }
@@ -5680,7 +7186,9 @@ function getWeeklySummaryProfileByDimension(dimensionKey) {
 
 function getWeeklyAgeStageKey(ageGroup) {
   const value = String(ageGroup || '').trim();
-  if (['1-2岁', '2-3岁', '1-3岁'].includes(value)) return '1-3岁';
+  if (['0-6月', '6-12月', '0-1岁'].includes(value)) return '0-1岁';
+  if (['1-1.5岁', '1.5-2岁', '1-2岁', '1-3岁'].includes(value)) return '1-2岁';
+  if (['2-3岁'].includes(value)) return '2-3岁';
   if (['3-4岁', '4-5岁', '5-6岁', '3-6岁'].includes(value)) return '3-6岁';
   if (['6-7岁', '7-8岁', '8-12岁', '6-12岁', '9-12岁'].includes(value)) return '6-12岁';
   if (value === '12岁以上') return '12岁以上';
@@ -6679,22 +8187,7 @@ async function weeklySummaryHandler(req, res) {
 }
 
 async function sceneSearchTagsHandler(req, res) {
-  const [rows] = await pool.execute(
-    `SELECT scene_key, scene_title, scene_category, principle_text, suggested_action
-     FROM parenting_scene_tags
-     WHERE status = 'active'
-     ORDER BY sort_order ASC, id ASC`
-  );
-  res.json({
-    success: true,
-    data: rows.map((row) => ({
-      sceneKey: row.scene_key,
-      sceneTitle: row.scene_title,
-      sceneCategory: row.scene_category,
-      principleText: row.principle_text || '',
-      suggestedAction: row.suggested_action || ''
-    }))
-  });
+  res.json({ success: true, data: await getCachedSceneTags() });
 }
 
 async function searchParentingArticlesByKeyword(keyword, page, pageSize, userId) {
@@ -7070,10 +8563,16 @@ async function parentingArticlesHandler(req, res) {
     res.status(400).json({ success: false, message: 'age_group参数无效' });
     return;
   }
+  const VALID_CONTENT_FORMS = new Set(['theory', 'method', 'both']);
+  if (req.query.content_form && !VALID_CONTENT_FORMS.has(String(req.query.content_form).trim())) {
+    res.status(400).json({ success: false, message: 'content_form参数无效' });
+    return;
+  }
   const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
   const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
   const offset = (page - 1) * pageSize;
   const paginationClause = ` LIMIT ${pageSize} OFFSET ${offset}`;
+  const cacheKey = buildParentingArticlesCacheKey(req.query || {});
   const params = [];
   const countParams = [];
   let whereClause = 'WHERE is_published = 1';
@@ -7093,13 +8592,26 @@ async function parentingArticlesHandler(req, res) {
     params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
   }
-  const [countRows] = await pool.execute(`SELECT COUNT(*) AS total FROM articles ${whereClause}`, countParams);
-  const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
+  if (req.query.content_form) {
+    whereClause += ' AND content_form = ?';
+    params.push(req.query.content_form);
+    countParams.push(req.query.content_form);
+  }
+  let cachedPayload = getCachedParentingArticles(cacheKey);
+  if (!cachedPayload) {
+    const [countRows] = await pool.execute(`SELECT COUNT(*) AS total FROM articles ${whereClause}`, countParams);
+    const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
+    cachedPayload = {
+      rows,
+      total: normalizeAggregateNumber(countRows[0] && countRows[0].total)
+    };
+    setCachedParentingArticles(cacheKey, cachedPayload);
+  }
   const data = [];
-  for (const row of rows) {
+  for (const row of cachedPayload.rows) {
     data.push(await normalizeArticle(row, getUserId(req)));
   }
-  const total = normalizeAggregateNumber(countRows[0] && countRows[0].total);
+  const total = cachedPayload.total;
   res.json({
     success: true,
     data: {
@@ -7641,7 +9153,7 @@ async function assessmentQuestionsHandler(req, res) {
     res.status(404).json({ success: false, message: '观察工具不存在' });
     return;
   }
-  res.json({ success: true, data: { assessment_code: code, age_group: req.query.age_group || '', questions: buildAssessmentQuestions(code) } });
+  res.json({ success: true, data: { assessment_code: code, age_group: req.query.age_group || '', questions: buildAssessmentQuestions(code, req.query.age_group || '') } });
 }
 
 function normalizeAssessmentLevel(percentage) {
@@ -7721,12 +9233,32 @@ function buildAssessmentAgeContext(assessmentCode, ageGroup, level) {
       '6-12岁': { ageNote: '6-12岁情绪能力进入精细化和策略化阶段，开始学习主动调节策略。', expectedByAge: '此年龄段应能识别多种复杂情绪并使用1-2种调节策略，但强烈情绪时仍需成人支持。', priorityFocus: '优先培养情绪调节工具箱（深呼吸、暂停、表达），在低强度情绪时练习使用。' },
       '12岁以上': { ageNote: '12岁以上情绪独立性和复杂性同步增长，青春期荷尔蒙变化带来新的情绪挑战。', expectedByAge: '此年龄段情绪波动和强度增加是正常的，重点看是否影响日常功能和人际关系。', priorityFocus: '优先保持开放的沟通渠道，不评判不追问，让孩子知道"任何时候都可以来找我"。' }
     },
-    learning: {
-      '1-3岁': { ageNote: '1-3岁学习以探索和模仿为主，学习适应更多体现在对日常流程的接受度上。', expectedByAge: '此年龄段抗拒和转移注意力都是正常的，重点看能否在引导下完成简单的多步骤活动。', priorityFocus: '优先建立固定的"一起做"时间，用游戏化方式引入学习活动。' },
-      '3-6岁': { ageNote: '3-6岁是学习习惯养成的黄金期，任务坚持、完成感和规则意识在此阶段建立。', expectedByAge: '此年龄段应能在成人陪伴下完成10-15分钟的结构化活动，但独立启动仍较困难。', priorityFocus: '优先生固定的每日学习时段，用"开始仪式"帮助大脑切换到学习模式。' },
-      '6-12岁': { ageNote: '6-12岁是学习适应能力的关键塑造期，小学阶段的习惯会影响整个学业生涯。', expectedByAge: '此年龄段应能独立启动和完成常规学习任务，对困难任务可能需要额外支持。', priorityFocus: '优先培养自主管理能力（计划、执行、检查），逐步减少成人陪伴和提醒。' },
-      '12岁以上': { ageNote: '12岁以上学习适应转向自主和策略化，需要更强的元认知和时间管理能力。', expectedByAge: '此年龄段应能独立规划学习、监控进度和调整策略，学业压力管理成为新课题。', priorityFocus: '优先帮助孩子建立个性化的学习系统，包括时间管理、复习策略和应试技巧。' }
-    }
+      learning: {
+        '1-3岁': { ageNote: '1-3岁学习以探索和模仿为主，学习适应更多体现在对日常流程的接受度上。', expectedByAge: '此年龄段抗拒和转移注意力都是正常的，重点看能否在引导下完成简单的多步骤活动。', priorityFocus: '优先建立固定的"一起做"时间，用游戏化方式引入学习活动。' },
+        '3-6岁': { ageNote: '3-6岁是学习习惯养成的黄金期，任务坚持、完成感和规则意识在此阶段建立。', expectedByAge: '此年龄段应能在成人陪伴下完成10-15分钟的结构化活动，但独立启动仍较困难。', priorityFocus: '优先生固定的每日学习时段，用"开始仪式"帮助大脑切换到学习模式。' },
+        '6-12岁': { ageNote: '6-12岁是学习适应能力的关键塑造期，小学阶段的习惯会影响整个学业生涯。', expectedByAge: '此年龄段应能独立启动和完成常规学习任务，对困难任务可能需要额外支持。', priorityFocus: '优先培养自主管理能力（计划、执行、检查），逐步减少成人陪伴和提醒。' },
+        '12岁以上': { ageNote: '12岁以上学习适应转向自主和策略化，需要更强的元认知和时间管理能力。', expectedByAge: '此年龄段应能独立规划学习、监控进度和调整策略，学业压力管理成为新课题。', priorityFocus: '优先帮助孩子建立个性化的学习系统，包括时间管理、复习策略和应试技巧。' }
+      },
+      gross_motor: {
+        '0-1岁': { ageNote: '0-1岁是大运动发展的第一波爆发期，从抬头到独立行走，每个里程碑都有大致的时间窗口。', expectedByAge: '约2-3月抬头稳，4-6月会翻身，6-8月能独坐，8-10月会爬行，10-14月扶站扶走。个体差异可达2-3个月。', priorityFocus: '优先保证每天充足的趴玩时间和地面自由活动，减少在推车、餐椅、学步车里的时间。' },
+        '1-2岁': { ageNote: '1-2岁是独立行走和探索的爆发期，从踉跄学步到稳健跑跳。', expectedByAge: '12-15月独立行走，18月能扶着上楼梯，2岁能跑能踢球。此阶段摔跤是正常学习过程。', priorityFocus: '优先提供安全的探索空间和丰富的户外运动机会，不过度保护也不过度push。' },
+        '2-3岁': { ageNote: '2-3岁是运动协调性快速提升期，从基础移动到复杂动作组合。', expectedByAge: '2岁半能双脚跳，3岁能单脚站片刻、骑三轮车。动作的流畅性和自信度在此阶段大幅提升。', priorityFocus: '优先保证每天至少1小时户外活动，提供攀爬、跳跃、投掷等多样化运动体验。' }
+      },
+      fine_motor: {
+        '0-1岁': { ageNote: '0-1岁是手部从反射性抓握到自主精确操作的转变期。', expectedByAge: '3-4月会合拢双手，5-6月会主动抓握，7-8月会换手，9-10月会用指尖捏取。每个小进步都值得鼓励。', priorityFocus: '优先提供各种安全可抓握的玩具和材料，多给孩子自己尝试用手的机会。' },
+        '1-2岁': { ageNote: '1-2岁是精细动作从基本抓握向工具使用的过渡期。', expectedByAge: '12-15月能用勺（会洒），15-18月能搭2-3块积木，18-24月能涂鸦、逐页翻书。手部操作开始有目的性。', priorityFocus: '优先提供涂鸦、搭积木、自己吃饭的练习机会，乱和洒是这个阶段的正常代价。' },
+        '2-3岁': { ageNote: '2-3岁是精细动作从操作到创造的关键期，手眼协调快速进步。', expectedByAge: '2岁半能串珠子，3岁能用安全剪刀。此阶段手工活动的完成度比精确度更重要。', priorityFocus: '优先生每天的手工和操作类活动，用安全剪刀、橡皮泥、积木等材料培养手部能力。' }
+      },
+      language_dev: {
+        '0-1岁': { ageNote: '0-1岁是语言前备期，从哭声到咿呀学语再到第一个有意义的词。', expectedByAge: '2-3月发咕咕声，6月左右发重复音节（哒哒），9月左右理解简单词汇，12月左右说出第一个词。', priorityFocus: '优先保证每天大量的面对面语言输入和回应，用母语清晰缓慢地描述日常活动。' },
+        '1-2岁': { ageNote: '1-2岁是语言爆发前期，从单词到双词组合再到短句。', expectedByAge: '15月左右词汇快速增长，18月能说10-20个词，24月能说50+词并组合双词句。理解远超前于表达。', priorityFocus: '优先通过亲子共读和日常对话扩展词汇量，多用开放性提问但接受孩子的简短回答。' },
+        '2-3岁': { ageNote: '2-3岁是语言复杂化期，从短句到复杂句再到叙述和对话。', expectedByAge: '2岁半左右词汇量快速增长，3岁能用3-5词句表达想法和讲故事。发音清晰度在此阶段快速提高。', priorityFocus: '优先通过讲故事、角色扮演和对话扩展句式复杂度，关注发音清晰度但不急于纠正。' }
+      },
+      social_emotion: {
+        '0-1岁': { ageNote: '0-1岁是社交情绪的基础建设期，核心是建立安全依恋和基本的社交回应。', expectedByAge: '2-3月社交性微笑，6-8月开始认生，8-10月出现分离焦虑，12月左右能用手指和声音引起注意。', priorityFocus: '优先保证主要照护者的稳定和回应一致性，多用积极的表情和语调回应宝宝的社交信号。' },
+        '1-2岁': { ageNote: '1-2岁是自我意识和社交探索的萌芽期。', expectedByAge: '15-18月能在镜子中认出自己，18-24月开始出现自我主张（我的、不要），此阶段平行游戏为主。', priorityFocus: '优先提供安全的探索环境和可预测的日常流程，接纳正在发展的自主意识。' },
+        '2-3岁': { ageNote: '2-3岁是社交技能和情绪调节的快速发展期。', expectedByAge: '2岁半左右开始出现真正的互动游戏，3岁左右能轮流和简单分享。情绪爆发频率仍然较高但恢复更快。', priorityFocus: '优先生创造与同龄孩子游戏的机会，教孩子用简单语言表达需求和感受而非行为爆发。' }
+      }
   };
   const codeContexts = contexts[assessmentCode] || contexts.focus;
   const result = codeContexts[stageKey] || codeContexts['3-6岁'];

@@ -1,6 +1,18 @@
 // AI聊天页面
 var app = getApp();
 var msgIdCounter = 0;
+var speechPlugin = null;
+var recordRecognitionManager = null;
+
+try {
+  speechPlugin = requirePlugin('WechatSI');
+  if (speechPlugin && speechPlugin.getRecordRecognitionManager) {
+    recordRecognitionManager = speechPlugin.getRecordRecognitionManager();
+  }
+} catch (err) {
+  speechPlugin = null;
+  recordRecognitionManager = null;
+}
 
 function generateMsgId() {
   msgIdCounter++;
@@ -12,6 +24,11 @@ Page({
     messages: [],
     inputValue: '',
     loading: false,
+    inputMode: 'text',
+    isRecording: false,
+    isRecognizing: false,
+    voiceSupported: false,
+    voiceHint: '',
     scrollToView: '',
     featureFlags: {
       aiChatEnabled: true,
@@ -20,7 +37,7 @@ Page({
     operationItems: [
       {
         icon: '🧠',
-        title: '成长观察',
+        title: '成长观察评估',
         desc: '通过测评和观察记录了解孩子能力发展情况，形成家庭训练建议。',
         type: 'assessment'
       },
@@ -32,13 +49,13 @@ Page({
       },
       {
         icon: '📚',
-        title: '育儿知识',
+        title: '育儿锦囊',
         desc: '整理亲子沟通、情绪管理、习惯培养和家庭教育内容。',
         type: 'parenting'
       },
       {
         icon: '📖',
-        title: '能力成长',
+        title: '每日训练',
         desc: '提供理解表达训练、口头复述录音、每日打卡和成长周报。',
         type: 'textbook'
       }
@@ -52,6 +69,7 @@ Page({
 
   onLoad: function() {
     this.syncFeatureFlags();
+    this.initVoiceRecognition();
     var self = this;
     var saved = wx.getStorageSync('chatMessages');
     if (saved && saved.length > 0) {
@@ -65,6 +83,14 @@ Page({
         scrollToView: 'msg-' + (saved.length - 1)
       });
     }
+  },
+
+  onHide: function() {
+    this.stopVoiceInput({ silent: true });
+  },
+
+  onUnload: function() {
+    this.stopVoiceInput({ silent: true });
   },
 
   syncFeatureFlags: function() {
@@ -91,6 +117,56 @@ Page({
     }
   },
 
+  initVoiceRecognition: function() {
+    var self = this;
+    if (!recordRecognitionManager) {
+      this.setData({
+        voiceSupported: false,
+        voiceHint: '当前基础库暂不支持语音输入'
+      });
+      return;
+    }
+
+    recordRecognitionManager.onRecognize = function(res) {
+      self.setData({
+        isRecognizing: true,
+        voiceHint: (res && res.result) ? ('正在识别：' + res.result) : '正在识别语音...'
+      });
+    };
+
+    recordRecognitionManager.onStop = function(res) {
+      var resultText = String((res && res.result) || '').trim();
+      var nextValue = resultText;
+      if (resultText && self.data.inputValue) {
+        nextValue = (self.data.inputValue + ' ' + resultText).trim();
+      }
+      self.setData({
+        isRecording: false,
+        isRecognizing: false,
+        inputMode: 'text',
+        inputValue: nextValue || self.data.inputValue,
+        voiceHint: resultText ? '语音已转成文字，可直接发送或再修改' : '没有识别到清晰语音，请再说一次'
+      });
+      if (!resultText) {
+        wx.showToast({ title: '没有识别到语音', icon: 'none' });
+      }
+    };
+
+    recordRecognitionManager.onError = function() {
+      self.setData({
+        isRecording: false,
+        isRecognizing: false,
+        voiceHint: '语音识别失败，请换安静环境再试'
+      });
+      wx.showToast({ title: '语音识别失败', icon: 'none' });
+    };
+
+    this.setData({
+      voiceSupported: true,
+      voiceHint: '可先语音输入，再转成文字发送'
+    });
+  },
+
   // 保存聊天记录到本地
   saveMessages: function() {
     var messages = this.data.messages || [];
@@ -109,6 +185,96 @@ Page({
     });
   },
 
+  toggleInputMode: function() {
+    if (this.data.inputMode === 'voice') {
+      this.stopVoiceInput({ silent: true, keepHint: true });
+      this.setData({
+        inputMode: 'text',
+        isRecognizing: false,
+        voiceHint: this.data.voiceSupported ? '可先语音输入，再转成文字发送' : '当前基础库暂不支持语音输入'
+      });
+      return;
+    }
+    if (!this.data.voiceSupported) {
+      wx.showToast({ title: '当前设备不支持语音输入', icon: 'none' });
+      return;
+    }
+    if (!this.data.featureFlags.aiChatEnabled) {
+      wx.showToast({ title: 'AI问答暂未开放', icon: 'none' });
+      return;
+    }
+    if (this.data.loading) {
+      wx.showToast({ title: '请等待当前回答完成', icon: 'none' });
+      return;
+    }
+    this.setData({
+      inputMode: 'voice',
+      voiceHint: '按住说话，松开后自动转成文字'
+    });
+  },
+
+  startVoiceInput: function() {
+    if (!recordRecognitionManager) {
+      wx.showToast({ title: '语音识别不可用', icon: 'none' });
+      return;
+    }
+    this.setData({
+      isRecording: true,
+      isRecognizing: false,
+      voiceHint: '正在录音，松开后自动识别文字'
+    });
+    recordRecognitionManager.start({
+      lang: 'zh_CN',
+      duration: 30000
+    });
+  },
+
+  onVoiceTouchStart: function() {
+    if (this.data.inputMode !== 'voice') {
+      return;
+    }
+    if (this.data.loading || this.data.isRecording || this.data.isRecognizing) {
+      return;
+    }
+    this.startVoiceInput();
+  },
+
+  onVoiceTouchEnd: function() {
+    if (!this.data.isRecording) {
+      return;
+    }
+    this.stopVoiceInput();
+  },
+
+  onVoiceTouchCancel: function() {
+    if (!this.data.isRecording) {
+      return;
+    }
+    this.stopVoiceInput({ cancelled: true });
+  },
+
+  stopVoiceInput: function(options) {
+    if (!recordRecognitionManager || !this.data.isRecording) {
+      return;
+    }
+    var cancelled = !!(options && options.cancelled);
+    this.setData({
+      isRecording: false,
+      isRecognizing: true,
+      voiceHint: (options && options.silent)
+        ? ((options && options.keepHint) ? this.data.voiceHint : '')
+        : (cancelled ? '正在结束录音...' : '正在把语音转成文字...')
+    });
+    recordRecognitionManager.stop();
+  },
+
+  onFollowupTap: function(e) {
+    const question = e.currentTarget.dataset.question;
+    if (!question) return;
+    this.setData({ inputValue: question });
+    this.sendMessage();
+  },
+
   // 发送消息
   sendMessage: function() {
     var self = this;
@@ -121,6 +287,11 @@ Page({
         title: 'AI问答暂未开放',
         icon: 'none'
       });
+      return;
+    }
+
+    if (!wx.getStorageSync('token')) {
+      app.promptLogin('请先登录后再使用AI问答功能');
       return;
     }
 
@@ -163,7 +334,8 @@ Page({
         role: 'bot',
         content: answer,
         markdownNodes: self.parseMarkdownToNodes(answer),
-        sources: sources
+        sources: sources,
+        structured: (result && result.structured) || null
       };
 
       var updatedMessages = self.data.messages.concat([botMessage]);

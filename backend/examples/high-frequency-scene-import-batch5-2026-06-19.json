@@ -1,0 +1,292 @@
+[
+  {
+    "type": "scene",
+    "scene_key": "chasing_feed_loop",
+    "scene_title": "不追着喂就不吃",
+    "scene_category": "营养支持",
+    "aliases": [
+      "追着喂饭",
+      "满屋追着喂",
+      "不追着喂就不吃",
+      "边走边喂才肯吃",
+      "吃饭要追着跑",
+      "追着喂才张嘴",
+      "离开餐桌喂饭",
+      "喂饭必须跟着走",
+      "不追着喂就停住",
+      "全家轮流追着喂"
+    ],
+    "principle_text": "先把吃饭地点和喂饭边界收回到餐桌，再让孩子重新把进食和固定环境连起来。",
+    "suggested_action": "从一天里最容易成功的一餐开始，固定在餐桌或餐椅上完成，离桌后这餐先结束，不再追着补喂。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先守住一顿固定餐桌饭",
+        "summary": "从最容易成功的一餐开始收边界，比三餐一起改更稳。",
+        "target_type": "scene_action",
+        "target_id": "chasing_feed_one_meal_anchor",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "离桌后这餐先结束",
+        "summary": "让孩子慢慢建立“吃饭发生在餐桌”的清楚连接。",
+        "target_type": "scene_action",
+        "target_id": "chasing_feed_end_after_leave",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "饭前先降零食和饮料",
+        "summary": "先把饥饿感和正餐连起来，追喂依赖通常会更容易松动。",
+        "target_type": "scene_action",
+        "target_id": "chasing_feed_reduce_snacks",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "全家统一喂饭边界",
+        "summary": "大人规则一致，孩子更容易从“看谁会追”转回正餐节奏。",
+        "target_type": "scene_action",
+        "target_id": "chasing_feed_family_alignment",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "wakeup_activation_delay",
+    "scene_title": "叫很多次还不起床",
+    "scene_category": "习惯执行",
+    "aliases": [
+      "叫很多次还不动",
+      "起床叫不动",
+      "早上叫很多遍",
+      "赖床不起",
+      "喊半天还不起床",
+      "早上很难叫醒",
+      "起床后一直赖着不动",
+      "早晨醒了也不起",
+      "催很多次还在床上",
+      "起床启动特别慢"
+    ],
+    "principle_text": "先把醒来和起身分开看，再用固定唤醒信号和第一步动作帮助孩子从床上真正动起来。",
+    "suggested_action": "先固定起床时间和唤醒顺序，起床后只抓“坐起来、下床、穿衣”前三步，不在床边反复谈判。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先抓起身前三步",
+        "summary": "把起床目标缩到坐起来、下床、穿衣，孩子更容易启动。",
+        "target_type": "scene_action",
+        "target_id": "wakeup_first_three_moves",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "固定唤醒顺序",
+        "summary": "每天同样的音乐、拉窗帘和短提示，会比随机催促更容易形成起床信号。",
+        "target_type": "scene_action",
+        "target_id": "wakeup_fixed_sequence",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "床边不反复谈判",
+        "summary": "起床当下保持短句和固定动作，能减少越叫越僵的循环。",
+        "target_type": "scene_action",
+        "target_id": "wakeup_no_bed_negotiation",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先检查晚上睡够没有",
+        "summary": "如果长期叫不动，先看睡眠总量和入睡时间，早晨执行才有基础。",
+        "target_type": "scene_action",
+        "target_id": "wakeup_check_sleep_budget",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "peer_join_hesitation",
+    "scene_title": "站在旁边却不敢加入",
+    "scene_category": "社交支持",
+    "aliases": [
+      "不会主动加入小朋友",
+      "不敢加入别人玩",
+      "站在旁边不敢加入",
+      "不会开口一起玩",
+      "看到别人玩只会看",
+      "想玩但不敢过去",
+      "不会主动找小朋友",
+      "加入同伴游戏困难",
+      "站在旁边看很久",
+      "不会说我能一起玩吗"
+    ],
+    "principle_text": "先把“加入”拆成观察、靠近、开口三个小动作，再让孩子在低压力场景里重复练熟。",
+    "suggested_action": "先和孩子练 1-2 句固定开场句，再从一对一或小范围活动开始，让他只完成一个加入动作。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先练固定开场句",
+        "summary": "把“我能一起玩吗”“轮到我时告诉我”先练熟，临场更容易开口。",
+        "target_type": "scene_action",
+        "target_id": "peer_join_practice_lines",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先从一对一加入",
+        "summary": "低压力小场景更适合孩子建立第一次主动加入的成功感。",
+        "target_type": "scene_action",
+        "target_id": "peer_join_small_group",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先完成靠近这一步",
+        "summary": "有些孩子卡在靠近前，先只练靠近和站定，比一次要求开口更稳。",
+        "target_type": "scene_action",
+        "target_id": "peer_join_approach_first",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "事后只复盘一个成功点",
+        "summary": "哪怕只是站近一点，也先把成功动作说出来，孩子更愿意下次再试。",
+        "target_type": "scene_action",
+        "target_id": "peer_join_one_success",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "boundary_breaks_in_the_moment",
+    "scene_title": "一到现场规则就守不住",
+    "scene_category": "规则支持",
+    "aliases": [
+      "一到现场守不住",
+      "临场就失守",
+      "规则现场就崩",
+      "说好了一到外面就不行",
+      "到了商场规则全没了",
+      "当下很难守住边界",
+      "临场总是破功",
+      "事先说好当场又变了",
+      "外出时规则守不住",
+      "现场一闹就改口"
+    ],
+    "principle_text": "先把最容易失守的现场挑出来，再把边界、预告和后续动作提前说清楚，减少临场改口。",
+    "suggested_action": "外出或高风险场景前先说一条核心规则和一个后续动作，到现场只重复同一句，不临时加码也不临时放水。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "外出前只说一条核心规则",
+        "summary": "规则越少越清楚，临场越容易真的守住。",
+        "target_type": "scene_action",
+        "target_id": "boundary_one_core_rule",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前说清后续动作",
+        "summary": "先让孩子知道如果没做到会发生什么，现场执行才更稳。",
+        "target_type": "scene_action",
+        "target_id": "boundary_predeclare_followup",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "现场只重复同一句",
+        "summary": "临场保持同一句短边界，能减少大人越说越乱、最后改口。",
+        "target_type": "scene_action",
+        "target_id": "boundary_repeat_same_line",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "事后回看最容易失守的点",
+        "summary": "找出是时间太长、人太多还是诱惑太强，下次才能提前布置。",
+        "target_type": "scene_action",
+        "target_id": "boundary_review_trigger",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "slow_emotional_recovery_after_no",
+    "scene_title": "被拒绝后很久缓不过来",
+    "scene_category": "情绪支持",
+    "aliases": [
+      "被拒绝后恢复很慢",
+      "哭很久停不下来",
+      "被拒绝后缓不过来",
+      "闹完很久才平复",
+      "情绪下去特别慢",
+      "哭闹后一直缓不过来",
+      "被说不行后难平复",
+      "发作后很久才安静",
+      "崩溃后收不回来",
+      "情绪过去特别久"
+    ],
+    "principle_text": "先把爆发和恢复分成两个阶段看，再帮孩子建立一套固定的降温路径，缩短情绪停留时间。",
+    "suggested_action": "孩子爆发后先不追问对错，直接进入固定恢复流程，比如抱一抱、喝水、安静角落、慢呼吸，等明显缓下来再复盘。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先固定恢复流程",
+        "summary": "让孩子每次都走同一条降温路径，恢复速度会更容易稳定。",
+        "target_type": "scene_action",
+        "target_id": "slow_recovery_fixed_sequence",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "恢复期先不讲道理",
+        "summary": "情绪还高的时候先帮孩子降温，复盘放到真正缓下来之后。",
+        "target_type": "scene_action",
+        "target_id": "slow_recovery_pause_reasoning",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "记录恢复时长",
+        "summary": "先看孩子通常要多久才缓下来，后面才知道是在变好还是卡住。",
+        "target_type": "scene_action",
+        "target_id": "slow_recovery_track_duration",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "平静时练自我安抚动作",
+        "summary": "在平静时练喝水、捏球、深呼吸这类动作，爆发后更容易用得上。",
+        "target_type": "scene_action",
+        "target_id": "slow_recovery_practice_soothing",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  }
+]

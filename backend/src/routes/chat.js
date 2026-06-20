@@ -270,6 +270,58 @@ function searchKnowledgeBase(query, intent) {
   return results;
 }
 
+function inferKnowledgeItemType(item) {
+  const text = [item.category, item.sub_category, item.tags, item.title]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (text.includes('recipe') || text.includes('nutrition') || text.includes('feeding')) {
+    return 'recipe';
+  }
+
+  if (text.includes('task') || text.includes('game') || text.includes('activity')) {
+    return 'task';
+  }
+
+  if (text.includes('scene') || text.includes('emotion') || text.includes('social')) {
+    return 'scene';
+  }
+
+  if (text.includes('assessment') || text.includes('milestone')) {
+    return 'assessment';
+  }
+
+  return 'article';
+}
+
+function getFallbackMatchedType(intent) {
+  switch (intent) {
+    case 'nutrition':
+    case 'recipes':
+      return 'recipe';
+    case 'games':
+      return 'task';
+    case 'emotion':
+    case 'potty':
+    case 'separation':
+    case 'safety':
+      return 'scene';
+    case 'assessment':
+      return 'assessment';
+    default:
+      return 'article';
+  }
+}
+
+function collectMatchedTypes(knowledgeItems, intent) {
+  const types = new Set(knowledgeItems.map(inferKnowledgeItemType));
+  if (types.size === 0) {
+    types.add(getFallbackMatchedType(intent));
+  }
+  return Array.from(types);
+}
+
 function buildPrompt(message, intent, knowledgeItems, context) {
   // 构建上下文
   let contextStr = '';
@@ -992,6 +1044,7 @@ router.post('/', async (req, res) => {
     
     // 检索知识库
     const knowledgeItems = searchKnowledgeBase(message, intent.intent);
+    const matchedTypes = collectMatchedTypes(knowledgeItems, intent.intent);
     
     // 生成专业回答
     const answerResult = await generateProfessionalAnswer(message, intent.intent, knowledgeItems, context);
@@ -1013,7 +1066,9 @@ router.post('/', async (req, res) => {
         confidence: intent.confidence,
         answer_source: answerResult.answer_source,
         ai_status: answerResult.ai_status,
-        fallback_reason: answerResult.fallback_reason || null
+        fallback_reason: answerResult.fallback_reason || null,
+        matched_types: matchedTypes,
+        age_group_used: ''
       }
     });
   } catch (err) {

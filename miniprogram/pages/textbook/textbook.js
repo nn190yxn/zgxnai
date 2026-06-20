@@ -1054,9 +1054,9 @@ Page({
         child_id: (currentChild && currentChild.id) || 0
       }
     }).then(function() {
-      console.log('[Textbook] 任务完成状态已同步到后端');
+      if (app.globalData.isDebug) console.log('[Textbook] 任务完成状态已同步到后端');
     }).catch(function(err) {
-      console.log('[Textbook] 同步任务完成状态失败:', err);
+      if (app.globalData.isDebug) console.log('[Textbook] 同步任务完成状态失败:', err);
     });
 
     this.loadReadingTasks();

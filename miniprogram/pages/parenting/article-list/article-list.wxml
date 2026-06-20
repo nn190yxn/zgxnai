@@ -16,6 +16,23 @@
     </view>
   </view>
 
+  <!-- 内容形态筛选 -->
+  <view class="filter-section form-filter">
+    <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
+      <view class="filter-list">
+        <view
+          class="filter-item form-item {{currentForm === item.id ? 'active' : ''}}"
+          wx:for="{{formList}}"
+          wx:key="id"
+          bindtap="onFormChange"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
   <!-- 分类筛选 -->
   <view class="filter-section">
     <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>

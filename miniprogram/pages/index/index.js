@@ -21,8 +21,8 @@ Page({
     heroImageReady: false,
     growthStatus: {
       weekCompletion: 68,
-      currentFocus: '围绕成长观察、能力训练和成长记录安排今天的育儿重点',
-      todaySuggestion: '从成长观察、能力成长或成长记录中选择一个开始'
+      currentFocus: '围绕成长观察、每日训练和成长记录安排今天的育儿重点',
+      todaySuggestion: '从成长观察、每日训练或成长记录中选择一个开始'
     },
     dailyPlanLoading: false,
     dailyPlanCards: [],
@@ -186,12 +186,12 @@ Page({
 
     var streakDays = allowDraftMetrics ? (metrics.streakDays || this.data.weeklyProgress.streakDays) : this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项能力成长任务') : '从成长观察、能力成长或成长记录中选择一个开始';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项每日训练任务') : '从成长观察、每日训练或成长记录中选择一个开始';
 
     this.setData({
         growthStatus: {
           weekCompletion: completionRate || this.data.growthStatus.weekCompletion,
-          currentFocus: '围绕成长观察、能力训练和成长记录安排今天的育儿重点',
+          currentFocus: '围绕成长观察、每日训练和成长记录安排今天的育儿重点',
           todaySuggestion: suggestion
         },
       weeklyProgress: {
@@ -313,8 +313,8 @@ Page({
 
   getPlanTypeLabel: function(type) {
     var map = {
-      ability_task: '能力训练',
-      parenting_article: '育儿方法',
+      ability_task: '每日训练',
+      parenting_article: '育儿锦囊',
       nutrition_recipe: '饮食支持',
       habit_reminder: '家庭提醒',
       onboarding: '开始设置'
@@ -363,26 +363,33 @@ Page({
       this.normalizeDailyPlanCard({
         id: 'guest_2',
         planDate: dateText,
-        type: 'habit_reminder',
-        title: '开始成长观察，了解孩子近期状态',
-        reason: '先完成一次观察，后面的陪伴建议会更有针对性。',
-        summary: '从专注、表达或习惯中选择一个方向，开始今天的成长观察。',
-        actionText: '去观察',
-        durationMinutes: 3,
-        targetType: 'assessment',
-        targetPath: '/pages/assessment/assessment'
-      }),
-      this.normalizeDailyPlanCard({
-        id: 'guest_3',
-        planDate: dateText,
         type: 'parenting_article',
-        title: '查看育儿知识，找到适合当前问题的内容',
-        reason: '按场景进入，更容易找到对应的育儿方法。',
-        summary: '从情绪、习惯、认知、社交、营养五类内容中开始查找。',
-        actionText: '去看看',
-        durationMinutes: 5,
-        targetType: 'parenting_home',
-        targetPath: '/pages/parenting/parenting'
+        title: '先登录并完善孩子档案，再生成更贴合年龄的育儿建议',
+        reason: '年龄、阶段和当前重点不同，首页建议内容也会不同。',
+        summary: '先完成登录，再补充孩子生日和基础情况，系统才会按年龄生成更准确的今日建议。',
+        actionText: '先登录',
+        durationMinutes: 2,
+        targetType: 'profile',
+        targetPath: '/pages/profile/profile'
+      })
+    ];
+  },
+
+  getNoChildDailyPlanCards: function() {
+    var today = new Date();
+    var dateText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    return [
+      this.normalizeDailyPlanCard({
+        id: 'child_setup_1',
+        planDate: dateText,
+        type: 'onboarding',
+        title: '先完善孩子档案，再生成今日育儿建议',
+        reason: '年龄不同，成长观察、营养建议和陪伴重点都会不一样。',
+        summary: '补充孩子生日和基础情况后，首页才会按当前年龄阶段生成更准确的建议。',
+        actionText: '去完善',
+        durationMinutes: 2,
+        targetType: 'child_profile',
+        targetPath: '/pages/profile/child-edit/child-edit'
       })
     ];
   },
@@ -423,7 +430,7 @@ Page({
     var completedCount = list.filter(function(item) { return item.completed; }).length;
     var firstCard = list[0] || null;
     var growthStatus = Object.assign({}, this.data.growthStatus, {
-      todaySuggestion: firstCard ? firstCard.title : '从成长观察、能力成长或成长记录中选择一个开始'
+      todaySuggestion: firstCard ? firstCard.title : '从成长观察、每日训练或成长记录中选择一个开始'
     });
     var todayTask = Object.assign({}, this.data.todayTask, firstCard ? {
       title: firstCard.title,
@@ -517,6 +524,10 @@ Page({
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      that.applyDailyPlan(that.getNoChildDailyPlanCards(), { date: '' });
+      return;
+    }
     that.setData({ dailyPlanLoading: true });
     app.ensureLogin().then(function() {
       return app.request({
@@ -584,6 +595,20 @@ Page({
       wx.showToast({ title: '入口暂未准备好', icon: 'none' });
       return;
     }
+    if (plan.targetPath === '/pages/profile/child-edit/child-edit') {
+      app.requireLoginForAction('请先完成微信登录，再完善孩子档案').then(function(canOperate) {
+        if (!canOperate) {
+          return;
+        }
+        wx.navigateTo({
+          url: plan.targetPath,
+          fail: function() {
+            wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          }
+        });
+      });
+      return;
+    }
     wx.navigateTo({
       url: plan.targetPath,
       fail: function() {
@@ -617,6 +642,11 @@ Page({
     }
     if (String(plan.id || '').indexOf('mock_') === 0) {
       wx.showToast({ title: '演示内容不可记录完成状态', icon: 'none' });
+      return;
+    }
+    if (String(plan.id || '').indexOf('child_setup_') === 0) {
+      wx.showToast({ title: '完善孩子档案后会生成正式建议', icon: 'none' });
+      that.navigateByDailyPlan(plan);
       return;
     }
     if (that._dailyPlanCompletePending) {
@@ -669,6 +699,12 @@ Page({
     if (!this.ensureFeatureEnabled('assessments', '成长观察暂未开放')) {
       return;
     }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      wx.showToast({ title: '请先完善孩子档案', icon: 'none' });
+      this.navigateByDailyPlan({ targetPath: '/pages/profile/child-edit/child-edit' });
+      return;
+    }
     wx.navigateTo({
       url: '/pages/assessment/assessment',
       fail: function() {
@@ -689,7 +725,7 @@ Page({
 
   // 跳转到育儿
   goToParenting() {
-    if (!this.ensureFeatureEnabled('parenting', '育儿知识暂未开放')) {
+    if (!this.ensureFeatureEnabled('parenting', '育儿锦囊暂未开放')) {
       return;
     }
     wx.navigateTo({
@@ -700,9 +736,9 @@ Page({
     });
   },
 
-  // 跳转到能力成长
+  // 跳转到每日训练
   goToTextbook() {
-    if (!this.ensureFeatureEnabled('education', '能力成长暂未开放')) {
+    if (!this.ensureFeatureEnabled('education', '每日训练暂未开放')) {
       return;
     }
     wx.navigateTo({
@@ -737,6 +773,12 @@ Page({
   // 查看进步报告
   goToGrowthRecord() {
     if (!this.ensureFeatureEnabled('growthRecord', '成长记录暂未开放')) {
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      wx.showToast({ title: '请先完善孩子档案', icon: 'none' });
+      this.navigateByDailyPlan({ targetPath: '/pages/profile/child-edit/child-edit' });
       return;
     }
     wx.navigateTo({

@@ -51,11 +51,11 @@
       </view>
 
       <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
-        <text class="module-name">能力成长训练</text>
-        <text class="module-desc">在家开展练习</text>
+        <text class="module-name">每日训练</text>
+        <text class="module-desc">今天带娃练什么</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
-        <text class="module-name">能力成长训练</text>
+        <text class="module-name">每日训练</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
@@ -65,11 +65,11 @@
       </view>
 
       <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card" bindtap="goToParenting">
-        <text class="module-name">育儿知识内容</text>
-        <text class="module-desc">查看场景方法</text>
+        <text class="module-name">育儿锦囊</text>
+        <text class="module-desc">遇到问题来这里找方法</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToParenting">
-        <text class="module-name">育儿知识内容</text>
+        <text class="module-name">育儿锦囊</text>
         <text class="module-desc">暂未开放</text>
       </view>
 

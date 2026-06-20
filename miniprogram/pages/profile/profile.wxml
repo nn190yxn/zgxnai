@@ -2,12 +2,31 @@
 <view class="page">
   <!-- 用户信息 -->
   <view class="user-section">
-    <view class="user-avatar">😊</view>
-    <view class="user-info">
-      <text class="user-name">{{userInfo.name || '游客用户'}}</text>
-      <text class="user-id">ID: {{userInfo.id || 'guest'}}</text>
+    <view class="user-avatar">
+      <image wx:if="{{userInfo && userInfo.avatar_url}}" src="{{userInfo.avatar_url}}" mode="aspectFill" class="user-avatar-img"></image>
+      <text wx:else>😊</text>
     </view>
-    <button class="login-btn" wx:if="{{!isLoggedIn}}" bindtap="login">登录</button>
+    <view class="user-info">
+      <text class="user-name">{{isLoggedIn ? (userInfo.nickname || '微信用户') : '未登录'}}</text>
+      <text class="user-id">{{isLoggedIn ? ('ID: ' + userInfo.id) : '先完成微信登录，再补充手机号'}}</text>
+      <text class="user-phone" wx:if="{{isLoggedIn && phoneNumberMasked}}">已绑定手机号 {{phoneNumberMasked}}</text>
+      <text class="user-phone" wx:elif="{{isLoggedIn}}">还没有绑定手机号</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="auth-card">
+      <view class="auth-copy">
+        <text class="auth-title">先完成微信登录，再继续孩子档案和成长记录</text>
+        <text class="auth-desc">登录后可以同步孩子资料、保存成长记录，补充手机号后也方便后续服务联系。</text>
+      </view>
+      <button class="auth-primary-btn" wx:if="{{!isLoggedIn}}" bindtap="login">微信一键登录</button>
+      <button class="auth-secondary-btn" wx:elif="{{!phoneNumber}}" open-type="getPhoneNumber" bindgetphonenumber="bindPhoneNumber">获取手机号</button>
+      <view class="auth-success" wx:else>
+        <text class="auth-success-title">登录和手机号绑定都已完成</text>
+        <text class="auth-success-desc">现在可以继续添加孩子档案、查看记录和使用成长服务。</text>
+      </view>
+    </view>
   </view>
 
   <!-- 成长服务状态卡片 -->

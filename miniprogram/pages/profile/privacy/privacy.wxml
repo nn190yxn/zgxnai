@@ -12,7 +12,7 @@
 
     <text class="section-title">二、收集的个人信息类型</text>
     <text class="section-text">我们可能收集以下类型的个人信息：</text>
-    <text class="list-item">• 账户信息：微信昵称、头像、OpenID等</text>
+    <text class="list-item">• 账户信息：微信昵称、头像、OpenID、已授权手机号等</text>
     <text class="list-item">• 儿童信息：姓名、出生日期、性别、健康信息等（用于为您提供个性化服务）</text>
     <text class="list-item">• 使用信息：浏览记录、成长记录、学习进度等</text>
     <text class="list-item">• 设备信息：设备型号、操作系统版本等（用于优化服务体验）</text>
@@ -75,9 +75,9 @@
     <text class="section-text">
       我们通过微信小程序提供服务，可能申请以下权限：
     </text>
-    <text class="list-item">• 用户信息：获取微信昵称和头像（用于个性化展示）</text>
+    <text class="list-item">• 用户信息：获取微信昵称、头像和手机号（用于个性化展示、账号识别和服务联系）</text>
     <text class="list-item">• 相册/摄像头：用于上传儿童照片和记录视频</text>
-    <text class="list-item">• 录音：用于口头复述录音功能</text>
+    <text class="list-item">• 录音：用于口头复述录音和 AI 问答语音转文字输入</text>
     <text class="list-item">• 地理位置：用于推荐本地化育儿资源（可选）</text>
     <text class="section-text">
       所有权限均可拒绝，不影响基础功能使用。

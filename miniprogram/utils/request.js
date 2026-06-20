@@ -159,14 +159,14 @@ function requiresAuthForPath(path) {
 function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
   var refreshToken = wx.getStorageSync('refreshToken') || app.globalData.refreshToken;
   var authPromise = refreshToken
-    ? app.refreshAccessToken().catch(function() {
-      return app.login();
-    })
-    : app.login();
+    ? app.refreshAccessToken()
+    : Promise.reject(new Error('missing refresh token'));
 
   authPromise.then(function() {
     request(app, Object.assign({}, options, { _skipAuthRetry: true })).then(resolve).catch(reject);
   }).catch(function(err) {
+    app.logout();
+    app.promptLogin('登录状态已失效，请重新登录');
     reject(err || fallbackError || new Error('请求失败'));
   });
 }

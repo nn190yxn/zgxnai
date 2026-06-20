@@ -48,6 +48,17 @@
   padding-bottom: 20rpx;
 }
 
+.filter-section.form-filter {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.filter-section.form-filter .filter-item.active {
+  color: var(--primary);
+  border-bottom: 4rpx solid var(--primary);
+  font-weight: 600;
+}
+
 .filter-scroll {
   width: 100%;
   white-space: nowrap;

@@ -295,6 +295,9 @@ describe('后端API测试', () => {
       expect(res.body.data.ai_status.configured).toBe(false);
       expect(res.body.data.fallback_reason).toBe('AI_NOT_CONFIGURED');
       expect(Array.isArray(res.body.data.sources)).toBe(true);
+      expect(Array.isArray(res.body.data.matched_types)).toBe(true);
+      expect(res.body.data.matched_types.length).toBeGreaterThan(0);
+      expect(res.body.data.age_group_used).toBe('');
     });
 
     it('缺少message应返回400', async () => {

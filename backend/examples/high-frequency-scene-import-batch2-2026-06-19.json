@@ -1,0 +1,292 @@
+[
+  {
+    "type": "scene",
+    "scene_key": "turn_taking_boundary",
+    "scene_title": "轮到别人就不肯给",
+    "scene_category": "社交支持",
+    "aliases": [
+      "不会轮流",
+      "轮到别人就生气",
+      "自己的玩具不给别人碰",
+      "玩具不肯轮流",
+      "轮流时就闹",
+      "别人一碰玩具就急",
+      "只许自己玩",
+      "不愿意轮流玩",
+      "轮到别人就抢回来",
+      "和小朋友轮流总吵起来"
+    ],
+    "principle_text": "先帮孩子建立玩具边界和轮流顺序，再在低冲突场景里重复练习等待与交换。",
+    "suggested_action": "先从家里一对一轮流开始，固定用计时器或口头顺序提示，让孩子先学会等 10-30 秒，再慢慢搬到同伴场景。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先在家里练短轮流",
+        "summary": "从熟悉玩具开始轮流 1-2 回合，让孩子先体验轮流会发生什么。",
+        "target_type": "scene_action",
+        "target_id": "turn_taking_home_practice",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前说清楚顺序",
+        "summary": "开始玩之前先说“你玩一分钟，接着轮到他”，让规则在冲突前出现。",
+        "target_type": "scene_action",
+        "target_id": "turn_taking_preview_order",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "允许保留一件核心玩具",
+        "summary": "先保护孩子最在意的一件玩具边界，其他玩具再练轮流，执行会更稳。",
+        "target_type": "scene_action",
+        "target_id": "turn_taking_keep_one_boundary",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "冲突后只复盘一个动作",
+        "summary": "事后只练一句替代表达，比如“轮到我时你告诉我”，比整段说教更容易落地。",
+        "target_type": "scene_action",
+        "target_id": "turn_taking_single_repair",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "sore_loser_meltdown",
+    "scene_title": "一输就哭和输不起",
+    "scene_category": "情绪支持",
+    "aliases": [
+      "一输就哭",
+      "输不起",
+      "比赛输了就发脾气",
+      "玩游戏输了就哭",
+      "输了就不玩了",
+      "输了就掀桌子",
+      "一输就闹",
+      "接受不了输",
+      "输了就怪别人",
+      "比赛输了情绪崩溃"
+    ],
+    "principle_text": "先把输赢带来的强情绪接住，再练孩子在失落里还能继续待一会儿，而不是立刻把注意力拉回输赢评判。",
+    "suggested_action": "先从低竞争、小输赢的游戏开始，家长提前示范输掉时怎么说、怎么停一停、怎么继续下一轮。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先练小输赢",
+        "summary": "用节奏短、输赢轻的游戏做练习，让孩子先体验“输了也能继续”。",
+        "target_type": "scene_action",
+        "target_id": "sore_loser_small_games",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "大人示范怎么输",
+        "summary": "家长故意示范“我有点失望，我喝口水再来”，孩子更容易学会照着做。",
+        "target_type": "scene_action",
+        "target_id": "sore_loser_parent_model",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "情绪下来后再聊策略",
+        "summary": "先等孩子从委屈里缓下来，再复盘刚才哪里卡住、下次准备怎么做。",
+        "target_type": "scene_action",
+        "target_id": "sore_loser_review_strategy",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "把焦点从输赢移到练习",
+        "summary": "每次只夸一个过程动作，比如坚持到最后、按规则来，比夸结果更能稳住情绪。",
+        "target_type": "scene_action",
+        "target_id": "sore_loser_process_focus",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "peer_exclusion_support",
+    "scene_title": "被同伴排斥没人一起玩",
+    "scene_category": "社交支持",
+    "aliases": [
+      "被同伴排斥",
+      "没人一起玩",
+      "不带他玩",
+      "在学校没有朋友",
+      "总是一个人玩",
+      "孩子被孤立",
+      "同学不跟他玩",
+      "幼儿园没人陪玩",
+      "总被小朋友拒绝",
+      "交不到朋友"
+    ],
+    "principle_text": "先帮孩子稳住被拒绝后的感受，再缩小社交目标，从一个可进入的小场景重新建立被接纳体验。",
+    "suggested_action": "先找一个更容易进入的同伴场景，比如固定同学、固定活动、固定时长，不急着一口气解决所有社交问题。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先找一个固定同伴",
+        "summary": "优先从一对一、小范围、固定对象开始，比直接丢进大群体更容易建立成功体验。",
+        "target_type": "scene_action",
+        "target_id": "peer_exclusion_one_friend",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先练开场句",
+        "summary": "提前和孩子练 1-2 句开场话，比如“我能一起玩吗”“轮到我时告诉我”。",
+        "target_type": "scene_action",
+        "target_id": "peer_exclusion_opening_lines",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "放学后先接住失落",
+        "summary": "孩子提到被拒绝时先接情绪，等他松下来后，再聊当时发生了什么。",
+        "target_type": "scene_action",
+        "target_id": "peer_exclusion_emotion_first",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "给孩子创造低压力社交机会",
+        "summary": "用课后短时约玩、共同任务或固定兴趣活动，帮孩子重新积累被接纳的经验。",
+        "target_type": "scene_action",
+        "target_id": "peer_exclusion_low_pressure_social",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "reward_system_fatigue",
+    "scene_title": "奖励贴纸渐渐失效",
+    "scene_category": "规则支持",
+    "aliases": [
+      "奖励失效",
+      "奖励没用了",
+      "贴纸奖励没用",
+      "奖励不管用",
+      "奖励一停就不做",
+      "奖励越来越难推动",
+      "给奖励也不听",
+      "奖励坚持不下去",
+      "奖励机制失灵",
+      "贴纸表失效"
+    ],
+    "principle_text": "先检查目标是不是太大、奖励是不是太远，再把奖励从推动全程改成支持起步和维持节奏。",
+    "suggested_action": "先把目标缩成一件具体小事，奖励改成即时、可见、短周期，再逐步把重点从外在奖励转到稳定流程和成就感。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先缩小目标",
+        "summary": "把“整晚都配合”改成“先开始 5 分钟”这类小目标，孩子更容易被激活。",
+        "target_type": "scene_action",
+        "target_id": "reward_shrink_goal",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "奖励放到当下",
+        "summary": "把奖励周期缩短到当天或当次，让孩子能马上看见努力和结果的连接。",
+        "target_type": "scene_action",
+        "target_id": "reward_immediate_feedback",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "保留固定流程",
+        "summary": "奖励只是辅助，真正稳定行为的还是固定流程和一致提醒，这一层要同时保留。",
+        "target_type": "scene_action",
+        "target_id": "reward_keep_routine",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "逐步撤掉外在奖励",
+        "summary": "当孩子能稳定做到时，慢慢把重点转成口头肯定、自主记录和结果成就感。",
+        "target_type": "scene_action",
+        "target_id": "reward_fade_external_reward",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "repeated_rule_ignoring",
+    "scene_title": "规则说很多次还是不听",
+    "scene_category": "规则支持",
+    "aliases": [
+      "规则说很多次还是不听",
+      "反复提醒还是没用",
+      "说很多遍都不听",
+      "提醒很多次还是不做",
+      "讲了规则还是照样犯",
+      "立了规则也没用",
+      "总要重复催",
+      "说了还是当没听见",
+      "提醒到最后还是拖着不做",
+      "家里规则执行不下去"
+    ],
+    "principle_text": "先看规则是不是太长、太多、太远，再把要求缩成一句话和一个后续动作，让孩子知道接下来会发生什么。",
+    "suggested_action": "每次只抓一条关键规则，提醒时只说一句短指令，配合一个固定后果或下一步动作，连续执行 1 周看变化。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "一次只抓一条规则",
+        "summary": "先选家里最常卡住的一条规则反复执行，规则少了，执行力会先起来。",
+        "target_type": "scene_action",
+        "target_id": "rule_one_at_a_time",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提醒缩成一句话",
+        "summary": "把提醒压缩到一句短指令，减少孩子在长篇话语里走神和对抗。",
+        "target_type": "scene_action",
+        "target_id": "rule_short_instruction",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前说清后续动作",
+        "summary": "先让孩子知道如果没做到，下一步会发生什么，执行会更稳定。",
+        "target_type": "scene_action",
+        "target_id": "rule_clear_followup",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "记录一周执行波动",
+        "summary": "把最容易失守的时间段和触发点记下来，方便判断规则卡在早晨、作业前还是睡前。",
+        "target_type": "scene_action",
+        "target_id": "rule_track_trigger",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  }
+]

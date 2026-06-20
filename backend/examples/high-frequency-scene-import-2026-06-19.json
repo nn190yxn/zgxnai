@@ -1,0 +1,234 @@
+[
+  {
+    "type": "scene",
+    "scene_key": "kindergarten_separation_anxiety",
+    "scene_title": "入园分离焦虑",
+    "scene_category": "情绪支持",
+    "aliases": [
+      "不肯去幼儿园",
+      "上幼儿园就哭",
+      "一到幼儿园门口就哭",
+      "入园哭闹",
+      "送园大哭",
+      "和妈妈分开就哭",
+      "去幼儿园总哭",
+      "入园焦虑",
+      "早上送园哭闹",
+      "幼儿园分离焦虑"
+    ],
+    "principle_text": "先稳住每天分开的节奏和预期感，再帮助孩子慢慢建立对幼儿园的安全感。",
+    "suggested_action": "把送园流程固定成到门口拥抱、说同一句告别语、交给老师三步，告别后直接离开，连续执行 1-2 周再看变化。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "固定送园告别三步",
+        "summary": "每天用同样的拥抱、告别语和交接顺序，让孩子知道分开会怎样发生。",
+        "target_type": "scene_action",
+        "target_id": "kindergarten_goodbye_ritual",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "回家后先接情绪再追问",
+        "summary": "放学后先说“今天分开很难受吧”，等孩子松下来，再聊学校里发生的事。",
+        "target_type": "scene_action",
+        "target_id": "kindergarten_after_school_connection",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前预演第二天送园",
+        "summary": "睡前用绘本、画图或角色扮演，把第二天的送园顺序先走一遍。",
+        "target_type": "scene_action",
+        "target_id": "kindergarten_preview_tomorrow",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "缩短告别时长",
+        "summary": "告别动作保持温和但短，避免门口反复安抚把分离过程越拖越长。",
+        "target_type": "scene_action",
+        "target_id": "kindergarten_short_goodbye",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "screen_time_boundary",
+    "scene_title": "屏幕时间管理",
+    "scene_category": "行为习惯",
+    "aliases": [
+      "总想看手机",
+      "总想看电视",
+      "总想玩平板",
+      "看动画片停不下来",
+      "玩平板停不下来",
+      "一不给看就闹",
+      "屏幕时间太长",
+      "放学就想玩手机",
+      "手机电视看太久",
+      "电子产品停不下来"
+    ],
+    "principle_text": "先把屏幕使用的边界说清楚，再用固定时段和替代活动降低来回拉扯。",
+    "suggested_action": "先定每天可看时段和结束提示，结束后立刻切到一项已经准备好的替代活动，比如拼搭、画画或下楼活动。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先定可看时段",
+        "summary": "把屏幕安排在固定时间段，用“什么时候可以看”替代全天随时协商。",
+        "target_type": "scene_action",
+        "target_id": "screen_fixed_slot",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "结束前提前预告",
+        "summary": "结束前 5 分钟和 1 分钟各提醒一次，让孩子从心理上开始切换。",
+        "target_type": "scene_action",
+        "target_id": "screen_countdown_warning",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "准备离屏替代活动",
+        "summary": "屏幕结束后马上接一项孩子熟悉的替代活动，减少空档带来的反复讨价还价。",
+        "target_type": "scene_action",
+        "target_id": "screen_replace_activity",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先守住睡前边界",
+        "summary": "优先把睡前 1 小时设成无屏幕时段，先从最影响睡眠和情绪的窗口开始收口。",
+        "target_type": "scene_action",
+        "target_id": "screen_before_bed_boundary",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "night_waking_repeat",
+    "scene_title": "半夜反复夜醒",
+    "scene_category": "睡眠支持",
+    "aliases": [
+      "半夜总醒",
+      "夜里频繁醒来",
+      "晚上老是醒",
+      "睡着后总醒",
+      "夜醒很多次",
+      "一晚上醒好几次",
+      "半夜哭醒",
+      "夜里反复醒",
+      "夜醒哄很久",
+      "孩子夜醒怎么办"
+    ],
+    "principle_text": "先看夜醒前后的固定触发因素，再用一致的安抚方式帮助孩子把夜间唤醒慢慢降下来。",
+    "suggested_action": "连续记录 5-7 天夜醒时间、入睡方式、白天午睡和睡前活动，优先调整最稳定出现的触发点。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先记夜醒触发点",
+        "summary": "记录夜醒时间、入睡方式、午睡时长和睡前活动，先找最常见的模式。",
+        "target_type": "scene_action",
+        "target_id": "night_waking_log_pattern",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "夜间安抚动作保持一致",
+        "summary": "夜里醒来时尽量用同一套轻声、短句、低刺激的安抚方式，减少越哄越兴奋。",
+        "target_type": "scene_action",
+        "target_id": "night_waking_consistent_soothing",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先收睡前刺激",
+        "summary": "优先检查睡前 1 小时的屏幕、追逐打闹和过晚进食，把刺激源先降下来。",
+        "target_type": "scene_action",
+        "target_id": "night_waking_reduce_stimulation",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "白天节律先稳定",
+        "summary": "固定起床时间和午睡边界，夜间睡眠通常会比单独盯着夜里更容易改善。",
+        "target_type": "scene_action",
+        "target_id": "night_waking_day_rhythm",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "backtalk_defiance",
+    "scene_title": "孩子一说就顶嘴",
+    "scene_category": "亲子互动",
+    "aliases": [
+      "孩子总顶嘴",
+      "一说就顶嘴",
+      "说一句回十句",
+      "叫他就回嘴",
+      "孩子爱顶撞大人",
+      "孩子说不得",
+      "越提醒越顶嘴",
+      "一管就对着干",
+      "说他两句就炸",
+      "孩子顶嘴怎么办"
+    ],
+    "principle_text": "先把对抗从语言输赢里拿出来，再把规则和后果说短、说清、说稳定。",
+    "suggested_action": "孩子顶嘴时先停下拉扯，只重复一句规则和一个后续动作，等情绪降下来后再讨论原因与补救。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先停口头拉扯",
+        "summary": "孩子开始回嘴时，先结束来回争辩，避免把规则问题升级成情绪对抗。",
+        "target_type": "scene_action",
+        "target_id": "backtalk_stop_argument",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "只保留一句规则",
+        "summary": "把提醒缩成一句短规则，比如“先把书包放好，再说别的”，减少长篇说教。",
+        "target_type": "scene_action",
+        "target_id": "backtalk_one_rule_sentence",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "情绪过后再复盘",
+        "summary": "等孩子和大人都平静后，再聊刚才卡在哪里、下次准备怎么做。",
+        "target_type": "scene_action",
+        "target_id": "backtalk_review_after_calm",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前练替代表达",
+        "summary": "在平静时教孩子用“我不愿意”“我想晚一点”这类句式替代顶撞和喊叫。",
+        "target_type": "scene_action",
+        "target_id": "backtalk_replace_expression",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  }
+]

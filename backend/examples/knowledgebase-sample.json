@@ -1,0 +1,66 @@
+[
+  {
+    "type": "article",
+    "title": "孩子总在写作业前拖拉，家里怎么先把开始动作立起来",
+    "summary": "先缩短开始动作，再固定一句提示语，让孩子更容易进入作业状态。",
+    "content": "很多孩子拖拉，卡住的不是能力，而是开始动作太大。家长先把作业前的动作缩成三步：坐下、拿笔、读第一题。每天先用同一句短提示语，例如“先做第一题，我陪你三分钟”。连续执行一周，再观察开始时间有没有缩短。",
+    "category": "行为习惯",
+    "sub_category": "作业启动",
+    "age_group": "6-9岁",
+    "tags": ["写作业", "拖拉", "开始动作"],
+    "author": "小牛育儿内容组",
+    "evidence_level": "A"
+  },
+  {
+    "type": "task",
+    "task_code": "read_69_dinner_retell",
+    "title": "晚饭后复述三句话",
+    "subject_code": "reading",
+    "age_range": "6-9岁",
+    "difficulty": 1,
+    "duration": 10,
+    "material": "当天共读的绘本或课文",
+    "objective": "帮助孩子把看过的内容用自己的话说出来。",
+    "steps": [
+      "先让孩子说出今天读了谁、在哪里、做了什么。",
+      "家长追问一题：最重要的一件事是什么。",
+      "最后让孩子用三句话重新讲一遍。"
+    ],
+    "parent_prompt": "你先说第一句，我帮你接第二句。",
+    "content": "这个任务适合晚饭后做，时间短，容易坚持。",
+    "tips": [
+      "孩子卡住时先提示人物或场景。",
+      "先求说出来，再求说完整。"
+    ],
+    "example_answer": "小明放学回家后先吃饭，后来和妈妈一起读书，最后把故事讲给爸爸听。"
+  },
+  {
+    "type": "scene",
+    "scene_key": "bedtime_wash_resistance",
+    "scene_title": "睡前洗漱磨蹭",
+    "scene_category": "作息习惯",
+    "aliases": ["睡前洗漱拖拉", "刷牙磨蹭", "晚上不肯洗漱"],
+    "principle_text": "先缩短指令，再把睡前流程固定成孩子能预期的顺序。",
+    "suggested_action": "把睡前流程固定成洗脸、刷牙、上床三步，每一步完成后立刻进入下一步，减少重复提醒。",
+    "recommendations": [
+      {
+        "result_type": "parenting_article",
+        "title": "睡前总拖拉时，先把提醒句子缩短",
+        "summary": "家长先减少长篇提醒，孩子更容易动起来。",
+        "target_type": "parenting_article",
+        "target_id": "",
+        "target_path": "",
+        "age_group": "3-6岁"
+      },
+      {
+        "result_type": "ability_task",
+        "title": "睡前流程图打卡",
+        "summary": "用看得见的三步流程帮助孩子进入睡前节奏。",
+        "target_type": "knowledge_task",
+        "target_id": "",
+        "target_path": "",
+        "age_group": "3-6岁"
+      }
+    ]
+  }
+]

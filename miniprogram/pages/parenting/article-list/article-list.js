@@ -12,6 +12,14 @@ Page({
       { id: 4, name: '社交能力' },
       { id: 5, name: '营养健康' }
     ],
+    // 内容形态列表
+    formList: [
+      { id: 'all', name: '全部' },
+      { id: 'method', name: '学方法' },
+      { id: 'theory', name: '学理论' }
+    ],
+    // 当前选中的内容形态
+    currentForm: 'all',
     // 年龄段列表
     ageList: [
       { id: 0, name: '全部年龄' },
@@ -162,6 +170,9 @@ Page({
     if (that.data.keyword) {
       params.keyword = that.data.keyword;
     }
+    if (that.data.currentForm !== 'all') {
+      params.content_form = that.data.currentForm;
+    }
 
     if (app.shouldUseMockFallback()) {
       var fallback = that.getLocalArticles();
@@ -251,6 +262,21 @@ Page({
     this.setData({
       [key]: true
     });
+  },
+
+  // 内容形态选择
+  onFormChange: function(e) {
+    var id = e.currentTarget.dataset.id;
+    if (id === this.data.currentForm) {
+      return;
+    }
+    this.setData({
+      currentForm: id,
+      articleList: [],
+      page: 1,
+      hasMore: true
+    });
+    this.loadArticles();
   },
 
   // 分类选择

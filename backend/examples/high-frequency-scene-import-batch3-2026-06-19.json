@@ -1,0 +1,234 @@
+[
+  {
+    "type": "scene",
+    "scene_key": "homework_start_resistance",
+    "scene_title": "作业拖到最后才开始写",
+    "scene_category": "学习支持",
+    "aliases": [
+      "不想开始写作业",
+      "写作业前一直磨蹭",
+      "拖到最后才写作业",
+      "作业总是迟迟不开始",
+      "一到写作业就去干别的",
+      "作业开始特别难",
+      "喊很多次才去写作业",
+      "作业前总要磨很久",
+      "写作业启动困难",
+      "放学后一直不开始写"
+    ],
+    "principle_text": "先把作业开始动作缩小，再把开始信号固定下来，让孩子更容易从拖着不动进入第一步。",
+    "suggested_action": "把开始动作固定成坐下、拿笔、做第一题三步，家长只陪最前面的 3-5 分钟，先把启动做出来。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先只做第一题",
+        "summary": "把开始目标缩成第一题或前 5 分钟，孩子更容易迈出第一步。",
+        "target_type": "scene_action",
+        "target_id": "homework_start_first_question",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "固定开始信号",
+        "summary": "每天用同一句短提示和同一时间段开始，减少临场拉扯。",
+        "target_type": "scene_action",
+        "target_id": "homework_start_fixed_signal",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "陪最前面三分钟",
+        "summary": "家长先陪孩子把开头搭起来，进入状态后再退出。",
+        "target_type": "scene_action",
+        "target_id": "homework_start_three_minutes",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先清掉开始前分心物",
+        "summary": "开写前先把零食、玩具和屏幕从桌面拿开，减少拖延抓手。",
+        "target_type": "scene_action",
+        "target_id": "homework_start_clear_distraction",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "task_freeze_at_first_question",
+    "scene_title": "一看题就说不会",
+    "scene_category": "学习支持",
+    "aliases": [
+      "看题就说不会",
+      "一写作业就说不会",
+      "题目还没看完就说不会",
+      "不会做就立刻放弃",
+      "遇到难题就卡住",
+      "作业不会就发呆",
+      "刚开始就说太难",
+      "不会做题就哭",
+      "题目不会就不动笔",
+      "一遇到题就求助"
+    ],
+    "principle_text": "先帮孩子把“不会”拆成看不懂、想不起来还是怕做错，再给一个更小的起点。",
+    "suggested_action": "家长先不急着讲答案，先追问“卡在题目哪里”，再只给一个起步线索，让孩子自己往前走一步。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先问卡在哪一步",
+        "summary": "把“不会”拆成读不懂、没想法还是怕做错，后面的支持才会更准。",
+        "target_type": "scene_action",
+        "target_id": "task_freeze_locate_block",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "只给一个线索",
+        "summary": "先给关键词、例题位置或第一步提示，让孩子保留自己完成的空间。",
+        "target_type": "scene_action",
+        "target_id": "task_freeze_one_hint",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "把难题拆成两步",
+        "summary": "先完成读题和圈关键词，再进入解题，孩子更容易从卡住走到动起来。",
+        "target_type": "scene_action",
+        "target_id": "task_freeze_split_steps",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先稳住怕错情绪",
+        "summary": "先让孩子知道“先试一小步也可以”，情绪松一点后才更愿意下笔。",
+        "target_type": "scene_action",
+        "target_id": "task_freeze_reduce_fear",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "prolonged_mealtime_delay",
+    "scene_title": "一顿饭拖很久",
+    "scene_category": "营养支持",
+    "aliases": [
+      "吃一顿饭很久",
+      "吃饭特别慢",
+      "一顿饭吃很长时间",
+      "吃饭总拖很久",
+      "半天吃不完一顿饭",
+      "一口饭含很久",
+      "吃饭总要磨蹭",
+      "一餐能吃一个小时",
+      "饭吃很久还没结束",
+      "正餐时间特别长"
+    ],
+    "principle_text": "先把饭桌节奏稳定下来，再看孩子卡在咀嚼、注意力还是吃饭流程上。",
+    "suggested_action": "先固定一段清晰的正餐时间，减少边吃边插入别的活动，让孩子在稳定节奏里完成这一餐。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "固定正餐时长",
+        "summary": "先给每顿饭一个稳定时段，饭桌节奏清楚了，拖延通常会先收一截。",
+        "target_type": "scene_action",
+        "target_id": "mealtime_delay_fixed_window",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "一餐只做一件事",
+        "summary": "吃饭时只保留吃饭，把玩具、屏幕和来回走动都先收掉。",
+        "target_type": "scene_action",
+        "target_id": "mealtime_delay_single_focus",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先看哪一口最容易卡",
+        "summary": "观察孩子是卡在开头、咀嚼还是快结束时，后面才方便对症调整。",
+        "target_type": "scene_action",
+        "target_id": "mealtime_delay_find_bottleneck",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "减少来回催促",
+        "summary": "把提醒缩成短句，频繁催促会让孩子更容易把注意力放在对抗上。",
+        "target_type": "scene_action",
+        "target_id": "mealtime_delay_short_prompt",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "leave_table_after_two_bites",
+    "scene_title": "吃两口就下桌",
+    "scene_category": "营养支持",
+    "aliases": [
+      "吃两口就跑",
+      "刚吃几口就下桌",
+      "吃饭坐不住总想走",
+      "吃着吃着就离开餐桌",
+      "饭没吃完就跑掉",
+      "总想离开餐桌",
+      "吃饭中途老下桌",
+      "坐餐椅没多久就跑",
+      "正餐时老想起来玩",
+      "吃饭时总离座"
+    ],
+    "principle_text": "先让孩子知道餐桌上的开始、进行和结束边界，再让离桌这件事变得可预期。",
+    "suggested_action": "开饭前先说清楚什么时候开始、吃到哪一步可以离桌，用固定结束信号帮助孩子建立完整进餐节奏。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "开饭前先说结束点",
+        "summary": "孩子知道吃到什么程度可以离桌，坐在餐桌前会更有预期感。",
+        "target_type": "scene_action",
+        "target_id": "leave_table_define_finish",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "离桌后不再追着喂",
+        "summary": "让孩子感受到餐桌是吃饭发生的地方，规则会更清楚。",
+        "target_type": "scene_action",
+        "target_id": "leave_table_no_chasing_feed",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先缩短坐餐时间",
+        "summary": "先从孩子能坐住的时长起步，坐稳后再慢慢拉长，比一开始要求太久更容易成功。",
+        "target_type": "scene_action",
+        "target_id": "leave_table_shorter_seat_time",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "结束后立刻切换下一步",
+        "summary": "饭后固定进入擦嘴、收餐具或洗手，帮助孩子把离桌从乱跑变成完整流程。",
+        "target_type": "scene_action",
+        "target_id": "leave_table_next_step",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  }
+]

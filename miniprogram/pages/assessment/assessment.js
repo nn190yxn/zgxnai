@@ -41,18 +41,31 @@ Page({
   },
 
   onLoad: function() {
-    this.loadCurrentChild();
-    this.applyAgeFilter();
-    this.loadAssessmentListFromServer();
-    this.loadHistoryCount();
-    this.checkPendingProgress();
+    this.bootstrap();
   },
 
   onShow: function() {
-    // 每次显示页面时刷新数据
-    this.loadCurrentChild();
-    this.loadHistoryCount();
-    this.checkPendingProgress();
+    this.bootstrap();
+  },
+
+  bootstrap: function() {
+    var that = this;
+    that.loadCurrentChild();
+    that.applyAgeFilter();
+    that.loadAssessmentListFromServer();
+    that.loadHistoryCount();
+    that.checkPendingProgress();
+
+    if (app.ensureCurrentChild) {
+      app.ensureCurrentChild().then(function(child) {
+        if (child && child.id) {
+          that.loadCurrentChild();
+          that.loadHistoryCount();
+        }
+      }).catch(function() {
+        return null;
+      });
+    }
   },
 
   // 加载当前孩子信息
@@ -241,11 +254,16 @@ Page({
         confirmText: '去添加',
         success: function(res) {
           if (res.confirm) {
-            wx.navigateTo({
-              url: '/pages/profile/child-edit/child-edit',
-              fail: function() {
-                wx.showToast({ title: '页面跳转失败', icon: 'none' });
+            app.requireLoginForAction('请先完成微信登录，再添加孩子档案').then(function(canOperate) {
+              if (!canOperate) {
+                return;
               }
+              wx.navigateTo({
+                url: '/pages/profile/child-edit/child-edit',
+                fail: function() {
+                  wx.showToast({ title: '页面跳转失败', icon: 'none' });
+                }
+              });
             });
           }
         }

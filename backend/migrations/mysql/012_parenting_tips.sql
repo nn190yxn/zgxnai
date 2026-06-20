@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS parenting_tips (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(50) DEFAULT '',
+  content_type VARCHAR(20) DEFAULT '',
+  concise_domain VARCHAR(30) DEFAULT '',
+  age_group VARCHAR(20) DEFAULT '',
+  scene_tags JSON DEFAULT NULL,
+  source_article_id INT DEFAULT NULL,
+  source_article_title VARCHAR(200) DEFAULT '',
+  source_author VARCHAR(100) DEFAULT '',
+  evidence_level VARCHAR(20) DEFAULT 'expert',
+  is_active TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_category (category),
+  KEY idx_content_type (content_type),
+  KEY idx_concise_domain (concise_domain),
+  KEY idx_age_group (age_group),
+  KEY idx_source_article (source_article_id),
+  FULLTEXT KEY ft_content (title, content)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

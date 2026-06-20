@@ -611,7 +611,7 @@ Page({
         that.setData({ comments: res.data || [] });
       }
     }).catch(function(err) {
-      console.log('获取评论失败', err);
+      if (app.globalData.isDebug) console.log('获取评论失败', err);
     }).finally(function() {
       that._commentsLoading = false;
     });

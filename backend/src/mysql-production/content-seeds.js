@@ -426,12 +426,16 @@ function buildReadingTasks() {
 const READING_TASKS = buildReadingTasks();
 
 const ASSESSMENT_META = {
-  sensory: { name: '儿童感觉统合能力发展评定量表', total_questions: 58, duration: 15, age_groups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'] },
-  focus: { name: '专注力观察', total_questions: 25, duration: 12, age_groups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'] },
-  adhd: { name: 'ADHD风险观察筛查', total_questions: 18, duration: 10, age_groups: ['4-6岁', '6-9岁', '9-12岁'] },
-  multi_intelligence: { name: '多元智能观察', total_questions: 40, duration: 20, age_groups: ['3-6岁', '6-9岁', '9-12岁'] },
-  emotion: { name: '情绪能力观察', total_questions: 22, duration: 12, age_groups: ['3-6岁', '6-9岁', '9-12岁'] },
-  learning: { name: '学习适应观察', total_questions: 35, duration: 18, age_groups: ['6-9岁', '9-12岁'] }
+  sensory: { name: '儿童感觉统合能力发展评定量表', total_questions: 58, duration: 15, age_groups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'], min_age_months: 36 },
+  focus: { name: '专注力观察', total_questions: 25, duration: 12, age_groups: ['3-4岁', '4-5岁', '5-6岁', '6-9岁', '9-12岁'], min_age_months: 36 },
+  adhd: { name: 'ADHD风险观察筛查', total_questions: 18, duration: 10, age_groups: ['4-6岁', '6-9岁', '9-12岁'], min_age_months: 48 },
+  multi_intelligence: { name: '多元智能观察', total_questions: 40, duration: 20, age_groups: ['3-6岁', '6-9岁', '9-12岁'], min_age_months: 36 },
+  emotion: { name: '情绪能力观察', total_questions: 22, duration: 12, age_groups: ['3-6岁', '6-9岁', '9-12岁'], min_age_months: 36 },
+  learning: { name: '学习适应观察', total_questions: 35, duration: 18, age_groups: ['6-9岁', '9-12岁'], min_age_months: 72 },
+  gross_motor: { name: '大运动发育观察', total_questions: 20, duration: 8, age_groups: ['0-1岁', '1-2岁', '2-3岁'], min_age_months: 0 },
+  fine_motor: { name: '精细动作观察', total_questions: 18, duration: 8, age_groups: ['0-1岁', '1-2岁', '2-3岁'], min_age_months: 0 },
+  language_dev: { name: '语言发育观察', total_questions: 22, duration: 10, age_groups: ['0-1岁', '1-2岁', '2-3岁'], min_age_months: 0 },
+  social_emotion: { name: '社交情绪观察', total_questions: 20, duration: 8, age_groups: ['0-1岁', '1-2岁', '2-3岁'], min_age_months: 0 }
 };
 
 const ASSESSMENT_DIMENSIONS = {
@@ -440,7 +444,11 @@ const ASSESSMENT_DIMENSIONS = {
   adhd: ['注意控制', '行为抑制', '活动水平'],
   multi_intelligence: ['语言智能', '逻辑智能', '空间智能', '人际智能'],
   emotion: ['情绪识别', '情绪表达', '情绪调节'],
-  learning: ['任务启动', '学习坚持', '学习策略', '自我管理']
+  learning: ['任务启动', '学习坚持', '学习策略', '自我管理'],
+  gross_motor: ['头颈控制', '躯干控制', '下肢力量', '全身协调'],
+  fine_motor: ['手掌抓握', '指尖捏取', '双手协调', '工具使用'],
+  language_dev: ['语音产出', '词汇理解', '句式表达', '语用交流'],
+  social_emotion: ['情绪识别', '社交回应', '依恋行为', '自我意识']
 };
 
 const ASSESSMENT_PROMPTS = {
@@ -449,16 +457,315 @@ const ASSESSMENT_PROMPTS = {
   adhd: '孩子在冲动和活动控制上的表现如何？',
   multi_intelligence: '孩子在不同智能领域中的表现如何？',
   emotion: '孩子在情绪识别与调节中的表现如何？',
-  learning: '孩子在学习适应和任务管理中的表现如何？'
+  learning: '孩子在学习适应和任务管理中的表现如何？',
+  gross_motor: '宝宝在大运动发展上的表现如何？',
+  fine_motor: '宝宝在精细动作发展上的表现如何？',
+  language_dev: '宝宝在语言发展上的表现如何？',
+  social_emotion: '宝宝在社交情绪发展上的表现如何？'
 };
 
-function buildAssessmentQuestions(code) {
+const ASSESSMENT_AGE_QUESTIONS = {
+  gross_motor: {
+    '0-1岁': [
+      { dimension: '头颈控制', text: '宝宝趴着时能否抬头并保持至少5秒？' },
+      { dimension: '头颈控制', text: '竖抱时宝宝的头部能否稳定不晃动？' },
+      { dimension: '头颈控制', text: '宝宝能否从侧卧自主翻到仰卧？' },
+      { dimension: '躯干控制', text: '宝宝能否从仰卧自主翻到侧卧或俯卧？' },
+      { dimension: '躯干控制', text: '有支撑时宝宝能否保持坐姿至少10秒？' },
+      { dimension: '躯干控制', text: '宝宝能否独立坐稳不需要手支撑？' },
+      { dimension: '躯干控制', text: '宝宝能否从坐姿转换到趴姿或躺姿？' },
+      { dimension: '下肢力量', text: '扶着宝宝腋下时双腿能否承重并做出蹬踏动作？' },
+      { dimension: '下肢力量', text: '宝宝能否用腹部贴地的方式匍匐前进？' },
+      { dimension: '下肢力量', text: '宝宝能否用手膝支撑的方式协调爬行？' },
+      { dimension: '下肢力量', text: '扶着家具时宝宝能否自己站起来？' },
+      { dimension: '全身协调', text: '宝宝能否扶着家具侧向移步？' },
+      { dimension: '全身协调', text: '单手扶站时宝宝能否弯腰捡起地上的玩具再站直？' },
+      { dimension: '全身协调', text: '宝宝能否独立站立至少5秒？' },
+      { dimension: '全身协调', text: '宝宝能否在俯卧位时尝试用手撑起上半身？' },
+      { dimension: '头颈控制', text: '宝宝仰卧时能否跟随移动的玩具转头？' },
+      { dimension: '全身协调', text: '宝宝在仰卧时能否双手抓住双脚玩耍？' },
+      { dimension: '躯干控制', text: '宝宝能否从趴姿自主翻成仰卧？' },
+      { dimension: '下肢力量', text: '宝宝仰卧时双腿是否交替有力地踢蹬？' },
+      { dimension: '全身协调', text: '宝宝被扶着站时是否会一上一下地弹跳？' }
+    ],
+    '1-2岁': [
+      { dimension: '下肢力量', text: '宝宝能否独立行走至少10步不倒？' },
+      { dimension: '下肢力量', text: '宝宝行走时能否手里拿着玩具？' },
+      { dimension: '全身协调', text: '宝宝能否蹲下捡起地上的玩具再站起来？' },
+      { dimension: '下肢力量', text: '宝宝能否扶着栏杆自己上楼梯？' },
+      { dimension: '全身协调', text: '宝宝能否倒退走几步？' },
+      { dimension: '全身协调', text: '宝宝能否尝试跑起来（步态可能不稳）？' },
+      { dimension: '躯干控制', text: '宝宝能否自己爬上沙发或矮床？' },
+      { dimension: '头颈控制', text: '宝宝能否在行走中转头看旁边的东西而保持平衡？' },
+      { dimension: '全身协调', text: '宝宝能否模仿踢球的动作？' },
+      { dimension: '下肢力量', text: '宝宝能否在扶持下双脚跳离地面？' },
+      { dimension: '全身协调', text: '宝宝能否推着玩具车或有轮子的物品向前走？' },
+      { dimension: '躯干控制', text: '宝宝能否坐在小凳子上自己站起来？' },
+      { dimension: '全身协调', text: '宝宝能否弯腰通过一个矮的通道或桌子下面？' },
+      { dimension: '头颈控制', text: '宝宝在跑动中突然停下能否保持不倒？' },
+      { dimension: '躯干控制', text: '宝宝能否从站立位自己坐到小椅子上？' },
+      { dimension: '下肢力量', text: '宝宝能否自己攀爬矮的滑梯或游乐设施？' },
+      { dimension: '全身协调', text: '宝宝能否尝试踮脚够高处的东西？' },
+      { dimension: '下肢力量', text: '宝宝能否在平地上双脚同时向前跳跃？' },
+      { dimension: '全身协调', text: '宝宝能否模仿简单的身体动作（如转圈、抬腿）？' },
+      { dimension: '躯干控制', text: '宝宝能否在不同地面（草地、沙地、地垫）上稳定行走？' }
+    ],
+    '2-3岁': [
+      { dimension: '下肢力量', text: '孩子能否双脚跳离地面并保持平衡落地？' },
+      { dimension: '下肢力量', text: '孩子能否单脚站立至少2秒？' },
+      { dimension: '全身协调', text: '孩子能否不扶栏杆自己上下楼梯（一步一阶）？' },
+      { dimension: '全身协调', text: '孩子能否跑得比较稳，很少摔倒？' },
+      { dimension: '躯干控制', text: '孩子能否骑三轮车或用脚划着前进？' },
+      { dimension: '全身协调', text: '孩子能否接住从1米外滚过来的大球？' },
+      { dimension: '下肢力量', text: '孩子能否从约20厘米高的台阶跳下并站稳？' },
+      { dimension: '全身协调', text: '孩子能否踮脚走几步？' },
+      { dimension: '躯干控制', text: '孩子能否在5厘米宽的低平衡木或画线上走几步？' },
+      { dimension: '全身协调', text: '孩子能否踢静止的球至少1米远？' },
+      { dimension: '头颈控制', text: '孩子能否在跑动中避开障碍物？' },
+      { dimension: '下肢力量', text: '孩子能否连续双脚跳至少3次？' },
+      { dimension: '全身协调', text: '孩子能否模仿简单的动物走路（如小兔跳、小熊走）？' },
+      { dimension: '躯体控制', text: '孩子能否在斜坡上稳定地走上去和走下来？' },
+      { dimension: '全身协调', text: '孩子能否手脚并用地攀爬游乐场的攀爬架？' },
+      { dimension: '下肢力量', text: '孩子能否尝试单脚跳至少1下？' },
+      { dimension: '全身协调', text: '孩子能否在成人帮助下玩简单的追逐游戏？' },
+      { dimension: '躯干控制', text: '孩子能否弯腰捡东西时膝盖微弯而不是直腿弯腰？' },
+      { dimension: '全身协调', text: '孩子能否模仿投掷动作（上手或低手）？' },
+      { dimension: '头颈控制', text: '孩子能否在荡秋千时保持头部稳定？' }
+    ]
+  },
+  fine_motor: {
+    '0-1岁': [
+      { dimension: '手掌抓握', text: '宝宝能否握住塞进手心的小玩具至少3秒？' },
+      { dimension: '手掌抓握', text: '宝宝能否双手在胸前合拢？' },
+      { dimension: '手掌抓握', text: '宝宝能否主动伸手去抓眼前的玩具？' },
+      { dimension: '指尖捏取', text: '宝宝能否用整只手把小的食物扒向自己？' },
+      { dimension: '手掌抓握', text: '宝宝能否把玩具从一只手换到另一只手？' },
+      { dimension: '指尖捏取', text: '宝宝能否用拇指和食指指尖捏起小饼干或泡芙？' },
+      { dimension: '双手协调', text: '宝宝能否同时用双手各拿一个玩具？' },
+      { dimension: '双手协调', text: '宝宝能否双手配合着把一个玩具对敲？' },
+      { dimension: '手掌抓握', text: '宝宝能否有意地松开手让玩具掉落？' },
+      { dimension: '指尖捏取', text: '宝宝能否用食指去戳或指东西？' },
+      { dimension: '双手协调', text: '宝宝能否用绳子拉近一个够不着的玩具？' },
+      { dimension: '工具使用', text: '宝宝能否用手把食物送进嘴里？' },
+      { dimension: '手掌抓握', text: '宝宝能否握住并摇晃一个能发出声音的摇铃？' },
+      { dimension: '双手协调', text: '宝宝能否在帮助下把圆环套在柱子上？' },
+      { dimension: '指尖捏取', text: '宝宝能否翻动较厚的书页（如布书、硬板书）？' },
+      { dimension: '工具使用', text: '宝宝能否用手指在食物或颜料上戳洞或涂抹？' },
+      { dimension: '双手协调', text: '宝宝能否把一个小物件放进敞口的容器里？' },
+      { dimension: '手掌抓握', text: '宝宝能否握住粗的蜡笔并做随意涂鸦？' }
+    ],
+    '1-2岁': [
+      { dimension: '手掌抓握', text: '宝宝能否用整只手握住粗蜡笔画线条？' },
+      { dimension: '指尖捏取', text: '宝宝能否用指尖捡起地上的小珠子或豆子？' },
+      { dimension: '双手协调', text: '宝宝能否把两到三块大积木叠起来？' },
+      { dimension: '工具使用', text: '宝宝能否用勺子自己舀食物送进嘴里（可能会洒）？' },
+      { dimension: '双手协调', text: '宝宝能否用一只手扶着纸另一只手画？' },
+      { dimension: '指尖捏取', text: '宝宝能否逐页翻纸板书或普通薄页？' },
+      { dimension: '双手协调', text: '宝宝能否把形状块放进对应的形状洞里？' },
+      { dimension: '工具使用', text: '宝宝能否用敞口杯自己喝水（可能会洒）？' },
+      { dimension: '手掌抓握', text: '宝宝能否双手配合拧开较大的瓶盖？' },
+      { dimension: '双手协调', text: '宝宝能否把木珠或大珠子串在绳子上？' },
+      { dimension: '指尖捏取', text: '宝宝能否模仿画出竖线和横线？' },
+      { dimension: '双手协调', text: '宝宝能否撕纸成小块？' },
+      { dimension: '工具使用', text: '宝宝能否脱下宽松的袜子或帽子？' },
+      { dimension: '手掌抓握', text: '宝宝能否揉捏橡皮泥或面团？' },
+      { dimension: '双手协调', text: '宝宝能否把积木排成一列当火车？' },
+      { dimension: '指尖捏取', text: '宝宝能否用两个手指捏起葡萄干大小的食物？' },
+      { dimension: '工具使用', text: '宝宝能否尝试拉拉链的大头？' },
+      { dimension: '双手协调', text: '宝宝能否把小物件从一个小瓶倒到另一个？' }
+    ],
+    '2-3岁': [
+      { dimension: '双手协调', text: '孩子能否搭起 6 到 8 块积木的高塔？' },
+      { dimension: '工具使用', text: '孩子能否用儿童安全剪刀剪开纸条？' },
+      { dimension: '手掌抓握', text: '孩子能否用三指或正确姿势握笔画圆？' },
+      { dimension: '指尖捏取', text: '孩子能否串起直径约1厘米的珠子？' },
+      { dimension: '双手协调', text: '孩子能否一页一页地翻薄页书？' },
+      { dimension: '工具使用', text: '孩子能否自己用勺子吃饭基本不洒？' },
+      { dimension: '双手协调', text: '孩子能否把纸对折（不一定整齐）？' },
+      { dimension: '工具使用', text: '孩子能否自己脱下宽松的外套？' },
+      { dimension: '手掌抓握', text: '孩子能否模仿画十字或交叉线？' },
+      { dimension: '指尖捏取', text: '孩子能否把小的拼图块放进对应的位置？' },
+      { dimension: '双手协调', text: '孩子能否拧上或拧开小瓶盖？' },
+      { dimension: '工具使用', text: '孩子能否尝试自己穿简单的鞋子（左右可能反）？' },
+      { dimension: '手掌抓握', text: '孩子能否握住较细的笔画出可辨认的圆形？' },
+      { dimension: '双手协调', text: '孩子能否用积木搭出桥或简单的结构？' },
+      { dimension: '指尖捏取', text: '孩子能否把豆子或小物件按颜色分类放进不同格子？' },
+      { dimension: '工具使用', text: '孩子能否在帮助下扣大纽扣？' },
+      { dimension: '双手协调', text: '孩子能否把橡皮泥搓成条或球？' },
+      { dimension: '手掌抓握', text: '孩子能否模仿画出至少一个闭合的形状？' }
+    ]
+  },
+  language_dev: {
+    '0-1岁': [
+      { dimension: '语音产出', text: '宝宝能否发出咕咕或咯咯的声音？' },
+      { dimension: '语音产出', text: '宝宝能否发出不同的元音（如啊、哦、呃）？' },
+      { dimension: '语音产出', text: '宝宝能否发出重复的音节（如哒哒、嘛嘛）？' },
+      { dimension: '语用交流', text: '宝宝能否用声音回应成人的说话？' },
+      { dimension: '语用交流', text: '宝宝能否用不同的哭声表达不同的需求？' },
+      { dimension: '词汇理解', text: '听到自己名字时宝宝是否会转头或有反应？' },
+      { dimension: '语用交流', text: '宝宝能否模仿成人发出的简单声音？' },
+      { dimension: '语音产出', text: '宝宝能否发出口唇音（如吧、噗）？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂简单指令如"来"或"给"？' },
+      { dimension: '语用交流', text: '宝宝能否用手指指向想要的东西？' },
+      { dimension: '词汇理解', text: '宝宝能否认出熟悉的物品名称（如灯、鞋）？' },
+      { dimension: '语音产出', text: '宝宝能否连续发出4个以上的不同音节？' },
+      { dimension: '语用交流', text: '宝宝能否用拍手或挥手表示高兴或再见？' },
+      { dimension: '词汇理解', text: '宝宝能否对"不"这个字有反应？' },
+      { dimension: '语音产出', text: '宝宝能否变化音调模仿说话的语气？' },
+      { dimension: '语用交流', text: '宝宝能否摇头表示不要？' },
+      { dimension: '词汇理解', text: '问熟悉的人或物在哪里时宝宝是否会看向正确方向？' },
+      { dimension: '语音产出', text: '宝宝能否发出多个不同的辅音（如 b、d、m、g）？' },
+      { dimension: '语用交流', text: '宝宝能否主动发起和成人的声音互动？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂并回应日常短语如"洗澡了"或"吃饭了"？' },
+      { dimension: '语音产出', text: '宝宝能否模仿简单的手势歌谣（如"拍拍手"）？' },
+      { dimension: '语用交流', text: '宝宝能否在成人说话时注视成人的脸？' }
+    ],
+    '1-2岁': [
+      { dimension: '词汇理解', text: '宝宝能否指出至少3个身体部位（如鼻子、眼睛）？' },
+      { dimension: '语音产出', text: '宝宝能否有意识地叫爸爸或妈妈？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂并执行简单的一步指令（如"把球拿来"）？' },
+      { dimension: '语用交流', text: '宝宝能否用单词加手势表达需求（如说"水"并指向杯子）？' },
+      { dimension: '语音产出', text: '宝宝能否说出至少 5 到 10 个有意义的单词？' },
+      { dimension: '词汇理解', text: '宝宝能否从一堆物品中挑出指定的那一个？' },
+      { dimension: '句式表达', text: '宝宝能否把两个单词放在一起（如"妈妈抱"）？' },
+      { dimension: '语用交流', text: '宝宝能否用摇头或说不来表达拒绝？' },
+      { dimension: '语音产出', text: '宝宝能否模仿动物叫声或其他环境声音？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂表示动作的词（如"坐""来""给"）？' },
+      { dimension: '句式表达', text: '宝宝能否说出含3个词以上的短句？' },
+      { dimension: '语用交流', text: '宝宝能否主动引起他人注意来看自己正在做的事？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂物品的所属关系（如"妈妈的鞋"）？' },
+      { dimension: '语音产出', text: '宝宝能否说出熟悉物品的名称约 20 个以上？' },
+      { dimension: '句式表达', text: '宝宝能否用简短的句子描述正在发生的事？' },
+      { dimension: '语用交流', text: '宝宝能否回答简单的是否问题？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂大小、颜色等基础概念词？' },
+      { dimension: '语音产出', text: '不熟悉的人能否听懂宝宝大约一半的话？' },
+      { dimension: '句式表达', text: '宝宝开始使用"我的"或"不要"表达主张？' },
+      { dimension: '语用交流', text: '宝宝能否参与轮流对话至少两个来回？' },
+      { dimension: '词汇理解', text: '宝宝能否听懂并执行两步指令（如"先拿鞋再过来"）？' },
+      { dimension: '句式表达', text: '宝宝能否用语言回忆刚发生过的事情？' }
+    ],
+    '2-3岁': [
+      { dimension: '语音产出', text: '不熟悉的人能否听懂孩子至少三分之二的话？' },
+      { dimension: '句式表达', text: '孩子能否说出 4 到 5 个词组成的完整句子？' },
+      { dimension: '词汇理解', text: '孩子能否听懂表示时间顺序的词（如"先""然后"）？' },
+      { dimension: '语用交流', text: '孩子能否回答是什么、在哪里、谁、干什么等问句？' },
+      { dimension: '词汇理解', text: '孩子能否听懂至少 3 个方位词（如上面、里面、下面）？' },
+      { dimension: '句式表达', text: '孩子能否用语言描述不在眼前的事物或过去的事件？' },
+      { dimension: '语用交流', text: '孩子能否在对话中维持同一个话题至少 3 个来回？' },
+      { dimension: '语音产出', text: '孩子能否较清楚地发出大部分声母和韵母？' },
+      { dimension: '词汇理解', text: '孩子能否听懂简单的因果关系（如"因为下雨所以要打伞"）？' },
+      { dimension: '句式表达', text: '孩子能否使用"了""着""过"等时态助词？' },
+      { dimension: '语用交流', text: '孩子能否根据听话人调整说话方式（如对宝宝说话更简单）？' },
+      { dimension: '词汇理解', text: '孩子能否听懂表示数量的概念（如多、少、都、一些）？' },
+      { dimension: '句式表达', text: '孩子能否用问句主动提问（如这是什么？他去哪了？）？' },
+      { dimension: '语用交流', text: '孩子能否在游戏中自言自语地说出自己在做什么？' },
+      { dimension: '语音产出', text: '孩子能否复述一个短小的故事片段？' },
+      { dimension: '词汇理解', text: '孩子能否根据用途说出物品的名称（如"可以用来喝水的"）？' },
+      { dimension: '句式表达', text: '孩子能否使用"因为""所以""但是"等连接词？' },
+      { dimension: '语用交流', text: '孩子能否在陌生环境中用语言表达需求而非哭闹？' },
+      { dimension: '词汇理解', text: '孩子能否听懂简单的比喻（如"像小鸟一样轻"）？' },
+      { dimension: '句式表达', text: '孩子能否用语言编简单的故事或描述想象的情境？' },
+      { dimension: '语用交流', text: '孩子能否在谈话中自然地切换角色（说话者和倾听者）？' },
+      { dimension: '语音产出', text: '孩子能否背诵简单的儿歌或唐诗？' }
+    ]
+  },
+  social_emotion: {
+    '0-1岁': [
+      { dimension: '情绪识别', text: '宝宝在出生后几周内是否会出现社交性微笑（对人有意识地笑）？' },
+      { dimension: '依恋行为', text: '宝宝被抱着或抚摸时能否被安抚平静？' },
+      { dimension: '社交回应', text: '宝宝能否跟随成人的脸转动头和眼睛？' },
+      { dimension: '情绪识别', text: '宝宝能否用不同的表情表达开心、生气和惊讶？' },
+      { dimension: '社交回应', text: '宝宝能否模仿简单的面部表情（如张嘴、嘟嘴）？' },
+      { dimension: '依恋行为', text: '宝宝在面对陌生人时是否出现认生反应（如盯着看或回避）？' },
+      { dimension: '情绪识别', text: '宝宝能否根据成人的语气判断情绪（如听到严厉语气会出现不安）？' },
+      { dimension: '社交回应', text: '玩躲猫猫时宝宝是否会发出笑声或有期待的表情？' },
+      { dimension: '依恋行为', text: '宝宝在疲倦或不适时是否优先寻求主要照护者的安抚？' },
+      { dimension: '自我意识', text: '宝宝能否对着镜子里的自己笑或拍打镜子？' },
+      { dimension: '社交回应', text: '宝宝能否用伸手或倾身表示想让成人抱？' },
+      { dimension: '情绪识别', text: '看到其他宝宝哭时宝宝是否会表现出不安？' },
+      { dimension: '依恋行为', text: '照护者离开时宝宝是否出现分离焦虑（哭闹或寻找）？' },
+      { dimension: '社交回应', text: '宝宝能否主动用声音或动作发起社交互动？' },
+      { dimension: '自我意识', text: '宝宝能否认出照片中的熟悉面孔？' },
+      { dimension: '社交回应', text: '成人对宝宝笑时宝宝是否通常会回笑？' },
+      { dimension: '依恋行为', text: '宝宝能否在熟悉的成人陪伴下接受陌生人短暂互动？' },
+      { dimension: '情绪识别', text: '宝宝能否感知家庭氛围的变化并做出反应？' },
+      { dimension: '社交回应', text: '宝宝能否参与轮流发出声音的互动游戏？' },
+      { dimension: '自我意识', text: '宝宝能否有意识地去触碰或移动自己身体的某个部位？' }
+    ],
+    '1-2岁': [
+      { dimension: '情绪识别', text: '宝宝能否识别图片中人物的简单情绪（开心、难过）？' },
+      { dimension: '社交回应', text: '宝宝能否在提示下说你好或再见？' },
+      { dimension: '依恋行为', text: '在新环境中宝宝是否愿意在照护者附近探索？' },
+      { dimension: '自我意识', text: '宝宝能否认出镜子或照片中的自己？' },
+      { dimension: '情绪识别', text: '别人表现出难过时宝宝是否会尝试安慰（如抱抱）？' },
+      { dimension: '社交回应', text: '宝宝能否和其他孩子在同一空间玩耍（平行游戏）？' },
+      { dimension: '依恋行为', text: '短暂分离后重逢时宝宝是否表现出明显的喜悦？' },
+      { dimension: '自我意识', text: '宝宝能否用名字或"我"来指代自己？' },
+      { dimension: '情绪识别', text: '宝宝能否用语言或手势表达自己的情绪（如说"怕"）？' },
+      { dimension: '社交回应', text: '宝宝能否模仿成人的日常行为（如打电话、擦桌子）？' },
+      { dimension: '依恋行为', text: '遇到困难时宝宝是否会主动寻求照护者的帮助？' },
+      { dimension: '自我意识', text: '宝宝是否开始表现出对自己的物品的占有意识？' },
+      { dimension: '情绪识别', text: '宝宝能否理解简单的情绪原因（如"他哭了因为摔倒了"）？' },
+      { dimension: '社交回应', text: '宝宝能否在简单的轮流游戏中等待自己的回合？' },
+      { dimension: '依恋行为', text: '在新环境中宝宝能否在照护者离开房间后继续玩几分钟？' },
+      { dimension: '自我意识', text: '宝宝能否从几个物品中选出属于自己的那一个？' },
+      { dimension: '社交回应', text: '宝宝能否主动把自己的玩具递给别人看（分享注意）？' },
+      { dimension: '情绪识别', text: '宝宝能否用"开心"或"哭"等词描述自己或他人的感受？' },
+      { dimension: '依恋行为', text: '宝宝在受挫后能否接受照护者的安抚并在短时间内恢复？' },
+      { dimension: '社交回应', text: '宝宝能否参与简单的假装游戏（如假装喂娃娃）？' }
+    ],
+    '2-3岁': [
+      { dimension: '情绪识别', text: '孩子能否命名开心、难过、生气、害怕等基本情绪？' },
+      { dimension: '社交回应', text: '孩子能否与另一个孩子进行简单的互动游戏（如一起搭积木）？' },
+      { dimension: '依恋行为', text: '照护者离开前预告后孩子能否较平静地接受短暂分离？' },
+      { dimension: '自我意识', text: '孩子能否说出自己的性别和年龄？' },
+      { dimension: '情绪识别', text: '孩子能否理解别人的感受可能和自己不同（如"你喜欢这个但我喜欢那个"）？' },
+      { dimension: '社交回应', text: '孩子能否在游戏中轮流和分享（可能需要提醒）？' },
+      { dimension: '依恋行为', text: '孩子在幼儿园或托班能否在老师安抚下平复？' },
+      { dimension: '自我意识', text: '孩子是否开始用"我"来捍卫自己的意愿？' },
+      { dimension: '情绪识别', text: '孩子能否讨论故事中人物的情绪和原因？' },
+      { dimension: '社交回应', text: '孩子能否和同伴一起完成一个简单的合作任务？' },
+      { dimension: '依恋行为', text: '孩子能否在大人短暂离开后恢复游戏而不是持续哭闹？' },
+      { dimension: '自我意识', text: '孩子能否表达自己的偏好（如"我想穿红色的"）？' },
+      { dimension: '情绪识别', text: '孩子能否知道什么行为会让别人开心或难过？' },
+      { dimension: '社交回应', text: '孩子能否主动邀请其他孩子一起玩？' },
+      { dimension: '依恋行为', text: '孩子能否把熟悉的成人作为安全基地去探索新环境？' },
+      { dimension: '自我意识', text: '孩子能否在简单的选择中表达并坚持自己的意见？' },
+      { dimension: '社交回应', text: '孩子能否在冲突中尝试使用语言而不是打或抢？' },
+      { dimension: '情绪识别', text: '孩子能否在提示下使用简单的情绪调节策略（如深呼吸）？' },
+      { dimension: '依恋行为', text: '孩子是否愿意和父母分享自己在外的经历？' },
+      { dimension: '社交回应', text: '孩子能否遵守简单的小组游戏规则？' }
+    ]
+  }
+};
+
+function buildAssessmentQuestions(code, ageGroup) {
   const meta = ASSESSMENT_META[code];
   const dimensions = ASSESSMENT_DIMENSIONS[code] || ['general'];
   const prompt = ASSESSMENT_PROMPTS[code] || '孩子的表现如何？';
   if (!meta) {
     return [];
   }
+
+  const ageBank = ASSESSMENT_AGE_QUESTIONS[code];
+  if (ageBank && ageGroup) {
+    const key = findBestAgeKey(Object.keys(ageBank), ageGroup);
+    const bank = ageBank[key];
+    if (bank && bank.length) {
+      return bank.slice(0, meta.total_questions).map((item, i) => ({
+        id: i + 1,
+        dimension: item.dimension || (dimensions[i % dimensions.length]),
+        text: `${i + 1}. ${item.text}`,
+        options: [
+          { value: 0, label: '很少出现' },
+          { value: 1, label: '偶尔出现' },
+          { value: 2, label: '经常出现' },
+          { value: 3, label: '持续稳定' }
+        ]
+      }));
+    }
+  }
+
   const questions = [];
   for (let i = 0; i < meta.total_questions; i++) {
     const dimension = dimensions[i % dimensions.length];
@@ -477,11 +784,55 @@ function buildAssessmentQuestions(code) {
   return questions;
 }
 
+function findBestAgeKey(ageKeys, ageGroup) {
+  if (ageKeys.includes(ageGroup)) return ageGroup;
+  for (const key of ageKeys) {
+    if (ageGroupMatches(key, ageGroup)) return key;
+  }
+  return ageKeys[0] || '';
+}
+
+function ageGroupMatches(configuredRange, childAgeGroup) {
+  function parseRange(range) {
+    const match = String(range || '').match(/^(\d+)[-~](\d+)岁$/);
+    if (match) return { min: Number(match[1]), max: Number(match[2]) };
+    const single = String(range || '').match(/^(\d+)岁以上$/);
+    if (single) return { min: Number(single[1]), max: 99 };
+    return null;
+  }
+  function parseChild(range) {
+    const match = String(range || '').match(/^(\d+)[-~](\d+)岁$/);
+    if (match) {
+      return (Number(match[1]) + Number(match[2])) / 2;
+    }
+    const single = String(range || '').match(/^(\d+)岁以上$/);
+    if (single) return Number(single[1]);
+    const infant = String(range || '').match(/^(\d+)[-~](\d+)岁$/);
+    if (infant) {
+      const minM = Number(infant[1]);
+      const maxM = Number(infant[2]);
+      return (minM + maxM) / 2;
+    }
+    if (String(range || '').includes('岁')) {
+      const m = String(range || '').match(/(\d+)/);
+      if (m) return Number(m[1]);
+    }
+    return 4;
+  }
+  const config = parseRange(configuredRange);
+  if (!config) return false;
+  const child = parseChild(childAgeGroup);
+  return child >= config.min && child <= config.max;
+}
+
 module.exports = {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
   READING_TASKS,
   ASSESSMENT_META,
+  ASSESSMENT_DIMENSIONS,
+  ASSESSMENT_AGE_QUESTIONS,
   buildAssessmentQuestions,
+  findBestAgeKey,
   buildReadingPracticeExample
 };

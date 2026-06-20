@@ -1,0 +1,234 @@
+[
+  {
+    "type": "scene",
+    "scene_key": "sleep_resist",
+    "scene_title": "睡前磨蹭",
+    "scene_category": "作息习惯",
+    "aliases": [
+      "睡前磨蹭",
+      "睡前拖延",
+      "刷牙磨蹭",
+      "收玩具磨蹭",
+      "上床前一直拖",
+      "睡前拖拖拉拉",
+      "到睡觉点还在磨",
+      "睡前一会儿要这个一会儿要那个",
+      "关灯前总拖很久",
+      "睡前流程走不动"
+    ],
+    "principle_text": "先把睡前流程缩成固定的少数几步，再让每一步都更可预期，孩子更容易从拖延转进睡觉节奏。",
+    "suggested_action": "把睡前流程固定成洗漱、收尾、上床三段，每段只给一句短提示，完成一段就直接进下一段。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "把睡前流程缩成三段",
+        "summary": "先减少流程长度和口头提醒量，孩子更容易跟上节奏。",
+        "target_type": "scene_action",
+        "target_id": "sleep_resist_three_steps",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "每段只保留一句提示",
+        "summary": "用短句替代连续催促，睡前对抗通常会先降下来。",
+        "target_type": "scene_action",
+        "target_id": "sleep_resist_short_prompts",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "提前十分钟收兴奋度",
+        "summary": "在正式睡前流程前先切换到低刺激活动，后面更容易走得动。",
+        "target_type": "scene_action",
+        "target_id": "sleep_resist_reduce_arousal",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "把临时要求放到明天",
+        "summary": "孩子睡前临时提要求时，先记录下来，第二天再处理，减少流程被打断。",
+        "target_type": "scene_action",
+        "target_id": "sleep_resist_defer_requests",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "morning_rush",
+    "scene_title": "早晨出门磨蹭",
+    "scene_category": "习惯执行",
+    "aliases": [
+      "早晨出门磨蹭",
+      "上学前磨蹭",
+      "早上总来不及",
+      "出门前一直拖",
+      "叫很多次还不动",
+      "早晨老是来不及",
+      "出门前找东西找很久",
+      "上学前总是手忙脚乱",
+      "早上准备特别慢",
+      "临出门还在磨蹭"
+    ],
+    "principle_text": "先把早晨动作前置到前一晚，再让早晨流程可见、可走、可收尾，冲突会比单纯催快更容易下降。",
+    "suggested_action": "把衣物、书包和关键物品前一晚摆好，早晨按固定顺序走起床、穿衣、洗漱、出门四段。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "前一晚把三样先摆好",
+        "summary": "先把衣服、书包和第二天要带的关键物品准备好，早晨会少掉一大块混乱。",
+        "target_type": "scene_action",
+        "target_id": "morning_rush_prepare_night_before",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "早晨流程固定成四段",
+        "summary": "起床、穿衣、洗漱、出门按顺序走，比边走边催更容易执行。",
+        "target_type": "scene_action",
+        "target_id": "morning_rush_four_steps",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "先抓最慢的一段",
+        "summary": "先找每天最容易卡住的一段，只修这一段，执行会更快起效。",
+        "target_type": "scene_action",
+        "target_id": "morning_rush_find_bottleneck",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "用到点信号收尾",
+        "summary": "用固定音乐、计时器或一句收尾提醒，帮助孩子从最后拖延切到出门。",
+        "target_type": "scene_action",
+        "target_id": "morning_rush_finish_signal",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "fall_asleep_delay",
+    "scene_title": "躺下很久还是睡不着",
+    "scene_category": "睡眠支持",
+    "aliases": [
+      "躺下很久睡不着",
+      "关灯后很久不睡",
+      "上床后翻来覆去",
+      "躺很久还醒着",
+      "睡着特别慢",
+      "入睡很久",
+      "关灯后一直讲话不睡",
+      "躺床上半天不睡",
+      "夜里迟迟睡不着",
+      "躺下后很久才睡着"
+    ],
+    "principle_text": "先把入睡困难和睡前磨蹭分开看，再找是兴奋度太高、作息不稳还是入睡依赖太强在卡住。",
+    "suggested_action": "连续记录 5-7 天上床时间、真正入睡时间和睡前活动，先调整最稳定出现的触发点。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先记上床和睡着的时间差",
+        "summary": "把真正入睡延迟量看清楚，后面调整才更有方向。",
+        "target_type": "scene_action",
+        "target_id": "fall_asleep_log_gap",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "优先降睡前兴奋度",
+        "summary": "先把追逐、屏幕和高刺激谈话降下来，很多入睡难会先松一截。",
+        "target_type": "scene_action",
+        "target_id": "fall_asleep_reduce_stimulation",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "固定起床时间",
+        "summary": "先把早晨起床时间稳住，夜里入睡通常会比单独盯着晚上更容易改善。",
+        "target_type": "scene_action",
+        "target_id": "fall_asleep_fix_wakeup",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "逐步减弱入睡依赖",
+        "summary": "如果孩子很依赖抱睡、陪睡或反复安抚，先一点点减弱，节奏更容易稳下来。",
+        "target_type": "scene_action",
+        "target_id": "fall_asleep_reduce_dependency",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  },
+  {
+    "type": "scene",
+    "scene_key": "rejected_request_meltdown",
+    "scene_title": "一被拒绝就情绪爆炸",
+    "scene_category": "情绪支持",
+    "aliases": [
+      "一被拒绝就崩溃",
+      "不答应就大哭",
+      "不能满足就爆炸",
+      "一说不行就闹",
+      "被拒绝就发脾气",
+      "说不可以就崩",
+      "一不能如愿就情绪爆炸",
+      "想要的东西不给就哭闹",
+      "一受限制就发作",
+      "拒绝他就立刻炸"
+    ],
+    "principle_text": "先把孩子对“被拒绝”的失落接住，再把边界说清楚，让他在失望里慢慢学会过渡。",
+    "suggested_action": "先固定一套拒绝后的回应顺序：命名情绪、重复边界、给过渡动作，避免在爆发当下反复讲道理。",
+    "recommendations": [
+      {
+        "result_type": "action",
+        "title": "先命名失落",
+        "summary": "先说出孩子此刻最强的情绪，很多爆发会先降一点。",
+        "target_type": "scene_action",
+        "target_id": "rejected_request_name_feeling",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "边界只重复一句",
+        "summary": "拒绝时只保留一句清楚边界，避免在情绪高点里越说越乱。",
+        "target_type": "scene_action",
+        "target_id": "rejected_request_one_boundary",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "马上给过渡动作",
+        "summary": "给孩子一个能接住情绪的小动作，比如抱一抱、喝水、去角落坐一会儿。",
+        "target_type": "scene_action",
+        "target_id": "rejected_request_transition_action",
+        "target_path": "",
+        "age_group": ""
+      },
+      {
+        "result_type": "action",
+        "title": "平静后再练替代表达",
+        "summary": "等情绪过去后，再教孩子用“我很想要”“我有点失望”替代直接爆炸。",
+        "target_type": "scene_action",
+        "target_id": "rejected_request_repair_language",
+        "target_path": "",
+        "age_group": ""
+      }
+    ]
+  }
+]

@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小牛育儿 30 天推广执行台</title>
+    <style>
+      :root {
+        --bg: #f6efe5;
+        --bg-strong: #ead7c0;
+        --panel: rgba(255, 251, 246, 0.88);
+        --panel-strong: rgba(255, 248, 240, 0.98);
+        --line: rgba(83, 48, 29, 0.12);
+        --text: #3f261b;
+        --muted: #7d5d4d;
+        --accent: #cb6f3f;
+        --accent-soft: #f4b487;
+        --accent-deep: #9f4f2f;
+        --good: #486b4d;
+        --shadow: 0 22px 60px rgba(95, 53, 30, 0.12);
+        --radius-lg: 28px;
+        --radius-md: 18px;
+        --radius-sm: 12px;
+        --sans: "Avenir Next", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--sans);
+        background:
+          radial-gradient(circle at top left, rgba(255, 214, 180, 0.8), transparent 28%),
+          radial-gradient(circle at top right, rgba(255, 236, 190, 0.7), transparent 22%),
+          linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+      }
+
+      .page-shell {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1.45fr 0.95fr;
+        gap: 24px;
+        padding: 30px;
+        border: 1px solid var(--line);
+        border-radius: 34px;
+        background: linear-gradient(135deg, rgba(255, 249, 241, 0.98), rgba(246, 228, 210, 0.92));
+        box-shadow: var(--shadow);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -80px;
+        top: -80px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(203, 111, 63, 0.18), rgba(203, 111, 63, 0));
+      }
+
+      .hero h1 {
+        margin: 0 0 14px;
+        font-family: var(--serif);
+        font-size: clamp(32px, 4vw, 52px);
+        line-height: 1.08;
+        letter-spacing: 0.02em;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.7;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        color: var(--accent-deep);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 36px;
+        height: 1px;
+        background: var(--accent);
+      }
+
+      .hero-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .metric-card,
+      .panel,
+      .stat-card,
+      .day-card,
+      .detail-card,
+      .library-card,
+      .review-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: var(--panel);
+        box-shadow: 0 12px 30px rgba(95, 53, 30, 0.06);
+        backdrop-filter: blur(10px);
+      }
+
+      .metric-card {
+        padding: 18px;
+      }
+
+      .metric-card span,
+      .stat-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .metric-card strong,
+      .stat-card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+        gap: 24px;
+        margin-top: 24px;
+        align-items: start;
+      }
+
+      .panel,
+      .detail-card,
+      .library-card,
+      .review-card {
+        padding: 22px;
+      }
+
+      .panel h2,
+      .detail-card h2,
+      .library-card h2,
+      .review-card h2,
+      .section-title {
+        margin: 0 0 14px;
+        font-family: var(--serif);
+        font-size: 24px;
+      }
+
+      .section-subtitle {
+        margin: -4px 0 18px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .toolbar input,
+      .toolbar select,
+      textarea,
+      input[type="number"],
+      input[type="text"] {
+        width: 100%;
+        padding: 14px 16px;
+        color: var(--text);
+        font: inherit;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(83, 48, 29, 0.14);
+        border-radius: 14px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+        transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        box-shadow: 0 10px 22px rgba(203, 111, 63, 0.22);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .ghost {
+        color: var(--accent-deep);
+        background: rgba(255, 243, 232, 0.9);
+        box-shadow: none;
+        border: 1px solid rgba(203, 111, 63, 0.16);
+      }
+
+      .plain {
+        padding: 0;
+        color: var(--accent-deep);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .top-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .stat-card {
+        padding: 18px;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .day-card {
+        padding: 18px;
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      }
+
+      .day-card:hover,
+      .day-card.active {
+        transform: translateY(-2px);
+        border-color: rgba(203, 111, 63, 0.45);
+        background: var(--panel-strong);
+      }
+
+      .day-card header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .day-tag,
+      .scene-tag,
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: var(--accent-deep);
+        background: rgba(203, 111, 63, 0.1);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .status-chip.done {
+        color: #fff;
+        background: linear-gradient(135deg, var(--good), #6a916f);
+      }
+
+      .day-card h3 {
+        margin: 12px 0 8px;
+        font-family: var(--serif);
+        font-size: 22px;
+        line-height: 1.28;
+      }
+
+      .day-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .detail-stack,
+      .library-stack,
+      .checklist,
+      .metrics-grid,
+      .text-grid,
+      .resource-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .resource-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-card h3,
+      .library-card h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .copy-row,
+      .flex-row,
+      .inline-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .content-box,
+      .markdown-box {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.64);
+        border: 1px solid rgba(83, 48, 29, 0.08);
+        color: var(--text);
+        line-height: 1.8;
+        white-space: pre-wrap;
+      }
+
+      .content-box strong {
+        font-family: var(--serif);
+      }
+
+      .check-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .check-row input {
+        width: 18px;
+        height: 18px;
+      }
+
+      details {
+        overflow: hidden;
+        border: 1px solid rgba(83, 48, 29, 0.08);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 16px 18px;
+        font-weight: 700;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .details-body {
+        padding: 0 18px 18px;
+      }
+
+      .markdown-box h3,
+      .markdown-box h4 {
+        margin: 18px 0 10px;
+        font-family: var(--serif);
+      }
+
+      .markdown-box p,
+      .markdown-box li {
+        line-height: 1.8;
+      }
+
+      .markdown-box ul,
+      .markdown-box ol {
+        margin: 10px 0 0 20px;
+      }
+
+      .markdown-box table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .markdown-box th,
+      .markdown-box td {
+        padding: 10px 12px;
+        border: 1px solid rgba(83, 48, 29, 0.12);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .markdown-box pre {
+        overflow: auto;
+        padding: 14px;
+        border-radius: 14px;
+        background: #fff6ee;
+        border: 1px solid rgba(83, 48, 29, 0.08);
+      }
+
+      .empty-state,
+      .notice {
+        padding: 18px;
+        border-radius: 18px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px dashed rgba(83, 48, 29, 0.18);
+      }
+
+      .sticky-column {
+        position: sticky;
+        top: 22px;
+      }
+
+      .footer-note {
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      @media (max-width: 1200px) {
+        .layout,
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .sticky-column {
+          position: static;
+        }
+      }
+
+      @media (max-width: 920px) {
+        .toolbar,
+        .top-stats,
+        .hero-meta,
+        .card-grid,
+        .metrics-grid,
+        .resource-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .page-shell {
+          padding: 16px;
+        }
+
+        .hero,
+        .panel,
+        .detail-card,
+        .library-card,
+        .review-card {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-shell">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Interactive Campaign Board</div>
+          <h1>小牛育儿 30 天推广执行台</h1>
+          <p>
+            这个页面会读取同目录下的 <code>miniprogram-30day-marketing-plan.md</code>，自动解析成 30 天执行卡、话术库、海报库和复盘区。你后面继续改 Markdown，HTML 重新打开后会同步更新。
+          </p>
+          <div class="top-stats">
+            <article class="stat-card">
+              <span>发布天数</span>
+              <strong>30</strong>
+            </article>
+            <article class="stat-card">
+              <span>核心动作</span>
+              <strong>先做成长观察</strong>
+            </article>
+            <article class="stat-card">
+              <span>会员触达</span>
+              <strong>3000 / 30天</strong>
+            </article>
+            <article class="stat-card">
+              <span>进度保存</span>
+              <strong>本地浏览器</strong>
+            </article>
+          </div>
+        </div>
+        <div class="hero-meta">
+          <article class="metric-card">
+            <span>主传播口号</span>
+            <strong id="heroTagline">加载中</strong>
+          </article>
+          <article class="metric-card">
+            <span>今日默认选择</span>
+            <strong id="heroToday">Day 1</strong>
+          </article>
+          <article class="metric-card">
+            <span>已完成动作</span>
+            <strong id="heroDone">0 / 120</strong>
+          </article>
+          <article class="metric-card">
+            <span>当前状态</span>
+            <strong id="heroState">等待加载 Markdown</strong>
+          </article>
+        </div>
+      </section>
+
+      <div class="layout">
+        <div>
+          <section class="panel">
+            <h2>30 天执行卡</h2>
+            <p class="section-subtitle">按周、场景和关键词筛选。点击卡片后，右侧会出现完整的小红书、短视频、封面和触达话术。</p>
+            <div class="toolbar">
+              <input id="searchInput" type="text" placeholder="搜索：写作业 / 吃饭 / 睡前 / 绘本 / 表达" />
+              <select id="weekFilter">
+                <option value="all">全部周次</option>
+                <option value="第1周">第1周</option>
+                <option value="第2周">第2周</option>
+                <option value="第3周">第3周</option>
+                <option value="第4周">第4周</option>
+                <option value="第5周">第5周</option>
+              </select>
+              <select id="sceneFilter">
+                <option value="all">全部场景</option>
+                <option value="专注">专注</option>
+                <option value="表达">表达</option>
+                <option value="吃饭">吃饭</option>
+                <option value="睡眠">睡眠</option>
+                <option value="阅读">阅读</option>
+                <option value="训练">训练</option>
+                <option value="转化">转化</option>
+              </select>
+              <select id="statusFilter">
+                <option value="all">全部状态</option>
+                <option value="pending">未完成</option>
+                <option value="done">已完成</option>
+              </select>
+            </div>
+            <div id="dayGrid" class="card-grid"></div>
+          </section>
+
+          <section class="panel" style="margin-top: 24px;">
+            <h2>文档总览</h2>
+            <p class="section-subtitle">这里保留原始 Markdown 的关键章节，方便随时回看口径、工作流、周主题和完整 SOP。</p>
+            <div id="overviewSection" class="library-stack"></div>
+          </section>
+        </div>
+
+        <div class="sticky-column">
+          <section class="detail-card">
+            <div class="flex-row" style="justify-content: space-between;">
+              <div>
+                <div id="detailWeek" class="eyebrow" style="margin-bottom: 8px;">Day Detail</div>
+                <h2 id="detailTitle">请选择一天</h2>
+              </div>
+              <div id="detailStatus" class="status-chip">待开始</div>
+            </div>
+            <p id="detailMeta" class="section-subtitle">加载完成后可查看完整内容。</p>
+            <div class="detail-stack">
+              <div class="detail-card" style="padding: 16px;">
+                <h3>执行打勾</h3>
+                <div class="checklist">
+                  <label class="check-row"><input type="checkbox" data-task="xhs" /> 小红书已发布</label>
+                  <label class="check-row"><input type="checkbox" data-task="video" /> 抖音 / 视频号已发布</label>
+                  <label class="check-row"><input type="checkbox" data-task="reach" /> 会员触达已完成</label>
+                  <label class="check-row"><input type="checkbox" data-task="review" /> 当天复盘已完成</label>
+                </div>
+              </div>
+
+              <div class="detail-card" style="padding: 16px;">
+                <div class="copy-row" style="justify-content: space-between;">
+                  <h3>小红书成稿</h3>
+                  <button class="ghost" id="copyXhsButton">复制小红书</button>
+                </div>
+                <div id="xhsBox" class="content-box">请选择左侧执行卡。</div>
+              </div>
+
+              <div class="detail-card" style="padding: 16px;">
+                <div class="copy-row" style="justify-content: space-between;">
+                  <h3>短视频口播</h3>
+                  <button class="ghost" id="copyVideoButton">复制口播</button>
+                </div>
+                <div id="videoBox" class="content-box">请选择左侧执行卡。</div>
+              </div>
+
+              <div class="resource-grid">
+                <div class="detail-card" style="padding: 16px;">
+                  <div class="copy-row" style="justify-content: space-between;">
+                    <h3>封面标题</h3>
+                    <button class="ghost" id="copyCoverButton">复制封面</button>
+                  </div>
+                  <div id="coverBox" class="content-box">请选择左侧执行卡。</div>
+                </div>
+
+                <div class="detail-card" style="padding: 16px;">
+                  <div class="copy-row" style="justify-content: space-between;">
+                    <h3>会员私聊</h3>
+                    <button class="ghost" id="copyReachButton">复制触达</button>
+                  </div>
+                  <div id="reachBox" class="content-box">请选择左侧执行卡。</div>
+                </div>
+              </div>
+
+              <div class="detail-card" style="padding: 16px;">
+                <h3>当天数据记录</h3>
+                <div class="metrics-grid">
+                  <input id="metricViews" type="number" min="0" placeholder="小红书浏览量" />
+                  <input id="metricSaves" type="number" min="0" placeholder="小红书收藏量" />
+                  <input id="metricPlays" type="number" min="0" placeholder="短视频播放量" />
+                  <input id="metricEntrances" type="number" min="0" placeholder="小程序进入人数" />
+                  <input id="metricReplies" type="number" min="0" placeholder="会员回复人数" />
+                  <input id="metricHighIntent" type="number" min="0" placeholder="高意向人数" />
+                </div>
+                <div style="margin-top: 12px;">
+                  <textarea id="metricNote" placeholder="记录当天最有用的话术、评论高频问题、需要明天放大的场景"></textarea>
+                </div>
+                <div class="inline-actions" style="margin-top: 12px;">
+                  <button id="saveMetricsButton">保存当天数据</button>
+                  <button class="ghost" id="copySummaryButton">复制当日执行摘要</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="library-card" style="margin-top: 24px;">
+            <h2>话术库与素材库</h2>
+            <p class="section-subtitle">高频使用的评论回复、异议处理、海报文案、周复盘模板都在这里。</p>
+            <div id="librarySection" class="library-stack"></div>
+          </section>
+        </div>
+      </div>
+
+      <p class="footer-note">建议通过本地静态服务或平台预览打开，这样 HTML 可以直接读取同目录 Markdown。</p>
+    </div>
+
+    <script>
+      const markdownPath = "./miniprogram-30day-marketing-plan.md";
+      const storageKey = "niuniu-marketing-plan-progress-v1";
+
+      const state = {
+        sections: {},
+        days: [],
+        selectedDay: 1,
+        progress: loadProgress(),
+      };
+
+      const overviewSectionIds = [
+        "1. 目标与原则",
+        "2. 产品卖点与对外口径",
+        "3. 目标人群与四条内容主线",
+        "4. 单人执行工作流",
+        "5. 30 天总日历",
+        "19. 发布SOP与每日执行清单",
+        "20. 素材清单与复盘表",
+      ];
+
+      const librarySectionIds = [
+        "10. 海报与封面提示词",
+        "24. 小程序模块卖点矩阵与营销切题方向",
+        "25. 按模块拆的 50 个内容选题标题库",
+        "26. 50 个标题对应的首句钩子库",
+        "21. 评论区回复库与私信承接话术",
+        "22. 异议处理与转化收口话术",
+        "23. 3000 会员分批触达排期与执行表",
+      ];
+
+      const heroTagline = document.getElementById("heroTagline");
+      const heroToday = document.getElementById("heroToday");
+      const heroDone = document.getElementById("heroDone");
+      const heroState = document.getElementById("heroState");
+      const dayGrid = document.getElementById("dayGrid");
+      const overviewSection = document.getElementById("overviewSection");
+      const librarySection = document.getElementById("librarySection");
+      const detailWeek = document.getElementById("detailWeek");
+      const detailTitle = document.getElementById("detailTitle");
+      const detailStatus = document.getElementById("detailStatus");
+      const detailMeta = document.getElementById("detailMeta");
+      const xhsBox = document.getElementById("xhsBox");
+      const videoBox = document.getElementById("videoBox");
+      const coverBox = document.getElementById("coverBox");
+      const reachBox = document.getElementById("reachBox");
+      const searchInput = document.getElementById("searchInput");
+      const weekFilter = document.getElementById("weekFilter");
+      const sceneFilter = document.getElementById("sceneFilter");
+      const statusFilter = document.getElementById("statusFilter");
+
+      document.querySelectorAll("input[data-task]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          const day = getSelectedDay();
+          if (!day) return;
+          const progress = getDayProgress(day.day);
+          progress.tasks[checkbox.dataset.task] = checkbox.checked;
+          persistProgress();
+          renderDayGrid();
+          renderDetail(day.day);
+          updateHero();
+        });
+      });
+
+      searchInput.addEventListener("input", renderDayGrid);
+      weekFilter.addEventListener("change", renderDayGrid);
+      sceneFilter.addEventListener("change", renderDayGrid);
+      statusFilter.addEventListener("change", renderDayGrid);
+
+      document.getElementById("saveMetricsButton").addEventListener("click", saveMetrics);
+      document.getElementById("copySummaryButton").addEventListener("click", copyDaySummary);
+      document.getElementById("copyXhsButton").addEventListener("click", () => copyCurrentField("xhs"));
+      document.getElementById("copyVideoButton").addEventListener("click", () => copyCurrentField("video"));
+      document.getElementById("copyCoverButton").addEventListener("click", () => copyCurrentField("cover"));
+      document.getElementById("copyReachButton").addEventListener("click", () => copyCurrentField("reach"));
+
+      init();
+
+      async function init() {
+        try {
+          const response = await fetch(markdownPath);
+          if (!response.ok) {
+            throw new Error(`读取 Markdown 失败：${response.status}`);
+          }
+          const markdown = await response.text();
+          state.sections = splitSections(markdown);
+          state.days = buildDays(state.sections);
+          heroTagline.textContent = extractTagline(state.sections["2. 产品卖点与对外口径"] || "") || "看懂孩子当前成长短板，少走弯路，带娃更省心";
+          renderOverview();
+          renderLibrary();
+          renderDayGrid();
+          renderDetail(state.selectedDay);
+          updateHero();
+          heroState.textContent = "Markdown 已加载";
+        } catch (error) {
+          heroState.textContent = "加载失败";
+          overviewSection.innerHTML = `<div class="notice">${escapeHtml(error.message)}。请通过本地静态服务或平台预览打开当前 HTML。</div>`;
+          dayGrid.innerHTML = `<div class="empty-state">当前页面需要读取同目录 Markdown 才能生成互动内容。</div>`;
+          librarySection.innerHTML = `<div class="empty-state">Markdown 未加载时，话术库和素材库无法生成。</div>`;
+        }
+      }
+
+      function splitSections(markdown) {
+        const sections = {};
+        const regex = /^##\s+(.+)$/gm;
+        const matches = [...markdown.matchAll(regex)];
+        matches.forEach((match, index) => {
+          const title = match[1].trim();
+          const start = match.index + match[0].length;
+          const end = index + 1 < matches.length ? matches[index + 1].index : markdown.length;
+          sections[title] = markdown.slice(start, end).trim();
+        });
+        return sections;
+      }
+
+      function buildDays(sections) {
+        const xhsMap = parseDayBlocks(sections["15. 30 条小红书可直接发布版"] || "", ["标题", "正文"]);
+        const videoMap = parseDayBlocks(sections["16. 30 条抖音口播逐字稿版"] || "", ["标题", "口播"]);
+        const coverMap = parseCoverBlocks(sections["17. 30 条小红书封面大标题与配图文案"] || "");
+        const reachMap = parseNumberedQuotes(sections["18. 30 天会员私聊逐日发送模板"] || "");
+
+        return Array.from({ length: 30 }, (_, index) => {
+          const day = index + 1;
+          const week = getWeekLabel(day);
+          const scene = getSceneLabel(day);
+          const xhs = xhsMap[day] || { 标题: `Day ${day}`, 正文: "" };
+          const video = videoMap[day] || { 标题: `Day ${day}`, 口播: "" };
+          const cover = coverMap[day] || { title: xhs.标题 || `Day ${day}`, subtitle: "" };
+          const reach = reachMap[day] || "";
+          return {
+            day,
+            week,
+            scene,
+            cta: getCta(day),
+            xhsTitle: xhs.标题 || `Day ${day}`,
+            xhsBody: xhs.正文 || "",
+            videoTitle: video.标题 || `Day ${day}`,
+            videoScript: video.口播 || "",
+            coverTitle: cover.title || "",
+            coverSubtitle: cover.subtitle || "",
+            reach,
+          };
+        });
+      }
+
+      function parseDayBlocks(section, fieldNames) {
+        const blocks = {};
+        const regex = /### Day (\d+)([\s\S]*?)(?=\n### Day \d+|$)/g;
+        let match;
+        while ((match = regex.exec(section))) {
+          const day = Number(match[1]);
+          const block = match[2];
+          const record = {};
+          fieldNames.forEach((field) => {
+            const fieldRegex = new RegExp("- " + field + "：`([\\s\\S]*?)`(?=\\n- |$)");
+            const found = block.match(fieldRegex);
+            record[field] = found ? cleanValue(found[1]) : "";
+          });
+          blocks[day] = record;
+        }
+        return blocks;
+      }
+
+      function parseCoverBlocks(section) {
+        const blocks = {};
+        const regex = /(\d+)\. 主标题：`([^`]+)`\s+副标题：`([^`]+)`/g;
+        let match;
+        while ((match = regex.exec(section))) {
+          blocks[Number(match[1])] = { title: match[2].trim(), subtitle: match[3].trim() };
+        }
+        return blocks;
+      }
+
+      function parseNumberedQuotes(section) {
+        const blocks = {};
+        const regex = /(\d+)\. `([^`]+)`/g;
+        let match;
+        while ((match = regex.exec(section))) {
+          blocks[Number(match[1])] = match[2].trim();
+        }
+        return blocks;
+      }
+
+      function cleanValue(value) {
+        return value
+          .replace(/^`|`$/g, "")
+          .replace(/\n+/g, "\n")
+          .trim();
+      }
+
+      function getWeekLabel(day) {
+        if (day <= 7) return "第1周";
+        if (day <= 14) return "第2周";
+        if (day <= 21) return "第3周";
+        if (day <= 28) return "第4周";
+        return "第5周";
+      }
+
+      function getSceneLabel(day) {
+        if (day <= 7) return "专注";
+        if (day <= 14) return "表达";
+        if (day <= 17) return "吃饭";
+        if (day <= 21) return day === 18 || day === 19 ? "睡眠" : "吃饭";
+        if (day <= 24) return "阅读";
+        if (day <= 28) return "训练";
+        return "转化";
+      }
+
+      function getCta(day) {
+        if (day === 7 || day === 14 || day === 21 || day === 28 || day === 30) return "领 7 天服务";
+        if (day >= 25 && day <= 27) return "先试 10 分钟";
+        if (day === 29) return "先做成长观察";
+        return day % 2 === 0 ? "先看短板" : "先做成长观察";
+      }
+
+      function renderOverview() {
+        overviewSection.innerHTML = overviewSectionIds
+          .map((id) => createDetailsCard(id, state.sections[id] || ""))
+          .join("");
+      }
+
+      function renderLibrary() {
+        librarySection.innerHTML = librarySectionIds
+          .map((id) => createDetailsCard(id, state.sections[id] || ""))
+          .join("");
+      }
+
+      function createDetailsCard(title, markdown) {
+        if (!markdown) {
+          return `<div class="empty-state">${escapeHtml(title)} 暂无内容。</div>`;
+        }
+        return `
+          <details open>
+            <summary>${escapeHtml(title)}</summary>
+            <div class="details-body">
+              <div class="copy-row" style="margin-bottom: 12px;">
+                <button class="ghost" onclick="window.copyText(${JSON.stringify(`${title}\n\n${markdown}`)})">复制本节</button>
+              </div>
+              <div class="markdown-box">${markdownToHtml(markdown)}</div>
+            </div>
+          </details>
+        `;
+      }
+
+      function renderDayGrid() {
+        if (!state.days.length) return;
+        const search = searchInput.value.trim();
+        const week = weekFilter.value;
+        const scene = sceneFilter.value;
+        const status = statusFilter.value;
+
+        const filtered = state.days.filter((day) => {
+          const haystack = `${day.xhsTitle} ${day.xhsBody} ${day.videoTitle} ${day.videoScript} ${day.coverTitle} ${day.reach} ${day.scene}`;
+          const progress = getDayProgress(day.day);
+          const done = isDayDone(progress);
+          const matchesSearch = !search || haystack.includes(search);
+          const matchesWeek = week === "all" || day.week === week;
+          const matchesScene = scene === "all" || day.scene === scene;
+          const matchesStatus = status === "all" || (status === "done" ? done : !done);
+          return matchesSearch && matchesWeek && matchesScene && matchesStatus;
+        });
+
+        if (!filtered.length) {
+          dayGrid.innerHTML = `<div class="empty-state">当前筛选条件下没有匹配内容。</div>`;
+          return;
+        }
+
+        dayGrid.innerHTML = filtered
+          .map((day) => {
+            const progress = getDayProgress(day.day);
+            const done = isDayDone(progress);
+            const selected = day.day === state.selectedDay ? "active" : "";
+            return `
+              <article class="day-card ${selected}" data-day="${day.day}" onclick="window.selectPlanDay(${day.day})">
+                <header>
+                  <div class="copy-row">
+                    <span class="day-tag">Day ${day.day}</span>
+                    <span class="scene-tag">${escapeHtml(day.scene)}</span>
+                  </div>
+                  <span class="status-chip ${done ? "done" : ""}">${done ? "已完成" : "进行中"}</span>
+                </header>
+                <h3>${escapeHtml(day.xhsTitle)}</h3>
+                <p>${escapeHtml(day.videoTitle)}</p>
+                <div class="copy-row" style="margin-top: 14px; justify-content: space-between;">
+                  <span style="color: var(--muted); font-size: 13px;">${escapeHtml(day.week)} · CTA：${escapeHtml(day.cta)}</span>
+                  <button class="plain" type="button">查看详情</button>
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+
+      }
+
+      function selectPlanDay(dayNumber) {
+        state.selectedDay = Number(dayNumber);
+        renderDayGrid();
+        renderDetail(state.selectedDay);
+        heroToday.textContent = `Day ${state.selectedDay}`;
+      }
+
+      function renderDetail(dayNumber) {
+        const day = state.days.find((item) => item.day === dayNumber);
+        if (!day) return;
+        const progress = getDayProgress(day.day);
+        detailWeek.textContent = `${day.week} · ${day.scene}`;
+        detailTitle.textContent = `Day ${day.day} · ${day.xhsTitle}`;
+        detailMeta.textContent = `CTA：${day.cta}。今天先围绕一个场景把内容发透，再完成会员触达和复盘。`;
+        const done = isDayDone(progress);
+        detailStatus.textContent = done ? "已完成" : "待推进";
+        detailStatus.className = `status-chip ${done ? "done" : ""}`;
+        xhsBox.innerHTML = `<strong>${escapeHtml(day.xhsTitle)}</strong>\n\n${escapeHtml(day.xhsBody)}`;
+        videoBox.innerHTML = `<strong>${escapeHtml(day.videoTitle)}</strong>\n\n${escapeHtml(day.videoScript)}`;
+        coverBox.innerHTML = `<strong>${escapeHtml(day.coverTitle)}</strong>\n\n${escapeHtml(day.coverSubtitle)}`;
+        reachBox.innerHTML = `<strong>会员私聊模板</strong>\n\n${escapeHtml(day.reach)}`;
+
+        document.querySelectorAll("input[data-task]").forEach((checkbox) => {
+          checkbox.checked = Boolean(progress.tasks[checkbox.dataset.task]);
+        });
+
+        document.getElementById("metricViews").value = progress.metrics.views || "";
+        document.getElementById("metricSaves").value = progress.metrics.saves || "";
+        document.getElementById("metricPlays").value = progress.metrics.plays || "";
+        document.getElementById("metricEntrances").value = progress.metrics.entrances || "";
+        document.getElementById("metricReplies").value = progress.metrics.replies || "";
+        document.getElementById("metricHighIntent").value = progress.metrics.highIntent || "";
+        document.getElementById("metricNote").value = progress.metrics.note || "";
+      }
+
+      function updateHero() {
+        const totalTasks = state.days.length * 4;
+        let completed = 0;
+        state.days.forEach((day) => {
+          const progress = getDayProgress(day.day);
+          Object.values(progress.tasks).forEach((value) => {
+            if (value) completed += 1;
+          });
+        });
+        heroDone.textContent = `${completed} / ${totalTasks}`;
+        heroToday.textContent = `Day ${state.selectedDay}`;
+      }
+
+      function getSelectedDay() {
+        return state.days.find((item) => item.day === state.selectedDay);
+      }
+
+      function saveMetrics() {
+        const day = getSelectedDay();
+        if (!day) return;
+        const progress = getDayProgress(day.day);
+        progress.metrics = {
+          views: document.getElementById("metricViews").value,
+          saves: document.getElementById("metricSaves").value,
+          plays: document.getElementById("metricPlays").value,
+          entrances: document.getElementById("metricEntrances").value,
+          replies: document.getElementById("metricReplies").value,
+          highIntent: document.getElementById("metricHighIntent").value,
+          note: document.getElementById("metricNote").value,
+        };
+        persistProgress();
+        heroState.textContent = `Day ${day.day} 数据已保存`;
+      }
+
+      function copyCurrentField(type) {
+        const day = getSelectedDay();
+        if (!day) return;
+        const map = {
+          xhs: `${day.xhsTitle}\n\n${day.xhsBody}`,
+          video: `${day.videoTitle}\n\n${day.videoScript}`,
+          cover: `${day.coverTitle}\n${day.coverSubtitle}`,
+          reach: day.reach,
+        };
+        copyText(map[type] || "");
+      }
+
+      function copyDaySummary() {
+        const day = getSelectedDay();
+        if (!day) return;
+        const progress = getDayProgress(day.day);
+        const summary = [
+          `Day ${day.day} · ${day.xhsTitle}`,
+          `周次：${day.week}`,
+          `场景：${day.scene}`,
+          `CTA：${day.cta}`,
+          `已发布小红书：${progress.tasks.xhs ? "是" : "否"}`,
+          `已发布视频：${progress.tasks.video ? "是" : "否"}`,
+          `已完成触达：${progress.tasks.reach ? "是" : "否"}`,
+          `已完成复盘：${progress.tasks.review ? "是" : "否"}`,
+          `小红书浏览量：${progress.metrics.views || ""}`,
+          `小红书收藏量：${progress.metrics.saves || ""}`,
+          `短视频播放量：${progress.metrics.plays || ""}`,
+          `小程序进入人数：${progress.metrics.entrances || ""}`,
+          `会员回复人数：${progress.metrics.replies || ""}`,
+          `高意向人数：${progress.metrics.highIntent || ""}`,
+          `复盘备注：${progress.metrics.note || ""}`,
+        ].join("\n");
+        copyText(summary);
+      }
+
+      function getDayProgress(day) {
+        if (!state.progress[day]) {
+          state.progress[day] = {
+            tasks: { xhs: false, video: false, reach: false, review: false },
+            metrics: {},
+          };
+        }
+        return state.progress[day];
+      }
+
+      function isDayDone(progress) {
+        return Object.values(progress.tasks).every(Boolean);
+      }
+
+      function loadProgress() {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function persistProgress() {
+        localStorage.setItem(storageKey, JSON.stringify(state.progress));
+      }
+
+      function extractTagline(section) {
+        const match = section.match(/`([^`]+)`/);
+        return match ? match[1] : "";
+      }
+
+      function markdownToHtml(markdown) {
+        const codeBlocks = [];
+        let safe = escapeHtml(markdown).replace(/```([\s\S]*?)```/g, (_, code) => {
+          codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+          return `@@CODEBLOCK_${codeBlocks.length - 1}@@`;
+        });
+
+        const lines = safe.split("\n");
+        let html = "";
+        let inUl = false;
+        let inOl = false;
+        let tableBuffer = [];
+
+        const flushLists = () => {
+          if (inUl) {
+            html += "</ul>";
+            inUl = false;
+          }
+          if (inOl) {
+            html += "</ol>";
+            inOl = false;
+          }
+        };
+
+        const flushTable = () => {
+          if (!tableBuffer.length) return;
+          const rows = tableBuffer.map((line) => line.split("|").slice(1, -1).map((cell) => cell.trim()));
+          const header = rows[0] || [];
+          const body = rows.slice(2);
+          html += "<table><thead><tr>" + header.map((cell) => `<th>${inlineMarkdown(cell)}</th>`).join("") + "</tr></thead><tbody>";
+          body.forEach((row) => {
+            html += "<tr>" + row.map((cell) => `<td>${inlineMarkdown(cell)}</td>`).join("") + "</tr>";
+          });
+          html += "</tbody></table>";
+          tableBuffer = [];
+        };
+
+        lines.forEach((line) => {
+          if (/^\|.*\|$/.test(line.trim())) {
+            flushLists();
+            tableBuffer.push(line.trim());
+            return;
+          }
+
+          flushTable();
+
+          if (!line.trim()) {
+            flushLists();
+            html += "<div style=\"height:8px\"></div>";
+            return;
+          }
+
+          if (line.startsWith("#### ")) {
+            flushLists();
+            html += `<h4>${inlineMarkdown(line.slice(5))}</h4>`;
+            return;
+          }
+
+          if (line.startsWith("### ")) {
+            flushLists();
+            html += `<h3>${inlineMarkdown(line.slice(4))}</h3>`;
+            return;
+          }
+
+          if (/^- /.test(line)) {
+            if (!inUl) {
+              flushLists();
+              html += "<ul>";
+              inUl = true;
+            }
+            html += `<li>${inlineMarkdown(line.replace(/^-\s+/, ""))}</li>`;
+            return;
+          }
+
+          if (/^\d+\. /.test(line)) {
+            if (!inOl) {
+              flushLists();
+              html += "<ol>";
+              inOl = true;
+            }
+            html += `<li>${inlineMarkdown(line.replace(/^\d+\.\s+/, ""))}</li>`;
+            return;
+          }
+
+          flushLists();
+          html += `<p>${inlineMarkdown(line)}</p>`;
+        });
+
+        flushLists();
+        flushTable();
+
+        return html.replace(/@@CODEBLOCK_(\d+)@@/g, (_, index) => codeBlocks[Number(index)] || "");
+      }
+
+      function inlineMarkdown(text) {
+        return text
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      async function copyText(text) {
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          heroState.textContent = "内容已复制";
+        } catch {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+          heroState.textContent = "内容已复制";
+        }
+      }
+
+      window.copyText = copyText;
+      window.selectPlanDay = selectPlanDay;
+    </script>
+  </body>
+  </html>

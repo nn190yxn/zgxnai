@@ -163,6 +163,15 @@ var ASSESSMENT_QUESTIONS = {
   }
 };
 
+function getLocalAssessmentData(code) {
+  return ASSESSMENT_QUESTIONS[normalizeAssessmentCode(code)] || ASSESSMENT_QUESTIONS[code] || null;
+}
+
+function shouldUseLocalQuestionsFirst(code) {
+  var normalizedCode = normalizeAssessmentCode(code);
+  return ['gross_motor', 'fine_motor', 'language_dev', 'social_emotion'].indexOf(normalizedCode) >= 0;
+}
+
 Page({
   data: {
     // 测评信息
@@ -263,8 +272,8 @@ Page({
   // 加载题目
   loadQuestions: function(code, isContinue) {
     var that = this;
+    var localData = getLocalAssessmentData(code);
     if (app.shouldUseMockFallback()) {
-      var localData = ASSESSMENT_QUESTIONS[normalizeAssessmentCode(code)] || ASSESSMENT_QUESTIONS[code];
       if (localData) {
         that.initQuestions(localData.questions, isContinue, localData.name);
       } else {
@@ -276,27 +285,22 @@ Page({
       }
       return;
     }
+
+    if (localData && shouldUseLocalQuestionsFirst(code)) {
+      that.initQuestions(localData.questions, isContinue, localData.name);
+      return;
+    }
     
     // 先尝试从服务器获取
     that.loadQuestionsFromServer(code).then(function(questions) {
       that.initQuestions(questions, isContinue);
     }).catch(function(err) {
-      if (!app.shouldUseMockFallback()) {
-        app.showApiError('观察题目加载失败');
-        that.scheduleNavigateBack();
-        return;
-      }
-      // 离线演示模式：使用本地模拟数据
-      var localData = ASSESSMENT_QUESTIONS[code];
       if (localData) {
         that.initQuestions(localData.questions, isContinue, localData.name);
-      } else {
-        wx.showToast({
-          title: '未找到题目',
-          icon: 'none'
-        });
-        that.scheduleNavigateBack();
+        return;
       }
+      app.showApiError('观察题目加载失败');
+      that.scheduleNavigateBack();
     });
   },
 
