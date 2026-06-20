@@ -120,7 +120,7 @@
 
       <!-- 文字输入行 -->
       <view class="text-row">
-        <view class="input-wrapper">
+        <view class="input-wrapper {{!featureFlags.aiChatEnabled ? 'input-wrapper-disabled' : ''}}">
           <textarea
             class="input"
             value="{{inputValue}}"
