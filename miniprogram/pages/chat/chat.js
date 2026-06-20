@@ -29,6 +29,7 @@ Page({
     voiceSupported: false,
     voiceResultText: '',
     voiceResultVisible: false,
+    voiceHint: '',
     scrollToView: '',
     featureFlags: {
       aiChatEnabled: true,
@@ -113,6 +114,7 @@ Page({
         self.setData({
           isRecording: false,
           isRecognizing: false,
+          inputMode: 'text',
           voiceResultText: mergedText,
           voiceResultVisible: true,
           voiceHint: ''
