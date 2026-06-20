@@ -438,12 +438,18 @@
 .input-wrapper {
   flex: 1;
   min-width: 0;
+  display: block;
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 .input {
   width: 100%;
   min-height: 80rpx;
   max-height: 200rpx;
+  display: block;
   font-size: 28rpx;
   color: var(--text);
   line-height: 1.5;

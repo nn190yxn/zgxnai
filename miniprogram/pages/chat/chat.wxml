@@ -133,7 +133,7 @@
       >
         {{inputMode === 'voice' ? '⌨' : '🎤'}}
       </button>
-      <view class="input-wrapper" wx:if="{{inputMode === 'text'}}">
+      <view class="input-wrapper {{inputMode === 'text' ? '' : 'is-hidden'}}">
         <textarea
           class="input"
           value="{{inputValue}}"
@@ -151,15 +151,14 @@
         />
       </view>
       <view
-        class="hold-to-talk {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}"
-        wx:if="{{inputMode === 'voice'}}"
+        class="hold-to-talk {{inputMode === 'voice' ? '' : 'is-hidden'}} {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}"
         bindtouchstart="onVoiceTouchStart"
         bindtouchend="onVoiceTouchEnd"
         bindtouchcancel="onVoiceTouchCancel"
       >
         {{isRecording ? '松开发送' : (isRecognizing ? '识别中...' : '按住说话')}}
       </view>
-      <button class="send-btn" wx:if="{{inputMode === 'text'}}" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">
+      <button class="send-btn {{inputMode === 'text' ? '' : 'is-hidden'}}" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">
         发送
       </button>
     </view>
