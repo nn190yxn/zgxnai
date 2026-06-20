@@ -21,37 +21,18 @@
       <text class="service-banner-desc">本页面涉及文本深度合成能力。开启AI问答后，回答内容由人工智能生成，仅供家庭教育参考，不能替代医生、心理咨询师或其他专业人员的判断。</text>
     </view>
 
-    <view class="operation-section">
-      <view class="operation-title">正式运营内容</view>
-      <view class="operation-card" wx:for="{{operationItems}}" wx:key="title" bindtap="onOperationItemTap" data-type="{{item.type}}">
-        <view class="operation-icon">{{item.icon}}</view>
-        <view class="operation-body">
-          <text class="operation-name">{{item.title}}</text>
-          <text class="operation-desc">{{item.desc}}</text>
+    <!-- AI 介绍（未开始对话时展示） -->
+    <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}">
+      <view class="ai-intro-avatar">AI</view>
+      <view class="ai-intro-content">
+        <text class="ai-intro-title">小牛育儿AI助理</text>
+        <text class="ai-intro-desc">我们基于专业的儿童发展认知体系和超过 100 项育儿知识库，为您提供 AI 育儿咨询服务。您可以输入任何育儿相关问题，AI 将尽力为您解答。</text>
+        <view class="ai-intro-hint">
+          <text class="ai-intro-hint-item">成长观察与训练问题</text>
+          <text class="ai-intro-hint-item">儿童营养与饮食</text>
+          <text class="ai-intro-hint-item">亲子沟通与育儿方法</text>
+          <text class="ai-intro-hint-item">能力成长与表达训练</text>
         </view>
-        <text class="operation-arrow">→</text>
-      </view>
-    </view>
-
-    <view class="sample-section">
-      <view class="sample-title">AI问答示例</view>
-      <view class="sample-question" wx:for="{{sampleQuestions}}" wx:key="*this" bindtap="useSampleQuestion" data-question="{{item}}">
-        <text>{{item}}</text>
-      </view>
-    </view>
-
-    <!-- 欢迎消息 -->
-    <view class="message bot" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}">
-      <view class="avatar avatar-image avatar-ai">AI</view>
-      <view class="bubble">
-        <text class="ai-label">AI生成</text>
-        <text>您好！我是小牛育儿AI助理</text>
-        <text class="mt20">我可以帮您解答：</text>
-        <text>🧠 成长观察与训练问题</text>
-        <text>🥗 儿童营养与饮食</text>
-        <text>👨‍👩‍👧 育儿方法与技巧</text>
-        <text>📚 能力成长与表达训练</text>
-        <text class="mt20">请直接输入您的问题，我会尽力为您解答！</text>
       </view>
     </view>
 

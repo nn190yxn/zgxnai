@@ -35,38 +35,7 @@ Page({
     featureFlags: {
       aiChatEnabled: true,
       configLoaded: false
-    },
-    operationItems: [
-      {
-        icon: '🧠',
-        title: '成长观察评估',
-        desc: '通过测评和观察记录了解孩子能力发展情况，形成家庭训练建议。',
-        type: 'assessment'
-      },
-      {
-        icon: '🥗',
-        title: '营养食谱',
-        desc: '提供儿童早餐、加餐、营养搭配和贵州本地食材参考。',
-        type: 'nutrition'
-      },
-      {
-        icon: '📚',
-        title: '育儿锦囊',
-        desc: '整理亲子沟通、情绪管理、习惯培养和家庭教育内容。',
-        type: 'parenting'
-      },
-      {
-        icon: '📖',
-        title: '每日训练',
-        desc: '提供理解表达训练、口头复述录音、每日打卡和成长周报。',
-        type: 'textbook'
-      }
-    ],
-    sampleQuestions: [
-      '孩子早餐怎么搭配更营养？',
-      '孩子发脾气时家长怎么沟通？',
-      '如何在家做能力成长训练？'
-    ]
+    }
   },
 
   onLoad: function() {
@@ -440,36 +409,6 @@ Page({
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
     });
-  },
-
-  onOperationItemTap: function(e) {
-    var type = e.currentTarget.dataset.type;
-    var urlMap = {
-      assessment: '/pages/assessment/assessment',
-      nutrition: '/pages/nutrition/nutrition',
-      parenting: '/pages/parenting/parenting',
-      textbook: '/pages/textbook/textbook'
-    };
-    var url = urlMap[type] || '/pages/index/index';
-    wx.navigateTo({
-      url: url,
-      fail: function() {
-        wx.switchTab({
-          url: url,
-          fail: function() {
-            wx.showToast({ title: '页面跳转失败', icon: 'none' });
-          }
-        });
-      }
-    });
-  },
-
-  useSampleQuestion: function(e) {
-    var question = e.currentTarget.dataset.question || '';
-    this.setData({ inputValue: question });
-    if (!this.data.featureFlags.aiChatEnabled) {
-      wx.showToast({ title: 'AI问答配置中，可先查看正式内容', icon: 'none' });
-    }
   },
 
   // 分享
