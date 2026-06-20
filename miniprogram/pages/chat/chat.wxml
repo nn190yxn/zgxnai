@@ -120,8 +120,8 @@
 
       <!-- 文字输入行 -->
       <view class="text-row">
-        <view class="input-wrapper {{!featureFlags.aiChatEnabled ? 'input-wrapper-disabled' : ''}}">
-          <textarea
+        <view class="input-wrapper">
+          <input
             class="input"
             value="{{inputValue}}"
             bindinput="onInput"
@@ -131,9 +131,8 @@
             hold-keyboard="{{false}}"
             disabled="{{!featureFlags.aiChatEnabled}}"
             placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
-            auto-height
+            placeholder-style="color:#94A3B8;font-size:32rpx"
             maxlength="2000"
-            show-confirm-bar="{{false}}"
             cursor-spacing="16"
           />
         </view>
