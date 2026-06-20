@@ -484,9 +484,11 @@ Page({
     if (article) {
       var payload = {
         title: app.buildShareTitle('article_detail', { title: article.title }),
-        path: '/pages/parenting/article-detail/article-detail?id=' + article.id,
-        imageUrl: article.cover || '/images/default-article.png'
+        path: '/pages/parenting/article-detail/article-detail?id=' + article.id
       };
+      if (article.cover) {
+        payload.imageUrl = article.cover;
+      }
       return payload;
     }
     return {
@@ -506,9 +508,11 @@ Page({
     if (article) {
       var payload = {
         title: app.buildShareTitle('article_detail', { title: article.title }),
-        query: 'id=' + article.id,
-        imageUrl: article.cover || '/images/default-article.png'
+        query: 'id=' + article.id
       };
+      if (article.cover) {
+        payload.imageUrl = article.cover;
+      }
       return payload;
     }
     return {

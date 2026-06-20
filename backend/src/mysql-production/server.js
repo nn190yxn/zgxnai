@@ -1845,7 +1845,7 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
 function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName) {
   const referenceBlock = references.length
     ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 260)}`).join('\n\n')
-    : '当前没有直接匹配的知识库条目。请明确告诉用户还需要补充年龄、场景或行为细节后才能给更准确建议。';
+    : '当前没有直接匹配的知识库条目。请你基于通用的育儿知识，给出温和、专业、可操作的建议。先共情家长的困扰，再解释可能的原因，接着给家庭能立刻开始的1-2个小动作，最后提醒观察窗口。不要要求用户补充更多信息。';
 
   const scenarioRule = getChatSubIntentRule(chatAnalysis.subIntent);
   const riskInstruction = chatAnalysis.riskLevel === 'high'
@@ -1872,7 +1872,7 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
     ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
     '4. 优先使用清晰短句和分步骤建议，不输出空泛口号。',
     `5. ${riskInstruction}`,
-    '6. 如果参考资料命中较弱，优先提示用户补充更具体的场景信息。',
+    '6. 如果参考资料命中较弱，使用通用的育儿原则给出建议，不要求用户补充更多信息（除非涉及安全风险）。',
     '参考资料：',
     referenceBlock
   );
@@ -1881,7 +1881,7 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
 
 function analyzeChatIntent(message) {
   const text = String(message || '').toLowerCase();
-  if (/(早餐|午餐|晚餐|挑食|营养|吃什么|食谱)/.test(text)) {
+  if (/(早餐|午餐|晚餐|晚饭|吃饭|挑食|偏食|厌食|不爱吃|不吃|营养|吃什么|食谱|喂养|喂饭)/.test(text)) {
     return 'nutrition';
   }
   if (/(阅读|绘本|复述|识字|共读)/.test(text)) {
@@ -2492,7 +2492,8 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
       recipe ? `先看知识库里最接近的一条做法：${recipe.title}。${recipe.description || '这类搭配更容易让孩子接受，也更方便家里连续执行。'}` : '先解释原则：每餐优先保证主食、蛋白质、蔬菜三类食物同时出现，先稳节奏，再慢慢扩食物种类。',
       recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `家庭做法可以先从这些熟悉食材开始：${recipe.ingredients.slice(0, 4).join('、')}。一次只增加一种少量新食物，更容易坚持。` : '家庭做法上，先保留一种孩子愿意吃的安全食物，再增加一种少量新食物，不追求一顿吃很多。',
       article ? `补充提醒：${article.extra.summary}` : '补充提醒：家长负责提供和安排，孩子负责决定吃多少，连续多次接触比一次强行吃完更有效。',
-      `观察点：连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。${boundaryText}`
+      `观察点：连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。${boundaryText}`,
+      `你可以先试试这些方法，如果想了解孩子挑食背后有没有其他原因，或者想知道具体哪一步怎么操作，随时告诉我。`
     ]);
   }
 
@@ -2518,7 +2519,8 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
         : article && article.summary
           ? `家长提示语：${article.summary}`
           : '家长提示语：问题越具体，孩子越容易回答。',
-      `观察点：连续练2周后，再逐步增加复述长度和表达难度。${boundaryText}`
+      `观察点：连续练2周后，再逐步增加复述长度和表达难度。${boundaryText}`,
+      `如果试了几天觉得孩子配合度不高，或者想针对某个具体方面再调整，随时来问我。`
     ]);
   }
 
@@ -2556,6 +2558,7 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
       `先判断原则：${summaryText || '先降低对抗，再把家长提示语缩短，孩子会更容易进入配合状态。'}`,
       `家庭做法：${actionText || '先命名情绪或任务，再给出一个清晰的小步骤；一次只推进一个可执行动作。'}${task && task.parent_prompt ? ` 家长提示语可以直接用：${task.parent_prompt}` : ''}`,
       '观察点：先连续执行7天，记录问题最常出现的时间、场景和触发点。',
+      `记录的过程中如果发现了规律，或者有某一次孩子反应特别好，可以告诉我，我们一起分析看看是什么起了作用。`,
       `边界提醒：${boundaryText}`
     ]);
   }
@@ -2577,20 +2580,62 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
       ? article.content.split('\n\n').slice(0, 2).join('；')
       : '';
 
+  const hasUsefulRefs = references.length >= 2 || (references.length === 1 && (generalSummaryText || generalActionText));
+  const childRef = childName ? `${childName}` : '孩子';
+
   if (!references.length) {
+    if (intent === 'nutrition') {
+      return buildChatSections([
+        `关于"${message}"，很多${ageGroup || '3-6岁'}的小朋友在这个阶段都会出现吃饭不规律或挑食的情况，这通常是正常的阶段性表现。`,
+        '先判断原则：吃饭问题的核心通常不是"吃得不够多"，而是进食氛围和节奏。家长负责准备什么、什么时候吃；孩子负责吃多少、吃不吃。把控制权分开，对抗就会少很多。',
+        '家庭步骤：1）每餐固定一种孩子愿意吃的安全食物，再搭配一种新食物，不要求必须吃完。2）吃饭时关掉电视和玩具，全家人尽量一起吃，让孩子看到大人也在吃同样的东西。3）不催促、不哄喂、不拿零食当奖励，一顿不吃就等下一顿。',
+        '观察点：先坚持1周，重点看孩子对餐桌的态度有没有缓和，而不是看吃进去多少。通常3-5天后对抗就会下降。',
+        childName ? `每个孩子节奏不同，${childName}现在不爱吃晚饭并不代表以后都会这样，放轻松最重要。` : '每个孩子节奏不同，现在不爱吃晚饭并不代表以后都会这样，放轻松最重要。',
+        `你可以先试试看，过程中可以告诉我孩子是只对晚饭这样、还是三餐都差不多，这样我能帮你判断是节奏问题还是食物选择的问题。`,
+        `补充提醒：${boundaryText}`
+      ]);
+    }
+
+    if (intent === 'emotion' || intent === 'focus') {
+      return buildChatSections([
+        `关于"${message}"，我理解你现在可能有些着急。${ageGroup || '这个年龄段'}的孩子在情绪和行为上的波动，很多时候不是"不听话"，而是他们自己也不知道怎么办。`,
+        '先判断原则：当孩子闹情绪或走神时，家长的第一步不是讲道理，而是先帮他把感受说出来。比如"你现在很生气对吗"比"别闹了"更有效，因为命名情绪本身就能帮孩子平静下来。',
+        '家庭做法：1）蹲下来和孩子视线平齐，用平静的语气说出你看到的表现。2）给他一个简单的选择，比如"你是想先深呼吸三次，还是先去喝口水再回来"。3）等他情绪平稳后，再用一两句话复盘刚才发生了什么，不批评，只描述。',
+        '观察点：先坚持1周，每天记录闹情绪的时间、地点和最直接的触发事件。一周后回头看，通常会找到规律。',
+        childName ? `记住，${childName}正在学习怎么管理自己的情绪，你在旁边稳住就是最好的帮助。` : '记住，孩子正在学习怎么管理自己的情绪，你在旁边稳住就是最好的帮助。',
+        `可以告诉我孩子最近一次闹情绪是在什么情况下发生的吗？比如是在外面玩要回家了、还是早上出门前、或者是吃饭写作业的时候？知道场景后我能给你更具体的建议。`,
+        `补充提醒：${boundaryText}`
+      ]);
+    }
+
     return buildChatSections([
-      `关于“${message}”，我还缺少能直接匹配的知识库内容。`,
-      '请尽量补充孩子年龄、典型场景、最困扰的表现和已经试过的方法，我才能按知识库里更接近的内容给你整理建议。',
-      `边界提醒：${boundaryText}`
+      `关于"${message}"，谢谢你告诉我这些。${ageGroup || ''}${childRef}的具体情况我大概了解了。`,
+      '先判断原则：大部分育儿问题的解法都遵循一个规律：先观察模式（什么时候、什么场景下出现），再调环境（减少触发或增加支持），最后做训练（拆成小步骤反复练习）。不用一步到位。',
+      '家庭做法：1）先记录问题出现的频率和场景，找规律。2）从最容易改的一个小点开始，比如换一个说法、调一个时间、或者加一个固定的仪式感。3）做了3-5天再回头看效果，不急着一次到位。',
+      '观察点：先稳定执行1周，把注意力放在"今天比以前好一点点"上，孩子的变化往往比我们想象中慢，但也比我们想象中稳。',
+      `你可以再多说一点孩子的情况，比如这种情况多长时间了、一天里什么时候最明显、或者你已经试过什么方法，这样我能帮你想更对路的做法。`,
+      `补充提醒：${boundaryText}`
+    ]);
+  }
+
+  if (!hasUsefulRefs) {
+    return buildChatSections([
+      `关于"${message}"，谢谢你把这个问题提出来。`,
+      `先判断原则：${generalSummaryText || '遇到这种情况，先别急着找"标准答案"，先观察孩子在什么场景下最容易出现问题、什么时候相对好一些，从对比里找线索。'}`,
+      `家庭做法：${generalActionText || '从最容易改的一个点开始试，做了三五天再回头看效果。不追求一次到位，先建立稳定的节奏。'}`,
+      '观察点：先稳定执行1周，再看变化决定下一步。',
+      `如果你方便的话，可以再多告诉我一点细节，比如这种情况多久了、最容易在什么时候发生，这样我能帮你把建议调得更准。`,
+      `补充提醒：${boundaryText}`
     ]);
   }
 
   return buildChatSections([
-    `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先把问题落到一个具体家庭场景里处理。`,
-    `先判断原则：${generalSummaryText || '先描述孩子年龄、典型场景和最困扰的表现，建议会更准确。'}`,
-    `家庭做法：${generalActionText || '先观察频率、触发点和持续时间，再决定是调环境、调回应还是做训练。'}`,
+    `关于"${message}"，${scenarioLabel ? `当前更像"${scenarioLabel}"这个场景，` : ''}建议先把问题落到一个具体家庭场景里处理。`,
+    `先判断原则：${generalSummaryText || '先不急着下结论，从孩子的表现里找到最明显的一个信号，再围绕这个信号调整家庭回应方式。'}`,
+    `家庭做法：${generalActionText || '拆成每天能执行的小动作，不求多，先求稳；一次推进一个改变，三五天后再看效果。'}`,
     '观察点：先稳定执行1周，再看变化决定下一步。',
-    `边界提醒：${boundaryText}`
+    `试用后如果遇到具体卡点，或者想针对某个细节再调整，随时告诉我，我们一起往下拆更细的办法。`,
+    `补充提醒：${boundaryText}`
   ]);
 }
 

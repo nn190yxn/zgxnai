@@ -110,12 +110,13 @@
           bindtap="onRelatedArticleTap"
           data-id="{{item.id}}"
         >
-          <image 
-            class="related-cover" 
-            src="{{item.cover || '/images/default-article.png'}}" 
+          <image
+            wx:if="{{item.cover}}"
+            class="related-cover"
+            src="{{item.cover}}"
             mode="aspectFill"
           />
-          <view class="related-content">
+          <view class="related-content {{!item.cover ? 'no-cover' : ''}}">
             <text class="related-title">{{item.title}}</text>
             <text class="related-summary">{{item.summary}}</text>
           </view>

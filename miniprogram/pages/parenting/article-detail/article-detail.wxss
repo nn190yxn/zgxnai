@@ -416,6 +416,10 @@
   justify-content: center;
 }
 
+.related-content.no-cover {
+  margin-left: 0;
+}
+
 .related-title {
   font-size: 28rpx;
   font-weight: 600;

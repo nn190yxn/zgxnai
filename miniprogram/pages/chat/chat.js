@@ -28,6 +28,8 @@ Page({
     isRecording: false,
     isRecognizing: false,
     voiceSupported: false,
+    voiceResultText: '',
+    voiceResultVisible: false,
     voiceHint: '',
     scrollToView: '',
     featureFlags: {
@@ -136,19 +138,26 @@ Page({
 
     recordRecognitionManager.onStop = function(res) {
       var resultText = String((res && res.result) || '').trim();
-      var nextValue = resultText;
-      if (resultText && self.data.inputValue) {
-        nextValue = (self.data.inputValue + ' ' + resultText).trim();
-      }
-      self.setData({
-        isRecording: false,
-        isRecognizing: false,
-        inputMode: 'text',
-        inputValue: nextValue || self.data.inputValue,
-        voiceHint: resultText ? '语音已转成文字，可直接发送或再修改' : '没有识别到清晰语音，请再说一次'
-      });
-      if (!resultText) {
-        wx.showToast({ title: '没有识别到语音', icon: 'none' });
+      if (resultText) {
+        var mergedText = resultText;
+        if (self.data.inputValue) {
+          mergedText = (self.data.inputValue + ' ' + resultText).trim();
+        }
+        self.setData({
+          isRecording: false,
+          isRecognizing: false,
+          inputMode: 'text',
+          voiceResultText: mergedText,
+          voiceResultVisible: true,
+          voiceHint: ''
+        });
+      } else {
+        self.setData({
+          isRecording: false,
+          isRecognizing: false,
+          voiceHint: ''
+        });
+        wx.showToast({ title: '没有识别到语音，请再说一次', icon: 'none' });
       }
     };
 
@@ -191,6 +200,8 @@ Page({
       this.setData({
         inputMode: 'text',
         isRecognizing: false,
+        voiceResultVisible: false,
+        voiceResultText: '',
         voiceHint: this.data.voiceSupported ? '可先语音输入，再转成文字发送' : '当前基础库暂不支持语音输入'
       });
       return;
@@ -209,6 +220,8 @@ Page({
     }
     this.setData({
       inputMode: 'voice',
+      voiceResultVisible: false,
+      voiceResultText: '',
       voiceHint: '按住说话，松开后自动转成文字'
     });
   },
@@ -273,6 +286,32 @@ Page({
     if (!question) return;
     this.setData({ inputValue: question });
     this.sendMessage();
+  },
+
+  onEditVoiceResult: function() {
+    this.setData({
+      inputValue: this.data.voiceResultText,
+      voiceResultVisible: false,
+      voiceResultText: ''
+    });
+  },
+
+  onSendVoiceResult: function() {
+    var text = this.data.voiceResultText;
+    if (!text || !text.trim()) return;
+    this.setData({
+      inputValue: text,
+      voiceResultVisible: false,
+      voiceResultText: ''
+    });
+    this.sendMessage();
+  },
+
+  onDismissVoiceResult: function() {
+    this.setData({
+      voiceResultVisible: false,
+      voiceResultText: ''
+    });
   },
 
   // 发送消息
