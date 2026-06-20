@@ -134,23 +134,19 @@
         {{inputMode === 'voice' ? '⌨' : '🎤'}}
       </button>
       <view class="input-main input-main-text" wx:if="{{inputMode === 'text'}}">
-        <view class="input-wrapper">
-          <textarea
-            class="input"
-            value="{{inputValue}}"
-            bindinput="onInput"
-            confirm-type="send"
-            bindconfirm="sendMessage"
-            adjust-position="{{true}}"
-            hold-keyboard="{{false}}"
-            disabled="{{!featureFlags.aiChatEnabled}}"
-            placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
-            auto-height
-            maxlength="2000"
-            show-confirm-bar="{{false}}"
-            cursor-spacing="16"
-          ></textarea>
-        </view>
+        <input
+          class="text-input"
+          value="{{inputValue}}"
+          bindinput="onInput"
+          confirm-type="send"
+          bindconfirm="sendMessage"
+          adjust-position="{{true}}"
+          hold-keyboard="{{false}}"
+          disabled="{{!featureFlags.aiChatEnabled || loading}}"
+          placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
+          maxlength="2000"
+          cursor-spacing="16"
+        />
         <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">
           发送
         </button>

@@ -442,7 +442,7 @@
 
 .input-main-text {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 16rpx;
 }
 
@@ -450,28 +450,23 @@
   display: block;
 }
 
-.input-wrapper {
+.text-input {
   flex: 1;
   min-width: 0;
-  display: block;
-}
-
-.input {
   width: 100%;
-  min-height: 80rpx;
-  max-height: 200rpx;
   display: block;
+  height: 80rpx;
   font-size: 28rpx;
   color: var(--text);
-  line-height: 1.5;
-  padding: 16rpx 20rpx;
+  line-height: 80rpx;
+  padding: 0 24rpx;
   background: #F8FAFC;
-  border-radius: 20rpx;
+  border-radius: 40rpx;
   border: 1rpx solid #CBD5E1;
   box-sizing: border-box;
 }
 
-.input[disabled] {
+.text-input[disabled] {
   background: #F1F5F9;
   color: var(--text-muted);
 }
@@ -514,12 +509,6 @@
   background: #EFF6FF;
   border-color: #93C5FD;
   color: #1D4ED8;
-}
-
-.input {
-  height: 80rpx;
-  font-size: 28rpx;
-  color: var(--text);
 }
 
 .send-btn {
