@@ -112,7 +112,7 @@
 
   <view class="bottom-dock {{voiceResultVisible && voiceResultText ? 'bottom-dock-with-voice-result' : ''}}">
     <view class="ai-input-notice" wx:if="{{featureFlags.aiChatEnabled}}">AI生成内容仅供参考，请家长结合实际情况判断。</view>
-    <view class="voice-hint" wx:if="{{featureFlags.aiChatEnabled && inputMode === 'voice' && voiceHint}}">{{voiceHint}}</view>
+    <view class="voice-hint" wx:if="{{featureFlags.aiChatEnabled && voiceHint}}">{{voiceHint}}</view>
 
     <!-- 语音识别结果卡片 -->
     <view class="voice-result-card" wx:if="{{voiceResultVisible && voiceResultText}}">
@@ -133,36 +133,35 @@
       >
         {{inputMode === 'voice' ? '键盘' : '语音'}}
       </button>
-      <view class="input-main input-main-text" wx:if="{{inputMode === 'text'}}">
-        <input
-          class="text-input"
+      <view class="input-wrapper" wx:if="{{inputMode === 'text'}}">
+        <textarea
+          class="input"
           value="{{inputValue}}"
           bindinput="onInput"
           confirm-type="send"
           bindconfirm="sendMessage"
           adjust-position="{{true}}"
           hold-keyboard="{{false}}"
-          disabled="{{!featureFlags.aiChatEnabled || loading}}"
+          disabled="{{!featureFlags.aiChatEnabled}}"
           placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
-          placeholder-style="color:#A08C86;font-size:30rpx"
+          auto-height
           maxlength="2000"
+          show-confirm-bar="{{false}}"
           cursor-spacing="16"
         />
-        <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">
-          发送
-        </button>
       </view>
       <view
-        class="input-main input-main-voice"
-        wx:else
+        class="hold-to-talk {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}"
+        wx:if="{{inputMode === 'voice'}}"
         bindtouchstart="onVoiceTouchStart"
         bindtouchend="onVoiceTouchEnd"
         bindtouchcancel="onVoiceTouchCancel"
       >
-        <view class="hold-to-talk {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}">
-          {{isRecording ? '松开发送' : (isRecognizing ? '识别中...' : '按住说话')}}
-        </view>
+        {{isRecording ? '松开发送' : (isRecognizing ? '识别中...' : '按住说话')}}
       </view>
+      <button class="send-btn" wx:if="{{inputMode === 'text'}}" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">
+        发送
+      </button>
     </view>
   </view>
 </view>

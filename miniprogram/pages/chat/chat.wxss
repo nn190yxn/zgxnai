@@ -11,12 +11,12 @@
 .chat-area {
   flex: 1;
   padding: 24rpx;
-  padding-bottom: 300rpx;
+  padding-bottom: 320rpx;
   overflow-y: auto;
 }
 
 .chat-area-with-voice-result {
-  padding-bottom: 540rpx;
+  padding-bottom: 640rpx;
 }
 
 .bottom-dock {
@@ -431,68 +431,56 @@
   background: #FFFFFF;
   border-top: 1rpx solid var(--border);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 16rpx;
 }
 
-.input-main {
+.input-wrapper {
   flex: 1;
   min-width: 0;
 }
 
-.input-main-text {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.input-main-voice {
-  flex: 1;
-  display: block;
-}
-
-.text-input {
-  flex: 1;
-  min-width: 0;
+.input {
   width: 100%;
-  height: 88rpx;
+  min-height: 88rpx;
+  max-height: 200rpx;
   font-size: 30rpx;
   color: var(--text);
-  line-height: 88rpx;
-  padding: 0 28rpx;
+  line-height: 1.5;
+  padding: 16rpx 20rpx;
   background: #F8FAFC;
-  border-radius: 44rpx;
+  border-radius: 20rpx;
   border: 1rpx solid #CBD5E1;
   box-sizing: border-box;
 }
 
-.text-input[disabled] {
+.input[disabled] {
   background: #F1F5F9;
   color: var(--text-muted);
 }
 
 .mode-toggle-btn {
   flex-shrink: 0;
-  width: 96rpx;
-  height: 88rpx;
-  line-height: 88rpx;
+  width: 112rpx;
+  height: 80rpx;
+  line-height: 80rpx;
   padding: 0;
   border-radius: 20rpx;
   background: #F8FAFC;
   color: #334155;
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   border: 1rpx solid #CBD5E1;
 }
 
 .hold-to-talk {
-  width: 100%;
-  height: 88rpx;
-  border-radius: 44rpx;
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
   background: #F8FAFC;
   border: 1rpx solid #CBD5E1;
   color: #334155;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -513,12 +501,12 @@
 
 .send-btn {
   flex-shrink: 0;
-  width: 124rpx;
-  height: 88rpx;
-  line-height: 88rpx;
+  width: 140rpx;
+  height: 80rpx;
+  line-height: 80rpx;
   background: var(--primary);
   color: #fff;
-  border-radius: 44rpx;
+  border-radius: 40rpx;
   font-size: 28rpx;
   font-weight: 600;
   border: none;
