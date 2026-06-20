@@ -91,6 +91,8 @@ const READING_TASK_ALIAS_MAP = buildReadingTaskAliasMap();
 const VALID_PARENTING_CATEGORIES = new Set(['情绪管理', '行为习惯', '认知发展', '社交能力', '营养健康']);
 const VALID_PARENTING_AGE_GROUPS = new Set(['2-3岁', '3-4岁', '4-5岁', '5-6岁', '6-9岁']);
 const VALID_SUBJECT_CODES = new Set(['logical_thinking', 'reading_comprehension', 'expression_communication', 'learning_metacognition', 'inquiry_creativity']);
+const VALID_CONTENT_FORMS = new Set(['theory', 'method', 'both']);
+const VALID_TIP_DISPLAY_TYPES = new Set(['action', 'insight', 'raw']);
 const chatRateLimitStore = new Map();
 let sceneTagsCache = {
   expiresAt: 0,
@@ -267,6 +269,12 @@ app.get(`${ADMIN_API_PREFIX}/analytics/features/ranking`, authenticateAdmin, asy
 app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyncHandler(adminContentRankingHandler));
 app.get(`${ADMIN_API_PREFIX}/insights/weekly`, authenticateAdmin, asyncHandler(adminWeeklyInsightsHandler));
 app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
+app.get(`${ADMIN_API_PREFIX}/content/ops/overview`, authenticateAdmin, asyncHandler(adminContentOpsOverviewHandler));
+app.get(`${ADMIN_API_PREFIX}/content/ops/tips`, authenticateAdmin, asyncHandler(adminContentOpsTipsHandler));
+app.get(`${ADMIN_API_PREFIX}/content/ops/articles`, authenticateAdmin, asyncHandler(adminContentOpsArticlesHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/overview`, authenticateAdmin, asyncHandler(adminAiChatOverviewHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/fallback-queries`, authenticateAdmin, asyncHandler(adminAiChatFallbackQueriesHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/recent`, authenticateAdmin, asyncHandler(adminAiChatRecentHandler));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
@@ -1186,6 +1194,295 @@ function pickWeeklyInsightCandidate(items, rateKey) {
   return { item: sortCandidates(candidates)[0], isLowSample: true };
 }
 
+async function adminContentOpsOverviewHandler(req, res) {
+  const [tipRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS total_active,
+       SUM(CASE WHEN display_type = 'action' THEN 1 ELSE 0 END) AS action_count,
+       SUM(CASE WHEN display_type = 'insight' THEN 1 ELSE 0 END) AS insight_count,
+       SUM(CASE WHEN display_type = 'raw' OR display_type IS NULL OR display_type = '' THEN 1 ELSE 0 END) AS raw_count,
+       SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_title, '')), '') IS NOT NULL AND NULLIF(TRIM(COALESCE(display_text, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS structured_ready_count,
+       SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_title, '')), '') IS NULL THEN 1 ELSE 0 END) AS missing_display_title_count,
+       SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_text, '')), '') IS NULL THEN 1 ELSE 0 END) AS missing_display_text_count,
+       MAX(updated_at) AS latest_tip_updated_at
+      FROM parenting_tips
+     WHERE is_active = 1`
+  );
+  const [articleRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS total_published,
+       SUM(CASE WHEN content_form = 'theory' THEN 1 ELSE 0 END) AS theory_count,
+       SUM(CASE WHEN content_form = 'method' THEN 1 ELSE 0 END) AS method_count,
+       SUM(CASE WHEN content_form = 'both' THEN 1 ELSE 0 END) AS both_count,
+       SUM(CASE WHEN content_form IS NULL OR content_form = '' THEN 1 ELSE 0 END) AS unclassified_count,
+       SUM(CASE WHEN read_count >= 100 THEN 1 ELSE 0 END) AS high_read_count,
+       MAX(updated_at) AS latest_article_updated_at
+      FROM articles
+     WHERE is_published = 1`
+  );
+
+  const tips = tipRows[0] || {};
+  const articles = articleRows[0] || {};
+  const totalActiveTips = Number(tips.total_active || 0);
+  const totalPublishedArticles = Number(articles.total_published || 0);
+
+  res.json({
+    success: true,
+    data: {
+      tips: {
+        total_active: totalActiveTips,
+        action_count: Number(tips.action_count || 0),
+        insight_count: Number(tips.insight_count || 0),
+        raw_count: Number(tips.raw_count || 0),
+        structured_ready_count: Number(tips.structured_ready_count || 0),
+        missing_display_title_count: Number(tips.missing_display_title_count || 0),
+        missing_display_text_count: Number(tips.missing_display_text_count || 0),
+        structured_ready_rate: calculateRatio(tips.structured_ready_count, totalActiveTips),
+        latest_updated_at: tips.latest_tip_updated_at || null
+      },
+      articles: {
+        total_published: totalPublishedArticles,
+        theory_count: Number(articles.theory_count || 0),
+        method_count: Number(articles.method_count || 0),
+        both_count: Number(articles.both_count || 0),
+        unclassified_count: Number(articles.unclassified_count || 0),
+        high_read_count: Number(articles.high_read_count || 0),
+        classified_rate: calculateRatio(totalPublishedArticles - Number(articles.unclassified_count || 0), totalPublishedArticles),
+        latest_updated_at: articles.latest_article_updated_at || null
+      }
+    }
+  });
+}
+
+async function adminContentOpsTipsHandler(req, res) {
+  const limit = clampAdminLimit(req.query.limit, 8);
+  const displayType = String(req.query.display_type || req.query.displayType || '').trim();
+  const keyword = String(req.query.keyword || '').trim();
+  if (displayType && !VALID_TIP_DISPLAY_TYPES.has(displayType)) {
+    res.status(400).json({ success: false, message: 'display_type参数无效' });
+    return;
+  }
+
+  const params = [];
+  let whereClause = 'WHERE is_active = 1';
+  if (displayType) {
+    whereClause += ' AND display_type = ?';
+    params.push(displayType);
+  }
+  if (keyword) {
+    const search = `%${keyword}%`;
+    whereClause += ' AND (title LIKE ? OR content LIKE ? OR display_title LIKE ? OR display_text LIKE ? OR source_article_title LIKE ?)';
+    params.push(search, search, search, search, search);
+  }
+
+  const [rows] = await pool.execute(
+    `SELECT id, title, display_title, display_text, display_type, display_priority, category, age_group,
+            source_article_title, display_source_type, display_source_id, updated_at
+       FROM parenting_tips
+       ${whereClause}
+      ORDER BY display_priority DESC, updated_at DESC, id DESC
+      LIMIT ${limit}`,
+    params
+  );
+
+  res.json({
+    success: true,
+    data: {
+      filters: { limit, display_type: displayType || '', keyword },
+      items: rows.map((row) => ({
+        id: row.id,
+        title: row.display_title || row.title || `锦囊${row.id}`,
+        raw_title: row.title || '',
+        text: row.display_text || '',
+        display_type: row.display_type || 'raw',
+        display_priority: Number(row.display_priority || 0),
+        category: row.category || '',
+        age_group: row.age_group || '',
+        source_article_title: row.source_article_title || '',
+        source_type: row.display_source_type || '',
+        source_id: row.display_source_id || null,
+        updated_at: row.updated_at || null
+      }))
+    }
+  });
+}
+
+async function adminContentOpsArticlesHandler(req, res) {
+  const limit = clampAdminLimit(req.query.limit, 8);
+  const contentForm = String(req.query.content_form || req.query.contentForm || '').trim();
+  const keyword = String(req.query.keyword || '').trim();
+  if (contentForm && !VALID_CONTENT_FORMS.has(contentForm)) {
+    res.status(400).json({ success: false, message: 'content_form参数无效' });
+    return;
+  }
+
+  const params = [];
+  let whereClause = 'WHERE is_published = 1';
+  if (contentForm) {
+    whereClause += ' AND content_form = ?';
+    params.push(contentForm);
+  }
+  if (keyword) {
+    const search = `%${keyword}%`;
+    whereClause += ' AND (title LIKE ? OR summary LIKE ? OR category LIKE ? OR tags LIKE ?)';
+    params.push(search, search, search, search);
+  }
+
+  const [rows] = await pool.execute(
+    `SELECT id, title, summary, category, age_group, content_form, read_count, updated_at
+       FROM articles
+       ${whereClause}
+      ORDER BY updated_at DESC, read_count DESC, id DESC
+      LIMIT ${limit}`,
+    params
+  );
+
+  res.json({
+    success: true,
+    data: {
+      filters: { limit, content_form: contentForm || '', keyword },
+      items: rows.map((row) => ({
+        id: row.id,
+        title: row.title || `文章${row.id}`,
+        summary: String(row.summary || '').slice(0, 120),
+        category: row.category || '',
+        age_group: row.age_group || '',
+        content_form: row.content_form || '',
+        read_count: Number(row.read_count || 0),
+        updated_at: row.updated_at || null
+      }))
+    }
+  });
+}
+
+async function adminAiChatOverviewHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS total_replies,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) = 'ai' THEN 1 ELSE 0 END) AS ai_reply_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) = 'knowledge_fallback' THEN 1 ELSE 0 END) AS knowledge_fallback_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) = 'age_clarification' THEN 1 ELSE 0 END) AS age_clarification_count,
+       SUM(CASE WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.reference_count')), '0') AS UNSIGNED) = 0 THEN 1 ELSE 0 END) AS zero_reference_count,
+       SUM(CASE WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.reference_count')), '0') AS UNSIGNED) = 1 THEN 1 ELSE 0 END) AS weak_reference_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.structured_available')) = 'true' THEN 1 ELSE 0 END) AS structured_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.fallback_reason')) = 'AI_NOT_CONFIGURED' THEN 1 ELSE 0 END) AS ai_not_configured_count,
+       AVG(CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.duration_sec')), '0') AS DECIMAL(10,2))) AS avg_duration_sec
+      FROM event_tracks
+     WHERE event_type = 'ai_chat_reply'
+       AND created_at >= ?
+       AND created_at < DATE_ADD(?, INTERVAL 1 DAY)`,
+    [range.startDate, range.endDate]
+  );
+
+  const summary = rows[0] || {};
+  const totalReplies = Number(summary.total_replies || 0);
+  res.json({
+    success: true,
+    data: {
+      range,
+      summary: {
+        total_replies: totalReplies,
+        ai_reply_count: Number(summary.ai_reply_count || 0),
+        knowledge_fallback_count: Number(summary.knowledge_fallback_count || 0),
+        age_clarification_count: Number(summary.age_clarification_count || 0),
+        zero_reference_count: Number(summary.zero_reference_count || 0),
+        weak_reference_count: Number(summary.weak_reference_count || 0),
+        structured_count: Number(summary.structured_count || 0),
+        ai_not_configured_count: Number(summary.ai_not_configured_count || 0),
+        ai_reply_rate: calculateRatio(summary.ai_reply_count, totalReplies),
+        structured_rate: calculateRatio(summary.structured_count, totalReplies),
+        zero_reference_rate: calculateRatio(summary.zero_reference_count, totalReplies),
+        avg_duration_sec: Number(summary.avg_duration_sec || 0)
+      }
+    }
+  });
+}
+
+async function adminAiChatFallbackQueriesHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const limit = clampAdminLimit(req.query.limit, 8);
+  const [rows] = await pool.execute(
+    `SELECT
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.query_signature')) AS query_signature,
+       MAX(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.query_text'))) AS query_text,
+       COUNT(*) AS ask_count,
+       SUM(CASE WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.reference_count')), '0') AS UNSIGNED) = 0 THEN 1 ELSE 0 END) AS zero_reference_count,
+       SUM(CASE WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.reference_count')), '0') AS UNSIGNED) = 1 THEN 1 ELSE 0 END) AS weak_reference_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) <> 'ai' THEN 1 ELSE 0 END) AS fallback_count,
+       SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.structured_available')) = 'true' THEN 1 ELSE 0 END) AS structured_count
+      FROM event_tracks
+     WHERE event_type = 'ai_chat_reply'
+       AND created_at >= ?
+       AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+       AND JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) <> 'age_clarification'
+       AND NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.query_signature')), '') IS NOT NULL
+     GROUP BY query_signature
+     HAVING zero_reference_count > 0 OR weak_reference_count > 0 OR fallback_count > 0
+     ORDER BY zero_reference_count DESC, fallback_count DESC, ask_count DESC
+     LIMIT ${limit}`,
+    [range.startDate, range.endDate]
+  );
+
+  res.json({
+    success: true,
+    data: {
+      range,
+      items: rows.map((row) => ({
+        query_signature: row.query_signature || '',
+        query_text: row.query_text || '',
+        ask_count: Number(row.ask_count || 0),
+        zero_reference_count: Number(row.zero_reference_count || 0),
+        weak_reference_count: Number(row.weak_reference_count || 0),
+        fallback_count: Number(row.fallback_count || 0),
+        structured_count: Number(row.structured_count || 0)
+      }))
+    }
+  });
+}
+
+async function adminAiChatRecentHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 7);
+  const limit = clampAdminLimit(req.query.limit, 8);
+  const [rows] = await pool.execute(
+    `SELECT
+       created_at,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.query_text')) AS query_text,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.intent')) AS intent,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.sub_intent')) AS sub_intent,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) AS answer_source,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.fallback_reason')) AS fallback_reason,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.matched_type_text')) AS matched_type_text,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.structured_available')) AS structured_available,
+       CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.reference_count')), '0') AS UNSIGNED) AS reference_count
+      FROM event_tracks
+     WHERE event_type = 'ai_chat_reply'
+       AND created_at >= ?
+       AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+     ORDER BY created_at DESC
+     LIMIT ${limit}`,
+    [range.startDate, range.endDate]
+  );
+
+  res.json({
+    success: true,
+    data: {
+      range,
+      items: rows.map((row) => ({
+        created_at: row.created_at || null,
+        query_text: row.query_text || '',
+        intent: row.intent || '',
+        sub_intent: row.sub_intent || '',
+        answer_source: row.answer_source || '',
+        fallback_reason: row.fallback_reason || '',
+        matched_type_text: row.matched_type_text || '',
+        structured_available: String(row.structured_available || '') === 'true',
+        reference_count: Number(row.reference_count || 0)
+      }))
+    }
+  });
+}
+
 async function adminSegmentUsersHandler(req, res) {
   const definition = getUserSegmentDefinition(String(req.params.segmentKey || '').trim());
   if (!definition) {
@@ -1480,23 +1777,27 @@ async function getCachedSceneTags() {
 
 function buildStructuredResponse(answer, references, chatAnalysis) {
   try {
-    const tipRefs = references.filter((ref) => ref.sourceType === 'tip' && ref.extra);
+    const tipRefs = references.filter((ref) => ref.sourceType === 'tip' && ref.extra && isParentingTipDisplayable(ref.extra));
     if (!tipRefs.length) return { available: false };
 
     const tips = tipRefs
-      .sort((a, b) => (b.extra.display_priority || 0) - (a.extra.display_priority || 0))
+      .sort((a, b) => {
+        const scoreA = Number(a.extra.chat_tip_quality_score || 0) + Number(a.score || 0);
+        const scoreB = Number(b.extra.chat_tip_quality_score || 0) + Number(b.score || 0);
+        return scoreB - scoreA;
+      })
       .slice(0, 3)
       .map((ref) => ({
         id: ref.extra.id,
         type: ref.extra.display_type || 'raw',
-        title: ref.extra.display_title || ref.title || '',
-        text: ref.extra.display_text || ref.content || '',
+        title: getParentingTipDisplayTitle(ref.extra),
+        text: getParentingTipDisplayText(ref.extra),
         rationale: ref.extra.content || '',
         source_type: ref.extra.display_source_type || 'article',
         source_id: ref.extra.display_source_id || null,
         source_title: ref.extra.source_article_title || ref.title || ''
       }))
-      .filter((tip) => tip.type !== 'raw' && tip.title);
+      .filter((tip) => tip.type !== 'raw' && tip.title && tip.text);
 
     if (!tips.length) return { available: false };
 
@@ -1514,6 +1815,62 @@ function buildStructuredResponse(answer, references, chatAnalysis) {
     console.error('[structured-response] build failed:', err.message);
     return { available: false };
   }
+}
+
+function normalizeStructuredTipText(value, maxLength) {
+  const text = String(value || '')
+    .replace(/\s+/g, ' ')
+    .replace(/[\u0000-\u001f]+/g, ' ')
+    .trim();
+  if (!text) return '';
+  if (!maxLength || text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trim()}…`;
+}
+
+function getParentingTipDisplayTitle(tip) {
+  return normalizeStructuredTipText(tip && (tip.display_title || tip.title), 32);
+}
+
+function getParentingTipDisplayText(tip) {
+  return normalizeStructuredTipText(tip && (tip.display_text || tip.content), 120);
+}
+
+function hasSuspiciousParentingTipTitle(title) {
+  const text = String(title || '').trim();
+  if (!text) return true;
+  if (text.length < 6 || text.length > 32) return true;
+  if (!/[\u4e00-\u9fff]/.test(text)) return true;
+  if (/^[，。！？、；：,.!?;:~\-\s]|^[的地得和与及但把让给在对将]/.test(text)) return true;
+  if (/[，。！？、；：,.!?;:~\-\s]$/.test(text)) return true;
+  if (/(宝宝孩子|孩子宝宝|宝宝宝宝|孩子孩子|家宝宝孩子|大便性)/.test(text)) return true;
+  return false;
+}
+
+function getParentingTipQualityScore(tip, keywords) {
+  if (!tip) return 0;
+  const displayType = String(tip.display_type || '').trim();
+  if (displayType !== 'action' && displayType !== 'insight') return 0;
+
+  const title = getParentingTipDisplayTitle(tip);
+  const text = getParentingTipDisplayText(tip);
+  if (hasSuspiciousParentingTipTitle(title)) return 0;
+  if (text.length < 18) return 0;
+
+  let score = 40;
+  score += Math.min(12, Number(tip.display_priority || 0));
+  score += Math.min(15, countChatKeywordHits([title, text, tip.title, tip.content, tip.category, tip.scene_tags_text].join(' '), keywords) * 5);
+
+  if (String(tip.content_type || '') === 'actionable' || String(tip.content_type || '') === 'stepwise') score += 6;
+  if (String(tip.content_type || '') === 'knowledge' || String(tip.content_type || '') === 'evidence') score += 4;
+  if (text.length >= 24 && text.length <= 100) score += 8;
+  if (title.length >= 8 && title.length <= 22) score += 6;
+  if (String(tip.age_group || '').trim()) score += 3;
+
+  return score;
+}
+
+function isParentingTipDisplayable(tip) {
+  return Number(tip && tip.chat_tip_quality_score) >= 55;
 }
 
 function extractJudgment(answer) {
@@ -1536,6 +1893,59 @@ function generateFollowups(chatAnalysis) {
     base.push('如果试了一周还是没效果怎么办？');
   }
   return base;
+}
+
+function normalizeChatQuestionSignature(message) {
+  return String(message || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/\d+/g, '#')
+    .replace(/[，。！？、,.!?;:："'“”‘’（）()【】\[\]<>《》\-—_]/g, '')
+    .slice(0, 80);
+}
+
+async function recordChatAnalyticsEvent(payload) {
+  try {
+    const message = String(payload.message || '').trim();
+    const matchedTypes = Array.isArray(payload.matchedTypes) ? payload.matchedTypes.filter(Boolean) : [];
+    const references = Array.isArray(payload.references) ? payload.references : [];
+    const structured = payload.structured && payload.structured.available ? payload.structured : null;
+    const durationMs = Math.max(0, Number(payload.durationMs || 0));
+    const eventPayload = {
+      module_key: 'ai_chat',
+      page_key: 'chat',
+      content_type: 'chat_reply',
+      content_id: payload.sessionId || `chat_${Date.now()}`,
+      score: references.length,
+      duration_sec: Number((durationMs / 1000).toFixed(2)),
+      event_meta: {
+        query_text: message.slice(0, 200),
+        query_signature: normalizeChatQuestionSignature(message),
+        intent: payload.intent || '',
+        sub_intent: payload.subIntent || '',
+        risk_level: payload.riskLevel || '',
+        age_group_used: payload.ageGroup || '',
+        child_context_source: payload.childContextSource || '',
+        answer_source: payload.answerSource || '',
+        ai_status: payload.aiStatus || '',
+        fallback_reason: payload.fallbackReason || '',
+        structured_available: Boolean(structured),
+        structured_tip_count: structured && Array.isArray(structured.tips) ? structured.tips.length : 0,
+        reference_count: references.length,
+        zero_reference: references.length === 0,
+        weak_reference: references.length === 1,
+        matched_types: matchedTypes,
+        matched_type_text: matchedTypes.join(','),
+        source_titles: references.map((item) => item.title).filter(Boolean).slice(0, 5)
+      }
+    };
+    await pool.execute(
+      'INSERT INTO event_tracks (user_id, event_type, event_data, session_id) VALUES (?, ?, ?, ?)',
+      [payload.userId, 'ai_chat_reply', JSON.stringify(eventPayload), String(payload.sessionId || 'chat_reply')]
+    );
+  } catch (err) {
+    console.error('[chat-analytics] track failed:', err.message);
+  }
 }
 
 async function chatHandler(req, res) {
@@ -1564,6 +1974,23 @@ async function chatHandler(req, res) {
     const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
     if (!ageGroup) {
       const clarificationAnswer = buildChatAgeClarificationAnswer(chatChildContext);
+      await recordChatAnalyticsEvent({
+        userId: getUserId(req),
+        sessionId,
+        message,
+        intent,
+        subIntent,
+        riskLevel,
+        ageGroup: '',
+        childContextSource: chatChildContext.source,
+        answerSource: 'age_clarification',
+        aiStatus: getAIStatus(),
+        fallbackReason: 'AGE_REQUIRED',
+        structured: null,
+        matchedTypes: [],
+        references: [],
+        durationMs: Date.now() - startedAt
+      });
       res.json({
         success: true,
         data: {
@@ -1599,6 +2026,24 @@ async function chatHandler(req, res) {
     const matchedTypes = getChatMatchedTypes(references);
 
     const structured = buildStructuredResponse(answer, references, chatAnalysis);
+
+    await recordChatAnalyticsEvent({
+      userId: getUserId(req),
+      sessionId,
+      message,
+      intent,
+      subIntent,
+      riskLevel,
+      ageGroup,
+      childContextSource: chatChildContext.source,
+      answerSource: aiResult.success ? 'ai' : fallbackSource,
+      aiStatus,
+      fallbackReason: aiResult.success ? '' : aiResult.code || '',
+      structured,
+      matchedTypes,
+      references,
+      durationMs: Date.now() - startedAt
+    });
 
     res.json({
       success: true,
@@ -2331,7 +2776,7 @@ async function collectSceneReferences(keywords, scoreText, ageGroup) {
 }
 
 async function collectParentingTipReferences(keywords, scoreText, ageGroup, chatAnalysis, message) {
-  const searchCondition = buildChatSearchCondition(['title', 'content'], keywords);
+  const searchCondition = buildChatSearchCondition(['title', 'content', 'display_title', 'display_text', 'source_article_title', 'category'], keywords);
   let sql = 'SELECT * FROM parenting_tips WHERE is_active = 1';
   const params = [];
   if (ageGroup) {
@@ -2340,7 +2785,7 @@ async function collectParentingTipReferences(keywords, scoreText, ageGroup, chat
   }
   sql += searchCondition.sql;
   params.push.apply(params, searchCondition.params);
-  sql += ' ORDER BY created_at DESC LIMIT 20';
+  sql += ' ORDER BY display_priority DESC, updated_at DESC, created_at DESC LIMIT 36';
 
   const queryType = detectQueryType(message);
 
@@ -2353,16 +2798,18 @@ async function collectParentingTipReferences(keywords, scoreText, ageGroup, chat
         if (Array.isArray(parsed)) sceneTagsText = parsed.join('、');
       }
     } catch (e) { /**/ }
-    let score = scoreText([tip.title, tip.content, tip.category, sceneTagsText].join(' '));
+    const qualityScore = getParentingTipQualityScore(Object.assign({}, tip, { scene_tags_text: sceneTagsText }), keywords);
+    let score = scoreText([tip.title, tip.content, tip.display_title, tip.display_text, tip.category, sceneTagsText].join(' '));
     score += getContentTypeBonus(queryType, tip.content_type);
+    score += Math.floor(qualityScore / 10);
     return {
       title: tip.title,
       score,
       content: tip.content || '',
-      extra: Object.assign({}, tip, { scene_tags_text: sceneTagsText }),
+      extra: Object.assign({}, tip, { scene_tags_text: sceneTagsText, chat_tip_quality_score: qualityScore }),
       sourceType: 'tip'
     };
-  }).filter((item) => item.score > 0);
+  }).filter((item) => item.score > 0 && item.extra.chat_tip_quality_score >= 40);
 }
 
 function detectQueryType(message) {
@@ -8608,7 +9055,6 @@ async function parentingArticlesHandler(req, res) {
     res.status(400).json({ success: false, message: 'age_group参数无效' });
     return;
   }
-  const VALID_CONTENT_FORMS = new Set(['theory', 'method', 'both']);
   if (req.query.content_form && !VALID_CONTENT_FORMS.has(String(req.query.content_form).trim())) {
     res.status(400).json({ success: false, message: 'content_form参数无效' });
     return;

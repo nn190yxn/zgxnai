@@ -244,6 +244,74 @@ const demoSnapshot = {
       { title: '发育迟缓营养补充要点', content_type: 'knowledge', content_id: 'K067', view_count: 1492, completion_count: 602, favorite_count: 152 },
       { title: '高原地区儿童补铁建议', content_type: 'knowledge', content_id: 'K071', view_count: 1418, completion_count: 584, favorite_count: 146 }
     ]
+  },
+  contentOpsOverview: {
+    tips: {
+      total_active: 7458,
+      action_count: 3032,
+      insight_count: 4424,
+      raw_count: 2,
+      structured_ready_count: 7456,
+      missing_display_title_count: 18,
+      missing_display_text_count: 7,
+      structured_ready_rate: 99.97,
+      latest_updated_at: '2026-06-20 11:20:00'
+    },
+    articles: {
+      total_published: 2789,
+      theory_count: 294,
+      method_count: 831,
+      both_count: 1305,
+      unclassified_count: 359,
+      high_read_count: 612,
+      classified_rate: 87.13,
+      latest_updated_at: '2026-06-20 10:40:00'
+    }
+  },
+  tipsOps: {
+    items: [
+      { id: 1, title: '先稳住饭前节奏', raw_title: '孩子不爱吃饭怎么办', text: '正餐前1小时收掉零食和甜饮，让孩子带着一点饥饿感回到餐桌。', display_type: 'action', display_priority: 98, category: '营养健康', age_group: '2-3岁', source_article_title: '孩子挑食的家庭应对', updated_at: '2026-06-20 11:20:00' },
+      { id: 2, title: '挑食先看前置因素', raw_title: '孩子总是不吃晚饭', text: '很多孩子的晚饭问题和前一小时的零食、疲劳、活动量有关，先看前置节奏更容易找到原因。', display_type: 'insight', display_priority: 95, category: '营养健康', age_group: '3-4岁', source_article_title: '晚饭难题的常见原因', updated_at: '2026-06-20 11:10:00' },
+      { id: 3, title: '先接住情绪再讲规则', raw_title: '孩子发脾气时家长怎么做', text: '孩子情绪冲上来时，先用一句短话接住感受，等情绪落一点再讲规则会更容易配合。', display_type: 'action', display_priority: 94, category: '情绪管理', age_group: '3-6岁', source_article_title: '发脾气场景下的家庭节奏', updated_at: '2026-06-20 11:05:00' }
+    ]
+  },
+  articleForms: {
+    items: [
+      { id: 101, title: '孩子挑食背后的常见原因', summary: '从疲劳、零食、注意力分散三个角度解释孩子挑食。', category: '营养健康', age_group: '2-3岁', content_form: 'both', read_count: 1286, updated_at: '2026-06-20 10:40:00' },
+      { id: 102, title: '晚睡前为什么更容易情绪爆发', summary: '解释学龄前孩子在疲劳状态下更容易和家长发生冲突。', category: '情绪管理', age_group: '3-4岁', content_form: 'theory', read_count: 942, updated_at: '2026-06-20 10:32:00' },
+      { id: 103, title: '晚饭磨蹭时家长的三步做法', summary: '给出饭前、饭中、饭后三个时段的家庭做法。', category: '营养健康', age_group: '3-6岁', content_form: 'method', read_count: 1168, updated_at: '2026-06-20 10:21:00' }
+    ]
+  },
+  aiChatOverview: {
+    range: { startDate: '2026-06-07', endDate: '2026-06-20', days: 14 },
+    summary: {
+      total_replies: 1482,
+      ai_reply_count: 412,
+      knowledge_fallback_count: 924,
+      age_clarification_count: 146,
+      zero_reference_count: 188,
+      weak_reference_count: 326,
+      structured_count: 998,
+      ai_not_configured_count: 924,
+      ai_reply_rate: 27.80,
+      structured_rate: 67.34,
+      zero_reference_rate: 12.69,
+      avg_duration_sec: 1.84
+    }
+  },
+  aiFallbackQueries: {
+    items: [
+      { query_text: '小朋友3岁了，特别不爱吃晚饭，好几天了', ask_count: 32, zero_reference_count: 6, weak_reference_count: 11, fallback_count: 28, structured_count: 18 },
+      { query_text: '孩子最近总躺地上哭怎么办', ask_count: 24, zero_reference_count: 4, weak_reference_count: 9, fallback_count: 20, structured_count: 15 },
+      { query_text: '晚上总不肯睡觉还一直闹', ask_count: 19, zero_reference_count: 3, weak_reference_count: 7, fallback_count: 15, structured_count: 12 }
+    ]
+  },
+  aiRecent: {
+    items: [
+      { created_at: '2026-06-20 11:36:00', query_text: '孩子晚饭老是吃两口就跑', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'article,tip', structured_available: true, reference_count: 3 },
+      { created_at: '2026-06-20 11:28:00', query_text: '最近总是睡前哭闹不肯洗漱', intent: 'parenting', sub_intent: 'sleep_bedtime', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'scene,tip', structured_available: true, reference_count: 2 },
+      { created_at: '2026-06-20 11:20:00', query_text: '我家孩子怎么总是不吃青菜', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'ai', fallback_reason: '', matched_type_text: 'article,tip', structured_available: true, reference_count: 4 }
+    ]
   }
 };
 
@@ -332,17 +400,23 @@ if (state.token) {
 }
 
 async function loadDashboard() {
-  const [me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights] = await Promise.all([
+  const [me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
     request('/auth/me'),
     request('/dashboard/overview'),
     request('/analytics/users/trends?days=14'),
     request('/analytics/revenue/trends?days=14'),
     request('/analytics/features/ranking?days=14&limit=8'),
     request('/analytics/content/ranking?days=14&limit=8'),
-    request('/insights/weekly?days=7')
+    request('/insights/weekly?days=7'),
+    request('/content/ops/overview'),
+    request('/content/ops/tips?limit=8'),
+    request('/content/ops/articles?limit=8'),
+    request('/analytics/ai-chat/overview?days=14'),
+    request('/analytics/ai-chat/fallback-queries?days=14&limit=8'),
+    request('/analytics/ai-chat/recent?days=7&limit=8')
   ]);
 
-  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights });
+  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent });
 }
 
 function renderDashboard(snapshot) {
@@ -362,6 +436,12 @@ function renderDashboard(snapshot) {
   renderFeatureConversion(snapshot.featureConversion || snapshot.overview.feature_conversion || []);
   renderWeeklyInsights((snapshot.weeklyInsights && snapshot.weeklyInsights.cards) || []);
   renderUserSegments(snapshot.userSegments || snapshot.overview.user_segments || []);
+  renderContentOpsOverview(snapshot.contentOpsOverview || {});
+  renderTipsOps(snapshot.tipsOps || {});
+  renderArticleForms(snapshot.articleForms || {});
+  renderAiChatOverview(snapshot.aiChatOverview || {});
+  renderAiFallbackQueries(snapshot.aiFallbackQueries || {});
+  renderAiRecent(snapshot.aiRecent || {});
   renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
   renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
@@ -881,6 +961,107 @@ function renderDistribution(containerId, items, emptyMessage) {
   });
 }
 
+function renderContentOpsOverview(data) {
+  var tips = data.tips || {};
+  var articles = data.articles || {};
+  renderMiniStats('contentOpsHealth', [
+    {
+      label: '结构化锦囊覆盖',
+      value: formatPercent(tips.structured_ready_rate),
+      meta: `${formatNumber(tips.structured_ready_count)} / ${formatNumber(tips.total_active)} 条已可直接投放`
+    },
+    {
+      label: 'Action / Insight',
+      value: `${formatNumber(tips.action_count)} / ${formatNumber(tips.insight_count)}`,
+      meta: `Raw 仅剩 ${formatNumber(tips.raw_count)} 条`
+    },
+    {
+      label: '文章分类完成率',
+      value: formatPercent(articles.classified_rate),
+      meta: `未分类 ${formatNumber(articles.unclassified_count)} 篇`
+    },
+    {
+      label: '高阅读文章',
+      value: formatNumber(articles.high_read_count),
+      meta: `最近更新 ${formatDateTime(articles.latest_updated_at)}`
+    }
+  ]);
+}
+
+function renderTipsOps(data) {
+  renderRanking('tipsOpsList', data.items || [], function(item) {
+    return {
+      title: `${formatDisplayType(item.display_type)} · ${item.title || item.raw_title || '未命名锦囊'}`,
+      score: `P${formatNumber(item.display_priority || 0)}`,
+      meta: `${item.category || '未分类'} / ${item.age_group || '年龄待补充'} / ${item.source_article_title || '无来源文章'} / ${formatDateTime(item.updated_at)}`
+    };
+  });
+}
+
+function renderArticleForms(data) {
+  renderRanking('articleFormList', data.items || [], function(item) {
+    return {
+      title: `${formatContentForm(item.content_form)} · ${item.title || '未命名文章'}`,
+      score: formatNumber(item.read_count || 0),
+      meta: `${item.category || '未分类'} / ${item.age_group || '年龄待补充'} / 更新 ${formatDateTime(item.updated_at)}`
+    };
+  });
+}
+
+function renderAiChatOverview(data) {
+  var summary = data.summary || {};
+  renderMiniStats('aiChatHealth', [
+    {
+      label: 'Structured 覆盖率',
+      value: formatPercent(summary.structured_rate),
+      meta: `${formatNumber(summary.structured_count)} / ${formatNumber(summary.total_replies)} 次回复`
+    },
+    {
+      label: '零引用率',
+      value: formatPercent(summary.zero_reference_rate),
+      meta: `零引用 ${formatNumber(summary.zero_reference_count)} 次，弱引用 ${formatNumber(summary.weak_reference_count)} 次`
+    },
+    {
+      label: 'AI 直答率',
+      value: formatPercent(summary.ai_reply_rate),
+      meta: `AI 直答 ${formatNumber(summary.ai_reply_count)} 次`
+    },
+    {
+      label: 'AI 未配置回退',
+      value: formatNumber(summary.ai_not_configured_count),
+      meta: `平均耗时 ${formatDecimal(summary.avg_duration_sec || 0)} 秒`
+    }
+  ]);
+}
+
+function renderAiFallbackQueries(data) {
+  renderRanking('aiFallbackQueries', data.items || [], function(item) {
+    return {
+      title: item.query_text || '未记录问题',
+      score: formatNumber(item.ask_count || 0),
+      meta: `零引用 ${formatNumber(item.zero_reference_count)} / 弱引用 ${formatNumber(item.weak_reference_count)} / 回退 ${formatNumber(item.fallback_count)} / structured ${formatNumber(item.structured_count)}`
+    };
+  });
+}
+
+function renderAiRecent(data) {
+  var items = (data.items || []).map(function(item) {
+    return Object.assign({}, item, {
+      structured_label: item.structured_available ? '已生效' : '未生效'
+    });
+  });
+  renderTrendTable('aiRecentTable', items, [
+    ['时间', 'created_at'],
+    ['问题', 'query_text'],
+    ['意图', 'intent'],
+    ['来源', 'answer_source'],
+    ['引用数', 'reference_count'],
+    ['Structured', 'structured_label'],
+    ['命中类型', 'matched_type_text'],
+    ['回退原因', 'fallback_reason']
+  ]);
+}
+
 function updateAuthState() {
   authStateText.textContent = state.admin ? `${state.admin.display_name || state.admin.username}` : state.token ? '登录态待校验' : '未登录';
 }
@@ -949,6 +1130,24 @@ function formatActionPriority(value) {
     low: '观察名单'
   };
   return map[String(value || 'medium')] || '持续跟进';
+}
+
+function formatDisplayType(value) {
+  var map = {
+    action: '行动卡',
+    insight: '判断卡',
+    raw: '原始卡'
+  };
+  return map[String(value || 'raw')] || '原始卡';
+}
+
+function formatContentForm(value) {
+  var map = {
+    theory: '学理论',
+    method: '学方法',
+    both: '理论+方法'
+  };
+  return map[String(value || '')] || '待分类';
 }
 
 function escapeHtml(value) {

@@ -332,6 +332,10 @@ td {
   margin-bottom: 16px;
 }
 
+.content-ops-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .mini-stat {
   display: grid;
   gap: 8px;
@@ -665,6 +669,7 @@ td {
 
   .distribution-split,
   .mini-stats,
+  .content-ops-grid,
   .age-feature-grid,
   .weekly-insight-grid,
   .segment-grid,

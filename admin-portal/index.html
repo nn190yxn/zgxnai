@@ -15,7 +15,7 @@
         <div>
           <p class="eyebrow">NiuNiu Parenting</p>
           <h1>运营后台</h1>
-          <p class="sidebar-copy">面向小牛育儿独立经营数据，覆盖登录、总览、趋势、会员结构和家庭画像。</p>
+          <p class="sidebar-copy">面向小牛育儿独立经营数据，当前同时覆盖经营驾驶舱、内容结构化运营和 AI 问答质检。</p>
         </div>
         <div class="sidebar-meta">
           <div>
@@ -32,9 +32,9 @@
       <main class="main">
         <section class="panel hero">
           <div>
-            <p class="eyebrow">Phase 1</p>
-            <h2>小牛育儿经营驾驶舱</h2>
-            <p class="hero-copy">当前页面直接对接后台认证、总览、趋势和排行接口，便于先完成业务可见性验证。</p>
+              <p class="eyebrow">Phase 1-2</p>
+              <h2>小牛育儿经营与内容运营后台</h2>
+              <p class="hero-copy">当前页面直接对接后台认证、经营概览、内容结构化列表和 AI 问答质检接口，便于同一入口完成数据巡检与内容复核。</p>
           </div>
           <form id="loginForm" class="login-form">
             <label>
@@ -237,6 +237,72 @@
               </div>
               <div id="segmentUsersList" class="segment-user-list"></div>
             </div>
+          </article>
+
+          <article class="panel insight-panel insight-panel-wide">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Content Ops</p>
+                <h3>内容运营概览</h3>
+              </div>
+              <span class="panel-note">聚焦育儿锦囊结构化与文章形态分类</span>
+            </div>
+            <div id="contentOpsHealth" class="mini-stats content-ops-grid"></div>
+          </article>
+
+          <article class="panel ranking-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Tips Review</p>
+                <h3>结构化锦囊巡检</h3>
+              </div>
+              <span class="panel-note">按结构化优先级与更新时间排序</span>
+            </div>
+            <div id="tipsOpsList" class="ranking-list"></div>
+          </article>
+
+          <article class="panel ranking-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Article Forms</p>
+                <h3>文章形态巡检</h3>
+              </div>
+              <span class="panel-note">用于复核 theory / method / both</span>
+            </div>
+            <div id="articleFormList" class="ranking-list"></div>
+          </article>
+
+          <article class="panel insight-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">AI QA</p>
+                <h3>AI 问答质检</h3>
+              </div>
+              <span class="panel-note">聚焦 structured、零引用和 AI 可用性</span>
+            </div>
+            <div id="aiChatHealth" class="mini-stats"></div>
+          </article>
+
+          <article class="panel ranking-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Coverage Gaps</p>
+                <h3>高频低命中问题</h3>
+              </div>
+              <span class="panel-note">优先指导下一批知识补充</span>
+            </div>
+            <div id="aiFallbackQueries" class="ranking-list"></div>
+          </article>
+
+          <article class="panel chart-panel insight-panel-wide">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">QA Samples</p>
+                <h3>最近问答样本</h3>
+              </div>
+              <span class="panel-note">用于快速判断回退链路与结构化是否生效</span>
+            </div>
+            <div id="aiRecentTable" class="table-wrap"></div>
           </article>
         </section>
       </main>
