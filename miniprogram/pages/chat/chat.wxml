@@ -120,7 +120,7 @@
 
       <!-- 文字输入行 -->
       <view class="text-row">
-        <view class="input-outer {{!featureFlags.aiChatEnabled ? 'input-outer-disabled' : ''}}" style="padding-left:80rpx;padding-right:80rpx;">
+        <view class="input-outer {{!featureFlags.aiChatEnabled ? 'input-outer-disabled' : ''}}">
           <input
             class="input"
             value="{{inputValue}}"
