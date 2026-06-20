@@ -10,7 +10,7 @@
 /* 聊天区域 */
 .chat-area {
   flex: 1;
-  padding: 32rpx;
+  padding: 40rpx;
   padding-bottom: 420rpx;
   overflow-y: auto;
 }
@@ -269,12 +269,12 @@
 
 /* 输入区域 */
 .input-area {
-  padding: 32rpx;
+  padding: 32rpx 40rpx;
   background: #FFFFFF;
   border-top: 1rpx solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 
 .voice-row {
@@ -310,7 +310,7 @@
 .text-row {
   display: flex;
   align-items: flex-end;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 
 .input-wrapper {
