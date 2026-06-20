@@ -15,9 +15,105 @@ function normalizeUser(row) {
     openid: row.openid,
     nickname: row.nickname || '',
     avatar_url: row.avatar_url || '',
+    phone_number: row.phone_number || '',
+    phone_bound_at: row.phone_bound_at || null,
     created_at: row.created_at,
     updated_at: row.updated_at
   };
+}
+
+let wechatAccessTokenCache = {
+  token: '',
+  expireAt: 0
+};
+
+function requestWechatJson(options, payload) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (response) => {
+      let body = '';
+      response.on('data', (chunk) => {
+        body += chunk;
+      });
+      response.on('end', () => {
+        try {
+          const data = JSON.parse(body || '{}');
+          if (data.errcode) {
+            reject(new Error(data.errmsg || 'wechat api failed'));
+            return;
+          }
+          resolve(data);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    if (payload) {
+      req.write(JSON.stringify(payload));
+    }
+    req.end();
+  });
+}
+
+async function getWechatAccessToken() {
+  const now = Date.now();
+  if (wechatAccessTokenCache.token && wechatAccessTokenCache.expireAt > now + 60 * 1000) {
+    return wechatAccessTokenCache.token;
+  }
+
+  const appid = process.env.WECHAT_APPID;
+  const secret = process.env.WECHAT_APP_SECRET;
+  if (!appid || !secret) {
+    throw new Error('WECHAT_APPID and WECHAT_APP_SECRET must be configured');
+  }
+
+  const data = await requestWechatJson({
+    hostname: 'api.weixin.qq.com',
+    path: '/cgi-bin/stable_token',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }, {
+    grant_type: 'client_credential',
+    appid,
+    secret,
+    force_refresh: false
+  });
+
+  if (!data.access_token) {
+    throw new Error('wechat access token missing');
+  }
+
+  wechatAccessTokenCache = {
+    token: data.access_token,
+    expireAt: now + Math.max((data.expires_in || 7200) - 300, 300) * 1000
+  };
+  return wechatAccessTokenCache.token;
+}
+
+async function getWechatPhoneNumber(code) {
+  const appid = process.env.WECHAT_APPID;
+  const secret = process.env.WECHAT_APP_SECRET;
+  if ((!appid || !secret) && process.env.NODE_ENV !== 'production') {
+    return {
+      phoneNumber: '13800138000',
+      purePhoneNumber: '13800138000'
+    };
+  }
+
+  const accessToken = await getWechatAccessToken();
+  const data = await requestWechatJson({
+    hostname: 'api.weixin.qq.com',
+    path: `/wxa/business/getuserphonenumber?access_token=${encodeURIComponent(accessToken)}`,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }, { code });
+
+  return (data && data.phone_info) || {};
 }
 
 function getWechatSession(code) {
@@ -181,6 +277,61 @@ router.get('/me', authenticateToken, (req, res) => {
     success: true,
     data: normalizeUser(user)
   });
+});
+
+router.post('/bind-phone', authenticateToken, async (req, res) => {
+  try {
+    const code = String((req.body && req.body.code) || '').trim();
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少手机号授权code'
+      });
+    }
+
+    const current = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.userId);
+    if (!current) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    const phoneInfo = await getWechatPhoneNumber(code);
+    const phoneNumber = String((phoneInfo && (phoneInfo.phoneNumber || phoneInfo.purePhoneNumber)) || '').trim();
+    if (!phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        message: '微信手机号获取失败'
+      });
+    }
+
+    const existing = db.prepare('SELECT id FROM users WHERE phone_number = ? AND id <> ? LIMIT 1').get(phoneNumber, req.user.userId);
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: '该手机号已绑定其他账号'
+      });
+    }
+
+    db.prepare(`
+      UPDATE users
+      SET phone_number = ?, phone_bound_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(phoneNumber, req.user.userId);
+
+    const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.userId);
+    return res.json({
+      success: true,
+      data: normalizeUser(updated)
+    });
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      message: '手机号绑定失败',
+      detail: process.env.NODE_ENV === 'production' ? undefined : err.message
+    });
+  }
 });
 
 router.put('/me', authenticateToken, (req, res) => {

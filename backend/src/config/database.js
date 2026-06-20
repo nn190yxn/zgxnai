@@ -27,10 +27,24 @@ function initDatabase() {
       openid TEXT UNIQUE NOT NULL,
       nickname TEXT,
       avatar_url TEXT,
+      phone_number TEXT,
+      phone_bound_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  const userColumns = db.prepare('PRAGMA table_info(users)').all().map(column => column.name);
+  const userColumnMigrations = [
+    ['phone_number', 'TEXT'],
+    ['phone_bound_at', 'DATETIME']
+  ];
+  for (const [columnName, columnType] of userColumnMigrations) {
+    if (!userColumns.includes(columnName)) {
+      db.exec(`ALTER TABLE users ADD COLUMN ${columnName} ${columnType}`);
+    }
+  }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_number_unique ON users(phone_number)');
 
   // 孩子档案表
   db.exec(`
