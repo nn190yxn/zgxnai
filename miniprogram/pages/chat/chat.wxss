@@ -11,8 +11,26 @@
 .chat-area {
   flex: 1;
   padding: 24rpx;
-  padding-bottom: 210rpx;
+  padding-bottom: 320rpx;
   overflow-y: auto;
+}
+
+.chat-area-with-voice-result {
+  padding-bottom: 640rpx;
+}
+
+.bottom-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 14%, #FFFFFF 100%);
+  z-index: 11;
+}
+
+.bottom-dock-with-voice-result {
+  padding-top: 8rpx;
 }
 
 .service-banner {
@@ -203,15 +221,13 @@
 }
 
 .voice-result-card {
-  position: fixed;
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
   left: 24rpx;
   right: 24rpx;
+  margin: 0 24rpx 16rpx;
   background: #FFFFFF;
   border-radius: 20rpx;
   box-shadow: 0 -4rpx 24rpx rgba(0,0,0,0.08), 0 8rpx 32rpx rgba(0,0,0,0.06);
   padding: 24rpx;
-  z-index: 10;
 }
 
 .voice-result-label {
@@ -262,31 +278,23 @@
 }
 
 .ai-input-notice {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  margin: 0 0 12rpx;
   padding: 12rpx 24rpx;
   background: #FFFBEB;
   border-top: 1rpx solid #FDE68A;
   color: #92400E;
   font-size: 22rpx;
   text-align: center;
-  z-index: 9;
 }
 
 .voice-hint {
-  position: fixed;
-  left: 24rpx;
-  right: 24rpx;
-  bottom: calc(196rpx + env(safe-area-inset-bottom));
+  margin: 0 24rpx 12rpx;
   padding: 14rpx 18rpx;
   border-radius: 16rpx;
   background: rgba(15, 23, 42, 0.82);
   color: #FFFFFF;
   font-size: 24rpx;
   line-height: 1.5;
-  z-index: 9;
 }
 
 /* 消息 */
@@ -419,18 +427,12 @@
 
 /* 输入区域 */
 .input-area {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: #FFFFFF;
   border-top: 1rpx solid var(--border);
   display: flex;
   align-items: flex-end;
   gap: 16rpx;
-  z-index: 11;
 }
 
 .input-wrapper {
