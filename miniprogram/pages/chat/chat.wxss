@@ -10,7 +10,7 @@
 /* 聊天区域 */
 .chat-area {
   flex: 1;
-  padding: 24rpx;
+  padding: 32rpx;
   padding-bottom: 420rpx;
   overflow-y: auto;
 }
@@ -269,7 +269,7 @@
 
 /* 输入区域 */
 .input-area {
-  padding: 24rpx;
+  padding: 32rpx;
   background: #FFFFFF;
   border-top: 1rpx solid var(--border);
   display: flex;
@@ -325,7 +325,7 @@
   font-size: 32rpx;
   color: var(--text);
   line-height: 1.5;
-  padding: 20rpx 24rpx;
+  padding: 24rpx 28rpx;
   background: #F8FAFC;
   border-radius: 20rpx;
   border: 1rpx solid #CBD5E1;
