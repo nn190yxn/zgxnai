@@ -5,6 +5,7 @@
     class="chat-area {{voiceResultVisible && voiceResultText ? 'chat-area-with-voice-result' : ''}}" 
     scroll-y 
     enable-flex="true"
+    style="padding-bottom:{{voiceResultVisible && voiceResultText ? '740rpx' : '420rpx'}}"
     scroll-into-view="{{scrollToView}}"
     scroll-with-animation
   >
@@ -106,19 +107,20 @@
     </view>
 
     <!-- 输入区域 -->
-    <view class="input-area">
-      <view class="voice-row">
+    <view class="input-area" style="padding:24rpx 32rpx;background:#FFFFFF;border-top:1rpx solid #E9D7CF;display:flex;flex-direction:column;gap:16rpx;">
+      <view class="voice-row" style="display:flex;">
         <view
           class="hold-to-talk {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}"
           bindtouchstart="onVoiceTouchStart"
           bindtouchend="onVoiceTouchEnd"
           bindtouchcancel="onVoiceTouchCancel"
+          style="flex:1;height:96rpx;border-radius:20rpx;background:#F8FAFC;border:1rpx solid #CBD5E1;color:#334155;font-size:30rpx;font-weight:600;display:flex;align-items:center;justify-content:center;"
         >
           <text>{{isRecording ? '松开发送' : (isRecognizing ? '识别中...' : '【调试-按住说话】')}}</text>
         </view>
       </view>
-      <view class="text-row">
-        <view class="input-wrapper">
+      <view class="text-row" style="display:flex;align-items:flex-end;gap:16rpx;">
+        <view class="input-wrapper" style="flex:1;min-width:0;">
           <textarea
             class="input"
             value="{{inputValue}}"
@@ -133,9 +135,10 @@
             maxlength="2000"
             show-confirm-bar="{{false}}"
             cursor-spacing="16"
+            style="width:100%;min-height:100rpx;max-height:240rpx;font-size:32rpx;line-height:1.5;padding:20rpx 32rpx;background:#F8FAFC;border-radius:20rpx;border:1rpx solid #CBD5E1;box-sizing:border-box;"
           />
         </view>
-        <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">发送</button>
+        <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}" style="flex-shrink:0;width:160rpx;height:100rpx;line-height:100rpx;background:#FF6B35;color:#fff;border-radius:20rpx;font-size:32rpx;font-weight:600;border:none;padding:0;">发送</button>
       </view>
     </view>
   </view>
