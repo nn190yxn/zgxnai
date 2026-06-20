@@ -131,7 +131,7 @@
         bindtap="toggleInputMode"
         disabled="{{!featureFlags.aiChatEnabled || loading}}"
       >
-        {{inputMode === 'voice' ? '⌨' : '🎤'}}
+        {{inputMode === 'voice' ? '键盘' : '语音'}}
       </button>
       <view class="input-main input-main-text" wx:if="{{inputMode === 'text'}}">
         <input
@@ -144,6 +144,7 @@
           hold-keyboard="{{false}}"
           disabled="{{!featureFlags.aiChatEnabled || loading}}"
           placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
+          placeholder-style="color:#A08C86;font-size:30rpx"
           maxlength="2000"
           cursor-spacing="16"
         />
