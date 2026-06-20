@@ -11,12 +11,12 @@
 .chat-area {
   flex: 1;
   padding: 24rpx;
-  padding-bottom: 320rpx;
+  padding-bottom: 420rpx;
   overflow-y: auto;
 }
 
 .chat-area-with-voice-result {
-  padding-bottom: 640rpx;
+  padding-bottom: 740rpx;
 }
 
 .bottom-dock {
@@ -267,196 +267,24 @@
   text-align: center;
 }
 
-.voice-hint {
-  margin: 0 24rpx 12rpx;
-  padding: 14rpx 18rpx;
-  border-radius: 16rpx;
-  background: rgba(15, 23, 42, 0.82);
-  color: #FFFFFF;
-  font-size: 24rpx;
-  line-height: 1.5;
-}
-
-/* 消息 */
-.message {
-  display: flex;
-  margin-bottom: 32rpx;
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.message.user {
-  flex-direction: row-reverse;
-}
-
-.avatar {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36rpx;
-  flex-shrink: 0;
-}
-
-.message.bot .avatar {
-  background: var(--primary-bg);
-  margin-right: 20rpx;
-}
-
-.message.user .avatar {
-  background: #E3F2FD;
-  margin-left: 20rpx;
-}
-
-.bubble {
-  max-width: 70%;
-  padding: 24rpx 28rpx;
-  border-radius: 24rpx;
-  font-size: 28rpx;
-  line-height: 1.7;
-  word-wrap: break-word;
-}
-
-.message.bot .bubble {
-  background: var(--white);
-  border: 1rpx solid var(--border);
-  border-top-left-radius: 8rpx;
-  color: var(--text);
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
-}
-
-.message.bot.error .bubble {
-  background: #FFF7ED;
-  border-color: #FDBA74;
-  color: #9A3412;
-}
-
-.message.user .bubble {
-  background: var(--primary);
-  color: #fff;
-  border-top-right-radius: 8rpx;
-}
-
-.bubble text,
-.bubble rich-text {
-  display: block;
-  font-size: 28rpx;
-  line-height: 1.8;
-}
-
-.mt20 {
-  margin-top: 20rpx;
-}
-
-/* 来源标签 */
-.sources {
-  margin-top: 20rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid var(--border);
-}
-
-.sources-label {
-  font-size: 22rpx;
-  color: var(--text-muted);
-  margin-bottom: 8rpx;
-}
-
-.sources text {
-  font-size: 22rpx;
-  color: var(--primary);
-  display: inline;
-  margin-right: 12rpx;
-}
-
-/* 加载动画 */
-.loading-bubble {
-  padding: 32rpx 48rpx;
-}
-
-.typing {
-  display: flex;
-  gap: 12rpx;
-}
-
-.dot {
-  width: 16rpx;
-  height: 16rpx;
-  background: var(--primary-light);
-  border-radius: 50%;
-  animation: typing 1.4s infinite;
-}
-
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-  30% { transform: translateY(-16rpx); opacity: 1; }
-}
-
 /* 输入区域 */
 .input-area {
-  padding: 16rpx 24rpx;
+  padding: 24rpx;
   background: #FFFFFF;
   border-top: 1rpx solid var(--border);
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   gap: 16rpx;
 }
 
-.input-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-.input {
-  width: 100%;
-  min-height: 88rpx;
-  max-height: 200rpx;
-  font-size: 30rpx;
-  color: var(--text);
-  line-height: 1.5;
-  padding: 16rpx 20rpx;
-  background: #F8FAFC;
-  border-radius: 20rpx;
-  border: 1rpx solid #CBD5E1;
-  box-sizing: border-box;
-}
-
-.input[disabled] {
-  background: #F1F5F9;
-  color: var(--text-muted);
-}
-
-.mode-toggle-btn {
-  flex-shrink: 0;
-  width: 112rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  padding: 0;
-  border-radius: 20rpx;
-  background: #F8FAFC;
-  color: #334155;
-  font-size: 28rpx;
-  font-weight: 600;
-  border: 1rpx solid #CBD5E1;
+.voice-row {
+  display: flex;
 }
 
 .hold-to-talk {
   flex: 1;
-  height: 80rpx;
-  border-radius: 40rpx;
+  height: 96rpx;
+  border-radius: 20rpx;
   background: #F8FAFC;
   border: 1rpx solid #CBD5E1;
   color: #334155;
@@ -479,15 +307,45 @@
   color: #1D4ED8;
 }
 
+.text-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16rpx;
+}
+
+.input-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.input {
+  width: 100%;
+  min-height: 100rpx;
+  max-height: 240rpx;
+  font-size: 32rpx;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 20rpx 24rpx;
+  background: #F8FAFC;
+  border-radius: 20rpx;
+  border: 1rpx solid #CBD5E1;
+  box-sizing: border-box;
+}
+
+.input[disabled] {
+  background: #F1F5F9;
+  color: var(--text-muted);
+}
+
 .send-btn {
   flex-shrink: 0;
-  width: 140rpx;
-  height: 80rpx;
-  line-height: 80rpx;
+  width: 160rpx;
+  height: 100rpx;
+  line-height: 100rpx;
   background: var(--primary);
   color: #fff;
-  border-radius: 40rpx;
-  font-size: 28rpx;
+  border-radius: 20rpx;
+  font-size: 32rpx;
   font-weight: 600;
   border: none;
   padding: 0;

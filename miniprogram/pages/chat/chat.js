@@ -24,13 +24,11 @@ Page({
     messages: [],
     inputValue: '',
     loading: false,
-    inputMode: 'text',
     isRecording: false,
     isRecognizing: false,
     voiceSupported: false,
     voiceResultText: '',
     voiceResultVisible: false,
-    voiceHint: '',
     scrollToView: '',
     featureFlags: {
       aiChatEnabled: true,
@@ -115,7 +113,6 @@ Page({
         self.setData({
           isRecording: false,
           isRecognizing: false,
-          inputMode: 'text',
           voiceResultText: mergedText,
           voiceResultVisible: true,
           voiceHint: ''
@@ -163,38 +160,6 @@ Page({
     });
   },
 
-  toggleInputMode: function() {
-    if (this.data.inputMode === 'voice') {
-      this.stopVoiceInput({ silent: true, keepHint: true });
-      this.setData({
-        inputMode: 'text',
-        isRecognizing: false,
-        voiceResultVisible: false,
-        voiceResultText: '',
-        voiceHint: this.data.voiceSupported ? '可先语音输入，再转成文字发送' : '当前基础库暂不支持语音输入'
-      });
-      return;
-    }
-    if (!this.data.voiceSupported) {
-      wx.showToast({ title: '当前设备不支持语音输入', icon: 'none' });
-      return;
-    }
-    if (!this.data.featureFlags.aiChatEnabled) {
-      wx.showToast({ title: 'AI问答暂未开放', icon: 'none' });
-      return;
-    }
-    if (this.data.loading) {
-      wx.showToast({ title: '请等待当前回答完成', icon: 'none' });
-      return;
-    }
-    this.setData({
-      inputMode: 'voice',
-      voiceResultVisible: false,
-      voiceResultText: '',
-      voiceHint: '按住说话，松开后自动转成文字'
-    });
-  },
-
   startVoiceInput: function() {
     if (!recordRecognitionManager) {
       wx.showToast({ title: '语音识别不可用', icon: 'none' });
@@ -212,9 +177,6 @@ Page({
   },
 
   onVoiceTouchStart: function() {
-    if (this.data.inputMode !== 'voice') {
-      return;
-    }
     if (this.data.loading || this.data.isRecording || this.data.isRecognizing) {
       return;
     }
