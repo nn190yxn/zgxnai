@@ -442,9 +442,9 @@
 
 .input {
   width: 100%;
-  min-height: 88rpx;
+  min-height: 80rpx;
   max-height: 200rpx;
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: var(--text);
   line-height: 1.5;
   padding: 16rpx 20rpx;
@@ -497,6 +497,12 @@
   background: #EFF6FF;
   border-color: #93C5FD;
   color: #1D4ED8;
+}
+
+.input {
+  height: 80rpx;
+  font-size: 28rpx;
+  color: var(--text);
 }
 
 .send-btn {
