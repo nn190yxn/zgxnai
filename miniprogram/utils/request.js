@@ -3,6 +3,11 @@ var envConfig = require('../config/env.js');
 
 function getApiUrl(app, path) {
   var finalUrl = '';
+  if (app && app.globalData && app.globalData.requireCustomApiHost) {
+    if (!app.globalData.apiBaseUrl || !app.globalData.baseUrl) {
+      throw new Error('开发环境未配置接口地址，请先设置 apiBaseUrl 和 baseUrl');
+    }
+  }
   if (!path) {
     finalUrl = app.globalData.apiBaseUrl;
   } else if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0) {

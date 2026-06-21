@@ -183,3 +183,30 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 涉及性能优化时，优先采用零破坏的小步改动方式推进。
   - 不修改我赢AI服务器现有系统配置、运行进程、数据库实例和路由。
   - 优先做应用层优化，如超时、幂等、缓存、限流、日志和可回退参数调整。
+
+[本地后端启动需显式带 NODE_PATH]
+- Date: 2026-06-20
+- Context: Agent 在执行内容运营后台改造后的本地重启验证时发现
+- Category: 环境配置
+- Instructions:
+  - 当前环境直接在 `backend/` 下执行 `npm run start:mysql` 可能因模块解析路径缺失而报 `Cannot find module 'mysql2/promise'`。
+  - 本地启动生产 MySQL 后端时，优先使用 `NODE_PATH=/workspace/backend/node_modules:/usr/local/lib/node_modules node src/mysql-production/server.js`。
+
+[小牛育儿生产后端实际部署入口]
+- Date: 2026-06-20
+- Context: Agent 在修复手机号绑定接口不存在并执行生产部署时确认
+- Category: 运维部署
+- Instructions:
+  - 当前线上小牛育儿实际运行入口是 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`，由 PM2 进程 `niuniu-backend` 启动。
+
+[小牛育儿生产环境变量与支付证书位置]
+- Date: 2026-06-21
+- Context: Agent 在执行上线前全面审计并核对生产支付配置时发现
+- Category: 环境配置
+- Instructions:
+  - `niuniu-backend` 的业务环境变量主要从 `/home/ubuntu/niuniu-parenting/.env` 加载。
+  - 微信支付私钥文件当前已配置且文件存在，平台证书路径 `WECHAT_PAY_PLATFORM_CERT_PATH` 当前为空。
+  - 排查线上支付回调验签问题时，优先检查项目根目录 `.env` 与平台证书文件是否已补齐。
+  - 生产目录不是 Git 工作树，后端热修复优先采用单文件同步到 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js` 的最小部署方式。
+  - 每次同步前先在 `/home/ubuntu/niuniu-parenting/backups/` 备份旧 `server.js`，同步后只重启 `niuniu-backend`，不操作 `woying-backend`。
+  - `POST https://api.woyai.cn/api/v1/auth/bind-phone` 的无令牌校验响应应为 `{"success":false,"message":"未提供访问令牌"}`，可作为路由是否已部署成功的快速验证信号。

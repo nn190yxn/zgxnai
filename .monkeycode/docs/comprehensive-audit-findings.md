@@ -23,6 +23,15 @@
 - 已纠偏: `P2-11` 首页不存在 `onReachBottom` 或触底加载绑定，首轮审计误报已更正
 - 文档说明: 下文原始问题条目保留审计证据，是否已修以上方状态更新为准
 
+## 增量审计更新（2026-06-21）
+
+- 新增高风险发现: 生产支付回调验签在 `WECHAT_PAY_PLATFORM_CERT_PATH` 为空时会直接放行，真实生产环境当前缺少该配置，回调验签实际未启用。
+- 新增高风险发现: 默认启动脚本 `backend/package.json -> start` 与线上真实入口 `backend/src/mysql-production/server.js` 长期分叉，现已实际导致过手机号绑定接口漏部署。
+- 新增中风险发现: `miniprogram/config/env.js` 的 development 与 production 都直连 `https://api.woyai.cn/api/v1`，开发联调会直接写生产数据。
+- 已完成修复: 生产后端 `backend/src/mysql-production/server.js` 已改为在生产环境缺少 `WECHAT_PAY_PLATFORM_CERT_PATH` 时拒绝跳过微信支付回调验签。
+- 已完成修复: `backend/package.json` 默认 `start` 已切换到 `src/mysql-production/server.js`，与线上真实运行入口对齐。
+- 已完成修复: development 环境默认 API 地址已清空，并要求通过 storage 显式设置 `apiBaseUrl` / `baseUrl` 后才允许请求后端，避免开发联调直接写生产数据。
+
 ---
 
 ## P0 级问题

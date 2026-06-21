@@ -14,6 +14,7 @@ App({
     apiBaseUrl: envConfig.apiBaseUrl,
     baseUrl: envConfig.baseUrl,
     allowHttpApi: !!envConfig.allowHttp,
+    requireCustomApiHost: !!envConfig.requireCustomApiHost,
     requestTimeoutMs: envConfig.requestTimeoutMs || 10000,
     apiStrictMode: envConfig.apiStrictMode !== false,
     allowMockFallback: !!envConfig.allowMockFallback,
@@ -175,6 +176,10 @@ onError: function(error) {
     }
     if (typeof mockFallbackOverride === 'boolean') {
       this.globalData.allowMockFallback = mockFallbackOverride;
+    }
+
+    if (this.globalData.requireCustomApiHost && (!this.globalData.apiBaseUrl || !this.globalData.baseUrl)) {
+      console.warn('Development API host is not configured. Set apiBaseUrl/baseUrl in storage before requesting backend APIs.');
     }
   },
 

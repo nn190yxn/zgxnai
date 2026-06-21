@@ -99,6 +99,10 @@ let sceneTagsCache = {
   data: null
 };
 const parentingArticlesCache = new Map();
+let wechatPlatformCertificateCache = {
+  loadedAt: 0,
+  certificates: []
+};
 
 function buildReadingTaskAliasMap() {
   const aliasMap = {};
@@ -5668,7 +5672,7 @@ async function paymentNotifyHandler(req, res) {
     res.status(503).json({ code: 'FAIL', message: '微信支付未配置' });
     return;
   }
-  if (req.body.resource && !verifyWechatNotifySignature(req.headers, req.rawBody || '')) {
+  if (req.body.resource && !(await verifyWechatNotifySignature(req.headers, req.rawBody || ''))) {
     res.status(400).json({ code: 'FAIL', message: '微信支付回调签名无效' });
     return;
   }
@@ -5797,18 +5801,86 @@ function decryptWechatResource(resource) {
   return JSON.parse(Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString('utf8'));
 }
 
-function verifyWechatNotifySignature(headers, rawBody) {
-  if (!wxPayConfig.platformCertPath) {
-    return true;
+function decryptWechatPlatformCertificate(resource) {
+  if (!resource || resource.algorithm !== 'AEAD_AES_256_GCM') {
+    throw new Error('不支持的微信支付平台证书加密算法');
   }
+  const ciphertext = Buffer.from(resource.ciphertext, 'base64');
+  const authTag = ciphertext.subarray(ciphertext.length - 16);
+  const encryptedData = ciphertext.subarray(0, ciphertext.length - 16);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', wxPayConfig.apiKey, resource.nonce);
+  decipher.setAuthTag(authTag);
+  if (resource.associated_data) {
+    decipher.setAAD(Buffer.from(resource.associated_data));
+  }
+  return Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString('utf8');
+}
+
+async function loadWechatPlatformCertificates(forceRefresh) {
+  const cacheTtlMs = 6 * 60 * 60 * 1000;
+  if (!forceRefresh && wechatPlatformCertificateCache.certificates.length && Date.now() - wechatPlatformCertificateCache.loadedAt < cacheTtlMs) {
+    return wechatPlatformCertificateCache.certificates;
+  }
+
+  if (wxPayConfig.platformCertPath) {
+    wechatPlatformCertificateCache = {
+      loadedAt: Date.now(),
+      certificates: [{ serial_no: '', content: fs.readFileSync(wxPayConfig.platformCertPath, 'utf8') }]
+    };
+    return wechatPlatformCertificateCache.certificates;
+  }
+
+  const response = await requestWechatPay('GET', '/v3/certificates');
+  const certificates = Array.isArray(response && response.data)
+    ? response.data.map((item) => ({
+      serial_no: item.serial_no || '',
+      effective_time: item.effective_time || '',
+      expire_time: item.expire_time || '',
+      content: decryptWechatPlatformCertificate(item.encrypt_certificate)
+    })).filter((item) => item.content)
+    : [];
+
+  if (!certificates.length) {
+    throw new Error('未获取到微信支付平台证书');
+  }
+
+  wechatPlatformCertificateCache = {
+    loadedAt: Date.now(),
+    certificates
+  };
+  return certificates;
+}
+
+async function verifyWechatNotifySignature(headers, rawBody) {
   const signature = headers['wechatpay-signature'];
   const timestamp = headers['wechatpay-timestamp'];
   const nonce = headers['wechatpay-nonce'];
+  const serial = headers['wechatpay-serial'] || '';
   if (!signature || !timestamp || !nonce || !rawBody) {
     return false;
   }
-  const certificate = fs.readFileSync(wxPayConfig.platformCertPath, 'utf8');
-  return crypto.createVerify('RSA-SHA256').update(`${timestamp}\n${nonce}\n${rawBody}\n`).verify(certificate, signature, 'base64');
+
+  const message = `${timestamp}\n${nonce}\n${rawBody}\n`;
+  const certificates = await loadWechatPlatformCertificates(false);
+  const preferred = serial ? certificates.find((item) => item.serial_no === serial) : certificates[0];
+  const candidates = preferred ? [preferred].concat(certificates.filter((item) => item !== preferred)) : certificates;
+
+  for (const certificate of candidates) {
+    if (crypto.createVerify('RSA-SHA256').update(message).verify(certificate.content, signature, 'base64')) {
+      return true;
+    }
+  }
+
+  if (!wxPayConfig.platformCertPath) {
+    const refreshed = await loadWechatPlatformCertificates(true);
+    for (const certificate of refreshed) {
+      if (crypto.createVerify('RSA-SHA256').update(message).verify(certificate.content, signature, 'base64')) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 async function bootstrap() {
