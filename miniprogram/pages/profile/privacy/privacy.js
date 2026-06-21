@@ -5,7 +5,7 @@ Page({
   onLoad: function() {
     // 设置页面标题
     wx.setNavigationBarTitle({
-      title: '隐私政策'
+      title: '隐私保护指引'
     });
   }
 ,

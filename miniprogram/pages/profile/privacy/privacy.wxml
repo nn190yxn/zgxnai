@@ -1,44 +1,63 @@
 <view class="container">
   <view class="header">
-    <text class="title">隐私政策</text>
-    <text class="date">更新日期：2026年6月5日</text>
+    <text class="title">隐私保护指引</text>
+    <text class="date">更新日期：2026年6月21日</text>
   </view>
 
   <view class="content">
-    <text class="section-title">一、信息收集与使用</text>
+    <text class="section-title">一、指引说明</text>
     <text class="section-text">
-      小牛育儿AI助理（以下简称"我们"）非常重视用户的个人信息和隐私保护。本政策旨在向您说明我们如何收集、使用、存储和保护您的个人信息，以及您享有的相关权利。
+      小牛育儿AI助理非常重视个人信息和未成年人信息保护。本指引用于说明我们在微信小程序内处理个人信息的类型、用途、触发场景、保存方式和您的权利。
     </text>
 
-    <text class="section-title">二、收集的个人信息类型</text>
-    <text class="section-text">我们可能收集以下类型的个人信息：</text>
-    <text class="list-item">• 账户信息：微信昵称、头像、OpenID、已授权手机号等</text>
-    <text class="list-item">• 儿童信息：姓名、出生日期、性别、健康信息等（用于为您提供个性化服务）</text>
-    <text class="list-item">• 使用信息：浏览记录、成长记录、学习进度等</text>
-    <text class="list-item">• 设备信息：设备型号、操作系统版本等（用于优化服务体验）</text>
+    <text class="section-title">二、我们处理的信息类型</text>
+    <text class="section-text">结合当前版本功能，我们会在对应功能开启时处理以下信息：</text>
+    <text class="list-item">• 账号标识信息：微信登录 code 换取的 OpenID、账号 ID、登录令牌</text>
+    <text class="list-item">• 手机号：您主动点击并授权后获取的手机号</text>
+    <text class="list-item">• 儿童档案信息：孩子姓名、性别、出生日期、头像、标签、成长记录</text>
+    <text class="list-item">• 选中的照片或视频信息：您主动上传的孩子头像或成长资料</text>
+    <text class="list-item">• 麦克风录音信息：您主动使用语音输入、跟读录音时产生的音频内容</text>
+    <text class="list-item">• 设备与日志信息：设备型号、系统版本、网络状态、错误日志</text>
 
-    <text class="section-title">三、个人信息的使用目的</text>
-    <text class="section-text">我们使用收集的个人信息用于：</text>
-    <text class="list-item">• 提供、维持和改进我们的服务</text>
-    <text class="list-item">• 为您的孩子提供个性化的成长建议和内容推荐</text>
-    <text class="list-item">• 进行儿童发展相关的观察和记录</text>
-    <text class="list-item">• 向您发送服务相关的通知</text>
+    <text class="section-title">三、对应功能与具体用途</text>
+    <text class="section-text">我们会按功能分别处理信息，主要用途如下：</text>
+    <text class="list-item">• OpenID：用于完成微信登录、识别账号身份、保持登录状态</text>
+    <text class="list-item">• 手机号：用于绑定账号、快速联系您处理服务问题</text>
+    <text class="list-item">• 儿童档案信息：用于生成成长建议、保存成长记录、展示孩子资料</text>
+    <text class="list-item">• 选中的照片或视频信息：用于上传孩子头像或补充成长资料</text>
+    <text class="list-item">• 麦克风录音信息：用于 AI 问答语音转文字、口语跟读录音与回放</text>
+    <text class="list-item">• 设备与日志信息：用于排查故障、优化稳定性和兼容性</text>
 
-    <text class="section-title">四、个人信息的存储与保护</text>
+    <text class="section-title">四、权限触发与使用说明</text>
+    <text class="section-text">只有在您主动使用相关功能时，才会触发对应的信息处理或权限申请：</text>
+    <text class="list-item">• 点击“微信一键登录”后，发起微信登录并建立账号</text>
+    <text class="list-item">• 点击“获取手机号”后，按微信授权流程绑定手机号</text>
+    <text class="list-item">• 编辑孩子头像时，您可从相册选择图片或直接拍照上传</text>
+    <text class="list-item">• 按住语音输入或开始跟读录音时，才会访问麦克风</text>
+    <text class="list-item">• 您可拒绝相关授权，基础浏览功能仍可继续使用；部分依赖授权的功能会在对应场景下受限</text>
+
+    <text class="section-title">五、个人信息的存储与保护</text>
     <text class="section-text">
-      我们采用行业标准的安全措施保护您的个人信息，包括数据加密、访问控制、安全审计等措施。我们会按照法律法规的要求，在合理必要的期限内保留您的个人信息。
+      我们采用访问控制、传输加密、日志审计等安全措施保护您的信息，并依据法律法规和业务需要在合理期限内保存相关数据。服务器部署在中国大陆境内。
     </text>
 
-    <text class="section-title">五、儿童个人信息保护</text>
+    <text class="section-title">六、儿童个人信息保护</text>
     <text class="section-text">
-      我们特别重视对儿童（14周岁以下）个人信息的保护：
+      我们特别重视儿童个人信息保护。监护人在使用本服务时录入的孩子档案、成长记录等信息，仅用于成长服务和内容推荐：
     </text>
-    <text class="list-item">• 我们会征求家长/监护人的同意后才收集儿童个人信息</text>
-    <text class="list-item">• 儿童个人信息仅用于提供服务和改善体验</text>
-    <text class="list-item">• 未经家长/监护人同意，我们不会向第三方分享儿童个人信息</text>
-    <text class="list-item">• 家长/监护人有权查看、更正、删除儿童的个人信息</text>
+    <text class="list-item">• 请监护人在取得合法授权后录入儿童信息</text>
+    <text class="list-item">• 儿童信息用于提供个性化成长建议、成长记录和学习陪伴服务</text>
+    <text class="list-item">• 我们会对儿童信息采取更严格的访问控制措施</text>
+    <text class="list-item">• 监护人可以申请查看、更正、删除儿童信息或注销账号</text>
 
-    <text class="section-title">六、您的权利</text>
+    <text class="section-title">七、第三方服务与微信能力</text>
+    <text class="section-text">为完成服务功能，我们可能接入以下微信能力或第三方服务：</text>
+    <text class="list-item">• 微信登录：用于完成账号识别和登录</text>
+    <text class="list-item">• 微信手机号能力：用于手机号快捷绑定</text>
+    <text class="list-item">• 微信同声传译插件 WechatSI：用于语音识别转文字</text>
+    <text class="list-item">• 微信支付：用于成长服务开通与订单支付</text>
+
+    <text class="section-title">八、您的权利</text>
     <text class="section-text">您对自己的个人信息享有以下权利：</text>
     <text class="list-item">• 访问权：查看我们持有的您的个人信息</text>
     <text class="list-item">• 更正权：要求更正不准确的个人信息</text>
@@ -46,52 +65,18 @@
     <text class="list-item">• 撤回同意：撤回您之前给出的同意</text>
     <text class="list-item">• 账号注销：申请注销您的账号</text>
 
-    <text class="section-title">七、联系我们</text>
+    <text class="section-title">九、联系我们</text>
     <text class="section-text">
-      如您对本隐私政策有任何疑问，或希望行使您的权利，请通过以下方式联系我们：
+      如您对本指引有任何疑问，或希望行使您的权利，请通过以下方式联系我们：
     </text>
     <text class="list-item">• 请通过小程序内意见反馈或运营人员公布的官方渠道联系我们</text>
 
-    <text class="section-title">八、政策更新</text>
+    <text class="section-title">十、政策更新</text>
     <text class="section-text">
-      我们可能会不时更新本隐私政策。更新后的政策将在本小程序内公布。如有重大变更，我们将通过适当方式通知您。
+      我们可能会不时更新本指引。更新后的内容将在本小程序内公布。如有重大变更，我们将通过适当方式通知您。
     </text>
 
-    <text class="section-title">九、数据存储与跨境传输</text>
-    <text class="section-text">
-      我们的服务器位于中国大陆境内，所有数据均在境内存储。我们不会将您的个人信息跨境传输至境外。数据备份采用加密存储，定期进行完整性验证。
-    </text>
-
-    <text class="section-title">十、数据删除流程</text>
-    <text class="section-text">
-      您可以通过以下方式申请删除数据：
-    </text>
-    <text class="list-item">• 在"我的-账号注销"页面提交注销申请</text>
-    <text class="list-item">• 我们将在15个工作日内完成数据删除</text>
-    <text class="list-item">• 删除后数据不可恢复，请谨慎操作</text>
-    <text class="list-item">• 删除范围包括：账户信息、儿童档案、测评记录、聊天记录等</text>
-
-    <text class="section-title">十一、微信授权信息说明</text>
-    <text class="section-text">
-      我们通过微信小程序提供服务，可能申请以下权限：
-    </text>
-    <text class="list-item">• 用户信息：获取微信昵称、头像和手机号（用于个性化展示、账号识别和服务联系）</text>
-    <text class="list-item">• 相册/摄像头：用于上传儿童照片和记录视频</text>
-    <text class="list-item">• 录音：用于口头复述录音和 AI 问答语音转文字输入</text>
-    <text class="list-item">• 地理位置：用于推荐本地化育儿资源（可选）</text>
-    <text class="section-text">
-      所有权限均可拒绝，不影响基础功能使用。
-    </text>
-
-    <text class="section-title">十二、第三方服务说明</text>
-    <text class="section-text">
-      我们可能使用以下第三方服务：
-    </text>
-    <text class="list-item">• 微信支付：用于会员订阅支付（审核通过后上线）</text>
-    <text class="list-item">• 数据统计：用于分析用户行为和优化服务</text>
-    <text class="list-item">• 云存储：用于存储用户上传的图片和音频</text>
-    <text class="section-text">
-      第三方服务商承诺遵守个人信息保护法规，不会滥用您的个人信息。
-    </text>
+    <text class="section-title">十一、数据删除说明</text>
+    <text class="section-text">您可以在账号注销页或通过反馈渠道申请删除数据，我们会在法律法规要求和业务处理完成后删除或匿名化相关信息。</text>
   </view>
 </view>
