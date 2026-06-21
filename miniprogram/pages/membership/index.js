@@ -47,17 +47,17 @@ Page({
     isPaying: false
   },
 
+  isLoggedIn() {
+    return !!(app.globalData.isLoggedIn && wx.getStorageSync('token'));
+  },
+
   onLoad() {
     this._redeemSuccessTimer = null;
     this.setData({
       displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
     });
-    app.ensureLogin().then(() => {
-      this.loadMembershipInfo();
-      this.loadReferralStats();
-    }).catch(() => {
-      this.loadMembershipInfo();
-    });
+    this.loadMembershipInfo();
+    this.loadReferralStats();
   },
 
   onUnload() {
@@ -73,7 +73,12 @@ Page({
 
   onShow() {
     this.loadMembershipInfo();
+    this.loadReferralStats();
     this.trackMembershipEvent('membership_center_view');
+  },
+
+  ensureLoggedIn(message) {
+    return app.ensureLogin(message || '请先完成微信登录，再继续开通成长服务');
   },
 
   trackMembershipEvent(eventType, extraMeta) {
@@ -103,6 +108,21 @@ Page({
 
   // 加载会员信息
   loadMembershipInfo() {
+    if (!this.isLoggedIn()) {
+      this.setData({
+        membershipInfo: {
+          status: 'free',
+          membership_type: 'free',
+          is_active: false,
+          days_left: 0,
+          is_trial_used: false,
+          plans: []
+        },
+        promoEnabled: false,
+        displayFeatures: this.buildDisplayFeatures({ is_active: false })
+      });
+      return Promise.resolve(null);
+    }
     app.request({
       url: '/membership/info',
       method: 'GET'
@@ -126,6 +146,13 @@ Page({
 
   // 加载邀请统计
   loadReferralStats() {
+    if (!this.isLoggedIn()) {
+      this.setData({
+        referralStats: {},
+        inviteCode: ''
+      });
+      return Promise.resolve(null);
+    }
     app.request({
       url: '/referral/stats',
       method: 'GET'
@@ -143,10 +170,10 @@ Page({
 
   // 激活试用
   activateTrial() {
-    app.request({
+    this.ensureLoggedIn('请先完成微信登录，再领取成长服务试用').then(() => app.request({
       url: '/membership/trial/activate',
       method: 'POST'
-    }).then(data => {
+    })).then(data => {
       if (data.activated !== false) {
         this.trackMembershipEvent('membership_trial_activate');
         wx.showToast({ title: '试用已开启', icon: 'success' });
@@ -157,6 +184,9 @@ Page({
         wx.showToast({ title: '试用资格已使用', icon: 'none' });
       }
     }).catch(err => {
+      if (err && err.message === 'LOGIN_REQUIRED') {
+        return;
+      }
       if (app.globalData.isDebug) {
         console.error('激活试用失败', err);
       }
@@ -188,7 +218,8 @@ Page({
     }
 
     const that = this;
-    app.ensureLogin().then(function() {
+    let currentOrderNo = '';
+    that.ensureLoggedIn('请先完成微信登录，再开通成长服务').then(function() {
       that.setData({ isPaying: true });
       return app.request({
         url: '/payment/create',
@@ -199,18 +230,19 @@ Page({
         }
       });
     }).then(function(order) {
-      if (!order || !order.success) {
+      if (!order || !order.order_no) {
         throw new Error((order && order.message) || '创建订单失败');
       }
+      currentOrderNo = order.order_no;
       return app.request({
         url: '/payment/unified-order',
         method: 'POST',
         data: {
-          order_no: order.order_no
+          order_no: currentOrderNo
         }
       });
     }).then(function(payParams) {
-      if (!payParams || !payParams.success) {
+      if (!payParams || !payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.paySign) {
         throw new Error((payParams && payParams.message) || '获取支付参数失败');
       }
       return new Promise(function(resolve, reject) {
@@ -225,10 +257,27 @@ Page({
         });
       });
     }).then(function() {
-      that.trackMembershipEvent('membership_payment_success', { plan_code: that.data.selectedPlan });
-      wx.showToast({ title: '支付成功', icon: 'success' });
-      that.loadMembershipInfo();
+      that.trackMembershipEvent('membership_payment_success', {
+        plan_code: that.data.selectedPlan,
+        order_no: currentOrderNo
+      });
+      wx.showLoading({ title: '正在确认成长服务...' });
+      return that.waitForMembershipActivation(currentOrderNo).then(function(activated) {
+        wx.hideLoading();
+        if (activated) {
+          wx.showToast({ title: '支付成功', icon: 'success' });
+          return;
+        }
+        wx.showToast({ title: '支付成功，成长服务稍后到账', icon: 'none' });
+      }).catch(function(err) {
+        wx.hideLoading();
+        throw err;
+      });
     }).catch(function(err) {
+      if (err && err.message === 'LOGIN_REQUIRED') {
+        return;
+      }
+      wx.hideLoading();
       const message = err && err.errMsg && err.errMsg.indexOf('cancel') !== -1
         ? '已取消支付'
         : app.getApiErrorMessage(err, '支付失败，请稍后重试');
@@ -241,6 +290,47 @@ Page({
     });
   },
 
+  waitForMembershipActivation(orderNo) {
+    const that = this;
+    const maxAttempts = 6;
+    const intervalMs = 1500;
+
+    function poll(attempt) {
+      return app.request({
+        url: '/payment/query/' + encodeURIComponent(orderNo),
+        method: 'GET'
+      }).then(function(orderInfo) {
+        if (orderInfo && orderInfo.status === 'paid') {
+          return that.loadMembershipInfo().then(function() {
+            return true;
+          });
+        }
+        if (attempt >= maxAttempts) {
+          return false;
+        }
+        return new Promise(function(resolve) {
+          setTimeout(resolve, intervalMs);
+        }).then(function() {
+          return poll(attempt + 1);
+        });
+      }).catch(function(err) {
+        if (attempt >= maxAttempts) {
+          throw err;
+        }
+        return new Promise(function(resolve) {
+          setTimeout(resolve, intervalMs);
+        }).then(function() {
+          return poll(attempt + 1);
+        });
+      });
+    }
+
+    if (!orderNo) {
+      return Promise.resolve(false);
+    }
+    return poll(1);
+  },
+
   // 输入兑换码
   inputPromoCode(e) {
     this.setData({ promoCode: e.detail.value });
@@ -248,6 +338,10 @@ Page({
 
   // 兑换码兑换
   redeemPromoCode() {
+    if (!this.isLoggedIn()) {
+      this.ensureLoggedIn('请先完成微信登录，再使用兑换码');
+      return;
+    }
     if (!this.data.promoEnabled) {
       wx.showToast({ title: '兑换码功能暂未开放', icon: 'none' });
       return;
@@ -288,12 +382,16 @@ Page({
 
   // 邀请好友
   shareInvite() {
+    if (!this.isLoggedIn()) {
+      this.ensureLoggedIn('请先完成微信登录，再邀请家人朋友');
+      return;
+    }
     this.trackMembershipEvent('membership_invite_click');
     app.request({
       url: '/referral/code',
       method: 'GET'
     }).then(data => {
-      if (data.success && data.invite_code) {
+      if (data && data.invite_code) {
           wx.showModal({
             title: '邀请家人朋友',
             content: '邀请好友注册，双方各得7天成长服务！',
