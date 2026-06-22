@@ -387,15 +387,23 @@ const assets = [
   { id:"10",name:"个人中心",icon:"👤",scenes:["转化"],file:"pages/10-profile.html" },
   { id:"11",name:"封面标题卡",icon:"🎨",scenes:["all"],file:"pages/social-cover.html" },
   { id:"12",name:"育儿日签卡",icon:"📅",scenes:["all"],file:"pages/daily-quote.html" },
+  { id:"13",name:"测评结果报告",icon:"📊",scenes:["专注","表达","训练"],file:"pages/assessment-result.html" },
+  { id:"14",name:"训练练习详情",icon:"🏋",scenes:["专注","表达","阅读","训练"],file:"pages/training-exercise.html" },
+  { id:"15",name:"AI问答对话",icon:"🤖",scenes:["专注","表达","吃饭","睡眠","阅读","训练"],file:"pages/ai-chat-demo.html" },
+  { id:"16",name:"成长趋势图表",icon:"📈",scenes:["专注","表达","训练"],file:"pages/growth-trend.html" },
+  { id:"17",name:"今日食谱推荐",icon:"🍽",scenes:["吃饭"],file:"pages/meal-recipe.html" },
+  { id:"18",name:"育儿锦囊文章",icon:"📄",scenes:["睡眠","阅读"],file:"pages/parenting-article.html" },
+  { id:"19",name:"周报详情页",icon:"📋",scenes:["转化"],file:"pages/weekly-report.html" },
+  { id:"20",name:"快速锦囊",icon:"💡",scenes:["all"],file:"pages/quick-tips.html" },
 ];
 const sceneFeat = {
-  "专注":{cls:"focus",feat:["02","03","04","07"]},
-  "表达":{cls:"express",feat:["02","03","04","07"]},
-  "吃饭":{cls:"eat",feat:["02","05"]},
-  "睡眠":{cls:"sleep",feat:["02","06"]},
-  "阅读":{cls:"read",feat:["02","04","06"]},
-  "训练":{cls:"train",feat:["02","03","04","07"]},
-  "转化":{cls:"convert",feat:["08","09","10","01"]},
+  "专注":{cls:"focus",feat:["02","03","04","07","13","14","15","16"]},
+  "表达":{cls:"express",feat:["02","03","04","07","13","14","15","16"]},
+  "吃饭":{cls:"eat",feat:["02","05","15","17"]},
+  "睡眠":{cls:"sleep",feat:["02","06","15","18"]},
+  "阅读":{cls:"read",feat:["02","04","06","14","15","18"]},
+  "训练":{cls:"train",feat:["02","03","04","07","13","14","15","16"]},
+  "转化":{cls:"convert",feat:["08","09","10","01","19"]},
 };
 
 
