@@ -8,16 +8,24 @@
       :root {
         --bg: #f6efe5;
         --bg-strong: #ead7c0;
-        --panel: rgba(255, 251, 246, 0.88);
+        --panel: rgba(255, 251, 246, 0.92);
+        --panel-warm: rgba(255, 245, 235, 0.88);
+        --panel-cool: rgba(248, 245, 242, 0.88);
         --panel-strong: rgba(255, 248, 240, 0.98);
-        --line: rgba(83, 48, 29, 0.12);
+        --line: rgba(83, 48, 29, 0.1);
+        --line-strong: rgba(83, 48, 29, 0.16);
         --text: #3f261b;
         --muted: #7d5d4d;
         --accent: #cb6f3f;
         --accent-soft: #f4b487;
         --accent-deep: #9f4f2f;
         --good: #486b4d;
-        --shadow: 0 22px 60px rgba(95, 53, 30, 0.12);
+        --blue: #3a6b8f;
+        --purple: #7b5ea7;
+        --gold: #b8860b;
+        --rose: #b85060;
+        --shadow: 0 22px 60px rgba(95, 53, 30, 0.1);
+        --shadow-sm: 0 6px 20px rgba(95, 53, 30, 0.05);
         --radius-lg: 28px;
         --radius-md: 18px;
         --radius-sm: 12px;
@@ -119,12 +127,23 @@
         border: 1px solid var(--line);
         border-radius: var(--radius-lg);
         background: var(--panel);
-        box-shadow: 0 12px 30px rgba(95, 53, 30, 0.06);
+        box-shadow: var(--shadow-sm);
         backdrop-filter: blur(10px);
       }
 
       .metric-card {
-        padding: 18px;
+        padding: 20px;
+        border-color: var(--line-strong);
+      }
+
+      .panel {
+        background: var(--panel-warm);
+        border-color: rgba(203, 111, 63, 0.08);
+      }
+
+      .library-card {
+        background: var(--panel-cool);
+        border-color: rgba(100, 130, 160, 0.1);
       }
 
       .metric-card span,
@@ -147,8 +166,8 @@
       .layout {
         display: grid;
         grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
-        gap: 24px;
-        margin-top: 24px;
+        gap: 32px;
+        margin-top: 32px;
         align-items: start;
       }
 
@@ -156,7 +175,7 @@
       .detail-card,
       .library-card,
       .review-card {
-        padding: 22px;
+        padding: 28px;
       }
 
       .panel h2,
@@ -166,13 +185,20 @@
       .section-title {
         margin: 0 0 14px;
         font-family: var(--serif);
-        font-size: 24px;
+        font-size: 22px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--line);
       }
 
+      .panel h2 { border-bottom-color: rgba(203, 111, 63, 0.15); }
+      .library-card h2 { border-bottom-color: rgba(100, 130, 160, 0.15); }
+      .detail-card h2 { border-bottom-color: rgba(72, 107, 77, 0.15); }
+
       .section-subtitle {
-        margin: -4px 0 18px;
+        margin: -4px 0 22px;
         color: var(--muted);
-        line-height: 1.6;
+        line-height: 1.7;
+        font-size: 13px;
       }
 
       .toolbar {
@@ -241,26 +267,33 @@
       }
 
       .stat-card {
-        padding: 18px;
+        padding: 22px 18px;
       }
 
       .card-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-        margin-top: 20px;
+        gap: 18px;
+        margin-top: 22px;
       }
 
       .day-card {
-        padding: 18px;
+        padding: 20px;
         cursor: pointer;
         transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        border-left: 3px solid transparent;
       }
 
-      .day-card:hover,
+      .day-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(203, 111, 63, 0.3);
+        border-left-color: var(--accent-soft);
+        background: var(--panel-strong);
+      }
       .day-card.active {
         transform: translateY(-2px);
         border-color: rgba(203, 111, 63, 0.45);
+        border-left-color: var(--accent);
         background: var(--panel-strong);
       }
 
@@ -277,13 +310,26 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 10px;
+        padding: 6px 12px;
         border-radius: 999px;
-        color: var(--accent-deep);
-        background: rgba(203, 111, 63, 0.1);
         font-size: 12px;
         font-weight: 700;
       }
+      .day-tag {
+        color: var(--accent-deep);
+        background: rgba(203, 111, 63, 0.1);
+      }
+      .scene-tag {
+        color: var(--accent-deep);
+        background: rgba(203, 111, 63, 0.08);
+      }
+      .scene-tag.scene-focus  { color: #cb6f3f; background: rgba(203, 111, 63, 0.08); }
+      .scene-tag.scene-express { color: var(--good); background: rgba(72, 107, 77, 0.08); }
+      .scene-tag.scene-eat    { color: var(--gold); background: rgba(184, 134, 11, 0.08); }
+      .scene-tag.scene-sleep  { color: var(--blue); background: rgba(58, 107, 143, 0.08); }
+      .scene-tag.scene-read   { color: var(--purple); background: rgba(123, 94, 167, 0.08); }
+      .scene-tag.scene-train  { color: #b06030; background: rgba(176, 96, 48, 0.08); }
+      .scene-tag.scene-convert { color: var(--rose); background: rgba(184, 80, 96, 0.08); }
 
       .status-chip.done {
         color: #fff;
@@ -291,10 +337,10 @@
       }
 
       .day-card h3 {
-        margin: 12px 0 8px;
+        margin: 14px 0 10px;
         font-family: var(--serif);
-        font-size: 22px;
-        line-height: 1.28;
+        font-size: 20px;
+        line-height: 1.3;
       }
 
       .day-card p {
@@ -310,7 +356,14 @@
       .text-grid,
       .resource-grid {
         display: grid;
-        gap: 16px;
+        gap: 20px;
+      }
+      .detail-stack > .detail-card {
+        padding: 18px;
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(83, 48, 29, 0.06);
+        box-shadow: none;
       }
 
       .metrics-grid {
@@ -323,9 +376,17 @@
 
       .detail-card h3,
       .library-card h3 {
-        margin: 0 0 10px;
-        font-size: 16px;
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: var(--accent-deep);
       }
+      .detail-stack > .detail-card h3 {
+        color: var(--text);
+      }
+      .detail-stack > .detail-card:nth-child(2) h3 { color: #b85060; }
+      .detail-stack > .detail-card:nth-child(3) h3 { color: var(--accent-deep); }
+      .detail-stack > .detail-card:nth-child(4) h3 { color: var(--blue); }
+      .detail-stack > .detail-card:nth-child(6) h3 { color: var(--purple); }
 
       .copy-row,
       .flex-row,
@@ -338,13 +399,14 @@
 
       .content-box,
       .markdown-box {
-        padding: 16px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.64);
-        border: 1px solid rgba(83, 48, 29, 0.08);
+        padding: 18px;
+        border-radius: var(--radius-sm);
+        background: rgba(253, 248, 240, 0.7);
+        border: 1px solid rgba(203, 111, 63, 0.08);
         color: var(--text);
-        line-height: 1.8;
+        line-height: 1.9;
         white-space: pre-wrap;
+        font-size: 13px;
       }
 
       .content-box strong {
@@ -510,12 +572,12 @@
       .week-stats {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
-        margin-top: 16px;
+        gap: 12px;
+        margin-top: 18px;
       }
       .week-stat-item {
         text-align: center;
-        padding: 8px 6px;
+        padding: 12px 8px;
         border-radius: var(--radius-sm);
         background: rgba(255, 255, 255, 0.55);
         border: 1px solid rgba(83, 48, 29, 0.06);
@@ -736,13 +798,13 @@
             <div id="dayGrid" class="card-grid"></div>
           </section>
 
-          <section class="panel" style="margin-top: 24px;">
+          <section class="panel" style="margin-top: 32px;">
             <h2>文档总览</h2>
             <p class="section-subtitle">这里保留原始 Markdown 的关键章节，方便随时回看口径、工作流、周主题和完整 SOP。</p>
             <div id="overviewSection" class="library-stack"></div>
           </section>
 
-          <section class="panel" style="margin-top: 24px;">
+          <section class="panel" style="margin-top: 32px;">
             <h2>完整内容中心</h2>
             <p class="section-subtitle">这里集中放 30 条小红书提示词、公众号标题文案、小红书成稿总表和抖音口播总表，方便整批查看和复制。</p>
             <div id="contentSection" class="library-stack"></div>
@@ -839,13 +901,13 @@
             </div>
           </section>
 
-          <section class="library-card" style="margin-top: 24px;">
+          <section class="library-card" style="margin-top: 32px;">
             <h2>&#x1F4F7; 产品配图素材库</h2>
             <p class="section-subtitle">10 个功能模块的产品截图，按营销场景分类。点击可在新标签页打开完整截图页面，右键另存即可用于小红书/公众号配图。</p>
             <div id="assetGallery" class="asset-grid"></div>
           </section>
 
-          <section class="library-card" style="margin-top: 24px;">
+          <section class="library-card" style="margin-top: 32px;">
             <h2>话术库与素材库</h2>
             <p class="section-subtitle">高频使用的评论回复、异议处理、海报文案、周复盘模板都在这里。</p>
             <div id="librarySection" class="library-stack"></div>
@@ -1191,6 +1253,11 @@
         return "转化";
       }
 
+      function getSceneClass(scene) {
+        const map = { "专注": "focus", "表达": "express", "吃饭": "eat", "睡眠": "sleep", "阅读": "read", "训练": "train", "转化": "convert" };
+        return map[scene] || "focus";
+      }
+
       function getCta(day) {
         if (day === 7 || day === 14 || day === 21 || day === 28 || day === 30) return "领 7 天服务";
         if (day >= 25 && day <= 27) return "先试 10 分钟";
@@ -1266,7 +1333,7 @@
                 <header>
                   <div class="copy-row">
                     <span class="day-tag">Day ${day.day}</span>
-                    <span class="scene-tag">${escapeHtml(day.scene)}</span>
+                    <span class="scene-tag scene-${getSceneClass(day.scene)}">${escapeHtml(day.scene)}</span>
                   </div>
                   <span class="status-chip ${done ? "done" : ""}">${done ? "已完成" : "进行中"}</span>
                 </header>
