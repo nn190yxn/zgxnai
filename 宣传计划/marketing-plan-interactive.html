@@ -194,6 +194,58 @@ body {
 
 .footer { text-align:center; color:var(--muted); font-size:12px; margin-top:24px; }
 
+/* toast */
+.toast {
+  position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%);
+  padding: 10px 22px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  background: var(--text); color: #fff; z-index: 9999;
+  animation: toastIn .28s ease, toastOut .28s .9s ease forwards;
+  pointer-events: none;
+}
+@keyframes toastIn { from {opacity:0;transform:translateX(-50%) translateY(12px);} to {opacity:1;transform:translateX(-50%) translateY(0);} }
+@keyframes toastOut { from {opacity:1;} to {opacity:0;transform:translateX(-50%) translateY(-8px);} }
+
+/* skeleton loading */
+.skel {
+  background: linear-gradient(90deg,rgba(0,0,0,0.04) 25%,rgba(0,0,0,0.1) 50%,rgba(0,0,0,0.04) 75%);
+  background-size:200% 100%; animation:skelShimmer 1.6s ease-in-out infinite; border-radius:8px;
+}
+@keyframes skelShimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+.skel-cal { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.skel-cal span { aspect-ratio:1; }
+.skel-card { height:80px; margin-bottom:6px; }
+.skel-text { height:14px; margin-bottom:6px; }
+.skel-text.short { width:60%; }
+
+/* nav arrows */
+.nav-arrows { display:flex; gap:6px; margin-left:auto; }
+.nav-arrows button {
+  width:32px; height:32px; border-radius:50%; border:1px solid var(--line);
+  background:rgba(255,255,255,0.7); cursor:pointer; font-size:14px; font-weight:700;
+  color:var(--text); display:flex; align-items:center; justify-content:center;
+  transition: border-color .18s, background .18s;
+}
+.nav-arrows button:hover { border-color:var(--accent); background:rgba(203,111,63,0.06); }
+
+/* center loading */
+.center-loading { padding:40px; text-align:center; }
+.center-loading .skel-spin {
+  width:32px; height:32px; margin:0 auto 12px; border:3px solid rgba(203,111,63,0.12);
+  border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg);} }
+
+/* error state */
+.error-panel { padding:40px; text-align:center; }
+.error-panel .err-icon { font-size:36px; margin-bottom:10px; }
+.error-panel .err-msg { color:var(--muted); font-size:13px; margin-bottom:16px; }
+.error-panel .err-btn {
+  padding:9px 24px; border-radius:99px; font-size:13px; font-weight:600; cursor:pointer;
+  border:1px solid var(--accent); background:var(--accent); color:#fff;
+  transition: opacity .18s;
+}
+.error-panel .err-btn:hover { opacity:.85; }
+
 @media (max-width:1280px) {
   .main { grid-template-columns:1fr; }
   .side-left, .side-right { position:static; max-height:none; }
@@ -235,7 +287,7 @@ body {
     <div class="side-left">
       <div class="side-card">
         <h3>📅 执行日历</h3>
-        <div id="calGrid" class="cal-grid"></div>
+        <div id="calGrid" class="cal-grid"><div class="skel-cal"><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span></div></div>
       </div>
 
       <div class="side-card">
@@ -271,9 +323,16 @@ body {
           <div class="title" id="missionTitle">Day 1 · 选择一天开始</div>
           <div class="sub" id="missionSub">点击左侧日历卡片加载内容</div>
         </div>
+        <div class="nav-arrows">
+          <button id="navPrev" title="上一天">&#8592;</button>
+          <button id="navNext" title="下一天">&#8594;</button>
+        </div>
         <span class="cta-chip" id="missionCta">-</span>
       </div>
-
+      <div class="center-loading" id="centerLoading">
+        <div class="skel-spin"></div>
+        <div style="color:var(--muted);font-size:12px;">正在加载 30 天计划数据...</div>
+      </div>
       <div id="taskCards"></div>
     </div>
 
@@ -284,24 +343,25 @@ body {
         <div id="assetGrid" class="asset-grid-mini"></div>
       </div>
 
-      <details class="collapse">
+      <details class="collapse lazy-panel" data-render="renderLib">
         <summary>💬 话术库</summary>
-        <div class="body" id="libraryBody"></div>
+        <div class="body" id="libraryBody"><div class="skel skel-card"></div><div class="skel skel-text"></div><div class="skel skel-text short"></div></div>
       </details>
 
-      <details class="collapse">
+      <details class="collapse lazy-panel" data-render="renderOv">
         <summary>📖 文档总览</summary>
-        <div class="body" id="overviewBody"></div>
+        <div class="body" id="overviewBody"><div class="skel skel-card"></div><div class="skel skel-text"></div><div class="skel skel-text short"></div></div>
       </details>
 
-      <details class="collapse">
+      <details class="collapse lazy-panel" data-render="renderCt">
         <summary>📚 完整内容中心</summary>
-        <div class="body" id="contentBody"></div>
+        <div class="body" id="contentBody"><div class="skel skel-card"></div><div class="skel skel-text"></div><div class="skel skel-text short"></div></div>
       </details>
     </div>
   </div>
 
   <div class="footer">数据保存在浏览器本地。修改同目录 Markdown 后刷新页面即可同步。</div>
+  <div class="toast" id="toast" style="display:none"></div>
 </div>
 
 <script>
@@ -338,6 +398,12 @@ const sceneFeat = {
 
 // ── helpers ──
 function extractTagline(sec) {const m=sec.match(/`([^`]+)`/);return m?m[1].trim():"";}
+function showToast(msg) {
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.style.display="block";
+  t.style.animation="none"; t.offsetHeight;
+  t.style.animation="toastIn .28s ease, toastOut .28s .9s ease forwards";
+}
 
 // ── init ──
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
@@ -348,13 +414,23 @@ async function init() {
     state.sections = splitSections(await r.text());
     state.days = buildDays(state.sections);
     document.getElementById("topTagline").textContent = extractTagline(state.sections["2. 产品卖点与对外口径"]||"")||"看懂孩子当前成长短板，少走弯路，带娃更省心";
-    renderCal(); renderDetail(state.selectedDay); renderAsset(); renderLib(); renderOv(); renderCt(); renderFunnel(); updateTop();
+    document.getElementById("centerLoading").style.display="none";
+    renderCal(); renderDetail(state.selectedDay); renderAsset(); renderFunnel(); updateTop();
+    setupLazyPanels();
   } catch(e) {
     const cc=document.getElementById("centerColumn");
-    if(cc) cc.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);">${e.message}<br>请刷新页面重试，或通过本地静态服务打开。</div>`;
+    if(cc) cc.innerHTML = `<div class="error-panel">
+      <div class="err-icon">⚠</div><div class="err-msg">${e.message}<br>请确认通过本地静态服务或平台预览打开。</div>
+      <button class="err-btn" onclick="init()">重新加载</button>
+    </div>`;
     const tt=document.getElementById("topTagline");
-    if(tt) tt.textContent = "加载失败，请刷新页面";
+    if(tt) tt.textContent = "加载失败，请重试";
   }
+}
+function setupLazyPanels() {
+  document.querySelectorAll(".lazy-panel").forEach(el=>{
+    el.addEventListener("toggle",()=>{if(el.open&&!el.dataset.loaded){el.dataset.loaded="1";const fn=window[el.dataset.render];if(fn)fn();}});
+  });
 }
 
 // ── MD parsing ──
@@ -528,7 +604,10 @@ function updateTop() {
 }
 
 // ── actions ──
-function selectDay(dn) { renderDetail(dn); }
+function selectDay(dn) {
+  if(dn<1) dn=1; if(dn>30) dn=30;
+  renderDetail(dn);
+}
 function toggleTask(task) {
   const d=state.days.find(x=>x.day===state.selectedDay);
   if(!d) return;
@@ -542,7 +621,7 @@ function saveMetrics() {
   if(!d) return;
   const p=getProgress(d.day);
   p.metrics={views:document.getElementById("mViews").value,saves:document.getElementById("mSaves").value,plays:document.getElementById("mPlays").value,entrances:document.getElementById("mEnt").value,replies:document.getElementById("mRepl").value,highIntent:document.getElementById("mHi").value,note:document.getElementById("mNote").value};
-  saveProgress();
+  saveProgress(); showToast("数据已保存");
 }
 
 document.getElementById("funnelSaveBtn").addEventListener("click",()=>{
@@ -553,16 +632,19 @@ document.getElementById("funnelSaveBtn").addEventListener("click",()=>{
   saveFunnel(); renderFunnel();
   document.getElementById("funnelRegInput").value="";
   document.getElementById("funnelPayInput").value="";
+  showToast("漏斗数据已更新");
 });
 document.getElementById("exportMdBtn").addEventListener("click",exportMd);
 document.getElementById("exportCsvBtn").addEventListener("click",exportCsv);
 document.getElementById("exportSummaryBtn").addEventListener("click",exportSummary);
+document.getElementById("navPrev").addEventListener("click",()=>selectDay(state.selectedDay-1));
+document.getElementById("navNext").addEventListener("click",()=>selectDay(state.selectedDay+1));
 
 function copyField(type) {
   const d=state.days.find(x=>x.day===state.selectedDay);
   if(!d) return;
   const map={xhs:`${d.xhsTitle}\n\n${d.xhsBody}`,prompt:`${d.promptTopic}\n\n${d.promptText}`,video:`${d.videoTitle}\n\n${d.videoScript}`,cover:`${d.coverTitle}\n${d.coverSubtitle}`,reach:d.reach};
-  copyText(map[type]||"");
+  copyText(map[type]||"");showToast(type==="reach"?"私聊话术已复制":"内容已复制");
 }
 
 function exportMd() {
@@ -571,12 +653,14 @@ function exportMd() {
   lines.push(`## 整体进度：${Math.round(c/tot*100)}% (${c}/${tot})`);lines.push("");
   state.days.forEach(d=>{const p=getProgress(d.day);lines.push(`### Day ${d.day} · ${d.week} · ${d.scene} ${isDone(p)?"[已完成]":"[进行中]"}`);lines.push(`- 小红书：${d.xhsTitle}`);lines.push(`- 视频：${d.videoTitle}`);lines.push(`- CTA：${d.cta}`);lines.push(`- 发布：小红书${p.tasks.xhs?"是":"否"} 视频${p.tasks.video?"是":"否"} 触达${p.tasks.reach?"是":"否"} 复盘${p.tasks.review?"是":"否"}`);if(p.metrics.views||p.metrics.saves)lines.push(`- 数据：浏览${p.metrics.views||0} 收藏${p.metrics.saves||0} 播放${p.metrics.plays||0}`);if(p.metrics.note)lines.push(`- 备注：${p.metrics.note}`);lines.push("");});
   const b=new Blob([lines.join("\n")],{type:"text/markdown;charset=UTF-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="小牛育儿30天推广执行报告.md";a.click();
+  showToast("报告已下载");
 }
 function exportCsv() {
   const rows=[["Day","周次","场景","CTA","小红书标题","视频标题","小红书","视频","触达","复盘","浏览","收藏","播放","小程序进入","会员回复","高意向","备注"]];
   state.days.forEach(d=>{const p=getProgress(d.day);rows.push([d.day,d.week,d.scene,d.cta,d.xhsTitle,d.videoTitle,p.tasks.xhs?"是":"否",p.tasks.video?"是":"否",p.tasks.reach?"是":"否",p.tasks.review?"是":"否",p.metrics.views||"",p.metrics.saves||"",p.metrics.plays||"",p.metrics.entrances||"",p.metrics.replies||"",p.metrics.highIntent||"",p.metrics.note||""]);});
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const b=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=UTF-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="小牛育儿30天数据报表.csv";a.click();
+  showToast("CSV 已下载");
 }
 function exportSummary() {
   const lines=["[小牛育儿 30 天推广执行摘要]"];let c=0;const tot=state.days.length*4;
@@ -587,7 +671,7 @@ function exportSummary() {
   state.days.forEach(d=>{if(isDone(getProgress(d.day))) lines.push(`  Day ${d.day} · ${d.xhsTitle}`);});
   lines.push("");lines.push("--- 待推进天 ---");
   state.days.forEach(d=>{if(!isDone(getProgress(d.day))) lines.push(`  Day ${d.day} · ${d.scene} · ${d.xhsTitle}`);});
-  copyText(lines.join("\n"));
+  copyText(lines.join("\n"));showToast("摘要已复制");
 }
 
 // ── md→html ──
@@ -608,15 +692,23 @@ function mdToHtml(md) {
 function imd(t){return t.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");}
 function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 
-async function copyText(t) {
+function copyText(t) {
   if(!t)return;
-  try{await navigator.clipboard.writeText(t);}catch{const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);}
+  try {
+    const ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
+    document.execCommand("copy");document.body.removeChild(ta);
+  } catch(e) {
+    navigator.clipboard.writeText(t).catch(()=>{});
+  }
 }
 
 window.selectDay=selectDay;
 window.toggleTask=toggleTask;
 window.copyField=copyField;
 window.saveMetrics=saveMetrics;
+window.renderLib=renderLib;
+window.renderOv=renderOv;
+window.renderCt=renderCt;
 </script>
 </body>
 </html>
