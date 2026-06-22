@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>育儿日签金句卡</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --accent:#cb6f3f; --deep:#9f4f2f; --text:#3f261b; --muted:#7d5d4d;
+  --c1:#cb6f3f; --c2:#486b4d; --c3:#b8860b; --c4:#7b5ea7; --c5:#b85060;
+  --c6:#3a6b8f; --c7:#9f4f2f;
+}
+body {
+  font-family:"Hiragino Sans GB","Microsoft YaHei",sans-serif; color:var(--text);
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.7), transparent 30%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.6), transparent 25%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 50%, #efe0cc 100%);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px;
+}
+h1 { font-family:"Noto Serif SC","Songti SC",serif; font-size:22px; margin-bottom:4px; }
+.subtitle { color:var(--muted); font-size:13px; margin-bottom:18px; }
+
+.controls {
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:center;
+  margin-bottom:20px; padding:12px 20px; border-radius:99px;
+  background:rgba(255,255,255,0.8); border:1px solid rgba(83,48,29,0.08);
+}
+.day-nav { display:flex; align-items:center; gap:8px; }
+.day-nav button {
+  width:32px; height:32px; border-radius:50%; border:1px solid rgba(83,48,29,0.12);
+  background:#fff; cursor:pointer; font-size:16px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; justify-content:center; transition:border-color .18s;
+}
+.day-nav button:hover { border-color:var(--accent); }
+.day-nav .day-num { font-size:16px; font-weight:700; min-width:60px; text-align:center; }
+.day-nav .day-scene { font-size:10px; color:var(--muted); }
+.style-btn {
+  padding:7px 16px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer;
+  border:1px solid rgba(83,48,29,0.12); background:#fff; color:var(--text); transition:all .18s;
+}
+.style-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.style-btn:hover:not(.active) { border-color:var(--accent); }
+
+.card-wrap { margin-bottom:20px; }
+.card {
+  position:relative; overflow:hidden; border-radius:24px; width:450px; height:450px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:44px 36px; gap:14px;
+}
+.card.s1 {
+  background: linear-gradient(160deg, #fff8f0 0%, #fef3e7 45%, #fde9d5 100%);
+  border:2px solid rgba(203,111,63,0.12);
+}
+.card.s2 {
+  background: linear-gradient(160deg, #f8f6f0 0%, #f0eee5 45%, #e8e4d8 100%);
+  border:2px solid rgba(72,107,77,0.12);
+}
+.card .week-tag {
+  font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  padding:3px 14px; border-radius:99px;
+}
+.card.s1 .week-tag { background:rgba(203,111,63,0.1); color:var(--c1); border:1px solid rgba(203,111,63,0.2); }
+.card.s2 .week-tag { background:rgba(72,107,77,0.1); color:var(--c2); border:1px solid rgba(72,107,77,0.2); }
+.card .scene-badge {
+  font-family:"Noto Serif SC","Songti SC",serif; font-size:13px; font-weight:700;
+  padding:4px 16px; border-radius:99px;
+}
+.card.s1 .scene-badge { background:rgba(203,111,63,0.06); color:var(--deep); }
+.card.s2 .scene-badge { background:rgba(72,107,77,0.06); color:var(--c2); }
+.card .quote {
+  font-family:"Noto Serif SC","Songti SC",serif; font-size:22px; font-weight:700;
+  line-height:1.5; max-width:85%; color:var(--text);
+}
+.card .divider {
+  width:32px; height:2px; border-radius:99px;
+}
+.card.s1 .divider { background:var(--c1); }
+.card.s2 .divider { background:var(--c2); }
+.card .insight { font-size:13px; color:var(--muted); line-height:1.6; max-width:80%; }
+.card .footer-text {
+  font-size:10px; color:var(--muted); letter-spacing:.04em;
+}
+.card .decor {
+  position:absolute; border-radius:50%; pointer-events:none;
+}
+.card .decor.d1 { width:100px; height:100px; top:-30px; right:-30px; }
+.card.s1 .decor.d1 { background:rgba(244,180,135,0.1); }
+.card.s2 .decor.d1 { background:rgba(132,179,138,0.08); }
+.card .decor.d2 { width:60px; height:60px; bottom:-15px; left:-15px; }
+.card.s1 .decor.d2 { background:rgba(203,111,63,0.06); }
+.card.s2 .decor.d2 { background:rgba(72,107,77,0.05); }
+
+.export-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 28px; border-radius:99px; font-size:14px; font-weight:600; cursor:pointer;
+  background:var(--accent); color:#fff; border:none; margin-top:10px; transition:opacity .18s;
+}
+.export-btn:hover { opacity:.85; }
+.export-btn.loading { pointer-events:none; opacity:.7; }
+.info { font-size:11px; color:var(--muted); margin-top:8px; text-align:center; max-width:500px; }
+</style>
+</head>
+<body>
+
+<h1>育儿日签金句卡</h1>
+<div class="subtitle">30 天推广计划 · 每日一条育儿洞察，适合分享到朋友圈/社群</div>
+
+<div class="controls">
+  <div class="day-nav">
+    <button onclick="prevDay()">&#8592;</button>
+    <span class="day-num" id="dayNum">Day 1</span>
+    <button onclick="nextDay()">&#8594;</button>
+    <span class="day-scene" id="dayScene">第1周 · 专注</span>
+  </div>
+  <span style="color:var(--muted);margin:0 4px;">|</span>
+  <button class="style-btn active" onclick="setStyle(1)">暖橙</button>
+  <button class="style-btn" onclick="setStyle(2)">雅绿</button>
+</div>
+
+<div class="card-wrap">
+  <div class="card s1" id="card">
+    <div class="decor d1"></div><div class="decor d2"></div>
+    <div class="week-tag" id="weekTag">第1周</div>
+    <div class="scene-badge" id="sceneBadge">专注力成长</div>
+    <div class="quote" id="cardQuote">孩子总坐不住<br>很多家长第一步就抓错了</div>
+    <div class="divider"></div>
+    <div class="insight" id="cardInsight">先看清孩子当前卡在哪，再决定怎么陪</div>
+    <div class="footer-text">小牛育儿AI助理 · 看懂孩子成长短板，少走弯路</div>
+  </div>
+</div>
+
+<button class="export-btn" id="exportBtn" onclick="exportImage()">↓ 导出图片</button>
+<div class="info">1:1 方图，适配微信朋友圈、社群分享、小红书配图 · 两种配色风格</div>
+
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+const quotes = [
+  { week:"第1周", scene:"专注力成长", quote:"孩子总坐不住<br>很多家长第一步就抓错了", insight:"先看这3个信号，再下结论" },
+  { week:"第1周", scene:"专注力成长", quote:"一写作业就跑开<br>先别急着催", insight:"很多时候是内容太难，不是态度问题" },
+  { week:"第1周", scene:"专注力成长", quote:"坐不住的孩子<br>卡点差别比你想的大", insight:"作业难、听不懂、坐不住，要先分清" },
+  { week:"第1周", scene:"专注力成长", quote:"听不进去和不配合<br>其实是两回事", insight:"分清信号，家长会更知道怎么陪" },
+  { week:"第1周", scene:"专注力成长", quote:"越催他写作业<br>他越磨蹭给你看", insight:"不是孩子故意对抗，是节奏不对" },
+  { week:"第1周", scene:"专注力成长", quote:"家长最容易抓错的<br>是专注第一步", insight:"先做判断，再安排练习，效果差很多" },
+  { week:"第1周", scene:"专注力成长", quote:"这一周最值得看懂的<br>是"坐不住"背后的原因", insight:"先做一次成长观察，心里更有底" },
+  { week:"第2周", scene:"表达力成长", quote:"孩子知道<br>却说不出来怎么办", insight:"很多时候开口少，是因为被替说太多" },
+  { week:"第2周", scene:"表达力成长", quote:"不爱开口的孩子<br>给他留3秒", insight:"你越替他说，他越难自己主动表达" },
+  { week:"第2周", scene:"表达力成长", quote:"复述差不等于<br>记忆力差", insight:"先看是不是听不懂，再看是不是说不清" },
+  { week:"第2周", scene:"表达力成长", quote:"表达弱的孩子<br>先在家练这3步", insight:"每天10分钟亲子对话，比一周一节课管用" },
+  { week:"第2周", scene:"表达力成长", quote:"家长最容易替孩子<br>把话先说完", insight:"停3秒，让孩子自己来，差别会很大" },
+  { week:"第2周", scene:"表达力成长", quote:"说话晚先别急<br>先看4个判断点", insight:"1到3岁尤其要结合吃饭、睡前一起看" },
+  { week:"第2周", scene:"表达力成长", quote:"这一周的家常对话<br>比什么课都管用", insight:"先看清当前表达卡在哪，再选一个场景开始" },
+  { week:"第3周", scene:"吃饭习惯培养", quote:"孩子挑食<br>很多时候卡在饭桌节奏", insight:"先别追着喂，先把一顿饭顺下来" },
+  { week:"第3周", scene:"吃饭习惯培养", quote:"吃饭拖拉<br>不是一句"快点吃"能解决", insight:"先看这4点，再决定怎么调整" },
+  { week:"第3周", scene:"吃饭习惯培养", quote:"一到饭点就对抗<br>先别急着生气", insight:"饭桌气氛比吃进去多少更重要" },
+  { week:"第3周", scene:"睡眠习惯培养", quote:"睡前又哭又闹<br>常常是白天节奏乱了", insight:"先稳住晚饭到睡前的小流程" },
+  { week:"第3周", scene:"睡眠习惯培养", quote:"夜醒反复<br>不只看夜里那一下", insight:"白天的小睡节奏和晚饭时间都要看" },
+  { week:"第3周", scene:"家庭节奏调整", quote:"吃饭和睡眠总反复<br>先看家庭一日节奏", insight:"先稳住一个场景，不要同时抓很多项" },
+  { week:"第3周", scene:"家庭节奏调整", quote:"这一周的家庭节奏<br>决定了后面轻松多少", insight:"先做成长观察，看清孩子当前短板" },
+  { week:"第4周", scene:"亲子阅读", quote:"一看绘本就跑开<br>不一定是坐不住", insight:"选书不对、节奏太赶，都会让孩子抗拒" },
+  { week:"第4周", scene:"亲子阅读", quote:"绘本翻两页就走<br>先看哪里卡住了", insight:"把共读拆成小段，孩子更容易坐住" },
+  { week:"第4周", scene:"亲子阅读", quote:"理解力弱<br>根源常常在表达", insight:"多问一句"你看到什么了"，比读完更重要" },
+  { week:"第4周", scene:"10分钟学习练习", quote:"每天10分钟<br>比一周一节课更有效", insight:"放进饭后、洗澡后、睡前这些自然场景里" },
+  { week:"第4周", scene:"10分钟学习练习", quote:"陪练最省力的方式<br>不必每次都坐下", insight:"饭桌上复述、睡前读绘本，日常就是练习" },
+  { week:"第4周", scene:"10分钟学习练习", quote:"每天陪练没变化<br>常常是重点没抓对", insight:"先看训练方向，再决定练什么" },
+  { week:"第4周", scene:"亲子学习小结", quote:"这一周做最简单的<br>先坚持下来", insight:"把一个场景顺下来，家长体感最明显" },
+  { week:"第5周", scene:"转化冲刺", quote:"哪些家长最适合<br>先做一次成长观察", insight:"先看清短板再做练习，比急着报课更省心" },
+  { week:"第5周", scene:"转介绍", quote:"这30天最值得收藏的<br>带娃判断清单", insight:"分享给同样在发愁的朋友，一起少走弯路" },
+];
+
+let currentDay = 0;
+let currentStyle = 1;
+
+function render() {
+  const q = quotes[currentDay];
+  document.getElementById("dayNum").textContent = "Day " + (currentDay + 1);
+  document.getElementById("dayScene").textContent = q.week + " · " + q.scene;
+  document.getElementById("weekTag").textContent = q.week;
+  document.getElementById("sceneBadge").textContent = q.scene;
+  document.getElementById("cardQuote").innerHTML = q.quote;
+  document.getElementById("cardInsight").textContent = q.insight;
+  document.getElementById("card").className = "card s" + currentStyle;
+  document.querySelectorAll(".style-btn").forEach((b,i) => {
+    b.classList.toggle("active", i+1 === currentStyle);
+  });
+}
+
+function prevDay() { currentDay = (currentDay - 1 + 30) % 30; render(); }
+function nextDay() { currentDay = (currentDay + 1) % 30; render(); }
+function setStyle(s) { currentStyle = s; render(); }
+
+async function exportImage() {
+  const btn = document.getElementById("exportBtn");
+  btn.textContent = "... 生成中"; btn.classList.add("loading");
+  try {
+    const el = document.getElementById("card");
+    const canvas = await html2canvas(el, { scale: 3, backgroundColor: null });
+    const a = document.createElement("a");
+    a.download = "育儿日签_Day" + (currentDay + 1) + ".png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    btn.textContent = "↓ 导出图片"; btn.classList.remove("loading");
+  } catch(e) {
+    btn.textContent = "导出失败，请重试"; btn.classList.remove("loading");
+  }
+}
+
+render();
+</script>
+</body>
+</html>

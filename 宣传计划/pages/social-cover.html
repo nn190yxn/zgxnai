@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>封面标题卡生成器</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+:root { --accent:#cb6f3f; --deep:#9f4f2f; --warm:#fff8f0; --text:#3f261b; --muted:#7d5d4d; }
+body {
+  font-family:"Hiragino Sans GB","Microsoft YaHei",sans-serif; color:var(--text);
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.7), transparent 30%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.6), transparent 25%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 50%, #efe0cc 100%);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px;
+}
+h1 { font-family:"Noto Serif SC","Songti SC",serif; font-size:22px; margin-bottom:4px; }
+.subtitle { color:var(--muted); font-size:13px; margin-bottom:18px; }
+
+.controls {
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:center;
+  margin-bottom:20px; padding:12px 20px; border-radius:99px;
+  background:rgba(255,255,255,0.8); border:1px solid rgba(83,48,29,0.08);
+}
+.controls label { font-size:12px; font-weight:600; color:var(--muted); }
+.format-btn {
+  padding:7px 16px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer;
+  border:1px solid rgba(83,48,29,0.12); background:#fff; color:var(--text);
+  transition: all .18s;
+}
+.format-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.format-btn:hover:not(.active) { border-color:var(--accent); }
+.day-nav { display:flex; align-items:center; gap:8px; }
+.day-nav button {
+  width:32px; height:32px; border-radius:50%; border:1px solid rgba(83,48,29,0.12);
+  background:#fff; cursor:pointer; font-size:16px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; justify-content:center; transition:border-color .18s;
+}
+.day-nav button:hover { border-color:var(--accent); }
+.day-nav .day-num { font-size:16px; font-weight:700; min-width:36px; text-align:center; }
+.day-nav .day-scene { font-size:10px; color:var(--muted); }
+
+.card-wrap { margin-bottom:20px; }
+.card {
+  position:relative; overflow:hidden; border-radius:20px;
+  background: linear-gradient(160deg, #fff8f0 0%, #fef3e7 40%, #fde9d5 100%);
+  border:2px solid rgba(203,111,63,0.12); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; padding:40px 32px;
+}
+.card.xhs { width:450px; height:450px; }
+.card.video { width:640px; height:360px; }
+.card.mp { width:640px; height:272px; }
+.card .brand {
+  font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase;
+  border:1px solid rgba(203,111,63,0.2); padding:4px 16px; border-radius:99px;
+  position:absolute; top:16px; left:50%; transform:translateX(-50%);
+  background:rgba(255,255,255,0.7);
+}
+.card .main-title {
+  font-family:"Noto Serif SC","Songti SC",serif; font-weight:700;
+  color:var(--deep); line-height:1.4; max-width:90%;
+}
+.card.xhs .main-title { font-size:30px; }
+.card.video .main-title { font-size:24px; }
+.card.mp .main-title { font-size:22px; }
+.card .sub-title {
+  color:var(--accent); font-weight:600; margin-top:12px; font-size:15px;
+  max-width:80%;
+}
+.card .divider {
+  width:40px; height:3px; border-radius:99px; background:var(--accent);
+  margin:16px 0;
+}
+.card .footer-text {
+  font-size:10px; color:var(--muted); position:absolute; bottom:14px;
+  left:50%; transform:translateX(-50%);
+}
+.card .decor {
+  position:absolute; border-radius:50%; pointer-events:none;
+}
+.card .decor.d1 { width:120px; height:120px; background:rgba(244,180,135,0.1); top:-40px; right:-40px; }
+.card .decor.d2 { width:80px; height:80px; background:rgba(203,111,63,0.05); bottom:-20px; left:-20px; }
+
+.export-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 28px; border-radius:99px; font-size:14px; font-weight:600; cursor:pointer;
+  background:var(--accent); color:#fff; border:none; margin-top:10px; transition:opacity .18s;
+}
+.export-btn:hover { opacity:.85; }
+.export-btn.loading { pointer-events:none; opacity:.7; }
+
+.info { font-size:11px; color:var(--muted); margin-top:8px; text-align:center; max-width:500px; }
+</style>
+</head>
+<body>
+
+<h1>封面标题卡生成器</h1>
+<div class="subtitle">第 17 节 · 30 条小红书封面大标题，适配多平台</div>
+
+<div class="controls">
+  <label>尺寸：</label>
+  <button class="format-btn active" onclick="setFormat('xhs')">小红书 1:1</button>
+  <button class="format-btn" onclick="setFormat('video')">视频号 16:9</button>
+  <button class="format-btn" onclick="setFormat('mp')">公众号头图</button>
+  <span style="color:var(--muted);margin:0 6px;">|</span>
+  <div class="day-nav">
+    <button onclick="prevDay()">&#8592;</button>
+    <span class="day-num" id="dayNum">1</span>
+    <button onclick="nextDay()">&#8594;</button>
+    <span class="day-scene" id="dayScene">第1周 · 专注</span>
+  </div>
+</div>
+
+<div class="card-wrap">
+  <div class="card xhs" id="card">
+    <div class="decor d1"></div><div class="decor d2"></div>
+    <div class="brand">小牛育儿AI助理</div>
+    <div class="main-title" id="cardTitle">孩子总坐不住，先别急着贴标签</div>
+    <div class="divider"></div>
+    <div class="sub-title" id="cardSub">先看清卡在哪</div>
+    <div class="footer-text">看懂孩子当前成长短板，少走弯路，带娃更省心</div>
+  </div>
+</div>
+
+<button class="export-btn" id="exportBtn" onclick="exportImage()">↓ 导出图片</button>
+<div class="info">支持 30 天内容切换 · 三种尺寸适配不同平台 · 点击导出下载高清 PNG</div>
+
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+const covers = [
+  { title:"孩子总坐不住，先别急着贴标签", sub:"先看清卡在哪", scene:"第1周 · 专注" },
+  { title:"一写作业就跑开，家长先看这4点", sub:"先别急着催", scene:"第1周 · 专注" },
+  { title:"坐不住，常常是内容太难", sub:"不是故意不配合", scene:"第1周 · 专注" },
+  { title:"听不进去和不愿配合，不是一回事", sub:"家长先分清", scene:"第1周 · 专注" },
+  { title:"为什么你越催，孩子越磨蹭", sub:"写作业场景高发", scene:"第1周 · 专注" },
+  { title:"专注问题，很多家长抓错第一步", sub:"先看场景再陪", scene:"第1周 · 专注" },
+  { title:"专注差先别急着报课", sub:"先做成长观察", scene:"第1周 · 专注" },
+  { title:"说话晚，家长先看这4个判断点", sub:"1到3岁尤其要看", scene:"第2周 · 表达" },
+  { title:"孩子知道，却总说不出来", sub:"很多时候卡在表达", scene:"第2周 · 表达" },
+  { title:"复述差，不一定是记忆差", sub:"先别急着下结论", scene:"第2周 · 表达" },
+  { title:"孩子不爱开口，先别急着替他说", sub:"给他留3秒", scene:"第2周 · 表达" },
+  { title:"你越替他说，他越难主动表达", sub:"很多家庭都中招", scene:"第2周 · 表达" },
+  { title:"3到6岁表达弱，家里先练这3步", sub:"每天10分钟就够", scene:"第2周 · 表达" },
+  { title:"陪孩子说一说，总坚持不下去", sub:"卡在节奏上", scene:"第2周 · 表达" },
+  { title:"孩子挑食，很多时候卡在饭桌节奏", sub:"先别追着喂", scene:"第3周 · 吃饭" },
+  { title:"吃饭慢拖拉，家长先看这4点", sub:"不是一句快点吃", scene:"第3周 · 吃饭" },
+  { title:"一到饭点就对抗，先别急着生气", sub:"饭桌气氛很关键", scene:"第3周 · 吃饭" },
+  { title:"睡前闹，常常是白天节奏乱了", sub:"先看入睡前3步", scene:"第3周 · 睡眠" },
+  { title:"夜醒反复，别只盯着夜里那一下", sub:"白天节奏先稳住", scene:"第3周 · 睡眠" },
+  { title:"吃饭和睡眠总反复，先看家庭节奏", sub:"少食多餐慢慢来", scene:"第3周 · 吃饭睡眠" },
+  { title:"一看绘本就跑开，不一定是坐不住", sub:"先看选书对不对", scene:"第3周 · 吃饭睡眠" },
+  { title:"绘本一翻就跑，先看哪里让孩子卡住", sub:"亲子共读怎么拆", scene:"第4周 · 阅读" },
+  { title:"孩子不爱看书，很多是阅读方式太累", sub:"换个方式试试", scene:"第4周 · 阅读" },
+  { title:"理解力弱，很多时候根源在表达", sub:"先练复述小游戏", scene:"第4周 · 阅读" },
+  { title:"每天10分钟亲子学习，为什么更好坚持", sub:"放进日常小场景", scene:"第4周 · 训练" },
+  { title:"家长陪练最省力的3个动作", sub:"不必每次都坐下", scene:"第4周 · 训练" },
+  { title:"每天陪练没变化？常常是重点没抓对", sub:"先看训练方向", scene:"第4周 · 训练" },
+  { title:"一周亲子学习，最值得记住的3条", sub:"先做最简单的", scene:"第4周 · 阅读训练" },
+  { title:"哪些家长最适合先做成长观察", sub:"先看清再陪更省心", scene:"第5周 · 转化" },
+  { title:"这30天最值得收藏的带娃判断表", sub:"先分享给有需要的朋友", scene:"第5周 · 转化" },
+];
+
+let currentDay = 0;
+let currentFormat = "xhs";
+
+function render() {
+  const c = covers[currentDay];
+  document.getElementById("dayNum").textContent = currentDay + 1;
+  document.getElementById("dayScene").textContent = c.scene;
+  document.getElementById("cardTitle").textContent = c.title;
+  document.getElementById("cardSub").textContent = c.sub;
+
+  const card = document.getElementById("card");
+  card.className = "card " + currentFormat;
+
+  document.querySelectorAll(".format-btn").forEach(b => {
+    b.classList.toggle("active", b.textContent.includes(
+      currentFormat==="xhs"?"小红书":currentFormat==="video"?"视频号":"公众号"));
+  });
+}
+
+function prevDay() { currentDay = (currentDay - 1 + 30) % 30; render(); }
+function nextDay() { currentDay = (currentDay + 1) % 30; render(); }
+
+function setFormat(f) { currentFormat = f; render(); }
+
+async function exportImage() {
+  const btn = document.getElementById("exportBtn");
+  btn.textContent = "... 生成中"; btn.classList.add("loading");
+  try {
+    const el = document.getElementById("card");
+    const scale = currentFormat === "xhs" ? 3 : 2;
+    const canvas = await html2canvas(el, { scale, backgroundColor: null });
+    const name = currentFormat === "xhs" ? "小红书封面" : currentFormat === "video" ? "视频号封面" : "公众号头图";
+    const a = document.createElement("a");
+    a.download = name + "_Day" + (currentDay + 1) + ".png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    btn.textContent = "↓ 导出图片"; btn.classList.remove("loading");
+  } catch(e) {
+    btn.textContent = "导出失败，请重试"; btn.classList.remove("loading");
+  }
+}
+
+render();
+</script>
+</body>
+</html>
