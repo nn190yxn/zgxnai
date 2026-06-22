@@ -2298,7 +2298,7 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
     : riskLevel === 'medium'
       ? '当前问题带有中等风险信号。回答中要加入持续观察与必要时线下求助的提醒。'
       : '回答中保持边界意识，当问题涉及明显异常或持续恶化时提醒线下咨询专业人士。';
-  const styleContext = '回答风格像家长对话，先直接回答，再补一句原因，最后给1到2个下一步。控制在3到5句，优先短句。少用“先判断原则、家庭做法、观察点、补充提醒”这类说明书标题。没有必要时不要分点。';
+  const styleContext = '回答风格像家长对话，先直接回答，再补一句理论说明，再给实操建议。实操建议里可以带一个帮助继续判断的追问。控制在4到6句，优先短句。少用“先判断原则、家庭做法、观察点、补充提醒”这类说明书标题。没有必要时不要分点。';
 
   const basePrompts = {
     nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
@@ -2337,9 +2337,9 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
   parts.push(
     '回答要求：',
     '1. 只允许基于参考资料回答，不补充参考资料之外的育儿结论。',
-    '2. 先直接回答用户最关心的问题，再补一句原因，最后给1到2个能立刻执行的小动作。',
+    '2. 先直接回答用户最关心的问题，再补一句理论说明，最后给实操建议；必要时带一个有助于继续判断的追问。',
     ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
-    '4. 控制在3到5句，像自然对话。只有步骤确实必要时才分点。',
+    '4. 控制在4到6句，像自然对话。只有步骤确实必要时才分点。',
     `5. ${riskInstruction}`,
     '6. 少用总结性标题，少讲背景知识，避免写成长段说明文字。',
     '7. 如果参考资料命中较弱，使用通用的育儿原则给出建议，不要求用户补充更多信息（除非涉及安全风险）。',
@@ -2960,9 +2960,10 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     const article = references.find((item) => item.extra && item.extra.summary);
     const ageNote = ageGroup ? `（${ageGroup}）` : '';
     return buildChatSections([
-      `关于${ageNote}“${message}”，先稳吃饭节奏，比先追求吃多少更重要。`,
-      recipe ? `可以先照着“${recipe.title}”这一类熟悉搭配来做，${recipe.description || '重点是孩子容易接受，家里也容易连续执行。'}` : '这一阶段更适合保留一种愿意吃的安全食物，再少量加入一种新食物。',
-      article ? `${article.extra.summary}` : '你先连续试1周，重点看餐桌对抗有没有下降，再看新食物接受度。',
+      `关于${ageNote}“${message}”，先稳吃饭节奏，比先追着多吃更重要。`,
+      recipe ? `原理上，孩子对熟悉食物的安全感更强，所以“${recipe.title}”这类搭配更容易接受，${recipe.description || '家里也更容易连续执行。'}` : '原理上，先保留熟悉食物能降低对抗，再少量加入新食物会更容易接受。',
+      article ? `${article.extra.summary}` : '你可以先连续试1周，每餐保留一种愿意吃的食物，再少量加一种新食物。',
+      '如果一到饭点就开始对抗，你先看是只对晚饭这样，还是三餐都差不多。',
       boundaryText
     ]);
   }
@@ -2979,7 +2980,8 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
         : article
           ? `可以先按“${article.title}”的思路来带，核心是${article.summary || '把共读拆成更短的表达练习。'}`
           : '先从看图说一句、复述一句话开始，每次控制在10分钟内。',
-      task ? `${task.parent_prompt || '你先说第一句，我帮你接第二句。'}` : '你提问越具体，孩子越容易接得上。',
+      '原理上，任务越短、提问越具体，孩子越容易开口，也更容易积累成功感。',
+      task ? `${task.parent_prompt || '你先说第一句，我帮你接第二句。'} 如果孩子总是不愿意说，你可以再告诉我是卡在看图、复述，还是回答问题。` : '你提问越具体，孩子越容易接得上。如果孩子总是不愿意说，你可以再告诉我是卡在看图、复述，还是回答问题。',
       boundaryText
     ]);
   }
@@ -2989,8 +2991,9 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     const meta = assessment && assessment.meta;
     return buildChatSections([
       `关于“${message}”，先把表现具体化，再决定练什么会更准。`,
-      meta ? `现在最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的一类成长观察开始。',
-      '做之前先回想最近两周最稳定的表现，按常态作答。结果出来后先盯1到2个最需要支持的点。',
+      meta ? `原理上，先用 ${meta.name} 这类观察把问题收窄，会比直接上训练更容易找准方向；它大约 ${meta.duration} 分钟，适用 ${(meta.age_groups || []).join('、')}。` : '原理上，先把表现观察清楚，再决定训练重点，会比直接加练更准确。',
+      '你做之前先回想最近两周最稳定的表现，按常态作答。结果出来后先盯1到2个最需要支持的点。',
+      '如果你愿意继续说，也可以直接告诉我现在最担心的是情绪、专注，还是表达。',
       boundaryText
     ]);
   }
@@ -3014,8 +3017,9 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
         : '';
     return buildChatSections([
       `关于“${message}”，${scenarioLabel ? `这更像“${scenarioLabel}”这个场景，` : ''}先从家长回应方式下手通常更快见效。`,
-      `${summaryText || '先把提示语变短、把要求变小，孩子会更容易配合。'}`,
-      `${actionText || '先说出孩子当下的情绪或任务，再只给一个小步骤。'}${task && task.parent_prompt ? ` 你可以直接说：${task.parent_prompt}` : ''}`,
+      `原理上，${summaryText || '提示语越短、要求越小，孩子当下能调动出来的配合度 usually 会更高。'.replace(' usually ', ' ')}`,
+      `${actionText || '你先说出孩子当下的情绪或任务，再只给一个小步骤。'}${task && task.parent_prompt ? ` 你可以直接说：${task.parent_prompt}` : ''}`,
+      '如果你想让我帮你继续细化，可以直接补一句最容易出问题的是哪个场景。',
       boundaryText
     ]);
   }
@@ -3044,8 +3048,9 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     if (intent === 'nutrition') {
       return buildChatSections([
         `关于"${message}"，这类情况很常见，先稳节奏会比先逼着多吃更有效。`,
-        '每餐保留一种愿意吃的食物，再少量加一种新食物，不催、不哄、不拿零食补。',
-        childName ? `${childName}先连续试一周，重点看餐桌对抗有没有下降。` : '先连续试一周，重点看餐桌对抗有没有下降。',
+        '原理上，餐桌对抗一上来，孩子会先抗拒吃饭这件事本身，所以先降对抗更关键。',
+        '你每餐保留一种愿意吃的食物，再少量加一种新食物，不催、不哄、不拿零食补。',
+        childName ? `${childName}先连续试一周，重点看餐桌对抗有没有下降。要是你愿意，也可以再告诉我是挑食，还是吃饭拖拉。` : '先连续试一周，重点看餐桌对抗有没有下降。你也可以再告诉我是挑食，还是吃饭拖拉。',
         boundaryText
       ]);
     }
@@ -3053,16 +3058,18 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     if (intent === 'emotion' || intent === 'focus') {
       return buildChatSections([
         `关于"${message}"，我更建议先稳住情绪，再讲道理。`,
-        `${ageGroup || '这个年龄段'}的孩子很多时候不是故意对着来，而是当下收不住。你先把话说短一点，比如“我知道你现在很生气”。`,
-        '然后只给一个小选择，比如先喝水还是先安静半分钟，别一次讲太多。',
+        `${ageGroup || '这个年龄段'}的孩子很多时候不是故意对着来，而是当下收不住，所以家长先帮他降下来会更有效。`,
+        '你先把话说短一点，比如“我知道你现在很生气”，然后只给一个小选择，比如先喝水还是先安静半分钟。',
+        '如果你愿意继续说，可以直接告诉我最近一次闹情绪是在什么场景发生的。',
         boundaryText
       ]);
     }
 
     return buildChatSections([
-      `关于"${message}"，我先给你一个实用判断：先别急着一次解决，先找最常出现的场景。`,
+      `关于"${message}"，我先给你一个实用判断：先找最常出现的场景，再决定怎么改。`,
+      '原理上，同一个问题在不同场景里触发点常常不一样，先找规律会更容易对准办法。',
       `${childRef}在哪个时间点最明显，你就先改那个点，比如换一句提示语，或者把任务拆小一点。`,
-      '先连续试3到5天，再看是不是有一点点变顺。',
+      '先连续试3到5天，再看是不是有一点点变顺。你也可以继续告诉我最明显的是早上、吃饭，还是写作业。',
       boundaryText
     ]);
   }
@@ -3071,7 +3078,8 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     return buildChatSections([
       `关于"${message}"，谢谢你把这个问题提出来。`,
       `${generalSummaryText || '先看它最容易出现在什么场景，再决定改哪里。'}`,
-      `${generalActionText || '从一个最小的点开始试，先做三五天，不追求一步到位。'}`,
+      '原理上，先缩小问题场景，建议才更容易落到家庭里。',
+      `${generalActionText || '从一个最小的点开始试，先做三五天，不追求一步到位。'} 你也可以直接补充最常出现在什么场景。`,
       boundaryText
     ]);
   }
@@ -3079,7 +3087,8 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
   return buildChatSections([
     `关于"${message}"，${scenarioLabel ? `这更像"${scenarioLabel}"这个场景，` : ''}先把问题放回具体生活场景里处理会更有效。`,
     `${generalSummaryText || '先抓最明显的一个信号，再围绕这个信号调整家里的回应方式。'}`,
-    `${generalActionText || '先改一个最小动作，连续做几天，再决定下一步。'}`,
+    '原理上，先改最明显的一个点，家长更容易坚持，也更容易看出是不是有效。',
+    `${generalActionText || '先改一个最小动作，连续做几天，再决定下一步。'} 如果你愿意继续说，我可以再按具体场景帮你细化。`,
     boundaryText
   ]);
 }
