@@ -32,6 +32,15 @@ body {
 .chip-green { background:rgba(72,107,77,0.1); color:#486b4d; }
 .ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
 .fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+
+.export-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 20px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer;
+  background:var(--accent, #cb6f3f); color:#fff; border:none;
+  margin-top:6px; transition: opacity .18s;
+}
+.export-btn:hover { opacity:.85; }
+.export-btn.loading { pointer-events:none; opacity:.7; }
 </style>
 </head>
 <body>
@@ -90,6 +99,27 @@ body {
   </div>
   <div class="ftitle">营养食谱</div>
   <div class="fdesc">分龄食谱推荐，覆盖早餐到晚餐三顿搭配，按孩子年龄段给出食材搭配和营养要点，做饭更省心</div>
+  <button class="export-btn" onclick="exportImage()" id="exportBtn">↓ 导出图片</button>
 </div>
+
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+async function exportImage() {
+  const btn=document.getElementById("exportBtn");
+  btn.textContent="... 生成中"; btn.classList.add("loading");
+  try {
+    const el=document.querySelector(".phone");
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#fffdf8"});
+    const a=document.createElement("a");
+    a.download="营养食谱.png";
+    a.href=canvas.toDataURL("image/png");
+    a.click();
+    btn.textContent="↓ 导出图片"; btn.classList.remove("loading");
+  } catch(e) {
+    btn.textContent="导出失败，请重试"; btn.classList.remove("loading");
+  }
+}
+</script>
 </body>
+
 </html>

@@ -30,6 +30,15 @@ body {
 .chat-user { background:#cb6f3f; color:#fff; border-radius:16px 16px 4px 16px; padding:8px 14px; margin-bottom:8px; font-size:11px; max-width:80%; margin-left:auto; }
 .ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
 .fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+
+.export-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 20px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer;
+  background:var(--accent, #cb6f3f); color:#fff; border:none;
+  margin-top:6px; transition: opacity .18s;
+}
+.export-btn:hover { opacity:.85; }
+.export-btn.loading { pointer-events:none; opacity:.7; }
 </style>
 </head>
 <body>
@@ -69,6 +78,27 @@ body {
   </div>
   <div class="ftitle">AI育儿问答</div>
   <div class="fdesc">基于分龄知识库的专业育儿对话，覆盖专注力、表达、吃饭、睡眠等场景，回答像老师在和家长说话</div>
+  <button class="export-btn" onclick="exportImage()" id="exportBtn">↓ 导出图片</button>
 </div>
+
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+async function exportImage() {
+  const btn=document.getElementById("exportBtn");
+  btn.textContent="... 生成中"; btn.classList.add("loading");
+  try {
+    const el=document.querySelector(".phone");
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#fffdf8"});
+    const a=document.createElement("a");
+    a.download="AI育儿问答.png";
+    a.href=canvas.toDataURL("image/png");
+    a.click();
+    btn.textContent="↓ 导出图片"; btn.classList.remove("loading");
+  } catch(e) {
+    btn.textContent="导出失败，请重试"; btn.classList.remove("loading");
+  }
+}
+</script>
 </body>
+
 </html>
