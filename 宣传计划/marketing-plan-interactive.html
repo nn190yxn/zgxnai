@@ -438,6 +438,10 @@
       .sticky-column {
         position: sticky;
         top: 22px;
+        max-height: calc(100vh - 44px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(203, 111, 63, 0.3) transparent;
       }
 
       .footer-note {
