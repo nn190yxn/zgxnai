@@ -92,7 +92,7 @@ async function exportImage() {
   btn.textContent="... 生成中"; btn.classList.add("loading");
   try {
     const el=document.querySelector(".phone");
-    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#fffdf8"});
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#fffdf8",onclone:function(d){const c=d.querySelector(".content");if(c){c.style.height="auto";c.style.overflow="visible"}}});
     const a=document.createElement("a");
     a.download="首页聚合.png";
     a.href=canvas.toDataURL("image/png");
