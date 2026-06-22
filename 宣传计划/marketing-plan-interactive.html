@@ -336,8 +336,11 @@ const sceneFeat = {
   "转化":{cls:"convert",feat:["08","09","10","01"]},
 };
 
+// ── helpers ──
+function extractTagline(sec) {const m=sec.match(/`([^`]+)`/);return m?m[1].trim():"";}
+
 // ── init ──
-init();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 async function init() {
   try {
     const r = await fetch(mdPath);
@@ -347,7 +350,10 @@ async function init() {
     document.getElementById("topTagline").textContent = extractTagline(state.sections["2. 产品卖点与对外口径"]||"")||"看懂孩子当前成长短板，少走弯路，带娃更省心";
     renderCal(); renderDetail(state.selectedDay); renderAsset(); renderLib(); renderOv(); renderCt(); renderFunnel(); updateTop();
   } catch(e) {
-    document.getElementById("centerColumn").innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);">${e.message}<br>请通过本地静态服务或平台预览打开。</div>`;
+    const cc=document.getElementById("centerColumn");
+    if(cc) cc.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);">${e.message}<br>请刷新页面重试，或通过本地静态服务打开。</div>`;
+    const tt=document.getElementById("topTagline");
+    if(tt) tt.textContent = "加载失败，请刷新页面";
   }
 }
 
