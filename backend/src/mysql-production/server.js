@@ -1968,7 +1968,7 @@ async function chatHandler(req, res) {
     }
 
     const chatChildContext = await resolveChatChildContext(req);
-    const ageGroup = chatChildContext.ageGroup;
+    const ageGroup = extractChatAgeGroupFromMessage(message) || chatChildContext.ageGroup;
     const childName = chatChildContext.childName;
     const intent = analyzeChatIntent(message);
     const subIntent = analyzeChatSubIntent(message, intent);
@@ -2193,6 +2193,25 @@ function normalizeExplicitAgeGroup(rawAgeGroup) {
   return '9-12岁';
 }
 
+function extractChatAgeGroupFromMessage(message) {
+  const text = String(message || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  const directMatch = text.match(/(\d+(?:\.\d+)?)\s*[-~到至]\s*(\d+(?:\.\d+)?)\s*岁/);
+  if (directMatch) {
+    return normalizeExplicitAgeGroup(`${directMatch[1]}岁`);
+  }
+
+  const ageMatch = text.match(/(\d+(?:\.\d+)?)\s*岁/);
+  if (ageMatch) {
+    return normalizeExplicitAgeGroup(`${ageMatch[1]}岁`);
+  }
+
+  return '';
+}
+
 function mapBirthdayToAgeGroup(birthday, now) {
   const months = getMonthDiff(birthday, now);
   if (months < 0) {
@@ -2279,14 +2298,15 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
     : riskLevel === 'medium'
       ? '当前问题带有中等风险信号。回答中要加入持续观察与必要时线下求助的提醒。'
       : '回答中保持边界意识，当问题涉及明显异常或持续恶化时提醒线下咨询专业人士。';
+  const styleContext = '回答风格像家长对话，先直接回答，再补一句原因，最后给1到2个下一步。控制在3到5句，优先短句。少用“先判断原则、家庭做法、观察点、补充提醒”这类说明书标题。没有必要时不要分点。';
 
   const basePrompts = {
-    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
-    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
-    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
-    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
-    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
-    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
+    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
+    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
+    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
+    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
+    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
+    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
   };
   return basePrompts[intent] || basePrompts.general;
 }
@@ -2317,11 +2337,12 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
   parts.push(
     '回答要求：',
     '1. 只允许基于参考资料回答，不补充参考资料之外的育儿结论。',
-    '2. 回答结构固定为：先判断，再解释原因或原则，再给家庭可执行步骤，最后给观察点或边界提醒。',
+    '2. 先直接回答用户最关心的问题，再补一句原因，最后给1到2个能立刻执行的小动作。',
     ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
-    '4. 优先使用清晰短句和分步骤建议，不输出空泛口号。',
+    '4. 控制在3到5句，像自然对话。只有步骤确实必要时才分点。',
     `5. ${riskInstruction}`,
-    '6. 如果参考资料命中较弱，使用通用的育儿原则给出建议，不要求用户补充更多信息（除非涉及安全风险）。',
+    '6. 少用总结性标题，少讲背景知识，避免写成长段说明文字。',
+    '7. 如果参考资料命中较弱，使用通用的育儿原则给出建议，不要求用户补充更多信息（除非涉及安全风险）。',
     '参考资料：',
     referenceBlock
   );
@@ -2505,7 +2526,7 @@ function getChatTaskSubjectFilters(intent, subIntent) {
   if (intent === 'reading' || subIntent === 'shared_reading_retell') {
     return ['reading', 'expression', 'logic'];
   }
-  if (intent === 'emotion' || intent === 'focus' || intent === 'general' || subIntent) {
+  if (intent === 'emotion' || intent === 'focus' || subIntent) {
     return ['expression', 'reading', 'logic'];
   }
   return [];
@@ -2939,12 +2960,10 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     const article = references.find((item) => item.extra && item.extra.summary);
     const ageNote = ageGroup ? `（${ageGroup}）` : '';
     return buildChatSections([
-      `关于${ageNote}“${message}”，当前更适合先按“稳定进食节奏 + 简单均衡搭配”来处理。`,
-      recipe ? `先看知识库里最接近的一条做法：${recipe.title}。${recipe.description || '这类搭配更容易让孩子接受，也更方便家里连续执行。'}` : '先解释原则：每餐优先保证主食、蛋白质、蔬菜三类食物同时出现，先稳节奏，再慢慢扩食物种类。',
-      recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length ? `家庭做法可以先从这些熟悉食材开始：${recipe.ingredients.slice(0, 4).join('、')}。一次只增加一种少量新食物，更容易坚持。` : '家庭做法上，先保留一种孩子愿意吃的安全食物，再增加一种少量新食物，不追求一顿吃很多。',
-      article ? `补充提醒：${article.extra.summary}` : '补充提醒：家长负责提供和安排，孩子负责决定吃多少，连续多次接触比一次强行吃完更有效。',
-      `观察点：连续观察1到2周，重点看进食对抗是否下降、接受的新食物是否增加。${boundaryText}`,
-      `你可以先试试这些方法，如果想了解孩子挑食背后有没有其他原因，或者想知道具体哪一步怎么操作，随时告诉我。`
+      `关于${ageNote}“${message}”，先稳吃饭节奏，比先追求吃多少更重要。`,
+      recipe ? `可以先照着“${recipe.title}”这一类熟悉搭配来做，${recipe.description || '重点是孩子容易接受，家里也容易连续执行。'}` : '这一阶段更适合保留一种愿意吃的安全食物，再少量加入一种新食物。',
+      article ? `${article.extra.summary}` : '你先连续试1周，重点看餐桌对抗有没有下降，再看新食物接受度。',
+      boundaryText
     ]);
   }
 
@@ -2954,24 +2973,14 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     const task = taskReference && taskReference.extra;
     const article = articleReference && articleReference.extra;
     return buildChatSections([
-      `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先做短时、高频、能马上开始的阅读训练。`,
+      `关于“${message}”，${scenarioLabel ? `这更像“${scenarioLabel}”这个场景，` : ''}先做短时、低门槛的表达练习会更有效。`,
       task
-        ? `先判断重点：优先用知识库任务“${task.title}”做切入，目标是${task.objective || '让孩子先把读到的内容说出来。'}`
+        ? `你可以先用“${task.title}”这类任务切入，重点是${task.objective || '先让孩子把读到的内容说出来。'}`
         : article
-          ? `先判断重点：可以先从“${article.title}”对应的阅读引导开始，核心是${article.summary || '先把共读拆成更短的表达练习。'}`
-          : '先判断重点：先从看图说信息、复述一句话这类低门槛任务开始。',
-      task
-        ? `家庭步骤：${String(task.steps || '').split('\n').slice(0, 3).join('；')}`
-        : article && article.content
-          ? `家庭步骤：${article.content.split('\n\n').slice(0, 2).join('；')}`
-          : '家庭步骤：每次控制在10分钟以内，先看图，再追问，再让孩子自己说。',
-      task
-        ? `家长提示语：${task.parent_prompt || '你先说第一句，我帮你接第二句。'}`
-        : article && article.summary
-          ? `家长提示语：${article.summary}`
-          : '家长提示语：问题越具体，孩子越容易回答。',
-      `观察点：连续练2周后，再逐步增加复述长度和表达难度。${boundaryText}`,
-      `如果试了几天觉得孩子配合度不高，或者想针对某个具体方面再调整，随时来问我。`
+          ? `可以先按“${article.title}”的思路来带，核心是${article.summary || '把共读拆成更短的表达练习。'}`
+          : '先从看图说一句、复述一句话开始，每次控制在10分钟内。',
+      task ? `${task.parent_prompt || '你先说第一句，我帮你接第二句。'}` : '你提问越具体，孩子越容易接得上。',
+      boundaryText
     ]);
   }
 
@@ -2979,11 +2988,10 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
     const assessment = references[0] && references[0].extra;
     const meta = assessment && assessment.meta;
     return buildChatSections([
-      `关于“${message}”，当前更适合先用成长观察工具把问题具体化，再决定训练重点。`,
-      meta ? `知识库里最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，${meta.total_questions} 题，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的成长观察开始。',
-      '家庭做法：做评估前先回想孩子最近2周在家庭、外出、任务场景中的稳定表现，按常态作答。',
-      '结果使用：拿到结果后先看最需要支持的1到2个维度，再把训练拆成每天能执行的小动作。',
-      `补充提醒：如果你继续描述孩子年龄和主要困扰，我可以帮你缩小到更匹配的一类观察。${boundaryText}`
+      `关于“${message}”，先把表现具体化，再决定练什么会更准。`,
+      meta ? `现在最接近的是 ${meta.name}，大约 ${meta.duration} 分钟，适用 ${(meta.age_groups || []).join('、')}。` : '可以先从最贴近当前困扰的一类成长观察开始。',
+      '做之前先回想最近两周最稳定的表现，按常态作答。结果出来后先盯1到2个最需要支持的点。',
+      boundaryText
     ]);
   }
 
@@ -3005,12 +3013,10 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
         ? article.content.split('\n\n').slice(0, 2).join('；')
         : '';
     return buildChatSections([
-      `关于“${message}”，${scenarioLabel ? `当前更像“${scenarioLabel}”这个场景，` : ''}建议先从家庭回应方式入手，再看训练安排。`,
-      `先判断原则：${summaryText || '先降低对抗，再把家长提示语缩短，孩子会更容易进入配合状态。'}`,
-      `家庭做法：${actionText || '先命名情绪或任务，再给出一个清晰的小步骤；一次只推进一个可执行动作。'}${task && task.parent_prompt ? ` 家长提示语可以直接用：${task.parent_prompt}` : ''}`,
-      '观察点：先连续执行7天，记录问题最常出现的时间、场景和触发点。',
-      `记录的过程中如果发现了规律，或者有某一次孩子反应特别好，可以告诉我，我们一起分析看看是什么起了作用。`,
-      `边界提醒：${boundaryText}`
+      `关于“${message}”，${scenarioLabel ? `这更像“${scenarioLabel}”这个场景，` : ''}先从家长回应方式下手通常更快见效。`,
+      `${summaryText || '先把提示语变短、把要求变小，孩子会更容易配合。'}`,
+      `${actionText || '先说出孩子当下的情绪或任务，再只给一个小步骤。'}${task && task.parent_prompt ? ` 你可以直接说：${task.parent_prompt}` : ''}`,
+      boundaryText
     ]);
   }
 
@@ -3037,56 +3043,44 @@ function buildChatAnswer(message, chatAnalysis, references, ageGroup, childName)
   if (!references.length) {
     if (intent === 'nutrition') {
       return buildChatSections([
-        `关于"${message}"，很多${ageGroup || '3-6岁'}的小朋友在这个阶段都会出现吃饭不规律或挑食的情况，这通常是正常的阶段性表现。`,
-        '先判断原则：吃饭问题的核心通常不是"吃得不够多"，而是进食氛围和节奏。家长负责准备什么、什么时候吃；孩子负责吃多少、吃不吃。把控制权分开，对抗就会少很多。',
-        '家庭步骤：1）每餐固定一种孩子愿意吃的安全食物，再搭配一种新食物，不要求必须吃完。2）吃饭时关掉电视和玩具，全家人尽量一起吃，让孩子看到大人也在吃同样的东西。3）不催促、不哄喂、不拿零食当奖励，一顿不吃就等下一顿。',
-        '观察点：先坚持1周，重点看孩子对餐桌的态度有没有缓和，而不是看吃进去多少。通常3-5天后对抗就会下降。',
-        childName ? `每个孩子节奏不同，${childName}现在不爱吃晚饭并不代表以后都会这样，放轻松最重要。` : '每个孩子节奏不同，现在不爱吃晚饭并不代表以后都会这样，放轻松最重要。',
-        `你可以先试试看，过程中可以告诉我孩子是只对晚饭这样、还是三餐都差不多，这样我能帮你判断是节奏问题还是食物选择的问题。`,
-        `补充提醒：${boundaryText}`
+        `关于"${message}"，这类情况很常见，先稳节奏会比先逼着多吃更有效。`,
+        '每餐保留一种愿意吃的食物，再少量加一种新食物，不催、不哄、不拿零食补。',
+        childName ? `${childName}先连续试一周，重点看餐桌对抗有没有下降。` : '先连续试一周，重点看餐桌对抗有没有下降。',
+        boundaryText
       ]);
     }
 
     if (intent === 'emotion' || intent === 'focus') {
       return buildChatSections([
-        `关于"${message}"，我理解你现在可能有些着急。${ageGroup || '这个年龄段'}的孩子在情绪和行为上的波动，很多时候不是"不听话"，而是他们自己也不知道怎么办。`,
-        '先判断原则：当孩子闹情绪或走神时，家长的第一步不是讲道理，而是先帮他把感受说出来。比如"你现在很生气对吗"比"别闹了"更有效，因为命名情绪本身就能帮孩子平静下来。',
-        '家庭做法：1）蹲下来和孩子视线平齐，用平静的语气说出你看到的表现。2）给他一个简单的选择，比如"你是想先深呼吸三次，还是先去喝口水再回来"。3）等他情绪平稳后，再用一两句话复盘刚才发生了什么，不批评，只描述。',
-        '观察点：先坚持1周，每天记录闹情绪的时间、地点和最直接的触发事件。一周后回头看，通常会找到规律。',
-        childName ? `记住，${childName}正在学习怎么管理自己的情绪，你在旁边稳住就是最好的帮助。` : '记住，孩子正在学习怎么管理自己的情绪，你在旁边稳住就是最好的帮助。',
-        `可以告诉我孩子最近一次闹情绪是在什么情况下发生的吗？比如是在外面玩要回家了、还是早上出门前、或者是吃饭写作业的时候？知道场景后我能给你更具体的建议。`,
-        `补充提醒：${boundaryText}`
+        `关于"${message}"，我更建议先稳住情绪，再讲道理。`,
+        `${ageGroup || '这个年龄段'}的孩子很多时候不是故意对着来，而是当下收不住。你先把话说短一点，比如“我知道你现在很生气”。`,
+        '然后只给一个小选择，比如先喝水还是先安静半分钟，别一次讲太多。',
+        boundaryText
       ]);
     }
 
     return buildChatSections([
-      `关于"${message}"，谢谢你告诉我这些。${ageGroup || ''}${childRef}的具体情况我大概了解了。`,
-      '先判断原则：大部分育儿问题的解法都遵循一个规律：先观察模式（什么时候、什么场景下出现），再调环境（减少触发或增加支持），最后做训练（拆成小步骤反复练习）。不用一步到位。',
-      '家庭做法：1）先记录问题出现的频率和场景，找规律。2）从最容易改的一个小点开始，比如换一个说法、调一个时间、或者加一个固定的仪式感。3）做了3-5天再回头看效果，不急着一次到位。',
-      '观察点：先稳定执行1周，把注意力放在"今天比以前好一点点"上，孩子的变化往往比我们想象中慢，但也比我们想象中稳。',
-      `你可以再多说一点孩子的情况，比如这种情况多长时间了、一天里什么时候最明显、或者你已经试过什么方法，这样我能帮你想更对路的做法。`,
-      `补充提醒：${boundaryText}`
+      `关于"${message}"，我先给你一个实用判断：先别急着一次解决，先找最常出现的场景。`,
+      `${childRef}在哪个时间点最明显，你就先改那个点，比如换一句提示语，或者把任务拆小一点。`,
+      '先连续试3到5天，再看是不是有一点点变顺。',
+      boundaryText
     ]);
   }
 
   if (!hasUsefulRefs) {
     return buildChatSections([
       `关于"${message}"，谢谢你把这个问题提出来。`,
-      `先判断原则：${generalSummaryText || '遇到这种情况，先别急着找"标准答案"，先观察孩子在什么场景下最容易出现问题、什么时候相对好一些，从对比里找线索。'}`,
-      `家庭做法：${generalActionText || '从最容易改的一个点开始试，做了三五天再回头看效果。不追求一次到位，先建立稳定的节奏。'}`,
-      '观察点：先稳定执行1周，再看变化决定下一步。',
-      `如果你方便的话，可以再多告诉我一点细节，比如这种情况多久了、最容易在什么时候发生，这样我能帮你把建议调得更准。`,
-      `补充提醒：${boundaryText}`
+      `${generalSummaryText || '先看它最容易出现在什么场景，再决定改哪里。'}`,
+      `${generalActionText || '从一个最小的点开始试，先做三五天，不追求一步到位。'}`,
+      boundaryText
     ]);
   }
 
   return buildChatSections([
-    `关于"${message}"，${scenarioLabel ? `当前更像"${scenarioLabel}"这个场景，` : ''}建议先把问题落到一个具体家庭场景里处理。`,
-    `先判断原则：${generalSummaryText || '先不急着下结论，从孩子的表现里找到最明显的一个信号，再围绕这个信号调整家庭回应方式。'}`,
-    `家庭做法：${generalActionText || '拆成每天能执行的小动作，不求多，先求稳；一次推进一个改变，三五天后再看效果。'}`,
-    '观察点：先稳定执行1周，再看变化决定下一步。',
-    `试用后如果遇到具体卡点，或者想针对某个细节再调整，随时告诉我，我们一起往下拆更细的办法。`,
-    `补充提醒：${boundaryText}`
+    `关于"${message}"，${scenarioLabel ? `这更像"${scenarioLabel}"这个场景，` : ''}先把问题放回具体生活场景里处理会更有效。`,
+    `${generalSummaryText || '先抓最明显的一个信号，再围绕这个信号调整家里的回应方式。'}`,
+    `${generalActionText || '先改一个最小动作，连续做几天，再决定下一步。'}`,
+    boundaryText
   ]);
 }
 
