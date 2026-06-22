@@ -38,7 +38,7 @@ var ENV_CONFIG = {
     enableNativeApiDiagnostics: false,
     enableNetworkProbe: false,
     enableBootIsolation: false,
-    enableRuntimeConfigFetch: false,
+    enableRuntimeConfigFetch: true,
     enableStartupSafeMode: false,
     enableAssessments: true,
     enableEducation: true,

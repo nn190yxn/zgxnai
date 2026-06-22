@@ -323,22 +323,53 @@ function healthHandler(req, res) {
   res.json({ status: 'ok', service: 'niuniu-backend', timestamp: new Date().toISOString() });
 }
 
+function parseRuntimeBooleanEnv(name, fallbackValue) {
+  const rawValue = String(process.env[name] || '').trim().toLowerCase();
+  if (!rawValue) {
+    return fallbackValue;
+  }
+  if (['1', 'true', 'yes', 'on'].includes(rawValue)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(rawValue)) {
+    return false;
+  }
+  return fallbackValue;
+}
+
+function getRuntimeFeatureFlags(aiStatus) {
+  return {
+    ai_chat_enabled: parseRuntimeBooleanEnv('RUNTIME_AI_CHAT_ENABLED', aiStatus.configured),
+    assessments_enabled: parseRuntimeBooleanEnv('RUNTIME_ASSESSMENTS_ENABLED', true),
+    education_enabled: parseRuntimeBooleanEnv('RUNTIME_EDUCATION_ENABLED', true),
+    parenting_enabled: parseRuntimeBooleanEnv('RUNTIME_PARENTING_ENABLED', true),
+    daily_plan_enabled: parseRuntimeBooleanEnv('RUNTIME_DAILY_PLAN_ENABLED', true),
+    growth_record_enabled: parseRuntimeBooleanEnv('RUNTIME_GROWTH_RECORD_ENABLED', true),
+    weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true),
+    scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true),
+    multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),
+    payment_enabled: parseRuntimeBooleanEnv('RUNTIME_PAYMENT_ENABLED', false),
+    ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false)
+  };
+}
+
 function runtimeConfigHandler(req, res) {
   const aiStatus = getAIStatus();
+  const runtimeFlags = getRuntimeFeatureFlags(aiStatus);
   res.json({
     env_name: process.env.NODE_ENV || 'production',
     debug: process.env.NODE_ENV !== 'production',
-    ai_chat_enabled: true,
-    assessments_enabled: true,
-    education_enabled: true,
-    parenting_enabled: true,
-    daily_plan_enabled: true,
-    growth_record_enabled: true,
-    weekly_summary_enabled: true,
-    scene_search_enabled: true,
-    multimodal_enabled: false,
-    payment_enabled: false,
-    ai_mock_fallback: false,
+    ai_chat_enabled: runtimeFlags.ai_chat_enabled,
+    assessments_enabled: runtimeFlags.assessments_enabled,
+    education_enabled: runtimeFlags.education_enabled,
+    parenting_enabled: runtimeFlags.parenting_enabled,
+    daily_plan_enabled: runtimeFlags.daily_plan_enabled,
+    growth_record_enabled: runtimeFlags.growth_record_enabled,
+    weekly_summary_enabled: runtimeFlags.weekly_summary_enabled,
+    scene_search_enabled: runtimeFlags.scene_search_enabled,
+    multimodal_enabled: runtimeFlags.multimodal_enabled,
+    payment_enabled: runtimeFlags.payment_enabled,
+    ai_mock_fallback: runtimeFlags.ai_mock_fallback,
     ai_service_ready: aiStatus.configured,
     ai_provider: aiStatus.provider,
     ai_model: aiStatus.model,

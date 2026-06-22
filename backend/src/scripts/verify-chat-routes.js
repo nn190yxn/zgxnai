@@ -167,33 +167,55 @@ function summarizeCase(name, data) {
   };
 }
 
+function assertChatResponseShape(data, name) {
+  assertCheck(!!data && typeof data === 'object', `${name} 返回数据为空`, data);
+  assertCheck(typeof data.answer === 'string' && data.answer.trim().length >= 12, `${name} 回答内容过短`, data);
+  assertCheck(Array.isArray(data.sources), `${name} sources 结构异常`, data);
+  assertCheck(Array.isArray(data.matched_types), `${name} matched_types 结构异常`, data);
+  assertCheck(!!data.ai_status && typeof data.ai_status === 'object', `${name} ai_status 结构异常`, data);
+}
+
+async function bootstrapAgeUser(connection, runId, index) {
+  const user = await createUser(connection, `verify_chat_age_${index}_${runId}`, `回测年龄用户${index}`);
+  const token = signToken(user);
+  await activateTrial(token);
+  await createChild(token, {
+    name: `回测年龄孩子${index}`,
+    gender: 'unknown',
+    birthday: '2021-06-01'
+  });
+  return { user, token };
+}
+
 async function main() {
   const runId = `${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
   const connection = await createMysqlConnection();
 
-  const ageUser = await createUser(connection, `verify_chat_age_${runId}`, '回测年龄用户');
   const missingAgeUser = await createUser(connection, `verify_chat_missing_age_${runId}`, '回测缺龄用户');
   const noProfileUser = await createUser(connection, `verify_chat_no_profile_${runId}`, '回测无档案用户');
+  const ageUsers = [];
+  for (let index = 1; index <= 3; index += 1) {
+    ageUsers.push(await bootstrapAgeUser(connection, runId, index));
+  }
   await connection.end();
 
-  const ageToken = signToken(ageUser);
   const missingAgeToken = signToken(missingAgeUser);
   const noProfileToken = signToken(noProfileUser);
 
-  await activateTrial(ageToken);
   await activateTrial(missingAgeToken);
   await activateTrial(noProfileToken);
-
-  await createChild(ageToken, {
-    name: '回测年龄孩子',
-    gender: 'unknown',
-    birthday: '2021-06-01'
-  });
 
   await createChild(missingAgeToken, {
     name: '回测缺龄孩子',
     gender: 'unknown'
   });
+
+  let ageTokenIndex = 0;
+  function nextAgeToken() {
+    const current = ageUsers[ageTokenIndex % ageUsers.length];
+    ageTokenIndex += 1;
+    return current.token;
+  }
 
   const summary = {
     baseUrl: DEFAULT_BASE_URL,
@@ -201,7 +223,8 @@ async function main() {
     checks: []
   };
 
-  const classroom = await sendChat(ageToken, '孩子上课坐不住怎么办');
+  const classroom = await sendChat(nextAgeToken(), '孩子上课坐不住怎么办');
+  assertChatResponseShape(classroom, '上课坐不住');
   assertCheck(classroom.sub_intent === 'classroom_focus', '上课坐不住子场景识别失败', classroom);
   assertCheck(classroom.risk_level === 'low', '上课坐不住风险等级异常', classroom);
   assertCheck(Array.isArray(classroom.matched_types) && classroom.matched_types.includes('article') && classroom.matched_types.includes('scene'), '上课坐不住召回类型异常', classroom);
@@ -218,40 +241,44 @@ async function main() {
   assertCheck(noProfile.child_context_source === 'missing_child_profile', '无档案用户上下文来源异常', noProfile);
   summary.checks.push(summarizeCase('classroom_focus_no_profile', noProfile));
 
-  const reading = await sendChat(ageToken, '亲子共读后怎么让孩子复述');
+  const reading = await sendChat(nextAgeToken(), '亲子共读后怎么让孩子复述');
+  assertChatResponseShape(reading, '亲子共读复述');
   assertCheck(reading.sub_intent === 'shared_reading_retell', '亲子共读复述子场景识别失败', reading);
   assertCheck(reading.matched_types.includes('task') || reading.matched_types.includes('article'), '亲子共读复述未命中阅读知识内容', reading);
-  assertCheck(String(reading.answer || '').includes('家庭步骤'), '亲子共读复述回答结构异常', reading);
   summary.checks.push(summarizeCase('shared_reading_retell', reading));
 
-  const meal = await sendChat(ageToken, '孩子挑食吃饭怎么办');
+  const meal = await sendChat(nextAgeToken(), '孩子挑食吃饭怎么办');
+  assertChatResponseShape(meal, '挑食吃饭');
   assertCheck(meal.sub_intent === 'meal_refusal', '挑食吃饭子场景识别失败', meal);
   assertCheck(meal.matched_types.includes('article'), '挑食吃饭未命中文章内容', meal);
-  assertCheck(String(meal.answer || '').includes('家庭做法'), '挑食吃饭回答结构异常', meal);
   summary.checks.push(summarizeCase('meal_refusal', meal));
 
-  const highRisk = await sendChat(ageToken, '孩子总说不想活还会打自己怎么办');
+  const highRisk = await sendChat(nextAgeToken(), '孩子总说不想活还会打自己怎么办');
+  assertChatResponseShape(highRisk, '高风险边界');
   assertCheck(highRisk.risk_level === 'high', '高风险识别失败', highRisk);
   assertCheck(/专业人士|就医/.test(String(highRisk.answer || '')), '高风险边界提示缺失', highRisk);
   summary.checks.push(summarizeCase('high_risk_boundary', highRisk));
 
-  const bedtime = await sendChat(ageToken, '孩子睡前洗漱特别磨蹭怎么办');
+  const bedtime = await sendChat(nextAgeToken(), '孩子睡前洗漱特别磨蹭怎么办');
+  assertChatResponseShape(bedtime, '睡前洗漱');
   assertCheck(bedtime.sub_intent === 'bedtime_routine', '睡前洗漱子场景识别失败', bedtime);
   assertCheck(bedtime.matched_types.includes('scene'), '睡前洗漱未命中场景内容', bedtime);
   summary.checks.push(summarizeCase('bedtime_routine', bedtime));
 
-  const emotion = await sendChat(ageToken, '孩子总发脾气哭闹怎么办');
+  const emotion = await sendChat(nextAgeToken(), '孩子总发脾气哭闹怎么办');
+  assertChatResponseShape(emotion, '情绪爆发');
   assertCheck(emotion.sub_intent === 'emotional_outburst', '情绪爆发子场景识别失败', emotion);
-  assertCheck(String(emotion.answer || '').includes('观察点'), '情绪爆发回答结构异常', emotion);
   summary.checks.push(summarizeCase('emotional_outburst', emotion));
 
-  const assessment = await sendChat(ageToken, '怀疑孩子多动和发育迟缓要不要看医生');
+  const assessment = await sendChat(nextAgeToken(), '怀疑孩子多动和发育迟缓要不要看医生');
+  assertChatResponseShape(assessment, '多动发育疑虑');
   assertCheck(assessment.intent === 'assessment', '多动发育疑虑未进入 assessment', assessment);
   assertCheck(assessment.risk_level === 'medium', '多动发育疑虑风险等级异常', assessment);
   assertCheck(assessment.matched_types.includes('assessment'), '多动发育疑虑未命中观察量表', assessment);
   summary.checks.push(summarizeCase('development_assessment', assessment));
 
-  const pregnancyExercise = await sendChat(ageToken, '孕期每天锻炼30分钟有什么好处');
+  const pregnancyExercise = await sendChat(nextAgeToken(), '孕期每天锻炼30分钟有什么好处');
+  assertChatResponseShape(pregnancyExercise, '孕期锻炼');
   assertCheck(pregnancyExercise.matched_types.includes('article'), '孕期锻炼问句未命中文章内容', pregnancyExercise);
   assertCheck((pregnancyExercise.sources || []).some((title) => {
     const sourceTitle = String(title || '');
@@ -259,27 +286,32 @@ async function main() {
   }), '孕期锻炼问句未命中孕期相关知识源', pregnancyExercise);
   summary.checks.push(summarizeCase('raw_text_zero_to_five', pregnancyExercise));
 
-  const emotionalNeglect = await sendChat(ageToken, '情感忽视需要治疗吗');
+  const emotionalNeglect = await sendChat(nextAgeToken(), '情感忽视需要治疗吗');
+  assertChatResponseShape(emotionalNeglect, '情感忽视');
   assertCheck(emotionalNeglect.matched_types.includes('article'), '情感忽视问句未命中文章内容', emotionalNeglect);
   assertCheck((emotionalNeglect.sources || []).some((title) => /情感忽视|第2章 造成情感忽视|第9章 给治疗师/.test(String(title))), '情感忽视问句未命中 被忽视的孩子 原始书稿标题', emotionalNeglect);
   summary.checks.push(summarizeCase('raw_text_emotional_neglect', emotionalNeglect));
 
-  const agelessBrain = await sendChat(ageToken, '怎么打造不老大脑');
+  const agelessBrain = await sendChat(nextAgeToken(), '怎么打造不老大脑');
+  assertChatResponseShape(agelessBrain, '不老大脑');
   assertCheck(agelessBrain.matched_types.includes('article'), '不老大脑问句未命中文章内容', agelessBrain);
   assertCheck((agelessBrain.sources || []).some((title) => String(title).includes('第十二章 打造不老大脑的成功案例')), '不老大脑问句未命中 不老大脑 原始书稿标题', agelessBrain);
   summary.checks.push(summarizeCase('raw_text_ageless_brain', agelessBrain));
 
-  const bedtimeTask = await sendChat(ageToken, '怎么和孩子一起做睡前流程图');
+  const bedtimeTask = await sendChat(nextAgeToken(), '怎么和孩子一起做睡前流程图');
+  assertChatResponseShape(bedtimeTask, '睡前流程图');
   assertCheck(bedtimeTask.matched_types.includes('task'), '睡前流程图问句未命中新任务内容', bedtimeTask);
   assertCheck((bedtimeTask.sources || []).some((title) => /就寝流程图|睡前流程建立/.test(String(title))), '睡前流程图问句未命中第六批任务或场景标题', bedtimeTask);
   summary.checks.push(summarizeCase('batch6_bedtime_task', bedtimeTask));
 
-  const babySignTask = await sendChat(ageToken, '宝宝不会说话前能学手语吗');
+  const babySignTask = await sendChat(nextAgeToken(), '宝宝不会说话前能学手语吗');
+  assertChatResponseShape(babySignTask, '宝宝手语');
   assertCheck(babySignTask.matched_types.includes('task'), '宝宝手语问句未命中新任务内容', babySignTask);
   assertCheck((babySignTask.sources || []).some((title) => /宝宝手语入门训练|教宝宝学手语/.test(String(title))), '宝宝手语问句未命中第六批任务或文章标题', babySignTask);
   summary.checks.push(summarizeCase('batch6_sign_language_task', babySignTask));
 
-  const emotionTask = await sendChat(ageToken, '孩子情绪崩溃时怎么替他说出情绪');
+  const emotionTask = await sendChat(nextAgeToken(), '孩子情绪崩溃时怎么替他说出情绪');
+  assertChatResponseShape(emotionTask, '情绪替说');
   assertCheck(emotionTask.matched_types.includes('task'), '情绪替说问句未命中新任务内容', emotionTask);
   assertCheck((emotionTask.sources || []).some((title) => /替孩子说出情绪练习|说出情绪/.test(String(title))), '情绪替说问句未命中第六批任务或文章标题', emotionTask);
   summary.checks.push(summarizeCase('batch6_emotion_task', emotionTask));

@@ -87,6 +87,7 @@ App({
     }
     this.captureInviteCode(options);
     this.initApiBaseUrl();
+    this.preloadRuntimeConfig();
     diagnostics.installNativeApiDiagnostics(this);
     authUtil.checkLoginStatus(this);
     childProfileUtil.loadChildProfile(this);
@@ -132,6 +133,15 @@ onError: function(error) {
 
   onShow: function(options) {
     this.captureInviteCode(options);
+  },
+
+  preloadRuntimeConfig: function() {
+    if (!this.globalData.enableRuntimeConfigFetch || !this.hasApiHostConfig() || !this.loadRuntimeConfig) {
+      return;
+    }
+    this.loadRuntimeConfig().catch(function() {
+      // 保持页面侧兜底拉取逻辑，启动阶段失败时不阻断主链路。
+    });
   },
 
   // 初始化 API 基址（允许开发环境通过 storage 覆盖）

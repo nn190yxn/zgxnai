@@ -41,6 +41,18 @@ describe('后端API测试', () => {
     });
   });
 
+  describe('GET /api/v1/runtime/config', () => {
+    it('应该返回运行时功能开关配置', async () => {
+      const res = await request(app).get('/api/v1/runtime/config');
+      expect(res.status).toBe(200);
+      expect(res.body.env_name).toBeDefined();
+      expect(res.body.config_loaded).toBe(true);
+      expect(typeof res.body.ai_chat_enabled).toBe('boolean');
+      expect(typeof res.body.multimodal_enabled).toBe('boolean');
+      expect(typeof res.body.payment_enabled).toBe('boolean');
+    });
+  });
+
   // JWT认证测试
   describe('JWT认证测试', () => {
     it('未认证访问受保护接口应返回401', async () => {

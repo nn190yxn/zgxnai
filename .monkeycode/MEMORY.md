@@ -219,3 +219,13 @@ Agent 在任务执行过程中发现的条目应遵循以下格式：
   - 生产目录不是 Git 工作树，后端热修复优先采用单文件同步到 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js` 的最小部署方式。
   - 每次同步前先在 `/home/ubuntu/niuniu-parenting/backups/` 备份旧 `server.js`，同步后只重启 `niuniu-backend`，不操作 `woying-backend`。
   - `POST https://api.woyai.cn/api/v1/auth/bind-phone` 的无令牌校验响应应为 `{"success":false,"message":"未提供访问令牌"}`，可作为路由是否已部署成功的快速验证信号。
+
+[小程序运行时配置链路收口]
+- Date: 2026-06-22
+- Context: Agent 在修复 AI 场景回归和运行时功能开关链路时发现
+- Category: 排错调试
+- Instructions:
+  - 小程序生产环境功能开关以 `GET https://api.woyai.cn/api/v1/runtime/config` 为准，后端返回的 `RUNTIME_*` 映射值可直接驱动 AI、评估、教育、家长课、计划、记录、周总结、搜索、多模态和支付入口。
+  - 小程序侧除页面级兜底同步外，还应在 `App.onLaunch` 主动预拉一次运行时配置，降低首页或聊天页首屏拿到旧默认值的概率。
+  - 线上修改 `RUNTIME_*` 环境变量后，需要执行 `pm2 restart niuniu-backend --update-env`，普通 `pm2 restart niuniu-backend` 只重载代码。
+  - 运行时配置链路上线后的快速验收信号是 `runtime/config` 返回 `config_loaded: true`，并包含 `ai_provider`、`ai_model` 与全量布尔开关字段。
