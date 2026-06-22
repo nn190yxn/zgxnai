@@ -480,6 +480,159 @@
           padding: 18px;
         }
       }
+
+      /* ===== 新增样式：进度条 ===== */
+      .progress-bar-wrap {
+        margin-top: 16px;
+      }
+      .progress-bar-wrap .label-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .progress-bar {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(203, 111, 63, 0.12);
+        overflow: hidden;
+      }
+      .progress-bar .fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent-soft), var(--accent), var(--accent-deep));
+        transition: width 0.4s ease;
+      }
+      .week-stats {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .week-stat-item {
+        text-align: center;
+        padding: 8px 6px;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(83, 48, 29, 0.06);
+      }
+      .week-stat-item .week-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .week-stat-item .week-pct {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      /* ===== 新增样式：配图素材库 ===== */
+      .asset-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .asset-card {
+        border: 1px solid rgba(83, 48, 29, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.18s, background 0.18s, transform 0.18s;
+        background: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+      .asset-card:hover {
+        border-color: var(--accent);
+        background: rgba(255, 248, 240, 0.9);
+        transform: translateY(-1px);
+      }
+      .asset-card .asset-icon {
+        font-size: 28px;
+        margin-bottom: 4px;
+      }
+      .asset-card .asset-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .asset-card .asset-scene {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .asset-tag {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 9px;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .asset-tag.focus { background: rgba(203, 111, 63, 0.1); color: var(--accent); }
+      .asset-tag.express { background: rgba(72, 107, 77, 0.1); color: var(--good); }
+      .asset-tag.eat { background: rgba(255, 180, 0, 0.12); color: #b8860b; }
+      .asset-tag.sleep { background: rgba(100, 140, 200, 0.12); color: #3a5f8f; }
+      .asset-tag.read { background: rgba(140, 100, 180, 0.12); color: #6b3fa0; }
+      .asset-tag.train { background: rgba(200, 120, 60, 0.12); color: #b06030; }
+      .asset-tag.convert { background: rgba(180, 60, 100, 0.12); color: #a03050; }
+
+      /* ===== 新增样式：推荐配图 ===== */
+      .rec-images {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .rec-image-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid rgba(203, 111, 63, 0.2);
+        background: rgba(203, 111, 63, 0.06);
+        color: var(--accent-deep);
+        transition: background 0.18s;
+      }
+      .rec-image-chip:hover {
+        background: rgba(203, 111, 63, 0.14);
+      }
+
+      /* ===== 新增样式：导出按钮 ===== */
+      .export-bar {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+      .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: border-color 0.18s, background 0.18s;
+      }
+      .btn-export:hover {
+        border-color: var(--accent);
+        background: rgba(255, 248, 240, 0.9);
+      }
+
+      @media (max-width: 920px) {
+        .week-stats, .asset-grid { grid-template-columns: repeat(2, 1fr); }
+      }
     </style>
   </head>
   <body>
@@ -508,6 +661,21 @@
               <span>进度保存</span>
               <strong>本地浏览器</strong>
             </article>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="label-row">
+              <span style="color: var(--muted);">整体完成进度</span>
+              <span style="font-weight: 700;" id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="week-stats" id="weekStats"></div>
+          <div class="export-bar" style="margin-top: 18px;">
+            <button class="btn-export" id="exportMdBtn">&#x1F4E5; 导出完整计划 (Markdown)</button>
+            <button class="btn-export" id="exportCsvBtn">&#x1F4CA; 导出数据报表 (CSV)</button>
+            <button class="btn-export" id="exportSummaryBtn">&#x1F4CB; 复制执行摘要</button>
           </div>
         </div>
         <div class="hero-meta">
@@ -641,6 +809,12 @@
               </div>
 
               <div class="detail-card" style="padding: 16px;">
+                <h3>&#x1F4F7; 推荐配图</h3>
+                <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">当天内容最适合搭配的产品截图，点击在新标签页打开</p>
+                <div id="recImagesBox" class="rec-images"></div>
+              </div>
+
+              <div class="detail-card" style="padding: 16px;">
                 <h3>当天数据记录</h3>
                 <div class="metrics-grid">
                   <input id="metricViews" type="number" min="0" placeholder="小红书浏览量" />
@@ -659,6 +833,12 @@
                 </div>
               </div>
             </div>
+          </section>
+
+          <section class="library-card" style="margin-top: 24px;">
+            <h2>&#x1F4F7; 产品配图素材库</h2>
+            <p class="section-subtitle">10 个功能模块的产品截图，按营销场景分类。点击可在新标签页打开完整截图页面，右键另存即可用于小红书/公众号配图。</p>
+            <div id="assetGallery" class="asset-grid"></div>
           </section>
 
           <section class="library-card" style="margin-top: 24px;">
@@ -701,6 +881,7 @@
         "24. 小程序模块卖点矩阵与营销切题方向",
         "25. 按模块拆的 50 个内容选题标题库",
         "26. 50 个标题对应的首句钩子库",
+        "27. 生活场景扩展开选题库（备用 30 条）",
       ];
 
       const librarySectionIds = [
@@ -758,7 +939,99 @@
       document.getElementById("copyCoverButton").addEventListener("click", () => copyCurrentField("cover"));
       document.getElementById("copyReachButton").addEventListener("click", () => copyCurrentField("reach"));
 
+      document.getElementById("exportMdBtn").addEventListener("click", exportMarkdown);
+      document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
+      document.getElementById("exportSummaryBtn").addEventListener("click", copyFullSummary);
+
       init();
+
+      const productAssets = [
+        { id: "01", name: "首页聚合", icon: "&#x1F3E0;", scenes: ["all"], file: "pages/01-home.html" },
+        { id: "02", name: "AI育儿问答", icon: "&#x1F4AC;", scenes: ["专注","表达","吃饭","睡眠","阅读","训练"], file: "pages/02-ai-chat.html" },
+        { id: "03", name: "成长观察评估", icon: "&#x1F50D;", scenes: ["专注","表达","训练"], file: "pages/03-assessment.html" },
+        { id: "04", name: "每日训练", icon: "&#x1F3CB;", scenes: ["专注","表达","阅读","训练"], file: "pages/04-daily-training.html" },
+        { id: "05", name: "营养食谱", icon: "&#x1F372;", scenes: ["吃饭"], file: "pages/05-nutrition.html" },
+        { id: "06", name: "育儿锦囊", icon: "&#x1F4D6;", scenes: ["睡眠","阅读"], file: "pages/06-parenting.html" },
+        { id: "07", name: "成长记录", icon: "&#x1F4C8;", scenes: ["专注","表达","训练"], file: "pages/07-growth-record.html" },
+        { id: "08", name: "每周成长总结", icon: "&#x1F4CA;", scenes: ["转化"], file: "pages/08-weekly-summary.html" },
+        { id: "09", name: "会员中心", icon: "&#x2B50;", scenes: ["转化"], file: "pages/09-membership.html" },
+        { id: "10", name: "个人中心", icon: "&#x1F464;", scenes: ["转化"], file: "pages/10-profile.html" },
+      ];
+
+      const sceneMap = {
+        "专注": { tagClass: "focus", features: ["02","03","04","07"] },
+        "表达": { tagClass: "express", features: ["02","03","04","07"] },
+        "吃饭": { tagClass: "eat", features: ["02","05"] },
+        "睡眠": { tagClass: "sleep", features: ["02","06"] },
+        "阅读": { tagClass: "read", features: ["02","04","06"] },
+        "训练": { tagClass: "train", features: ["02","03","04","07"] },
+        "转化": { tagClass: "convert", features: ["08","09","10","01"] },
+      };
+
+      const baseUrl = window.location.href.replace(/marketing-plan-interactive\.html.*$/, "");
+
+      function renderAssetGallery() {
+        const gallery = document.getElementById("assetGallery");
+        gallery.innerHTML = productAssets.map((asset) => {
+          const sceneTags = asset.scenes.filter((s) => s !== "all").map((s) => {
+            const cls = (sceneMap[s] && sceneMap[s].tagClass) || "focus";
+            return `<span class="asset-tag ${cls}">${s}</span>`;
+          }).join(" ");
+          return `
+            <a class="asset-card" href="${baseUrl}${asset.file}" target="_blank" title="${asset.name} - 点击打开完整截图页">
+              <div class="asset-icon">${asset.icon}</div>
+              <div class="asset-name">${asset.name}</div>
+              <div style="margin-top: 4px;">${sceneTags}</div>
+            </a>
+          `;
+        }).join("");
+      }
+
+      function renderRecImages(scene) {
+        const box = document.getElementById("recImagesBox");
+        if (!box) return;
+        const mapping = sceneMap[scene];
+        if (!mapping) {
+          box.innerHTML = `<span style="font-size:11px;color:var(--muted);">无推荐配图</span>`;
+          return;
+        }
+        const assets = productAssets.filter((a) => mapping.features.includes(a.id));
+        box.innerHTML = assets.map((a) => `
+          <span class="rec-image-chip" onclick="window.open('${baseUrl}${a.file}', '_blank')" title="点击打开 ${a.name} 截图页">
+            ${a.icon} ${a.name}
+          </span>
+        `).join("");
+      }
+
+      function updateProgress() {
+        const totalTasks = state.days.length * 4;
+        let completed = 0;
+        const weekStats = { "第1周": [0,0], "第2周": [0,0], "第3周": [0,0], "第4周": [0,0], "第5周": [0,0] };
+        state.days.forEach((day) => {
+          const progress = getDayProgress(day.day);
+          const w = day.week;
+          if (weekStats[w]) {
+            weekStats[w][1] += 4;
+            Object.values(progress.tasks).forEach((v) => { if (v) { completed += 1; weekStats[w][0] += 1; } });
+          }
+        });
+        const pct = totalTasks ? Math.round((completed / totalTasks) * 100) : 0;
+        document.getElementById("progressPct").textContent = `${pct}%`;
+        document.getElementById("progressFill").style.width = `${pct}%`;
+        heroDone.textContent = `${completed} / ${totalTasks}`;
+
+        const weekStatsEl = document.getElementById("weekStats");
+        if (weekStatsEl) {
+          weekStatsEl.innerHTML = Object.entries(weekStats).map(([label, data]) => {
+            const wpct = data[1] ? Math.round((data[0] / data[1]) * 100) : 0;
+            return `<div class="week-stat-item">
+              <div class="week-label">${label}</div>
+              <div class="week-pct">${wpct}%</div>
+              <div style="font-size:10px;color:var(--muted);">${data[0]}/${data[1]}</div>
+            </div>`;
+          }).join("");
+        }
+      }
 
       async function init() {
         try {
@@ -773,6 +1046,7 @@
           renderOverview();
           renderContentCenter();
           renderLibrary();
+          renderAssetGallery();
           renderDayGrid();
           renderDetail(state.selectedDay);
           updateHero();
@@ -1039,18 +1313,12 @@
         document.getElementById("metricReplies").value = progress.metrics.replies || "";
         document.getElementById("metricHighIntent").value = progress.metrics.highIntent || "";
         document.getElementById("metricNote").value = progress.metrics.note || "";
+
+        renderRecImages(day.scene);
       }
 
       function updateHero() {
-        const totalTasks = state.days.length * 4;
-        let completed = 0;
-        state.days.forEach((day) => {
-          const progress = getDayProgress(day.day);
-          Object.values(progress.tasks).forEach((value) => {
-            if (value) completed += 1;
-          });
-        });
-        heroDone.textContent = `${completed} / ${totalTasks}`;
+        updateProgress();
         heroToday.textContent = `Day ${state.selectedDay}`;
       }
 
@@ -1266,6 +1534,108 @@
           document.body.removeChild(textarea);
           heroState.textContent = "内容已复制";
         }
+      }
+
+      function exportMarkdown() {
+        const lines = [];
+        lines.push("# 小牛育儿 30 天推广执行报告");
+        lines.push("");
+        const totalTasks = state.days.length * 4;
+        let completed = 0;
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          Object.values(p.tasks).forEach((v) => { if (v) completed++; });
+        });
+        lines.push(`## 整体进度：${Math.round((completed/totalTasks)*100)}% (${completed}/${totalTasks})`);
+        lines.push("");
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          const done = isDayDone(p);
+          lines.push(`### Day ${day.day} · ${day.week} · ${day.scene} ${done ? "[已完成]" : "[进行中]"}`);
+          lines.push(`- 小红书：${day.xhsTitle}`);
+          lines.push(`- 抖音/视频号：${day.videoTitle}`);
+          lines.push(`- CTA：${day.cta}`);
+          lines.push(`- 小红书发布：${p.tasks.xhs ? "是" : "否"} | 视频发布：${p.tasks.video ? "是" : "否"} | 会员触达：${p.tasks.reach ? "是" : "否"} | 复盘：${p.tasks.review ? "是" : "否"}`);
+          if (p.metrics.views || p.metrics.saves) {
+            lines.push(`- 数据：浏览${p.metrics.views||0} 收藏${p.metrics.saves||0} 播放${p.metrics.plays||0} 小程序进入${p.metrics.entrances||0} 会员回复${p.metrics.replies||0} 高意向${p.metrics.highIntent||0}`);
+          }
+          if (p.metrics.note) lines.push(`- 备注：${p.metrics.note}`);
+          lines.push("");
+        });
+        const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=UTF-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "小牛育儿30天推广执行报告.md";
+        a.click();
+        URL.revokeObjectURL(url);
+        heroState.textContent = "Markdown 已导出";
+      }
+
+      function exportCsv() {
+        const rows = [["Day","周次","场景","CTA","小红书标题","视频标题","小红书发布","视频发布","触达完成","复盘完成","浏览量","收藏量","播放量","小程序进入","会员回复","高意向","备注"]];
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          rows.push([
+            day.day, day.week, day.scene, day.cta,
+            day.xhsTitle, day.videoTitle,
+            p.tasks.xhs ? "是" : "否", p.tasks.video ? "是" : "否",
+            p.tasks.reach ? "是" : "否", p.tasks.review ? "是" : "否",
+            p.metrics.views || "", p.metrics.saves || "", p.metrics.plays || "",
+            p.metrics.entrances || "", p.metrics.replies || "", p.metrics.highIntent || "",
+            p.metrics.note || ""
+          ]);
+        });
+        const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=UTF-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "小牛育儿30天数据报表.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        heroState.textContent = "CSV 已导出";
+      }
+
+      function copyFullSummary() {
+        const lines = [];
+        let totalCompleted = 0;
+        let totalTasks = state.days.length * 4;
+        let totalViews = 0, totalSaves = 0, totalPlays = 0;
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          Object.values(p.tasks).forEach((v) => { if (v) totalCompleted++; });
+          totalViews += Number(p.metrics.views) || 0;
+          totalSaves += Number(p.metrics.saves) || 0;
+          totalPlays += Number(p.metrics.plays) || 0;
+        });
+        lines.push(`[小牛育儿 30 天推广执行摘要]`);
+        lines.push(`整体完成率：${Math.round((totalCompleted/totalTasks)*100)}% (${totalCompleted}/${totalTasks})`);
+        lines.push(`总浏览量：${totalViews}  总收藏量：${totalSaves}  总播放量：${totalPlays}`);
+        lines.push("");
+        lines.push("--- 各周完成情况 ---");
+        const weeks = { "第1周":[0,28], "第2周":[0,28], "第3周":[0,28], "第4周":[0,28], "第5周":[0,8] };
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          Object.values(p.tasks).forEach((v) => { if (v && weeks[day.week]) weeks[day.week][0]++; });
+        });
+        Object.entries(weeks).forEach(([label, data]) => {
+          lines.push(`  ${label}：${data[0]}/${data[1]} (${Math.round((data[0]/data[1])*100)}%)`);
+        });
+        lines.push("");
+        lines.push("--- 已完成天 ---");
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          if (isDayDone(p)) lines.push(`  Day ${day.day} · ${day.xhsTitle}`);
+        });
+        lines.push("");
+        lines.push("--- 待推进天 ---");
+        state.days.forEach((day) => {
+          const p = getDayProgress(day.day);
+          if (!isDayDone(p)) lines.push(`  Day ${day.day} · ${day.scene} · ${day.xhsTitle}`);
+        });
+        copyText(lines.join("\n"));
+        heroState.textContent = "执行摘要已复制";
       }
 
       window.copyText = copyText;
