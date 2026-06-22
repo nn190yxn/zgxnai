@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - 个人中心 & 孩子档案</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; }
+.content { padding:14px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.card { background:#fff; border:1px solid rgba(83,48,29,0.08); border-radius:12px; padding:12px; margin-bottom:10px; }
+.card-title { font-size:12px; font-weight:700; color:#3f261b; margin-bottom:6px; }
+.user-row { display:flex; align-items:center; gap:10px; }
+.avatar { width:44px; height:44px; border-radius:50%; background:#ffe8d6; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.user-name { font-size:14px; font-weight:700; color:#3f261b; }
+.user-meta { font-size:11px; color:#7d5d4d; margin-top:2px; }
+.child-row { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+.child-icon { font-size:24px; flex-shrink:0; }
+.child-info { flex:1; }
+.child-name { font-size:13px; font-weight:700; color:#3f261b; }
+.child-detail { font-size:11px; color:#7d5d4d; }
+.chip { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; }
+.chip-current { background:rgba(58,143,77,0.12); color:#3a8f4d; font-weight:600; }
+.child-extra { font-size:11px; color:#7d5d4d; margin-top:6px; }
+.func-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.func-item { background:#fff; border:1px solid rgba(83,48,29,0.08); border-radius:12px; text-align:center; padding:14px 8px; }
+.func-item .icon { font-size:24px; margin-bottom:4px; }
+.func-item .label { font-size:11px; color:#3f261b; font-weight:600; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar">我的</div>
+    <div class="content">
+      <div class="card">
+        <div class="user-row">
+          <div class="avatar">&#x1F466;</div>
+          <div>
+            <div class="user-name">小宝妈妈</div>
+            <div class="user-meta">VIP会员 · 2026.07.22到期</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="child-row">
+          <div class="child-icon">&#x1F476;</div>
+          <div class="child-info">
+            <div class="child-name">小宝</div>
+            <div class="child-detail">男 · 2021年6月 · 5-6岁</div>
+          </div>
+          <span class="chip chip-current">当前</span>
+        </div>
+        <div class="child-extra">身高 112cm · 体重 19kg · 无食物过敏</div>
+      </div>
+
+      <div class="card">
+        <div class="child-row">
+          <div class="child-icon">&#x1F467;</div>
+          <div class="child-info">
+            <div class="child-name">小花</div>
+            <div class="child-detail">女 · 2023年9月 · 2-3岁</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="card-title" style="margin-bottom:8px;">常用功能</div>
+        <div class="func-grid">
+          <div class="func-item">
+            <div class="icon">&#x1F4CA;</div>
+            <div class="label">评估历史</div>
+          </div>
+          <div class="func-item">
+            <div class="icon">&#x1F517;</div>
+            <div class="label">推荐码</div>
+          </div>
+          <div class="func-item">
+            <div class="icon">&#x1F4C4;</div>
+            <div class="label">隐私政策</div>
+          </div>
+          <div class="func-item">
+            <div class="icon">&#x2699;</div>
+            <div class="label">账号设置</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item active"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">个人中心 & 孩子档案</div>
+  <div class="fdesc">多孩子档案管理，每个孩子独立记录成长数据，支持分龄切换，评估历史、推荐码等常用入口汇聚于此</div>
+</div>
+</body>
+</html>

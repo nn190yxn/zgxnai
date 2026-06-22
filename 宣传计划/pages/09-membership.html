@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - 会员中心</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; position:relative; }
+.nav-bar .back { position:absolute; left:12px; font-size:12px; color:#cb6f3f; }
+.content { padding:14px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.vip-card { background:linear-gradient(135deg, #fff8e1, #fff3cd); border:1px solid rgba(203,111,63,0.2); border-radius:12px; padding:16px; margin-bottom:14px; text-align:center; }
+.vip-card .label { font-size:11px; color:#a07d5a; margin-bottom:4px; }
+.vip-card .vip-title { font-size:22px; font-weight:700; color:#cb6f3f; font-family:"Noto Serif SC",serif; }
+.vip-card .expiry { font-size:11px; color:#a07d5a; margin-top:4px; }
+.privilege-title { font-size:13px; font-weight:700; color:#3f261b; margin-bottom:8px; }
+.privilege-list { background:#fff; border:1px solid rgba(83,48,29,0.08); border-radius:12px; padding:10px 12px; margin-bottom:14px; }
+.privilege-item { display:flex; align-items:center; gap:10px; padding:8px 0; }
+.privilege-item + .privilege-item { border-top:1px solid rgba(83,48,29,0.06); }
+.privilege-item .icon { font-size:20px; flex-shrink:0; width:28px; text-align:center; }
+.privilege-item .info { flex:1; }
+.privilege-item .name { font-size:13px; font-weight:700; color:#3f261b; }
+.privilege-item .sub { font-size:11px; color:#7d5d4d; margin-top:1px; }
+.btn-primary { display:flex; align-items:center; justify-content:center; background:#cb6f3f; color:#fff; border-radius:20px; padding:12px 0; font-size:13px; font-weight:600; width:100%; margin-bottom:10px; }
+.invite { text-align:center; font-size:11px; color:#7d5d4d; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar"><span class="back">&larr; 返回</span>会员中心</div>
+    <div class="content">
+      <div class="vip-card">
+        <div class="label">当前会员</div>
+        <div class="vip-title">VIP 会员</div>
+        <div class="expiry">有效期至 2026年7月22日</div>
+      </div>
+
+      <div class="privilege-title">会员专属权益</div>
+      <div class="privilege-list">
+        <div class="privilege-item">
+          <div class="icon">&#x1F50D;</div>
+          <div class="info">
+            <div class="name">全部成长观察评估</div>
+            <div class="sub">四大评估工具不限次数</div>
+          </div>
+        </div>
+        <div class="privilege-item">
+          <div class="icon">&#x1F4AC;</div>
+          <div class="info">
+            <div class="name">无限AI育儿问答</div>
+            <div class="sub">随时提问，不限次数</div>
+          </div>
+        </div>
+        <div class="privilege-item">
+          <div class="icon">&#x1F4DA;</div>
+          <div class="info">
+            <div class="name">每日训练全部内容</div>
+            <div class="sub">解锁全部分龄训练任务</div>
+          </div>
+        </div>
+        <div class="privilege-item">
+          <div class="icon">&#x1F4CA;</div>
+          <div class="info">
+            <div class="name">每周成长总结</div>
+            <div class="sub">完整周报与趋势分析</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-primary">续费会员</div>
+      <div class="invite">邀请好友各得7天会员</div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">会员中心</div>
+  <div class="fdesc">VIP会员解锁全部成长评估、无限AI问答、完整训练库和每周总结，支持转介绍赠送会员天数</div>
+</div>
+</body>
+</html>

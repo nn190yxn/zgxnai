@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - 每周成长总结</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; position:relative; }
+.nav-bar .back { position:absolute; left:12px; font-size:12px; color:#cb6f3f; }
+.content { padding:14px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.card { background:#fff; border:1px solid rgba(83,48,29,0.08); border-radius:12px; padding:12px; margin-bottom:10px; }
+.card.summary { background:linear-gradient(135deg, #f0fff4, #e6ffed); border:1px solid rgba(72,107,77,0.15); }
+.card-title { font-size:12px; font-weight:700; color:#3f261b; margin-bottom:6px; }
+.card-text { font-size:11px; color:#7d5d4d; line-height:1.7; }
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px; }
+.stat-item { text-align:center; padding:6px; }
+.stat-num { font-size:22px; font-weight:700; }
+.stat-num.green { color:#3a8f4d; }
+.stat-num.orange { color:#cb6f3f; }
+.stat-label { font-size:10px; color:#7d5d4d; margin-top:2px; }
+.highlight { font-size:11px; color:#7d5d4d; line-height:1.6; margin-bottom:4px; }
+.btn-primary { display:inline-flex; align-items:center; justify-content:center; background:#cb6f3f; color:#fff; border-radius:20px; padding:10px 0; font-size:12px; font-weight:600; width:100%; }
+.btn-outline { display:inline-flex; align-items:center; justify-content:center; border:1px solid #cb6f3f; color:#cb6f3f; border-radius:20px; padding:10px 0; font-size:12px; font-weight:600; width:100%; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar"><span class="back">&larr; 返回</span>本周成长总结</div>
+    <div class="content">
+      <div class="card summary">
+        <div style="text-align:center; margin-bottom:10px;">
+          <div style="font-size:11px; color:#7d5d4d;">6月16日 — 6月22日</div>
+          <div style="font-size:22px; font-family:'Noto Serif SC',serif; font-weight:700; color:#3a8f4d; margin-top:2px;">本周总结</div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-item">
+            <div class="stat-num green">5 天</div>
+            <div class="stat-label">连续记录</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num orange">4 项</div>
+            <div class="stat-label">完成训练</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">趋势总结</div>
+        <div class="card-text">本周孩子总体状态比较稳定，专注力训练完成良好。建议下周逐步延长单次专注时长到15分钟。饮食方面需要关注晚餐食量。</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">本周亮点</div>
+        <div class="highlight">&#x2B50; 周三拼图专注20分钟，进步明显</div>
+        <div class="highlight">&#x2B50; 情绪表达更主动，"我生气了"</div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <div class="btn-outline">&#x1F4E4; 分享成果卡</div>
+        <div class="btn-primary">查看详细</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">每周成长总结</div>
+  <div class="fdesc">自动汇总一周成长数据，生成趋势分析和亮点回顾，支持一键分享成果卡至朋友圈</div>
+</div>
+</body>
+</html>

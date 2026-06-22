@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - 成长记录</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; position:relative; }
+.nav-bar .back { position:absolute; left:12px; font-size:12px; color:#cb6f3f; }
+.content { padding:14px 14px 50px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.card { background:#fff; border-radius:14px; padding:14px; border:1px solid rgba(83,48,29,0.06); margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
+.card-hero { background:linear-gradient(135deg,#fdf2f8,#fce4ec); border-radius:14px; padding:16px; border:1px solid rgba(225,112,85,0.12); margin-bottom:10px; }
+.chip-green { display:inline-flex; align-items:center; background:rgba(72,107,77,0.1); color:#486b4d; border-radius:12px; padding:3px 8px; font-size:10px; font-weight:600; }
+.btn-primary { display:inline-flex; align-items:center; justify-content:center; background:#cb6f3f; color:#fff; border-radius:20px; padding:8px 20px; font-size:12px; font-weight:600; border:none; }
+.btn-outline { display:inline-flex; align-items:center; justify-content:center; background:transparent; color:#cb6f3f; border:1.5px solid #cb6f3f; border-radius:20px; padding:8px 20px; font-size:12px; font-weight:600; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar"><span class="back">&larr; 返回</span>成长记录</div>
+    <div class="content">
+      <div class="card-hero">
+        <div style="font-size:15px; font-weight:700; color:#3f261b;">记录孩子的每日变化</div>
+        <div style="font-size:11px; color:#7d5d4d; margin-top:4px;">连续记录 · 发现趋势 · 分享成果</div>
+      </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div style="font-weight:700; font-size:12px;">6月22日（今日）</div>
+          <span class="chip-green">&#x2713; 已记录</span>
+        </div>
+        <div style="font-size:11px; color:#7d5d4d; line-height:1.8;">
+          情绪状态：平稳<br/>
+          专注时长：约15分钟（画画）<br/>
+          饮食状况：三餐正常，下午加水果<br/>
+          睡眠状况：午睡1小时，晚9点入睡
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div style="font-weight:700; font-size:12px;">6月21日</div>
+          <span class="chip-green">&#x2713;</span>
+        </div>
+        <div style="font-size:11px; color:#7d5d4d; line-height:1.8;">
+          情绪状态：愉快<br/>
+          专注时长：约20分钟（拼图）<br/>
+          饮食状况：晚餐吃得较少<br/>
+          睡眠状况：正常
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <div class="btn-primary" style="flex:1; text-align:center; font-size:11px;">+ 记录今天</div>
+        <div class="btn-outline" style="flex:1; text-align:center; font-size:11px;">查看历史</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">成长记录</div>
+  <div class="fdesc">每日记录孩子的情绪、专注、饮食和睡眠，连续追踪发现成长趋势，分享成果卡到朋友圈</div>
+</div>
+</body>
+</html>

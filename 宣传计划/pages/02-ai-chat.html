@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - AI育儿问答</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; position:relative; }
+.nav-bar .back { position:absolute; left:12px; font-size:12px; color:#cb6f3f; }
+.content { padding:14px 14px 50px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.chat-ai { background:rgba(203,111,63,0.08); border-radius:16px 16px 16px 4px; padding:10px 14px; margin-bottom:8px; font-size:11px; line-height:1.7; max-width:92%; }
+.chat-user { background:#cb6f3f; color:#fff; border-radius:16px 16px 4px 16px; padding:8px 14px; margin-bottom:8px; font-size:11px; max-width:80%; margin-left:auto; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar"><span class="back">&larr; 返回</span>AI育儿问答</div>
+    <div class="content">
+      <div style="text-align:center; margin-bottom:14px;">
+        <div style="font-size:30px;">&#x1F9B8;</div>
+        <div style="font-size:13px; color:#3f261b; font-weight:700;">小牛育儿AI助理</div>
+        <div style="font-size:10px; color:#7d5d4d; margin-top:3px;">基于0-12岁分龄知识库的专业育儿建议</div>
+      </div>
+      <div class="chat-user">孩子上课坐不住怎么办？</div>
+      <div class="chat-ai">
+        5-6岁的孩子注意力持续约10到15分钟很正常，坐不住不等于有问题。<br/><br/>
+        从家里先练起来：找一个孩子喜欢做的安静活动，从5分钟开始，做到了就及时肯定。<br/><br/>
+        把写作业拆成两三小段，每段之间安排一个明确的身体活动过渡。<br/><br/>
+        孩子一般是在听课、做作业还是吃饭的时候更容易坐不住？
+      </div>
+      <div class="chat-user">挑食不爱吃饭怎么办</div>
+      <div class="chat-ai">
+        先稳住节奏比追着多吃更重要。餐桌上对抗一上来，孩子会先抗拒吃饭这件事本身。<br/><br/>
+        每餐保留一种愿意吃的食物，再少量加一种新的，不催不哄。<br/><br/>
+        先连续试一周，重点看餐桌对抗有没有下降。是挑食还是吃饭拖拉？
+      </div>
+      <div style="display:flex; gap:8px; margin-top:8px; border-top:1px solid rgba(0,0,0,0.06); padding-top:10px;">
+        <input style="flex:1; padding:8px 12px; border-radius:20px; border:1px solid rgba(0,0,0,0.1); font-size:11px;" placeholder="输入你的育儿问题..." />
+        <div style="display:inline-flex; align-items:center; justify-content:center; background:#cb6f3f; color:#fff; border-radius:20px; padding:6px 14px; font-size:11px; font-weight:600;">发送</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item active"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">AI育儿问答</div>
+  <div class="fdesc">基于分龄知识库的专业育儿对话，覆盖专注力、表达、吃饭、睡眠等场景，回答像老师在和家长说话</div>
+</div>
+</body>
+</html>

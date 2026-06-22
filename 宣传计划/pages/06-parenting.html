@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小牛育儿AI助理 - 育儿锦囊</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+  background: radial-gradient(circle at top left, rgba(255,214,180,0.8), transparent 28%),
+              radial-gradient(circle at top right, rgba(255,236,190,0.7), transparent 22%),
+              linear-gradient(180deg, #fcf6ef 0%, #f5eadb 48%, #f1e4d3 100%);
+  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif; padding:20px;
+}
+.wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone {
+  width:320px; border:3px solid #3a3a3a; border-radius:36px; background:#fffdf8; overflow:hidden;
+  box-shadow:0 24px 60px rgba(95,53,30,0.18); position:relative;
+}
+.status-bar { height:32px; background:#3a3a3a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+.nav-bar { height:44px; background:#fffdf8; border-bottom:1px solid rgba(83,48,29,0.08); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#3f261b; position:relative; }
+.nav-bar .back { position:absolute; left:12px; font-size:12px; color:#cb6f3f; }
+.content { padding:14px 14px 50px; overflow-y:auto; height:540px; font-size:12px; }
+.tab-bar { display:flex; border-top:1px solid rgba(83,48,29,0.08); padding:6px 0 4px; background:#fff; position:absolute; bottom:0; left:0; right:0; }
+.tab-item { flex:1; text-align:center; font-size:10px; color:#7d5d4d; }
+.tab-item.active { color:#cb6f3f; font-weight:700; }
+.tab-icon { font-size:18px; display:block; margin-bottom:1px; }
+.card { background:#fff; border-radius:14px; padding:14px; border:1px solid rgba(83,48,29,0.06); margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
+.chip { display:inline-flex; align-items:center; background:rgba(203,111,63,0.1); color:#9f4f2f; border-radius:12px; padding:3px 8px; font-size:10px; font-weight:600; }
+.ftitle { font-family:"Noto Serif SC","Songti SC",serif; font-size:18px; color:#3f261b; text-align:center; }
+.fdesc { font-size:13px; color:#7d5d4d; text-align:center; max-width:320px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="phone">
+    <div class="status-bar"><span>9:41</span><span>100%</span></div>
+    <div class="nav-bar"><span class="back">&larr; 返回</span>育儿锦囊</div>
+    <div class="content">
+      <div style="margin-bottom:8px;">
+        <input style="width:100%; padding:10px 14px; border-radius:20px; border:1px solid rgba(0,0,0,0.1); font-size:11px; background:#f8f8f8;" placeholder="搜索育儿问题..." />
+      </div>
+      <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="chip">情绪管理</span><span class="chip">睡眠</span><span class="chip">专注力</span><span class="chip">社交</span><span class="chip">吃饭</span><span class="chip">语言</span>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; font-size:13px;">5-6岁孩子情绪命名训练：先让孩子会说，再谈控制</div>
+        <div style="font-size:10px; color:#7d5d4d; margin-top:6px; line-height:1.5;">帮助这个年龄段的孩子识别和命名"生气""难过""开心"等基本情绪，是情绪调节的第一步</div>
+        <div style="margin-top:6px; display:flex; gap:8px; font-size:9px; color:#7d5d4d;">
+          <span>&#x1F441; 2.3K</span><span>&#x2B50; 128</span><span>&#x1F4AC; 45</span>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; font-size:13px;">5-6岁孩子睡前流程建立：把入睡做成一套稳定顺序</div>
+        <div style="font-size:10px; color:#7d5d4d; margin-top:6px; line-height:1.5;">用可视化的就寝流程图帮孩子建立自主睡前习惯，2-3周可见效果</div>
+        <div style="margin-top:6px; display:flex; gap:8px; font-size:9px; color:#7d5d4d;">
+          <span>&#x1F441; 1.8K</span><span>&#x2B50; 96</span><span>&#x1F4AC; 32</span>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700; font-size:13px;">孩子总顶嘴时，先把重复提醒压成原句复述</div>
+        <div style="font-size:10px; color:#7d5d4d; margin-top:6px; line-height:1.5;">把"别顶嘴"换成"你刚才说..."然后帮孩子找到更好的表达方式</div>
+        <div style="margin-top:6px; display:flex; gap:8px; font-size:9px; color:#7d5d4d;">
+          <span>&#x1F441; 1.5K</span><span>&#x2B50; 74</span><span>&#x1F4AC; 28</span>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="tab-icon">&#x1F3E0;</span>首页</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F4AC;</span>AI问答</div>
+      <div class="tab-item"><span class="tab-icon">&#x1F464;</span>我的</div>
+    </div>
+  </div>
+  <div class="ftitle">育儿锦囊</div>
+  <div class="fdesc">分龄育儿文章库，涵盖情绪、睡眠、专注力等场景，支持搜索和收藏，遇到问题来这里找方法</div>
+</div>
+</body>
+</html>
