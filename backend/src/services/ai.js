@@ -6,6 +6,7 @@ function getAIConfig() {
   const apiKey = String(process.env.AI_API_KEY || '').trim();
   const model = String(process.env.AI_MODEL || '').trim();
   const baseUrl = resolveBaseUrl(provider, process.env.AI_BASE_URL || '');
+  const reasoningEffort = String(process.env.AI_REASONING_EFFORT || '').trim();
   const timeoutMs = parseInt(process.env.AI_TIMEOUT_MS || '12000', 10);
 
   return {
@@ -13,6 +14,7 @@ function getAIConfig() {
     apiKey,
     model,
     baseUrl,
+    reasoningEffort,
     timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : 12000
   };
 }
@@ -59,6 +61,7 @@ function getAIStatus() {
     configured: true,
     provider: config.provider,
     model: config.model,
+    reasoning_effort: config.reasoningEffort || null,
     timeout_ms: config.timeoutMs,
     base_url: config.baseUrl
   };
@@ -83,6 +86,10 @@ async function generateAIAnswer(prompt, options = {}) {
       temperature: clampNumber(options.temperature, 0.2, 0, 2),
       max_tokens: clampNumber(options.maxTokens, 900, 1, 4096)
     };
+    const finalReasoningEffort = String(options.reasoningEffort || config.reasoningEffort || '').trim();
+    if (finalReasoningEffort) {
+      payload.reasoning_effort = finalReasoningEffort;
+    }
 
     const response = await postJson(`${config.baseUrl}/chat/completions`, payload, {
       timeoutMs: config.timeoutMs,
