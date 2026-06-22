@@ -183,6 +183,60 @@ onError: function(error) {
     }
   },
 
+  hasApiHostConfig: function() {
+    return !!(this.globalData.apiBaseUrl && this.globalData.baseUrl);
+  },
+
+  applyDebugApiHostConfig: function(apiBaseUrl, baseUrl) {
+    if (!apiBaseUrl || !baseUrl) {
+      return false;
+    }
+    this.globalData.apiBaseUrl = apiBaseUrl;
+    this.globalData.baseUrl = baseUrl;
+    wx.setStorageSync('apiBaseUrl', apiBaseUrl);
+    wx.setStorageSync('baseUrl', baseUrl);
+    return true;
+  },
+
+  promptDevApiHostSetup: function() {
+    var that = this;
+    if (!that.globalData.isDebug || !that.globalData.requireCustomApiHost || that.hasApiHostConfig()) {
+      return Promise.resolve(false);
+    }
+    if (that.globalData._devApiHostPromptPromise) {
+      return that.globalData._devApiHostPromptPromise;
+    }
+
+    var productionConfig = envConfig.getConfigByEnv ? envConfig.getConfigByEnv('production') : null;
+    that.globalData._devApiHostPromptPromise = new Promise(function(resolve) {
+      wx.showModal({
+        title: '开发版接口未配置',
+        content: '当前是开发版，后端地址还没有设置。确认后会把本机调试请求切到生产接口，方便继续联调。',
+        confirmText: '立即切换',
+        cancelText: '稍后再说',
+        success: function(res) {
+          if (res.confirm && productionConfig && productionConfig.apiBaseUrl && productionConfig.baseUrl) {
+            that.applyDebugApiHostConfig(productionConfig.apiBaseUrl, productionConfig.baseUrl);
+            wx.showToast({
+              title: '已切到生产接口',
+              icon: 'none'
+            });
+            resolve(true);
+            return;
+          }
+          resolve(false);
+        },
+        fail: function() {
+          resolve(false);
+        }
+      });
+    }).finally(function() {
+      that.globalData._devApiHostPromptPromise = null;
+    });
+
+    return that.globalData._devApiHostPromptPromise;
+  },
+
   onPageNotFound: function(res) {
     console.error('Page not found', res);
     wx.switchTab({

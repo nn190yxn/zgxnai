@@ -319,7 +319,7 @@ Page({
       self.saveMessages();
 
     }).catch(function(error) {
-      if (app.globalData.isDebug) console.error('Chat error:', error);
+      if (app.globalData.isDebug && (!error || error.code !== 'DEV_API_HOST_REQUIRED')) console.error('Chat error:', error);
       var errorText = app.getApiErrorMessage(
         error,
         '抱歉，暂时无法回答，请稍后再试。'

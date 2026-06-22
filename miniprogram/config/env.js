@@ -73,5 +73,8 @@ function resolveEnv() {
 var selectedEnv = resolveEnv();
 var selectedConfig = ENV_CONFIG[selectedEnv] || ENV_CONFIG.development;
 selectedConfig.envName = selectedEnv;
+selectedConfig.getConfigByEnv = function(envName) {
+  return ENV_CONFIG[envName] || null;
+};
 
 module.exports = selectedConfig;

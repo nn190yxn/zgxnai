@@ -5,7 +5,9 @@ function getApiUrl(app, path) {
   var finalUrl = '';
   if (app && app.globalData && app.globalData.requireCustomApiHost) {
     if (!app.globalData.apiBaseUrl || !app.globalData.baseUrl) {
-      throw new Error('开发环境未配置接口地址，请先设置 apiBaseUrl 和 baseUrl');
+      var missingApiConfigError = new Error('当前是开发版，后端接口地址还没配置。确认提示后会自动切到生产接口，再发一次就可以。');
+      missingApiConfigError.code = 'DEV_API_HOST_REQUIRED';
+      throw missingApiConfigError;
     }
   }
   if (!path) {
@@ -188,6 +190,9 @@ function request(app, options) {
     try {
       url = getApiUrl(app, url);
     } catch (err) {
+      if (err && err.code === 'DEV_API_HOST_REQUIRED' && app && typeof app.promptDevApiHostSetup === 'function') {
+        app.promptDevApiHostSetup();
+      }
       reject(err);
       return;
     }
