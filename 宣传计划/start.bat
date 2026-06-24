@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 title 小牛育儿 30天宣传指挥台
 setlocal enabledelayedexpansion
 
@@ -9,10 +8,10 @@ setlocal enabledelayedexpansion
 :: ==================================
 
 echo.
-echo   ╔══════════════════════════════════╗
-echo   ║   小牛育儿 30天宣传指挥台       ║
-echo   ║   看懂孩子短板，带娃更省心       ║
-echo   ╚══════════════════════════════════╝
+echo   ======================================
+echo     小牛育儿 30天宣传指挥台
+echo     看懂孩子短板，带娃更省心
+echo   ======================================
 echo.
 
 :: Check Node.js
@@ -33,7 +32,13 @@ set "BACKEND_DIR=%~dp0..\backend"
 :: Check .env
 if not exist "%BACKEND_DIR%\.env" (
     echo [错误] 未找到 %BACKEND_DIR%\.env
-    echo 请先配置 .env 文件 ^(必需项: AI_PROVIDER, AI_API_KEY, AI_MODEL^)
+    echo.
+    echo 请先在 backend 目录下创建 .env 文件，内容如下（至少包含这三行）:
+    echo.
+    echo   AI_PROVIDER=stepfun
+    echo   AI_API_KEY=你的API密钥
+    echo   AI_MODEL=step-3.7-flash
+    echo.
     pause
     exit /b 1
 )
@@ -53,7 +58,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3002" ^| findstr "LISTENING
 )
 
 echo [启动] 后端服务 (端口 3002)...
-set "NODE_PATH=%BACKEND_DIR%\node_modules;%NODE_PATH%"
+set "NODE_PATH=%BACKEND_DIR%\node_modules"
 start /B "niuniu-backend" node "%BACKEND_DIR%\src\mysql-production\server.js"
 
 :: Wait for backend to be ready
@@ -78,12 +83,11 @@ echo.
 echo   正在打开浏览器...
 
 :: Open browser
-start "" "http://127.0.0.1:3002/marketing"
+start "" "http://127.0.0.1:3002/marketing/"
 
 echo.
-echo   按此窗口的关闭按钮或 Ctrl+C 停止服务
-echo   ══════════════════════════════════
+echo   按此窗口的关闭按钮停止服务
+echo   ======================================
 echo.
 
-:: Keep window open
 pause >nul
