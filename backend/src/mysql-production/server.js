@@ -6153,8 +6153,12 @@ async function verifyWechatNotifySignature(headers, rawBody) {
 }
 
 async function bootstrap() {
-  await ensureProductionTables();
-  await ensureAdminBootstrapUser();
+  try {
+    await ensureProductionTables();
+    await ensureAdminBootstrapUser();
+  } catch (err) {
+    console.error('[niuniu-backend] MySQL init skipped (DB not available):', err.message);
+  }
   await fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
   app.listen(PORT, HOST, () => {
     console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
