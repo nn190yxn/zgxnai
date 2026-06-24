@@ -15,7 +15,7 @@ const {
   buildReadingPracticeExample
 } = require('./content-seeds');
 
-loadEnv(path.resolve(__dirname, '../../../.env'));
+loadEnv(path.resolve(__dirname, '../../.env'));
 loadEnv('/home/ubuntu/niuniu-parenting/.env');
 
 const app = express();
@@ -26,7 +26,7 @@ const PORT = Number(process.env.PORT || 3002);
 const HOST = process.env.HOST || '127.0.0.1';
 const JWT_SECRET = process.env.JWT_SECRET;
 const WECHAT_REQUEST_TIMEOUT_MS = Math.max(1000, Number(process.env.WECHAT_REQUEST_TIMEOUT_MS || 10000) || 10000);
-const CHAT_AI_TIMEOUT_MS = Math.max(1000, Number(process.env.CHAT_AI_TIMEOUT_MS || 8000) || 8000);
+const CHAT_AI_TIMEOUT_MS = Math.max(1000, Number(process.env.CHAT_AI_TIMEOUT_MS || 60000) || 60000);
 const CHAT_RATE_LIMIT_WINDOW_MS = Math.max(1000, Number(process.env.CHAT_RATE_LIMIT_WINDOW_MS || 60000) || 60000);
 const CHAT_RATE_LIMIT_MAX = Math.max(1, Number(process.env.CHAT_RATE_LIMIT_MAX || 12) || 12);
 const SCENE_TAGS_CACHE_TTL_MS = Math.max(1000, Number(process.env.SCENE_TAGS_CACHE_TTL_MS || 30000) || 30000);
@@ -2053,9 +2053,9 @@ async function chatHandler(req, res) {
     const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, childName), {
       systemPrompt: getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel),
       temperature: 0.6,
-      maxTokens: 1200
+      maxTokens: 4000
     });
-    const answer = aiResult.success ? aiResult.answer : fallbackAnswer;
+    const answer = normalizeChatAnswerOutput(aiResult.success ? aiResult.answer : fallbackAnswer, riskLevel);
     const aiStatus = getAIStatus();
     const fallbackSource = getChatFallbackSource(references);
     const matchedTypes = getChatMatchedTypes(references);
@@ -2327,32 +2327,102 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
   const riskContext = riskLevel === 'high'
     ? '当前问题带有高风险信号。必须先提示尽快线下咨询医生、心理或发育专业人士，再给家庭临时观察建议。'
     : riskLevel === 'medium'
-      ? '当前问题带有中等风险信号。回答中要加入持续观察与必要时线下求助的提醒。'
-      : '回答中保持边界意识，当问题涉及明显异常或持续恶化时提醒线下咨询专业人士。';
-  const styleContext = '回答风格像家长对话，先直接回答，再补一句理论说明，再给实操建议。实操建议里可以带一个帮助继续判断的追问。控制在4到6句，优先短句。少用“先判断原则、家庭做法、观察点、补充提醒”这类说明书标题。没有必要时不要分点。';
+      ? '当前问题带有中等风险信号。回答中要加入持续观察与必要时线下求助的提醒，但只说一次，语气平实。'
+      : '当前问题风险等级较低。优先把建议讲清楚，只有在确实出现明显异常、持续恶化或用户主动问到就医时，再补一句边界提醒。';
+  const styleContext = '回答风格像一位专业、温和、很会和家长沟通的老师。用自然对话口吻，少用说明书腔。禁止给段落加标题，禁止说固定结尾句式。';
+
+  const reasoningFramework = `你每次回答必须按以下路径思考，把推理过程自然融入回答：
+1. 先判断：用户描述对应哪个发展阶段、哪类常见卡点，一句话点明
+2. 再归因：从参考资料中提取最可能的 2-3 个原因，逐个说明
+3. 分情况给方案：针对不同原因给出分支建议，每个建议带具体可执行的动作和频次
+4. 说预期：告诉家长坚持多久、观察什么指标、到什么程度算好转
+5. 保底线：只有在参考资料中明确提到风险信号时，才给一句就医提醒`;
+
+  const baseFrameworks = {
+    nutrition: `### 回答结构
+先判断喂养阶段和抗拒类型，再归因到味觉敏感、进餐压力或食物接触频率三大方向。方案部分给出食材替换清单和逐步引入的周计划。预期部分说清楚 2-4 周能看到的进食行为变化。
+
+### 回答示例（达到这个深度）
+家长问："3岁孩子只吃白米饭和鸡蛋，蔬菜水果都不碰怎么办？"
+理想回答：
+你现在遇到的情况是"食物新恐期"末段的单一偏好延续，这在 2-4 岁非常常见。两个主要原因：一是孩子的味觉和触觉敏感度还在发育，绿色蔬菜的微苦感和纤维质地需要重复暴露才能脱敏；二是可能之前强制喂食或追着喂，让孩子把"新食物=压力"联系起来了。
+
+接下来可以分两步走。第一步，建议把一份他拒绝的蔬菜（比如西兰花）切成极小块，混入他接受的蛋炒饭里，比例从 1/10 开始，每周提到 2/10，预计 2-3 周他咀嚼和吞咽的接受度会有明显提升。第二步，用"食物接触代替食物吃下去"——每天在他面前用青椒、胡萝卜做你自己的凉拌或炒菜，不劝他吃，只是让他反复看到、闻到、甚至帮妈妈捏一下，通常 3-4 周后他对这些食物的防备心会明显降低。按这个节奏坚持，一个月左右他开始愿意尝试的蔬菜种类通常能从零增加到 1-2 种。暂时不需要担心生长问题，除非连续两次体检体重百分位掉了超过两根线，再考虑发育门诊。`,
+    reading: `### 回答结构
+先判断卡在"读不懂""说不出""没兴趣"中的哪一步，归因到识字储备、理解策略或表达信心。方案给每日 10-15 分钟的共读脚本模板。预期说 4-6 周在流畅度和复述完整性上的可观察变化。
+
+### 回答示例（达到这个深度）
+家长问："5岁孩子共读绘本后问她讲了什么都说'不知道'，怎么办？"
+理想回答：
+"问完绘本就沉默"多不是理解力问题，是"提取表达"这个环节还没练到。5 岁孩子工作记忆和语言组织还在发展中，开放性提问（"讲了什么"）对孩子来说检索范围太大，不如把问题拆细。
+
+两个最常见的原因：一是提问方式超出了她的组织能力，问"讲了什么"等于让她自己先筛选、再排序、再输出，三步一起完成负担很重；二是她不确定"正确答案"是什么，怕说错就选择不说。
+
+你可以把每日共读 15 分钟拆成三段：先完整读一遍不提问。再翻到某一页，用填空式问法——"小熊走到了什么地方？走到了__？"，她只需要补一个词。第三段再让她挑最喜欢的一页，说出"这一页发生了什么"，你可以用"是这里吗？对，就是这里"先确认她选的对。按这个节奏每天练，预计 3-4 周她在复述时会从单个词跳到半句话，6 周左右能自己说出 2-3 句的逻辑完整复述。如果 6 周后依然完全沉默，再考虑评估语言表达能力。`,
+    emotion: `### 回答结构
+先给情绪命名帮家长确认孩子在经历什么，归因到发展阶段、环境变动或表达方式限制。方案分"当下安抚"和"长期引导"两层，每层给出具体话术。预期说 1-3 周情绪爆发的频率和强度变化。
+
+### 回答示例（达到这个深度）
+家长问："4岁孩子最近每天早上起床都大哭大闹不肯出门，持续两周了，怎么哄都没用。"
+理想回答：
+每天固定时间段的规律性情绪爆发，孩子很可能不是"故意闹"，而是"晨间过渡困难"——这是 3-5 岁孩子常见的发育现象。两个原因：一是孩子的生物钟和自控中枢需要时间从睡眠切换到清醒状态，这个过渡期大约 15-20 分钟，如果流程太赶或催促太多，焦虑会叠加；二是持续两周说明可能有触发变化——比如幼儿园有了新老师、好朋友请假、或者上周某天出门前有了一次不愉快的经历。
+
+当下安抚用"先接住、再转移"：蹲下抱 30 秒不动，不说"别哭了"，可以轻声数 10 下呼吸——"妈妈和你一起数十下大喘气，1——呼——2——呼——"，这个动作能帮她的自主神经系统从应激态切回平静态。长期做法是每天提前 15 分钟叫醒，用 3 个固定的"晨间锚点"替代催促——比如"先选袜子颜色 → 一起看窗外 1 分钟 → 背上书包"，每完成一步给一个拍手确认。按这个节奏坚持 1 周，爆发频率通常能降到每周 1-2 次，2 周后晨间情绪强度会明显缓下来。如果 3 周后依然每天都爆，而且哭完一整天情绪都低落，可能需要跟老师沟通一下园内情况。`,
+    focus: `### 回答结构
+先判断是启动困难、维持困难还是切换困难。归因到任务匹配度、环境干扰或自控发育阶段。方案给环境调整清单和分段计时法。预期说 2-4 周在持续时间和启动速度上的变化。
+
+### 回答示例（达到这个深度）
+家长问："6岁大班孩子做作业坐不住，写两个字就东张西望、摸橡皮，半小时作业拖成一个半小时。"
+理想回答：
+你把问题描述得很清楚——核心是维持困难。6 岁大班孩子的持续注意力生理上限是 15-20 分钟，如果任务超过这个时长又没有分段，走神是发育常态而且不是态度问题。
+
+两个主要原因。第一个是任务切粒度过粗：半小时的"语文作业"在孩子眼里是一整块小山，她不知道该从哪里开始、怎么算做完，焦虑会直接表现为摸橡皮。第二个是桌面视觉噪音：彩色铅笔盒、贴纸、零散橡皮、隔壁桌的玩具，6 岁的执行功能还不支持有意识过滤，每扫到一个新物品就等于被"喊"走一次。
+
+建议用"番茄钟切段+物理分区"两个方法同时做。切段法：把 30 分钟作业拆成 2 个 12 分钟的短块，每个短块只规定一个具体动作——"把这一行的 5 个字各写 3 遍"，用倒计时器让她看见时间往回走，12 分钟一响先给 3 分钟自由休息。物理分区：把书桌清到只剩当前任务需要的铅笔、橡皮、本子三样东西，其他物品都收到她看不见的抽屉里。按这个节奏坚持，第一周能看到她从 2 分钟就散焦延长到 5-7 分钟，3-4 周后 12 分钟短块能基本坐满。如果 4 周后依然全程频繁走神，可以再评估感统和注意力的具体维度。`,
+    assessment: `### 回答结构
+先帮家长把模糊担忧具体化为可观察维度，再与该年龄段发展常模对比。方案建议选 1-2 个最值得优先关注的维度做家庭观察训练。
+
+### 回答示例（达到这个深度）
+家长问："我家3岁半，别的同龄孩子都能说完整句子了，他还是两三个字蹦，是不是语言发育慢了？"
+理想回答：
+先不用慌，3 岁半词汇量从 50 到 600 都在正常范围，关键不是比"别人家的孩子"，而是看他词汇的发展速度和技术变化。建议先做一个两周的家庭观察：每天记录他说出的"新词组"——不是单纯的新词，而是"把两个词连起来"的使用频率，比如"妈妈抱""喝水水""看车车"。3 岁半的常模是自发词组出现率应超过日常表达的 50%。
+
+如果他已经能稳定说出 10 个以上的双词词组（妈妈抱、吃饭饭、出去玩等），那就是在正常轨道上，只是表达风格偏"慢热型"。如果两周观察下来自发词组明显少于 10 个、且你在说话时他有明显的目光回避或完全不理你，再评估听力先。但先不急着紧张，大部分"晚说"的孩子在 4 岁前会有一个突然爆发期。`,
+    general: `### 回答结构
+先用一句话缩小家长的核心担忧范围，归因到最常见的发展性原因。方案给 1-2 个马上能做的家庭小动作，频率和时长要明确。预期说大概的观察窗口。
+
+### 回答示例（达到这个深度）
+家长问："孩子在家话特别多，一到外面见到陌生人就完全不说话，躲在我身后，是不是性格有问题？"
+理想回答：
+这更像是"选择性缄默的阈值前表现"，而不是性格缺陷。3-6 岁的孩子对陌生环境的焦虑中枢更活跃，在家里话多说明语言能力没问题，在外面沉默是因为大脑把"陌生=潜在危险"的信号放大了。
+
+两个原因：一是她的气质类型偏慢预热型，需要比其他孩子多 3-5 倍的安全感积累才能开始表达；二是她还没有学会"低风险的打招呼方式"，她觉得"说话"就等于"长篇大论"，压力太大了。
+
+你可以试一个小动作：以后在见人前先跟她定一个暗号——"等一下你可以只跟阿姨说一个字——'嗨'，或者只招一下手，随你选。"给她一个极低门槛的表达入口，出门前练两遍，见面时如果她做到了，立刻捏一下她的手作为确认，不要当场夸。每天如果有一个新的人接触就用这个方法，预计 2-3 周她在陌生场景下出声的窗口会缩短，从 30 分钟降到 10 分钟左右。如果 4 周后没有任何变化，且同时在家里也开始沉默，再考虑评估听力或语言沟通障碍。`
+  };
 
   const basePrompts = {
-    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
-    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
-    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
-    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
-    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
-    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}${styleContext}只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
+    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.nutrition}\n\n只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
+    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.reading}\n\n只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
+    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.emotion}\n\n只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
+    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.focus}\n\n只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
+    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.assessment}\n\n只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
+    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.general}\n\n只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
   };
   return basePrompts[intent] || basePrompts.general;
 }
 
 function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName) {
   const referenceBlock = references.length
-    ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 260)}`).join('\n\n')
+    ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 1000)}`).join('\n\n')
     : '当前没有直接匹配的知识库条目。请你基于通用的育儿知识，给出温和、专业、可操作的建议。先共情家长的困扰，再解释可能的原因，接着给家庭能立刻开始的1-2个小动作，最后提醒观察窗口。不要要求用户补充更多信息。';
 
   const scenarioRule = getChatSubIntentRule(chatAnalysis.subIntent);
   const riskInstruction = chatAnalysis.riskLevel === 'high'
     ? '当前问题存在高风险信号，必须明确提醒尽快线下就医或咨询专业人士。'
     : chatAnalysis.riskLevel === 'medium'
-      ? '当前问题存在中等风险信号，需要加入持续观察与必要时线下求助提醒。'
-      : '当前问题风险等级较低，仍需保留边界提示。';
+      ? '当前问题存在中等风险信号，需要加入持续观察与必要时线下求助提醒，但只说一次，不要把提醒写成固定结尾。'
+      : '当前问题风险等级较低。重点是把建议讲清楚，除非用户明确问到就医、内容出现明显异常，或情况已经持续恶化，否则不要主动补线下求助提醒。';
 
   const parts = [
     `用户问题：${message}`,
@@ -2368,16 +2438,40 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
   parts.push(
     '回答要求：',
     '1. 只允许基于参考资料回答，不补充参考资料之外的育儿结论。',
-    '2. 先直接回答用户最关心的问题，再补一句理论说明，最后给实操建议；必要时带一个有助于继续判断的追问。',
+    '2. 按"判断→归因→方案→预期→底线"路径组织回答，每个环节给出具体内容而不是泛泛而谈。',
     ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
-    '4. 控制在4到6句，像自然对话。只有步骤确实必要时才分点。',
+    '4. 回答要有深度：归因时至少列出 2 个可能原因，方案给具体的执行动作、频次和时长，预期说明观察窗口和好转标准。语气亲和但判断明确。',
     `5. ${riskInstruction}`,
-    '6. 少用总结性标题，少讲背景知识，避免写成长段说明文字。',
-    '7. 如果参考资料命中较弱，使用通用的育儿原则给出建议，不要求用户补充更多信息（除非涉及安全风险）。',
     '参考资料：',
     referenceBlock
   );
   return parts.join('\n\n');
+}
+
+function normalizeChatAnswerOutput(answer, riskLevel) {
+  let text = String(answer || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  text = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+
+  if (riskLevel === 'low') {
+    const paragraphs = text.split(/\n\n+/).map((item) => item.trim()).filter(Boolean);
+    const filtered = paragraphs.filter((paragraph, index) => {
+      if (index !== paragraphs.length - 1) {
+        return true;
+      }
+      return !/(持续(存在|恶化|加重)|影响(日常生活|睡眠|社交|吃饭|学习|上学)|建议(尽快)?(线下)?咨询.*专业人士|建议咨询.*(心理科|专业人士)|再考虑线下咨询专业人士)/.test(paragraph);
+    });
+    text = filtered.join('\n\n').trim();
+  }
+
+  return text;
 }
 
 function analyzeChatIntent(message) {
@@ -2971,9 +3065,9 @@ function getChatBoundaryText(riskLevel) {
     return '这个问题已经带有较高风险信号，建议尽快线下咨询儿科、儿童保健、发育行为或心理相关专业人士。';
   }
   if (riskLevel === 'medium') {
-    return '如果这种情况持续存在，或者已经明显影响睡眠、吃饭、上学或亲子互动，建议尽快线下咨询专业人士。';
+    return '如果这种情况已经拖了一段时间，或者开始明显影响睡眠、吃饭、上学或亲子互动，尽快线下找专业人士一起看会更稳妥。';
   }
-  return '如果后续持续加重，或者已经明显影响睡眠、社交、吃饭或学习，再考虑线下咨询专业人士。';
+  return '';
 }
 
 function getChatScenarioLabel(chatAnalysis) {

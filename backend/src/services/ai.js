@@ -34,6 +34,7 @@ function resolveBaseUrl(provider, configuredBaseUrl) {
     qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     dashscope: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     openrouter: 'https://openrouter.ai/api/v1',
+    stepfun: 'https://api.stepfun.com/step_plan/v1',
     siliconflow: 'https://api.siliconflow.cn/v1',
     compatible: 'https://api.openai.com/v1'
   };
@@ -84,7 +85,7 @@ async function generateAIAnswer(prompt, options = {}) {
       model: config.model,
       messages,
       temperature: clampNumber(options.temperature, 0.2, 0, 2),
-      max_tokens: clampNumber(options.maxTokens, 900, 1, 4096)
+      max_tokens: clampNumber(options.maxTokens, 900, 1, 8192)
     };
     const finalReasoningEffort = String(options.reasoningEffort || config.reasoningEffort || '').trim();
     if (finalReasoningEffort) {
@@ -156,8 +157,19 @@ function buildHeaders(config, options) {
 function extractAnswer(body) {
   const choices = body && Array.isArray(body.choices) ? body.choices : [];
   const message = choices[0] && choices[0].message;
-  const content = message && typeof message.content === 'string' ? message.content.trim() : '';
-  return content;
+  if (!message) return '';
+
+  const content = typeof message.content === 'string' ? message.content.trim() : '';
+  if (content) return content;
+
+  // 推理模型 fallback: content 为空时尝试使用 reasoning_content 或 reasoning
+  const reasoning = typeof message.reasoning_content === 'string' && message.reasoning_content.trim()
+    ? message.reasoning_content.trim()
+    : typeof message.reasoning === 'string' && message.reasoning.trim()
+      ? message.reasoning.trim()
+      : '';
+
+  return reasoning;
 }
 
 function clampNumber(value, fallback, min, max) {
