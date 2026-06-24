@@ -25,10 +25,15 @@ if not exist "%BACKEND_DIR%\.env" (
     exit /b 1
 )
 
-if not exist "%BACKEND_DIR%\node_modules" (
-    echo [INFO] Installing npm packages...
+if not exist "%BACKEND_DIR%\node_modules\express" (
+    echo [INFO] Installing npm packages (first run)...
     cd /d "%BACKEND_DIR%"
     call npm install --registry=https://registry.npmmirror.com
+    if %errorlevel% neq 0 (
+        echo [ERROR] npm install failed.
+        pause
+        exit /b 1
+    )
     cd /d "%~dp0"
 )
 
