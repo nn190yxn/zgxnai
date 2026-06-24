@@ -197,6 +197,8 @@ app.use('/uploads', express.static(UPLOAD_ROOT));
 app.use('/admin-console', express.static(ADMIN_PORTAL_ROOT));
 app.get('/admin-console', adminPortalHandler);
 app.get('/admin-console/*', adminPortalHandler);
+app.use('/marketing', express.static(path.resolve(__dirname, '../../../宣传计划')));
+app.get('/marketing', (req, res) => res.sendFile(path.resolve(__dirname, '../../../宣传计划/marketing-plan-interactive.html')));
 
 app.get('/health', healthHandler);
 for (const prefix of API_PREFIXES) {
@@ -260,8 +262,134 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
   app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
+  app.post(`${prefix}/marketing/generate`, asyncHandler(marketingGenerateHandler));
   app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
+}
+
+async function marketingGenerateHandler(req, res) {
+  const topic = String((req.body && req.body.topic) || '').trim();
+  const platform = String((req.body && req.body.platform) || 'xhs').trim();
+  const contentType = String((req.body && req.body.content_type) || 'post').trim();
+
+  if (!topic) {
+    res.status(400).json({ success: false, message: '请输入选题/主题' });
+    return;
+  }
+
+  const validPlatforms = new Set(['xhs', 'douyin', 'gzh', 'wechat', 'cover', 'headline']);
+  const platformName = validPlatforms.has(platform) ? platform : 'xhs';
+
+  const systemPrompt = getMarketingSystemPrompt(platformName, contentType);
+  const prompt = `请为以下选题创作营销内容：${topic}`;
+
+  try {
+    const aiResult = await generateAIAnswer(prompt, {
+      systemPrompt,
+      temperature: 0.8,
+      maxTokens: 4000
+    });
+
+    if (!aiResult.success) {
+      res.json({
+        success: true,
+        data: {
+          content: `【${platformName === 'xhs' ? '小红书' : platformName === 'douyin' ? '抖音' : platformName === 'gzh' ? '公众号' : platformName === 'wechat' ? '私聊话术' : platformName === 'cover' ? '封面标题' : '选题标题'}文案】\n\nAI 服务当前不可用（${aiResult.message}），以下是基础模板：\n\n标题：${topic}\n\n请参考右侧话术库和内容中心中的现有素材，或稍后重试。`,
+          source: 'fallback',
+          provider: null,
+          model: null
+        }
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        content: aiResult.answer,
+        source: 'ai',
+        provider: aiResult.provider,
+        model: aiResult.model
+      }
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      data: {
+        content: `【内容框架】\n主题：${topic}\n\n请参考话术库中的模板手动撰写，或稍后重试。`,
+        source: 'error',
+        provider: null,
+        model: null
+      }
+    });
+  }
+}
+
+const MARKETING_SYSTEM_PROMPT_BASE = `你是资深母婴/亲子类新媒体内容策划专家，专注于为儿童体育培训机构和育儿成长类小程序创作传播内容。
+
+核心受众：2-8岁孩子的妈妈（宝妈），她们日常最焦虑的场景包括——
+- 孩子一写作业就跑开/坐不住/拖拉磨蹭
+- 孩子说话晚/不爱开口/复述说不清
+- 饭桌挑食/一叫吃饭就对抗/吃饭拖拉超40分钟
+- 睡前哭闹/夜醒反复/入睡困难
+- 绘本翻两页就走/亲子共读坐不住
+- 放学回家就想玩iPad/约定10分钟总超时
+- 两个孩子抢玩具/大宝学小宝哭/手足冲突
+- 每天早上出门磨蹭/去幼儿园就哭/放学问不出话
+
+品牌定位：先看清孩子当前短板，再决定怎么陪，带娃更省心。
+产品核心动作：成长观察（3分钟看清短板）→ 10分钟亲子练习 → 7天成长服务。
+
+写作铁律：
+1. 开头必须用具体家庭场景（"晚饭后刚拿出作业本""早上7:40你眼看就迟到了""睡前你累得不行孩子突然开始哭"）
+2. 正文先共情（"很多家里都有这种情况""你是不是也这样"），再给判断点，再给一句话可执行建议
+3. 少用抽象词（任务/方法/问题/训练/方向），多用场景词（写作业/亲子共读/饭桌吃饭/睡前洗漱/出门上课）
+4. 标题要让人"一眼就觉得说的就是我家"（用"孩子一X就Y"句式或"先别急着X"句式）
+5. 结尾统一用一个CTA：先做成长观察/先看清短板/先领7天服务
+6. 语气：像一个懂育儿的过来人妈妈在分享，不是专家在讲课`;
+
+function getMarketingSystemPrompt(platform, contentType) {
+  const platformGuides = {
+    xhs: `【小红书图文文案要求】
+- 字数600-800字
+- 每段不超过3行，多用短句和换行
+- 正文开头2-3句就要让家长代入
+- 内容结构：痛点场景 → 家长常见误区 → 2-4个判断点 → 1个可执行建议 → 结尾CTA
+- 适合收藏和转发
+- emoji适量使用（每段1-2个即可）`,
+    douyin: `【抖音/视频号口播脚本要求】
+- 总时长25-40秒（约120-180字）
+- 前3秒必须出现具体家庭场景（"你见过孩子饭都没吃两口就想跑吗"）
+- 中间10-15秒给2-3个判断线索
+- 最后5秒CTA
+- 语言像真实家长聊天，不是播音腔
+- 同时输出：口播文案、字幕文案（精简版）、封面标题`,
+    gzh: `【公众号文章要求】
+- 字数1200-1800字
+- 有真实育儿场景引入
+- 分段清晰，每段有小标题
+- 包含判断逻辑和可执行方法
+- 结尾引导先做成长观察
+- 语气专业、温和、可信`,
+    wechat: `【私聊/社群话术要求】
+- 2-3句话即可
+- 第一句给价值（"我这边有个成长观察工具"）
+- 第二句给场景（"很多家长看完后才知道孩子先抓什么"）
+- 第三句给入口（"我发您，3分钟先看一眼"）
+- 语气像朋友推荐，不是推销`,
+    cover: `【封面标题要求】
+- 主标题控制在14-18字
+- 副标题控制在10-16字
+- 主标题用"孩子一X就Y"或"先别急着X"句式
+- 一眼能看出痛点场景`,
+    headline: `【选题标题要求】
+- 输出5个备选标题
+- 每个标题12-20字
+- 要用"孩子一X就Y""先别急着X""为什么你越X孩子越Y"等高打开率句式
+- 每个标题都要让家长觉得"这说的就是我家"`
+  };
+
+  return `${MARKETING_SYSTEM_PROMPT_BASE}\n\n${platformGuides[platform] || platformGuides.xhs}`;
 }
 
 app.post(`${ADMIN_API_PREFIX}/auth/login`, asyncHandler(adminLoginHandler));

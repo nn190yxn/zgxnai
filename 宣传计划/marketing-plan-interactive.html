@@ -259,6 +259,9 @@ body {
   .cal-grid { grid-template-columns:repeat(5,1fr); }
   .metrics-row { grid-template-columns:1fr; }
 }
+/* ai gen */
+.ai-gen-btn:disabled { opacity:.5; cursor:not-allowed; }
+#aiGenResult .copy-ok { border-color:var(--good)!important; color:var(--good); }
 </style>
 </head>
 <body>
@@ -356,6 +359,38 @@ body {
       <details class="collapse lazy-panel" data-render="renderCt">
         <summary>📚 完整内容中心</summary>
         <div class="body" id="contentBody"><div class="skel skel-card"></div><div class="skel skel-text"></div><div class="skel skel-text short"></div></div>
+      </details>
+
+      <details class="collapse" id="aiGenPanel" open>
+        <summary>🤖 AI 文案生成器</summary>
+        <div class="body" id="aiGenBody">
+          <div style="margin-bottom:10px;">
+            <input id="aiGenTopic" type="text" placeholder="输入选题，如：孩子一写作业就跑开怎么办" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:12px;background:rgba(255,255,255,0.8);" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <select id="aiGenPlatform" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:11px;background:rgba(255,255,255,0.8);">
+              <option value="xhs">小红书图文</option>
+              <option value="douyin">抖音口播</option>
+              <option value="gzh">公众号文章</option>
+              <option value="wechat">私聊话术</option>
+              <option value="cover">封面标题</option>
+              <option value="headline">备选标题</option>
+            </select>
+            <button id="aiGenBtn" style="padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:#fff;transition:opacity .18s;">生成文案</button>
+          </div>
+          <div id="aiGenLoading" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:12px;">
+            <div class="skel-spin" style="margin:0 auto 10px;"></div>
+            AI 正在生成文案，预计 15-25 秒...
+          </div>
+          <div id="aiGenResult" style="display:none;">
+            <div style="background:rgba(255,248,240,0.9);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:12px;line-height:1.9;white-space:pre-wrap;max-height:360px;overflow-y:auto;margin-bottom:10px;" id="aiGenContent"></div>
+            <div style="display:flex;gap:6px;">
+              <button id="aiGenCopyBtn" style="flex:1;padding:7px 12px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);transition:border-color .18s;">复制文案</button>
+              <button id="aiGenClearBtn" style="padding:7px 12px;border-radius:10px;font-size:11px;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.5);">清空</button>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:8px;">模型：step-3.7-flash · 可替代手动写稿，节省 80% 初稿时间</div>
+        </div>
       </details>
     </div>
   </div>
@@ -738,6 +773,68 @@ window.saveMetrics=saveMetrics;
 window.renderLib=renderLib;
 window.renderOv=renderOv;
 window.renderCt=renderCt;
+window.renderCt=renderCt;
+
+// ── AI 文案生成器 ──
+const AI_GEN_API = '/api/v1/marketing/generate';
+
+document.getElementById('aiGenBtn').addEventListener('click', async () => {
+  const topic = document.getElementById('aiGenTopic').value.trim();
+  if (!topic) { showToast('请先输入选题/主题'); return; }
+
+  const platform = document.getElementById('aiGenPlatform').value;
+  const btn = document.getElementById('aiGenBtn');
+  const loading = document.getElementById('aiGenLoading');
+  const result = document.getElementById('aiGenResult');
+  const content = document.getElementById('aiGenContent');
+
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  loading.style.display = 'block';
+  result.style.display = 'none';
+
+  try {
+    const res = await fetch(AI_GEN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, platform, content_type: 'post' })
+    });
+    const data = await res.json();
+    content.textContent = (data.data && data.data.content) ? data.data.content : '生成失败，请重试';
+    loading.style.display = 'none';
+    result.style.display = 'block';
+    document.getElementById('aiGenCopyBtn').className = '';
+  } catch (e) {
+    content.textContent = '网络错误，请确认后端服务正在运行，或稍后重试。';
+    loading.style.display = 'none';
+    result.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '生成文案';
+  showToast('生成完成');
+});
+
+document.getElementById('aiGenCopyBtn').addEventListener('click', () => {
+  const text = document.getElementById('aiGenContent').textContent;
+  if (!text) return;
+  copyText(text);
+  document.getElementById('aiGenCopyBtn').classList.add('copy-ok');
+  document.getElementById('aiGenCopyBtn').textContent = '已复制';
+  setTimeout(() => {
+    const b = document.getElementById('aiGenCopyBtn');
+    b.classList.remove('copy-ok');
+    b.textContent = '复制文案';
+  }, 2000);
+  showToast('文案已复制到剪贴板');
+});
+
+document.getElementById('aiGenClearBtn').addEventListener('click', () => {
+  document.getElementById('aiGenResult').style.display = 'none';
+  document.getElementById('aiGenContent').textContent = '';
+  document.getElementById('aiGenCopyBtn').className = '';
+  document.getElementById('aiGenCopyBtn').textContent = '复制文案';
+});
 </script>
 </body>
 </html>
