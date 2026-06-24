@@ -696,6 +696,7 @@ onError: function(error) {
     return that.request({
       url: '/chat',
       method: 'POST',
+      timeout: 60000,
       data: {
         message: message.substring(0, 2000), // 前端限制长度
         child_profile: that.globalData.currentChild || that.globalData.childProfile
