@@ -161,11 +161,24 @@
   - 后端测试脚本 `backend/test-prompt.js` 未提交到仓库
 
 [GitHub 仓库信息]
-- Date: 2026-06-24
+- Date: 2026-06-24 (更新)
 - Category: 工作流协作
 - Instructions:
   - GitHub 仓库：`nn190yxn/zgxnai`
-  - 本轮 commit 链：`2ce6da1`（AI 深度优化）→ `62c16e0`（超时修复）→ `c9cfeef`（年龄解析+滚动）→ `e16a596`（加载提示）
-  - 当前 HEAD `e16a596`，已推送，远端一致
-  - 生产 server.js MD5：`14e2a2c85dab4997df4b9f999f91205a`
+  - 当前 HEAD `d0a7f3b`（宣传指挥台AI文案生成器），已推送，远端一致
+  - 生产 server.js MD5：`e472a677572392da5aefb77ad8bbc6ef`
   - 生产 ai.js MD5：`42c805dc1806249b1fbaeeef8ae3bc03`
+
+[宣传指挥台 — AI 文案生成器与营销接口] (2026-06-24 本轮新增)
+- Date: 2026-06-24
+- Category: 运维部署 / 环境配置
+- Context: 本轮为宣传指挥台新增 AI 文案生成能力和会员群引爆策略
+- Instructions:
+  - 后端新增 `/api/v1/marketing/generate` 接口（`marketingGenerateHandler`），无需认证，支持 6 种平台类型：xhs/douyin/gzh/wechat/cover/headline
+  - 营销 System Prompt 包含核心受众画像、品牌定位、写作铁律、平台规范（`MARKETING_SYSTEM_PROMPT_BASE` + `getMarketingSystemPrompt`）
+  - 推理模型 marketing 生成 maxTokens 配置 4000（覆盖 reasoning + content），temperature 0.8
+  - 生产 server.js 已新增 `/marketing` 路由，serve `宣传计划/` 目录下的 HTML 和 MD
+  - 宣传指挥台访问地址：`https://api.woyai.cn/marketing`
+  - HTML 右侧面板已含 AI 文案生成器：输入主题 → 选平台 → 生成 → 复制，调用 `/api/v1/marketing/generate`
+  - MD 新增 `9.9 会员群引爆策略`（前三板斧+运营节奏表）和 `9.10 运动馆场景专属话术`
+  - 宣传计划 MD/HTML 文件部署路径：`/home/ubuntu/niuniu-parenting/宣传计划/`
