@@ -19,6 +19,13 @@ function generateMsgId() {
   return 'msg_' + Date.now() + '_' + msgIdCounter;
 }
 
+function getScrollToBottomPayload(targetIndex) {
+  return {
+    scrollToView: 'msg-' + targetIndex,
+    scrollTop: 999999  // 大值强制 scroll-view 滚到底部
+  };
+}
+
 Page({
   data: {
     messages: [],
@@ -31,6 +38,7 @@ Page({
     voiceResultVisible: false,
     voiceHint: '',
     scrollToView: '',
+    scrollTop: 0,
     featureFlags: {
       aiChatEnabled: true,
       configLoaded: false
@@ -48,10 +56,9 @@ Page({
           msg.markdownNodes = self.parseMarkdownToNodes(msg.content);
         }
       });
-      this.setData({
-        messages: saved,
-        scrollToView: 'msg-' + (saved.length - 1)
-      });
+      this.setData(Object.assign({
+        messages: saved
+      }, getScrollToBottomPayload(saved.length - 1)));
     }
   },
 
@@ -289,12 +296,11 @@ Page({
     };
 
     var newMessages = messages.concat([userMessage]);
-    this.setData({
+    this.setData(Object.assign({
       messages: newMessages,
       inputValue: '',
-      loading: true,
-      scrollToView: 'msg-' + (newMessages.length - 1)
-    });
+      loading: true
+    }, getScrollToBottomPayload(newMessages.length - 1)));
 
     // 调用AI接口
     app.chat(userMessage.content).then(function(result) {
@@ -311,11 +317,10 @@ Page({
       };
 
       var updatedMessages = self.data.messages.concat([botMessage]);
-      self.setData({
+      self.setData(Object.assign({
         messages: updatedMessages,
-        loading: false,
-        scrollToView: 'msg-' + (updatedMessages.length - 1)
-      });
+        loading: false
+      }, getScrollToBottomPayload(updatedMessages.length - 1)));
       self.saveMessages();
 
     }).catch(function(error) {
@@ -333,11 +338,10 @@ Page({
       };
 
       var updatedMessages = self.data.messages.concat([errorMessage]);
-      self.setData({
+      self.setData(Object.assign({
         messages: updatedMessages,
-        loading: false,
-        scrollToView: 'msg-' + (updatedMessages.length - 1)
-      });
+        loading: false
+      }, getScrollToBottomPayload(updatedMessages.length - 1)));
       self.saveMessages();
     });
   },

@@ -7,6 +7,7 @@
     enable-flex="true"
     style="padding-bottom:{{voiceResultVisible && voiceResultText ? '740rpx' : '420rpx'}}"
     scroll-into-view="{{scrollToView}}"
+    scroll-top="{{scrollTop}}"
     scroll-with-animation
   >
     <view class="service-closed" wx:if="{{!featureFlags.aiChatEnabled}}">

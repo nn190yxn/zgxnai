@@ -2104,7 +2104,9 @@ async function chatHandler(req, res) {
     logRequestDuration('chatHandler', startedAt, {
       userId: getUserId(req),
       messageLength: message.length,
-      statusCode: res.statusCode
+      statusCode: res.statusCode,
+      ageGroup: ageGroup || '(missing)',
+      answerSource: aiResult.success ? 'ai' : fallbackSource
     });
   }
 }
@@ -2238,6 +2240,18 @@ function extractChatAgeGroupFromMessage(message) {
   const ageMatch = text.match(/(\d+(?:\.\d+)?)\s*岁/);
   if (ageMatch) {
     return normalizeExplicitAgeGroup(`${ageMatch[1]}岁`);
+  }
+
+  // 支持中文数字: 一岁 两岁 三岁 ... 十二岁
+  const cnNums = { '一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,'十一':11,'十二':12,'半':0.5 };
+  for (const cn of Object.keys(cnNums)) {
+    if (text.includes(cn + '岁')) {
+      return normalizeExplicitAgeGroup(`${cnNums[cn]}岁`);
+    }
+    // 也匹配 "X岁半" 形式
+    if (text.includes(cn + '岁半')) {
+      return normalizeExplicitAgeGroup(`${cnNums[cn] + 0.5}岁`);
+    }
   }
 
   return '';
