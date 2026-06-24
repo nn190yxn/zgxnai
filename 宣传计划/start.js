@@ -33,7 +33,7 @@ async function main() {
   const expressPath = path.join(BACKEND_DIR, 'node_modules', 'express');
   if (!require('fs').existsSync(expressPath)) {
     info('Installing npm packages...');
-    execSync('npm install --registry=https://registry.npmmirror.com', {
+    execSync('npm install --ignore-scripts --registry=https://registry.npmmirror.com', {
       cwd: BACKEND_DIR,
       stdio: 'inherit'
     });
