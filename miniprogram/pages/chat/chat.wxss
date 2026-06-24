@@ -384,6 +384,14 @@
   gap: 12rpx;
 }
 
+.loading-hint {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+}
+
 .dot {
   width: 16rpx;
   height: 16rpx;

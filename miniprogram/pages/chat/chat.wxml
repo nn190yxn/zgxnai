@@ -89,6 +89,7 @@
           <view class="dot"></view>
           <view class="dot"></view>
         </view>
+        <text class="loading-hint">AI 正在深度思考，预计需要 20-30 秒</text>
       </view>
     </view>
   </scroll-view>
