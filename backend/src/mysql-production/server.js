@@ -198,7 +198,6 @@ app.use('/admin-console', express.static(ADMIN_PORTAL_ROOT));
 app.get('/admin-console', adminPortalHandler);
 app.get('/admin-console/*', adminPortalHandler);
 app.use('/marketing', express.static(path.resolve(__dirname, '../../../宣传计划')));
-app.get('/marketing', (req, res) => res.sendFile(path.resolve(__dirname, '../../../宣传计划/marketing-plan-interactive.html')));
 
 app.get('/health', healthHandler);
 for (const prefix of API_PREFIXES) {
