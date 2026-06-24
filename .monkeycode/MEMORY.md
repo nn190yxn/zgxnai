@@ -1,231 +1,171 @@
 # 用户指令记忆
 
-本文件记录了用户的指令、偏好和教导，用于在未来的交互中提供参考。
+本文件记录用户指令、偏好和项目知识，供后续会话快速接续。
 
 ## 格式
 
 ### 用户指令条目
-用户指令条目应遵循以下格式：
-
 [用户指令摘要]
 - Date: [YYYY-MM-DD]
-- Context: [提及的场景或时间]
+- Context: [场景]
 - Instructions:
-  - [用户教导或指示的内容，逐行描述]
+  - [内容]
 
 ### 项目知识条目
-Agent 在任务执行过程中发现的条目应遵循以下格式：
-
 [项目知识摘要]
 - Date: [YYYY-MM-DD]
-- Context: Agent 在执行 [具体任务描述] 时发现
+- Context: Agent 在执行 [任务] 时发现
 - Category: [运维部署|构建方法|测试方法|排错调试|工作流协作|环境配置]
 - Instructions:
-  - [具体的知识点，逐行描述]
+  - [内容]
 
 ## 去重策略
-- 添加新条目前，检查是否存在相似或相同的指令
-- 若发现重复，跳过新条目或与已有条目合并
-- 合并时，更新上下文或日期信息
-- 这有助于避免冗余条目，保持记忆文件整洁
+- 添加前检查是否已有相同条目，有则合并
+- 合并时更新日期和上下文
 
 ## 条目
 
-[生产 API 域名]
+[生产 API 域名与小程序配置]
 - Date: 2026-06-09
-- Context: 用户说明当前微信小程序合法 request 域名已更换
 - Category: 环境配置
 - Instructions:
-  - 当前生产 API 域名使用 `https://api.woyai.cn`。
-  - 小程序生产 API 基址使用 `https://api.woyai.cn/api/v1`。
+  - 生产 API 域名 `https://api.woyai.cn`，基址 `https://api.woyai.cn/api/v1`
+  - 小程序 AppID `wxb22908624ec860fe`，miniprogramRoot 指向 `miniprogram/`
 
-[修复执行必须备份、回测和全局审查]
-- Date: 2026-06-15
-- Context: 用户多次约束修复阶段的执行方式，并要求进入修复执行阶段后每次修复及时回测验证
+[小牛育儿生产服务器完整配置]
+- Date: 2026-06-24 (更新)
+- Category: 运维部署
 - Instructions:
-  - 每一步修复前必须建立可追溯备份点或 Git 检查点。
-  - 每一步修复后必须执行对应回测，记录测试命令、结果和影响范围。
-  - 进入修复执行阶段后，每个问题修复完成后立即做定向回测和验证，再进入下一个问题。
-  - 修复方案必须基于全局依赖关系评估，避免修复单点问题引入其他模块回归。
+  - 服务器 `ubuntu@124.223.3.175`，SSH 密钥 `/workspace/WOYING.pem`（与 `.monkeycode-tmp-files/33e5da7c-WOYING-1.pem` 相同）
+  - 部署目录 `/home/ubuntu/niuniu-parenting`，PM2 进程名 `niuniu-backend`
+  - 后端入口 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`
+  - 业务环境变量从 `/home/ubuntu/niuniu-parenting/.env` 加载
+  - 生产目录不是 Git 工作树，热修复采用 SCP 单文件同步 → pm2 restart
+  - 每次同步前先备份到 `/home/ubuntu/niuniu-parenting/backups/`
+  - 修改 RUNTIME_* 环境变量后需 `pm2 restart niuniu-backend --update-env`
+  - 运行时配置验收信号：`GET /api/v1/runtime/config` 返回 `config_loaded: true` 及 `ai_provider`、`ai_model`
+  - 部署时不影响 `woying-backend` 进程和我赢AI任何配置
 
-[小牛育儿部署必须隔离我赢AI]
-- Date: 2026-06-11
-- Context: 用户确认小牛育儿正式部署方案时提出
-- Instructions:
-  - 小牛育儿后端、数据库、PM2 进程和反向代理配置必须与我赢AI隔离。
-  - 实施部署或支付改动时，不得影响我赢AI现有配置、数据库、路由和运行进程。
-
-[共享代码同步工作流]
-- Date: 2026-06-13
-- Context: 用户要求改动完成后上传 GitHub，再由本机拉取同步
+[修复与开发工作流约束]
+- Date: 2026-06-15 (整合)
 - Category: 工作流协作
 - Instructions:
-  - 当用户需要同步本机代码时，先在共享工作区完成改动，再提交并推送到 GitHub。
-  - 不要把“工作区已改但未推送”的状态当成本机已生效。
+  - 每一步修复前建立可追溯备份点或 Git 检查点
+  - 每一步修复后执行定向回测，记录测试命令、结果和影响范围
+  - 修复方案必须基于全局依赖评估，避免修一点引入其他地方回归
+  - 共享工作区完成改动后提交推送到 GitHub，不要把"工作区已改但未推送"当成本机已生效
+  - 进入该项目后优先读取 `.monkeycode/MEMORY.md` 和已有部署文档
+  - 所有服务器操作只允许落在小牛育儿目录和 `niuniu-backend` 进程范围内
 
 [后台建设分步开发与回测要求]
 - Date: 2026-06-13
-- Context: 用户要求规划完整后台方案并约束后续开发方式
 - Category: 工作流协作
 - Instructions:
-  - 后台相关开发必须形成完整方案和开发方案后再进入实现。
-  - 每一步开发都必须具备可回测能力，明确验证范围、验证方法和回滚点。
-  - 每一轮开发完成后都要执行优化回测，再进入下一阶段。
-
-[小牛育儿后台必须与我赢AI后台隔离]
-- Date: 2026-06-13
-- Context: 用户继续推进后台方案时强调避免与现有我赢AI冲突
-- Category: 环境配置
-- Instructions:
-  - 小牛育儿后台的域名、Nginx 路由、PM2 进程、数据库表和部署目录必须与现有我赢AI后台隔离。
-  - 不得复用我赢AI现有后台入口、管理路由或管理进程。
-  - 后台方案设计和后续实现都要优先采用独立子域名或独立路径，并明确隔离边界。
-
-[小牛育儿生产服务器连接信息]
-- Date: 2026-06-14
-- Context: Agent 在执行后台联调准备时从本机 SSH 配置与历史操作日志中发现
-- Category: 运维部署
-- Instructions:
-  - 当前小牛育儿生产服务器可通过 `ubuntu@124.223.3.175` 访问。
-  - 当前环境曾使用工作区临时私钥 `.monkeycode-tmp-files/33e5da7c-WOYING-1.pem` 连接该服务器。
-  - 小牛育儿生产部署根目录为 `/home/ubuntu/niuniu-parenting`。
-  - 生产服务进程为 `niuniu-backend`，脚本路径为 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`。
-
-[优先读取记忆并保持我赢AI隔离]
-- Date: 2026-06-14
-- Context: 用户要求后续执行时优先复用已知关键信息，减少重复追问
-- Category: 工作流协作
-- Instructions:
-  - 进入该项目后优先读取 `.monkeycode/MEMORY.md` 和已有部署文档，再决定是否需要向用户补问。
-  - 已确认的服务器、部署目录、进程名和隔离边界应持续复用。
-  - 所有服务器操作只允许落在小牛育儿目录和 `niuniu-backend` 进程范围内。
-  - 保持 `我赢AI` 目录、路由、数据库和 `woying-backend` 进程不变。
-
-[全面审计协作方式]
-- Date: 2026-06-15
-- Context: 用户要求制定全面审计计划，并说明会安排另一位 Agent 做只读审查
-- Category: 工作流协作
-- Instructions:
-  - 全面审计计划必须覆盖代码测试、逻辑测试、功能测试、深度测试、环境测试、稳定性测试六类内容。
-  - 用户会安排另一位 Agent 进行只读审查；当前 Agent 负责整合审查结果并判断是否进入修复。
-  - 在只读审查结果返回前，优先输出完整审计方案、执行顺序、通过标准和交付物。
-
-[修复剩余问题的稳定性约束]
-- Date: 2026-06-15
-- Context: 用户要求继续完成剩余问题，但强调稳定性、内容深度和内容链条完整性
-- Instructions:
-  - 修复剩余问题时不得引入新的问题。
-  - 不得破坏原有内容深度。
-  - 不得破坏原有内容逻辑。
-  - 不得破坏原有内容链条。
-
-[营养内容专业口径]
-- Date: 2026-06-16
-- Context: 用户继续推进营养模块收口时，强调 `0-1岁` 喂养专业性和数据源专业度
-- Instructions:
-  - 营养模块的数据源和对外输出都必须保持专业口径。
-  - `0-1岁` 食谱与相关营养输出全部下线，不再对外提供该年龄段食谱内容。
-  - 其他年龄段的食谱内容继续收口，并补充更专业的阶段性建议和执行提示。
+  - 后台开发必须形成完整方案和开发方案后再进入实现
+  - 每一步开发必须具备可回测能力，明确验证范围、验证方法和回滚点
+  - 后台域名、Nginx 路由、PM2 进程、数据库表和部署目录必须与现有我赢AI后台隔离
 
 [前端改动先验证再推送]
 - Date: 2026-06-16
-- Context: 用户继续推进测评板块前端适配时，明确要求完成验证后再执行推送
 - Instructions:
-  - 涉及前端适配或页面扩充的改动，先完成定向验证，再执行代码推送。
+  - 涉及前端适配或页面扩充的改动，先完成定向验证再执行代码推送
 
 [根目录 lint 联合校验范围]
 - Date: 2026-06-16
-- Context: Agent 在执行测评板块前端适配验证时发现
 - Category: 构建方法
 - Instructions:
-  - 仓库根目录执行 `npm run lint` 会同时运行后端语法检查和小程序语法检查。
-  - 该命令当前会输出 `Syntax check passed for 41 file(s)` 与 `Miniprogram syntax check passed for 40 file(s)` 作为通过标记。
-
-[AI 问答回复风格]
-- Date: 2026-06-22
-- Context: 用户要求继续收敛 AI 问答回复语气和结构，并补充期望的回答层次
-- Instructions:
-  - AI 问答回复优先采用自然对话式短句。
-  - 回答先直接回应用户问题，再补理论说明，再给实操建议。
-  - 实操建议部分可以包含一个有助于继续判断的追问。
-  - 避免说明书式长段落和固定标题结构。
-
-[营销文案要具体到家庭场景]
-- Date: 2026-06-17
-- Context: 用户要求继续细化小程序推广方案，并强调营销文案要有可传达性和具体场景
-- Instructions:
-  - 写营销文案时优先使用具体家庭场景词，如 `写作业`、`亲子共读`、`吃饭`、`睡前洗漱`、`出门上课`。
-  - 少用抽象词，如 `任务`、`方法`、`问题`、`训练`、`方向`；尽量改写成家长可直接代入的生活表达。
-  - 内容越有具体场景，越容易形成家长共鸣。
-
-[产品主链路优先于推广物料]
-- Date: 2026-06-17
-- Context: 用户在发现注册登录缺失后，要求先解决产品主链路，再继续推广计划相关工作
-- Category: 工作流协作
-- Instructions:
-  - 当注册、登录、支付、核心功能入口等主链路存在缺失或阻塞时，优先处理产品主链路问题。
-  - 推广文档、HTML 执行台和营销物料可以顺延到主链路修复完成后继续推进。
-
-[补充知识库前先做统一链路规划]
-- Date: 2026-06-17
-- Context: 用户要求后续继续补充知识库，并强调整体知识库链路要先规划清楚
-- Category: 工作流协作
-- Instructions:
-  - 后续新增知识库前，先明确统一的内容类型、导入映射、召回顺序和降级顺序。
-  - AI 问答相关知识源统一通过聚合召回入口接入，避免新增分散链路。
-  - 当知识库扩充与主链路稳定性发生冲突时，优先保持链路清晰、可观测和可回归验证。
-
-[知识库问答调整前先保留基线并做深度回测]
-- Date: 2026-06-18
-- Context: 用户要求规划知识库问答方案，并约束后续调整执行方式
-- Category: 工作流协作
-- Instructions:
-  - 知识库问答相关调整前，先保留当前方案文档或代码基线，确保可回溯和可对比。
-  - 调整知识库问答规则、召回策略、回答模板后，必须执行一轮完整的深度回测。
-  - 深度回测至少覆盖知识命中、年龄段过滤、多来源整合、降级回答、边界提示和真实场景问法。
-
-[性能优化优先零破坏我赢AI服务器]
-- Date: 2026-06-18
-- Context: 用户询问并发稳定性后，明确要求后续优化不要破坏我赢AI服务器任何东西
-- Category: 工作流协作
-- Instructions:
-  - 涉及性能优化时，优先采用零破坏的小步改动方式推进。
-  - 不修改我赢AI服务器现有系统配置、运行进程、数据库实例和路由。
-  - 优先做应用层优化，如超时、幂等、缓存、限流、日志和可回退参数调整。
+  - 仓库根目录执行 `npm run lint` 同时跑后端和小程序语法检查
+  - 通过标记：`Syntax check passed for XX file(s)` 与 `Miniprogram syntax check passed for XX file(s)`
 
 [本地后端启动需显式带 NODE_PATH]
 - Date: 2026-06-20
-- Context: Agent 在执行内容运营后台改造后的本地重启验证时发现
 - Category: 环境配置
 - Instructions:
-  - 当前环境直接在 `backend/` 下执行 `npm run start:mysql` 可能因模块解析路径缺失而报 `Cannot find module 'mysql2/promise'`。
-  - 本地启动生产 MySQL 后端时，优先使用 `NODE_PATH=/workspace/backend/node_modules:/usr/local/lib/node_modules node src/mysql-production/server.js`。
+  - 本地启动生产 MySQL 后端命令：`NODE_PATH=/workspace/backend/node_modules:/usr/local/lib/node_modules node src/mysql-production/server.js`
 
-[小牛育儿生产后端实际部署入口]
-- Date: 2026-06-20
-- Context: Agent 在修复手机号绑定接口不存在并执行生产部署时确认
-- Category: 运维部署
+[营养内容专业口径]
+- Date: 2026-06-16
 - Instructions:
-  - 当前线上小牛育儿实际运行入口是 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`，由 PM2 进程 `niuniu-backend` 启动。
+  - 0-1岁食谱与相关营养输出全部下线，不对外提供该年龄段食谱内容
+  - 其他年龄段食谱继续收口，补充更专业的阶段性建议和执行提示
 
-[小牛育儿生产环境变量与支付证书位置]
+[营销文案要具体到家庭场景]
+- Date: 2026-06-17
+- Instructions:
+  - 优先使用具体家庭场景词（写作业、亲子共读、吃饭、睡前洗漱、出门上课）
+  - 少用抽象词（任务、方法、问题、训练、方向），改写成家长可直接代入的表达
+
+[产品主链路优先于推广物料]
+- Date: 2026-06-17
+- Category: 工作流协作
+- Instructions:
+  - 当注册、登录、支付、核心功能入口等主链路存在缺失时，优先处理主链路
+  - 推广文档和营销物料顺延到主链路修复完成后推进
+
+[知识库变更与验证要求]
+- Date: 2026-06-18 (整合)
+- Category: 工作流协作
+- Instructions:
+  - 补充知识库前先做统一链路规划（内容类型、导入映射、召回顺序、降级顺序）
+  - AI 问答相关知识源统一通过聚合召回入口接入，避免新增分散链路
+  - 知识库问答调整前先保留基线，调整后执行完整深度回测
+  - 深度回测至少覆盖：知识命中、年龄段过滤、多来源整合、降级回答、边界提示、真实场景问法
+
+[性能优化优先零破坏我赢AI]
+- Date: 2026-06-18
+- Category: 工作流协作
+- Instructions:
+  - 涉及性能优化优先采用零破坏小步改动
+  - 不修改我赢AI现有系统配置、运行进程、数据库实例和路由
+  - 优先做应用层优化：超时、幂等、缓存、限流、日志、可回退参数调整
+
+[支付配置排查要点]
 - Date: 2026-06-21
-- Context: Agent 在执行上线前全面审计并核对生产支付配置时发现
-- Category: 环境配置
-- Instructions:
-  - `niuniu-backend` 的业务环境变量主要从 `/home/ubuntu/niuniu-parenting/.env` 加载。
-  - 微信支付私钥文件当前已配置且文件存在，平台证书路径 `WECHAT_PAY_PLATFORM_CERT_PATH` 当前为空。
-  - 排查线上支付回调验签问题时，优先检查项目根目录 `.env` 与平台证书文件是否已补齐。
-  - 生产目录不是 Git 工作树，后端热修复优先采用单文件同步到 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js` 的最小部署方式。
-  - 每次同步前先在 `/home/ubuntu/niuniu-parenting/backups/` 备份旧 `server.js`，同步后只重启 `niuniu-backend`，不操作 `woying-backend`。
-  - `POST https://api.woyai.cn/api/v1/auth/bind-phone` 的无令牌校验响应应为 `{"success":false,"message":"未提供访问令牌"}`，可作为路由是否已部署成功的快速验证信号。
-
-[小程序运行时配置链路收口]
-- Date: 2026-06-22
-- Context: Agent 在修复 AI 场景回归和运行时功能开关链路时发现
 - Category: 排错调试
 - Instructions:
-  - 小程序生产环境功能开关以 `GET https://api.woyai.cn/api/v1/runtime/config` 为准，后端返回的 `RUNTIME_*` 映射值可直接驱动 AI、评估、教育、家长课、计划、记录、周总结、搜索、多模态和支付入口。
-  - 小程序侧除页面级兜底同步外，还应在 `App.onLaunch` 主动预拉一次运行时配置，降低首页或聊天页首屏拿到旧默认值的概率。
-  - 线上修改 `RUNTIME_*` 环境变量后，需要执行 `pm2 restart niuniu-backend --update-env`，普通 `pm2 restart niuniu-backend` 只重载代码。
-  - 运行时配置链路上线后的快速验收信号是 `runtime/config` 返回 `config_loaded: true`，并包含 `ai_provider`、`ai_model` 与全量布尔开关字段。
+  - 微信支付私钥已配置且文件存在，平台证书路径 `WECHAT_PAY_PLATFORM_CERT_PATH` 当前为空
+  - 排查线上支付回调验签时优先检查 `.env` 与平台证书是否补齐
+  - 绑定手机号路由验收信号：`POST /api/v1/auth/bind-phone` 无令牌时返回 `{"success":false,"message":"未提供访问令牌"}`
+
+[AI 问答回复风格]
+- Date: 2026-06-22
+- Instructions:
+  - 回复优先采用自然对话式短句
+  - 先直接回应用户问题，再补理论说明，再给实操建议
+  - 实操建议可包含一个有助于继续判断的追问
+  - 避免说明书式长段落和固定标题结构
+
+[AI 回答系统配置 — 推理框架与模型接入] (2026-06-24 本轮新增)
+- Date: 2026-06-24
+- Category: 环境配置 / 运维部署
+- Context: 本轮完成 AI 回答深度优化全链路改造
+- Instructions:
+  - AI Provider：stepfun，模型 step-3.7-flash，API Base `https://api.stepfun.com/step_plan/v1`
+  - AI 超时 60 秒（生产 .env `AI_TIMEOUT_MS=60000`）
+  - step-3.7-flash 先产生 `reasoning_content`（推理链）再产生 `content`（最终回答），ai.js 已实现 reasoning fallback：content 为空时自动取 `reasoning_content`
+  - max_tokens 需同时覆盖推理+内容两段，生产配置 4000
+  - System Prompt 已重写：删除"控制在4到6句"约束，替换为 5 步推理框架（判断→归因→方案→预期→底线），6 个意图（营养/阅读/情绪/专注/评估/通用）各有独立回答结构模板和深度标杆 few-shot 示例
+  - 知识片段裁剪从 260 字符扩容到 1000 字符
+  - `.env` 路径 bug 已修复：loadEnv 中 `../../..` → `../../`
+
+[小程序端 AI 相关修复] (2026-06-24 本轮新增)
+- Date: 2026-06-24
+- Category: 排错调试
+- Context: 本轮修复了小程序端多个与 AI 推理模型适配相关的体验问题
+- Instructions:
+  - `miniprogram/app.js` 中 `chat()` 请求 timeout 设为 60000ms（原默认 15s 不足以覆盖推理模型 14-21s 响应时间），其他请求保持 15s 默认
+  - `miniprogram/utils/request.js` 默认超时 15s
+  - 年龄解析 `extractChatAgeGroupFromMessage` 已支持一岁~十二岁/半岁中文数字匹配，防止解析失败时 fallback 到错误档案年龄
+  - 聊天页自动滚动：`scroll-into-view` + `scroll-top: 999999` 双保险方案，三处滚动点统一使用 `getScrollToBottomPayload()`
+  - 加载气泡下方有"AI 正在深度思考，预计需要 20-30 秒"提示文字（`.loading-hint` 样式）
+  - 后端测试脚本 `backend/test-prompt.js` 未提交到仓库
+
+[GitHub 仓库信息]
+- Date: 2026-06-24
+- Category: 工作流协作
+- Instructions:
+  - GitHub 仓库：`nn190yxn/zgxnai`
+  - 本轮 commit 链：`2ce6da1`（AI 深度优化）→ `62c16e0`（超时修复）→ `c9cfeef`（年龄解析+滚动）→ `e16a596`（加载提示）
+  - 当前 HEAD `e16a596`，已推送，远端一致
+  - 生产 server.js MD5：`14e2a2c85dab4997df4b9f999f91205a`
+  - 生产 ai.js MD5：`42c805dc1806249b1fbaeeef8ae3bc03`
