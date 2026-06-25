@@ -19,11 +19,20 @@ function generateMsgId() {
   return 'msg_' + Date.now() + '_' + msgIdCounter;
 }
 
-function getScrollToBottomPayload(targetIndex) {
-  return {
-    scrollToView: 'msg-' + targetIndex,
-    scrollTop: 999999  // 大值强制 scroll-view 滚到底部
-  };
+var scrollBottomCounter = 0;
+
+function scrollToBottom(page) {
+  scrollBottomCounter++;
+  page.setData({
+    scrollTop: 99999000 + scrollBottomCounter
+  });
+}
+
+function flushScrollToBottom(page, delayMs) {
+  var ms = typeof delayMs === 'number' ? delayMs : 80;
+  setTimeout(function () {
+    scrollToBottom(page);
+  }, ms);
 }
 
 Page({
@@ -56,9 +65,10 @@ Page({
           msg.markdownNodes = self.parseMarkdownToNodes(msg.content);
         }
       });
-      this.setData(Object.assign({
+      this.setData({
         messages: saved
-      }, getScrollToBottomPayload(saved.length - 1)));
+      });
+      flushScrollToBottom(this, 150);
     }
   },
 
@@ -296,11 +306,12 @@ Page({
     };
 
     var newMessages = messages.concat([userMessage]);
-    this.setData(Object.assign({
+    this.setData({
       messages: newMessages,
       inputValue: '',
       loading: true
-    }, getScrollToBottomPayload(newMessages.length - 1)));
+    });
+    flushScrollToBottom(this, 80);
 
     // 调用AI接口
     app.chat(userMessage.content).then(function(result) {
@@ -317,10 +328,11 @@ Page({
       };
 
       var updatedMessages = self.data.messages.concat([botMessage]);
-      self.setData(Object.assign({
+      self.setData({
         messages: updatedMessages,
         loading: false
-      }, getScrollToBottomPayload(updatedMessages.length - 1)));
+      });
+      flushScrollToBottom(self, 80);
       self.saveMessages();
 
     }).catch(function(error) {
@@ -338,10 +350,11 @@ Page({
       };
 
       var updatedMessages = self.data.messages.concat([errorMessage]);
-      self.setData(Object.assign({
+      self.setData({
         messages: updatedMessages,
         loading: false
-      }, getScrollToBottomPayload(updatedMessages.length - 1)));
+      });
+      flushScrollToBottom(self, 80);
       self.saveMessages();
     });
   },
