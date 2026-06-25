@@ -194,6 +194,23 @@ body {
 
 .footer { text-align:center; color:var(--muted); font-size:12px; margin-top:24px; }
 
+/* gzh section */
+.gzh-section { max-width: 1360px; margin: 20px auto 0; }
+.gzh-section .collapse { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.gzh-section .collapse summary {
+  list-style: none; cursor: pointer; padding: 16px 22px; font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px; background: rgba(203,111,63,0.04);
+}
+.gzh-section .collapse summary::-webkit-details-marker { display: none; }
+.gzh-section .body { padding: 20px 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.gzh-section .gzh-article { background: rgba(255,248,240,0.6); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; }
+.gzh-section .gzh-article .week-label { font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.gzh-section .gzh-article .art-title { font-family: var(--serif); font-size: 15px; font-weight: 700; margin-bottom: 8px; line-height: 1.5; }
+.gzh-section .gzh-article .art-hook { color: var(--muted); font-size: 12px; margin-bottom: 12px; line-height: 1.7; }
+.gzh-section .gzh-article ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.9; }
+.gzh-section .gzh-article ul li { margin-bottom: 2px; }
+@media (max-width: 900px) { .gzh-section .body { grid-template-columns: 1fr; } }
+
 /* toast */
 .toast {
   position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%);
@@ -375,14 +392,14 @@ body {
           <button id="promptCopyBtn" onclick="copyPrompt()" style="padding:7px 14px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);">复制 Prompt</button>
         </div>
       </details>
-
-      <details class="collapse">
-        <summary>📰 公众号 8 篇推文方案</summary>
-        <div class="body" style="font-size:12px;line-height:1.9;">
-          <div id="gzhArticles"></div>
-        </div>
-      </details>
     </div>
+  </div>
+
+  <div class="gzh-section">
+    <details class="collapse">
+      <summary>📰 公众号 8 篇推文方案（4 周 × 2 篇）</summary>
+      <div class="body" id="gzhArticles"></div>
+    </details>
   </div>
 
   <div class="footer">数据保存在浏览器本地。所有文案内容已内嵌，无需网络即可使用。</div>
@@ -956,22 +973,14 @@ const GZH_ARTICLES = [
 
 function renderGzh() {
   let html = "";
-  let lastWeek = "";
   GZH_ARTICLES.forEach((a, i) => {
-    if (a.week !== lastWeek) {
-      if (lastWeek) html += "</div>";
-      html += `<div style="margin-bottom:16px;"><strong style="color:var(--accent);">${a.week}</strong>`;
-      lastWeek = a.week;
-    }
-    html += `<div style="margin-bottom:12px;padding-left:8px;border-left:3px solid var(--accent-soft);">
-      <div style="font-weight:700;margin-bottom:4px;">${i+1}. ${esc(a.title)}</div>
-      <div style="color:var(--muted);font-size:11px;margin-bottom:6px;">${esc(a.hook)}</div>
-      <ul style="margin:0;padding-left:18px;font-size:11px;">
-        ${a.outline.map(o => `<li>${esc(o)}</li>`).join("")}
-      </ul>
+    html += `<div class="gzh-article">
+      <div class="week-label">${a.week}</div>
+      <div class="art-title">${i+1}. ${esc(a.title)}</div>
+      <div class="art-hook">${esc(a.hook)}</div>
+      <ul>${a.outline.map(o => `<li>${esc(o)}</li>`).join("")}</ul>
     </div>`;
   });
-  if (lastWeek) html += "</div>";
   document.getElementById("gzhArticles").innerHTML = html;
 }
 
