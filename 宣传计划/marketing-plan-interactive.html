@@ -357,10 +357,35 @@ body {
         <summary>📚 完整内容中心</summary>
         <div class="body" id="contentBody"><div class="skel skel-card"></div><div class="skel skel-text"></div><div class="skel skel-text short"></div></div>
       </details>
+
+      <details class="collapse" id="promptPanel" open>
+        <summary>📝 Prompt 模板</summary>
+        <div class="body">
+          <div style="margin-bottom:10px;">
+            <select id="promptPlatform" onchange="showPrompt()" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:12px;background:rgba(255,255,255,0.8);width:100%;">
+              <option value="xhs">小红书图文</option>
+              <option value="douyin">抖音口播</option>
+              <option value="gzh">公众号文章</option>
+              <option value="wechat">私聊话术</option>
+              <option value="cover">封面标题</option>
+              <option value="headline">备选标题</option>
+            </select>
+          </div>
+          <div style="background:rgba(255,248,240,0.9);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:12px;line-height:1.9;white-space:pre-wrap;max-height:420px;overflow-y:auto;margin-bottom:10px;" id="promptContent"></div>
+          <button id="promptCopyBtn" onclick="copyPrompt()" style="padding:7px 14px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);">复制 Prompt</button>
+        </div>
+      </details>
+
+      <details class="collapse">
+        <summary>📰 公众号 8 篇推文方案</summary>
+        <div class="body" style="font-size:12px;line-height:1.9;">
+          <div id="gzhArticles"></div>
+        </div>
+      </details>
     </div>
   </div>
 
-  <div class="footer">数据保存在浏览器本地。修改同目录 Markdown 后刷新页面即可同步。</div>
+  <div class="footer">数据保存在浏览器本地。所有文案内容已内嵌，无需网络即可使用。</div>
   <div class="toast" id="toast" style="display:none"></div>
 </div>
 
@@ -726,9 +751,232 @@ window.saveMetrics=saveMetrics;
 window.renderLib=renderLib;
 window.renderOv=renderOv;
 window.renderCt=renderCt;
-window.renderCt=renderCt;
 
-window.renderLib=renderLib;
+// ── Prompt 模板 ──
+const PROMPT_DATA = {
+  xhs: {
+    name: "小红书图文",
+    rules: `字数600-800字，每段不超过3行，多用短句和换行。正文开头2-3句就要让家长代入。
+结构：痛点场景 -> 家长常见误区 -> 2-4个判断点 -> 1个可执行建议 -> 结尾CTA`,
+    template: `请写一篇小红书图文文案，主题是"{主题}"。
+要求：
+1. 面向2-8岁孩子的妈妈（宝妈）
+2. 开头用具体家庭场景（"晚饭后刚拿出作业本""早上7:40你眼看就迟到了"）
+3. 正文先共情，再给判断点，再给可执行建议
+4. 少用抽象词（任务/方法/问题/训练），多用场景词（写作业/亲子共读/饭桌吃饭/睡前洗漱/出门上课）
+5. 标题用"孩子一X就Y"或"先别急着X"句式
+6. 结尾统一CTA：先做一次成长观察，先看清孩子当前短板
+7. emoji适量使用（每段1-2个）`
+  },
+  douyin: {
+    name: "抖音口播",
+    rules: `总时长25-40秒（约120-180字）
+前3秒必须出现具体家庭场景（"你见过孩子饭都没吃两口就想跑吗"）
+中间10-15秒给2-3个判断线索
+最后5秒CTA
+语言像真实家长聊天，不是播音腔`,
+    template: `请写一条抖音口播脚本，主题是"{主题}"。
+要求：
+1. 前3秒打痛点（具体家庭场景）
+2. 10秒内给判断线索
+3. 10秒内给家长可执行建议
+4. 结尾5秒CTA：先做成长观察，先看清短板
+5. 同时输出：口播文案、字幕文案（精简版）、封面标题
+6. 总时长控制在25-40秒，约120-180字`
+  },
+  gzh: {
+    name: "公众号文章",
+    rules: `字数1200-1800字。有真实育儿场景引入。分段清晰，每段有小标题。包含判断逻辑和可执行方法。结尾引导先做成长观察。语气专业、温和、可信。`,
+    template: `请以"{主题}"为题，写一篇1500字公众号文章。
+要求：
+1. 面向1-6岁家长
+2. 开头有真实育儿场景引入（具体到"晚饭后""早上出门前""睡前10分钟"）
+3. 正文分3-4个小节，每节有小标题
+4. 每节包含：常见误区 -> 判断逻辑 -> 可执行方法
+5. 结尾引导先做成长观察
+6. 语气专业、温和、可信，像懂育儿的过来人妈妈在分享`
+  },
+  wechat: {
+    name: "私聊话术",
+    rules: `2-3句话即可。第一句给价值，第二句给场景，第三句给入口。语气像朋友推荐，不是推销。`,
+    template: `请写一段私聊/社群话术，主题是"{主题}"。
+要求：
+1. 第一句给价值（"我这边有个成长观察工具"）
+2. 第二句给场景（"很多家长看完后才知道孩子先抓什么"）
+3. 第三句给入口（"我发您，3分钟先看一眼"）
+4. 语气像朋友推荐，不是推销
+5. 控制在2-3句话，50-80字`
+  },
+  cover: {
+    name: "封面标题",
+    rules: `主标题控制在14-18字。副标题控制在10-16字。主标题用"孩子一X就Y"或"先别急着X"句式。一眼能看出痛点场景。用米白底+暖橙强调+深棕文字。`,
+    template: `请为"{主题}"设计小红书封面标题。
+要求：
+1. 主标题14-18字，用"孩子一X就Y"或"先别急着X"句式
+2. 副标题10-16字，补充痛点或给出方向
+3. 输出3组供选择`
+  },
+  headline: {
+    name: "备选标题",
+    rules: `输出5个备选标题。每个12-20字。用"孩子一X就Y""先别急着X""为什么你越X孩子越Y"等高打开率句式。每个标题都要让家长觉得"这说的就是我家"。`,
+    template: `请为"{主题}"生成5个备选标题。
+要求：
+1. 每个标题12-20字
+2. 用高打开率句式：孩子一X就Y / 先别急着X / 为什么你越X孩子越Y
+3. 每个标题都要让家长一眼觉得"这说的就是我家"
+4. 5个标题覆盖不同角度`
+  }
+};
+
+function showPrompt() {
+  const plat = document.getElementById("promptPlatform").value;
+  const data = PROMPT_DATA[plat];
+  if (!data) return;
+  const content = `${"=".repeat(40)}
+【${data.name} 写作规则】
+${data.rules}
+${"=".repeat(40)}
+【AI Prompt 模板】
+${data.template}
+${"=".repeat(40)}
+用法：将 "{主题}" 替换为你的具体选题，直接喂给 ChatGPT / Kimi / 豆包 等 AI 工具即可生成初稿。`;
+  document.getElementById("promptContent").textContent = content;
+}
+
+function copyPrompt() {
+  const text = document.getElementById("promptContent").textContent;
+  if (!text) return;
+  copyText(text);
+  const btn = document.getElementById("promptCopyBtn");
+  btn.textContent = "已复制";
+  btn.style.borderColor = "var(--good)";
+  btn.style.color = "var(--good)";
+  setTimeout(() => {
+    btn.textContent = "复制 Prompt";
+    btn.style.borderColor = "";
+    btn.style.color = "";
+  }, 2000);
+  showToast("Prompt 已复制");
+}
+
+// ── 公众号推文方案 ──
+const GZH_ARTICLES = [
+  {
+    week: "第 1 周", title: "孩子坐不住，家长先判断这 4 件事",
+    hook: "晚饭后刚把作业本摊开，孩子写两行就跑。你以为是专注力差，其实先看这 4 个信号。",
+    outline: [
+      "信号 1：坐下前没过渡好——从玩到学需要 5-10 分钟缓冲",
+      "信号 2：任务难度不对——太简单无聊、太难逃避",
+      "信号 3：环境干扰太多——旁边有平板、玩具、电视",
+      "信号 4：之前被骂怕了——一拿笔就紧张，想跑开",
+      "给家长的可执行方法：每天固定时间、固定位置、先做 3 分钟简单任务过渡",
+      "结尾 CTA：先做一次成长观察，看清孩子当前到底卡在哪"
+    ]
+  },
+  {
+    week: "第 1 周", title: "先看清短板，再决定怎么带，家长会轻松很多",
+    hook: "报了培训班、买了练习册、每天盯着写作业，为什么孩子进步还是不明显？因为你可能一直在补短板之外的地方用力。",
+    outline: [
+      "误区：看到问题就报班——坐不住就报专注力、不爱说就报口才",
+      "真相：很多时候不是能力问题，是还没到那个发展阶段",
+      "方法：先做成长观察 -> 明确当前最需要抓的 1-2 个点 -> 针对性 10 分钟练习",
+      "案例：一个 4 岁男孩坐不住，实际原因是听不懂老师说的话",
+      "结尾 CTA：先做成长观察，3 分钟看清卡在哪"
+    ]
+  },
+  {
+    week: "第 2 周", title: "说话晚、表达弱、复述差，背后常见的 3 种情况",
+    hook: "别人家孩子已经能讲故事了，你家孩子还只会说'那个那个'。先别急着报口才班，99% 的情况是先看这 3 件事。",
+    outline: [
+      "情况 1：听得懂但不想说——不是不会说，是缺少表达的机会和动机",
+      "情况 2：想说但说不清——词汇量够但组织能力弱，需要结构化的复述练习",
+      "情况 3：听力先行但口语滞后——理解力超前表达能力，需要耐心的输出引导",
+      "方法：每天 10 分钟亲子共读+复述小游戏",
+      "结尾 CTA：先做成长观察，看清孩子表达卡在哪个阶段"
+    ]
+  },
+  {
+    week: "第 2 周", title: "你越替他说，他越难主动表达",
+    hook: "孩子一指水杯你就递过去，一嗯嗯你就问'是不是要这个'。你觉得自己在帮忙，其实是在剥夺他练习表达的机会。",
+    outline: [
+      "常见场景：孩子还没开口，家长已经帮他说完了",
+      "后果：孩子学会'不用说我就能得到我想要的'",
+      "改变方法：延迟满足 + 选择题 + 等待 3 秒",
+      "话术示例：'你想要什么？指给妈妈看' -> '是这个杯子还是那个碗？'",
+      "进阶：从 1 个词到 2 个词到完整句子，循序渐进",
+      "结尾 CTA：先做成长观察，看看孩子当前表达能力处在哪个阶段"
+    ]
+  },
+  {
+    week: "第 3 周", title: "孩子挑食、拖饭、睡前闹，家长先看家庭节奏",
+    hook: "一到饭点就打仗，睡前像开运动会。你以为是孩子不听话，其实可能是全家的生活节奏出了问题。",
+    outline: [
+      "挑食：是不是开饭前太饿或太困？是不是零食吃太多？",
+      "拖饭：是不是吃饭时电视开着？是不是全家吃饭时间不一致？",
+      "睡前闹：是不是白天活动量不够？是不是睡前一小时还在看屏幕？",
+      "方法：固定吃饭时间、固定睡前仪式、全家人一起调整节奏",
+      "结尾 CTA：先做成长观察，看清孩子的饮食睡眠模式"
+    ]
+  },
+  {
+    week: "第 3 周", title: "吃饭睡眠总反复，很多家庭都卡在第一步",
+    hook: "好不容易把挑食改好了，过两周又回来了。睡眠也是，刚睡两天好觉又回到解放前。这不是你的问题，是孩子的发育节奏在变化。",
+    outline: [
+      "认识反复：2-6 岁孩子的饮食睡眠本身就会周期性波动",
+      "常见反复原因：长牙、感冒、环境变化、情绪波动",
+      "应对策略：不焦虑、不强迫、保持节奏、等待回归",
+      "方法：记录 3 天饮食睡眠日志，找规律而不是找问题",
+      "结尾 CTA：先做成长观察，看清孩子当前阶段的发育特点"
+    ]
+  },
+  {
+    week: "第 4 周", title: "每天 10 分钟亲子学习，为什么更容易坚持",
+    hook: "你报过多少培训班？买过多少学习资料？最后都怎么样了？真正有效的不是一次 2 小时，而是每天 10 分钟。",
+    outline: [
+      "认知科学：短时高频练习比长时间突击更有效",
+      "为什么 10 分钟：孩子注意力时间有限，家长也更容易坚持",
+      "怎么做：固定时间（晚饭后）、固定位置（书桌前）、固定内容（一次只做一个练习）",
+      "成功案例：从 3 分钟过渡到 10 分钟，孩子自己会期待这个时间",
+      "结尾 CTA：先做成长观察，明确当前最需要练的是什么"
+    ]
+  },
+  {
+    week: "第 4 周", title: "先看清写作业、阅读、表达卡在哪，再安排练习",
+    hook: "30 天推广结束了，家长最需要的不是更多育儿口号，而是更清楚地知道孩子当前卡在哪。这篇做个总结。",
+    outline: [
+      "回顾 4 类常见问题：专注力、语言表达、吃饭睡眠、亲子共读",
+      "每类问题的核心判断方法（2-3 个信号）",
+      "每类问题对应的 10 分钟练习方案",
+      "如何持续跟踪：每天记录 3 个观察点",
+      "30 天后的下一步：从'先看清短板'到'持续精准陪伴'",
+      "结尾 CTA：先做一次成长观察，30 天后再做一次，对比变化"
+    ]
+  }
+];
+
+function renderGzh() {
+  let html = "";
+  let lastWeek = "";
+  GZH_ARTICLES.forEach((a, i) => {
+    if (a.week !== lastWeek) {
+      if (lastWeek) html += "</div>";
+      html += `<div style="margin-bottom:16px;"><strong style="color:var(--accent);">${a.week}</strong>`;
+      lastWeek = a.week;
+    }
+    html += `<div style="margin-bottom:12px;padding-left:8px;border-left:3px solid var(--accent-soft);">
+      <div style="font-weight:700;margin-bottom:4px;">${i+1}. ${esc(a.title)}</div>
+      <div style="color:var(--muted);font-size:11px;margin-bottom:6px;">${esc(a.hook)}</div>
+      <ul style="margin:0;padding-left:18px;font-size:11px;">
+        ${a.outline.map(o => `<li>${esc(o)}</li>`).join("")}
+      </ul>
+    </div>`;
+  });
+  if (lastWeek) html += "</div>";
+  document.getElementById("gzhArticles").innerHTML = html;
+}
+
+showPrompt();
+renderGzh();
 </script>
 </body>
 </html>
