@@ -566,69 +566,103 @@ td {
   font-size: 13px;
 }
 
+.segment-summary-stats {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
 .segment-user-list {
   display: grid;
   gap: 12px;
 }
 
-.segment-user-item {
-  display: grid;
-  gap: 10px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(61, 42, 24, 0.08);
+.segment-user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.48);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
-.segment-user-topline {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
-}
-
-.segment-user-name {
-  font-weight: 600;
-}
-
-.segment-user-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.segment-user-tag {
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: var(--brand-deep);
+.segment-user-table thead {
   background: rgba(182, 84, 47, 0.08);
 }
 
-.segment-user-tag.priority-high {
-  color: #fff7f0;
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
+.segment-user-table th {
+  padding: 10px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--brand-deep);
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(61, 42, 24, 0.1);
 }
 
-.segment-user-suggestion {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(93, 107, 45, 0.08);
+.segment-user-table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(61, 42, 24, 0.05);
   color: var(--ink);
-  line-height: 1.6;
-  font-size: 13px;
 }
 
-.segment-user-meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
+.segment-user-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.7);
 }
 
-.segment-user-meta span {
-  font-size: 13px;
+.segment-user-table .cell-name {
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.segment-user-table .cell-phone {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 12px;
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.segment-user-table .cell-date {
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.segment-user-table .cell-amount {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.segment-user-table .cell-priority {
+  text-align: center;
+}
+
+.segment-user-table .priority-high-tag {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.segment-user-table .cell-action {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: default;
+}
+
+.segment-load-more {
+  margin-top: 10px;
+  width: 100%;
+  text-align: center;
 }
 
 .age-feature-item {

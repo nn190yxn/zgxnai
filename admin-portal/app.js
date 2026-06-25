@@ -866,12 +866,13 @@ function exportCurrentSegmentUsers() {
     return;
   }
   const rows = [
-    ['分层', '昵称', '孩子', '年龄段', '会员类型', '累计支付', '支付单数', '最近活跃', '近14天活跃事件', '会员到期', '自动续费', '触达优先级', '建议动作']
+    ['分层', '昵称', '手机号', '孩子', '年龄段', '会员类型', '累计支付', '支付单数', '最近活跃', '近14天活跃事件', '会员到期', '自动续费', '触达优先级', '建议动作']
   ];
   state.currentSegmentUsers.forEach((item) => {
     rows.push([
       state.activeSegmentMeta.label || state.activeSegmentMeta.key || '',
       item.nickname || `用户${item.id}`,
+      item.phone || '',
       item.child_name || '',
       item.child_age_label || '',
       formatMembershipLabel(item.membership_type, item.current_plan),
@@ -931,36 +932,118 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
   const container = document.getElementById('segmentUsersList');
   state.currentSegmentUsers = Array.isArray(items) ? items : [];
   title.textContent = segment ? `${segment.label || segment.key}名单` : '分层用户名单';
-  meta.textContent = segment ? (segment.description || '最近 20 个用户样本') : '选择一个分层查看最近 20 个用户';
+
+  // 汇总统计
+  const totalCount = state.currentSegmentUsers.length;
+  const totalAmount = state.currentSegmentUsers.reduce((sum, u) => sum + (Number(u.total_paid_amount) || 0), 0);
+  const highCount = state.currentSegmentUsers.filter((u) => u.action_priority === 'high').length;
+  const withPhoneCount = state.currentSegmentUsers.filter((u) => u.phone).length;
+  meta.innerHTML = segment
+    ? `<span>${escapeHtml(segment.description || '')}</span>`
+    : '选择一个分层查看最近 20 个用户';
+  meta.innerHTML += totalCount > 0
+    ? `<span class="segment-summary-stats">当前 ${totalCount} 人 | 累计支付 ¥${formatNumber(totalAmount)} | 高优先 ${highCount} 人 | 有手机号 ${withPhoneCount} 人</span>`
+    : '';
+
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage || '当前分层暂无用户样本。')}</div>`;
     return;
   }
+
+  // 紧凑表格
+  const table = document.createElement('table');
+  table.className = 'segment-user-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>用户</th>
+        <th>手机号</th>
+        <th>孩子</th>
+        <th>会员</th>
+        <th>到期时间</th>
+        <th>累计支付</th>
+        <th>最近活跃</th>
+        <th>优先</th>
+        <th>动作</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const tbody = table.querySelector('tbody');
   items.forEach((item) => {
-    const node = document.createElement('div');
-    node.className = 'segment-user-item';
-    node.innerHTML = `
-      <div class="segment-user-topline">
-        <span class="segment-user-name">${escapeHtml(item.nickname || `用户${item.id}`)}</span>
-        <strong>${escapeHtml(formatCurrency(item.total_paid_amount || 0))}</strong>
-      </div>
-      <div class="segment-user-tags">
-        <span class="segment-user-tag">${escapeHtml(item.child_name ? `${item.child_name} / ${item.child_age_label || '年龄待补充'}` : (item.child_age_label || '年龄待补充'))}</span>
-        <span class="segment-user-tag">${escapeHtml(formatMembershipLabel(item.membership_type, item.current_plan))}</span>
-        <span class="segment-user-tag">支付 ${escapeHtml(formatNumber(item.paid_order_count || 0))} 单</span>
-        <span class="segment-user-tag ${item.action_priority === 'high' ? 'priority-high' : ''}">${escapeHtml(formatActionPriority(item.action_priority))}</span>
-      </div>
-      <div class="segment-user-meta">
-        <span>最近活跃：${escapeHtml(formatDateTime(item.last_active_at))}</span>
-        <span>近14天活跃事件：${escapeHtml(formatNumber(item.active_event_count_14d || 0))}</span>
-        <span>会员到期：${escapeHtml(formatDateTime(item.current_end_date))}</span>
-        <span>自动续费：${item.auto_renew ? '已开启' : '未开启'}</span>
-      </div>
-      <p class="segment-user-suggestion">建议动作：${escapeHtml(item.suggested_action || '结合最近活跃行为安排精细化触达。')}</p>
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="cell-name">${escapeHtml(item.nickname || `用户${item.id}`)}</td>
+      <td class="cell-phone">${escapeHtml(item.phone ? maskPhone(item.phone) : '-')}</td>
+      <td>${escapeHtml(item.child_name ? `${item.child_name} / ${item.child_age_label || '?'}` : (item.child_age_label || '-'))}</td>
+      <td>${escapeHtml(formatMembershipLabel(item.membership_type, item.current_plan))}</td>
+      <td class="cell-date">${item.current_end_date ? formatShortDate(item.current_end_date) : '-'}</td>
+      <td class="cell-amount">¥${escapeHtml(formatNumber(item.total_paid_amount || 0))}</td>
+      <td class="cell-date">${item.last_active_at ? formatShortDate(item.last_active_at) : '-'}</td>
+      <td class="cell-priority ${item.action_priority === 'high' ? 'priority-high-tag' : ''}">${escapeHtml(formatActionPriority(item.action_priority))}</td>
+      <td class="cell-action" title="${escapeHtml(item.suggested_action || '')}">${escapeHtml(truncateText(item.suggested_action, 12) || '-')}</td>
     `;
-    container.appendChild(node);
+    tbody.appendChild(row);
   });
+  container.appendChild(table);
+
+  // 加载更多按钮
+  if (totalCount >= 20) {
+    const moreBtn = document.createElement('button');
+    moreBtn.className = 'ghost filter-chip segment-load-more';
+    moreBtn.textContent = '加载更多 (每次 20 条)';
+    moreBtn.addEventListener('click', async () => {
+      moreBtn.textContent = '加载中...';
+      moreBtn.disabled = true;
+      try {
+        const query = new URLSearchParams({ limit: '20', offset: String(totalCount) });
+        if (state.segmentFilters.expiringOnly) query.set('expiring_only', '1');
+        if (state.segmentFilters.highActivityOnly) query.set('high_activity_only', '1');
+        const data = await request(`/segments/${state.activeSegmentKey}/users?${query.toString()}`);
+        if (data && data.items && data.items.length) {
+          state.currentSegmentUsers = state.currentSegmentUsers.concat(data.items);
+          state.segmentUsersByKey[buildSegmentUsersCacheKey(state.activeSegmentKey)] = null; // invalidate cache
+          renderSegmentUsersPanel(state.activeSegmentMeta, state.currentSegmentUsers);
+        } else {
+          moreBtn.textContent = '没有更多了';
+          moreBtn.disabled = true;
+        }
+      } catch (err) {
+        moreBtn.textContent = '加载失败，点击重试';
+        moreBtn.disabled = false;
+      }
+    });
+    container.appendChild(moreBtn);
+  }
+}
+
+function maskPhone(phone) {
+  const text = String(phone).trim();
+  if (text.length >= 11) {
+    return text.slice(0, 3) + '****' + text.slice(-4);
+  }
+  if (text.length >= 7) {
+    return text.slice(0, 3) + '****' + text.slice(-2);
+  }
+  return text;
+}
+
+function formatShortDate(value) {
+  if (!value) return '';
+  const text = String(value).trim();
+  // Handle ISO format: 2026-07-15T00:00:00.000Z or 2026-07-15 23:59:59
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return `${Number(match[2])}/${Number(match[3])}`;
+  }
+  return text;
+}
+
+function truncateText(text, maxLen) {
+  const str = String(text || '');
+  if (str.length <= maxLen) return str;
+  return str.slice(0, maxLen) + '…';
 }
 
 function renderTrendLine(containerId, items, valueKey, tone) {

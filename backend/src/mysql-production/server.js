@@ -1831,6 +1831,7 @@ async function adminSegmentUsersHandler(req, res) {
   }
 
   const limit = clampAdminLimit(req.query.limit, 20);
+  const offset = Math.max(0, Number(req.query.offset || 0));
   const expiringOnly = normalizeBooleanQuery(req.query.expiring_only || req.query.expiringOnly);
   const highActivityOnly = normalizeBooleanQuery(req.query.high_activity_only || req.query.highActivityOnly);
   const filters = [definition.sql];
@@ -1844,6 +1845,7 @@ async function adminSegmentUsersHandler(req, res) {
     `SELECT
        u.id,
        u.nickname,
+       u.phone_number,
        u.created_at,
        child_profile.child_name,
        child_profile.age_label,
@@ -1898,7 +1900,7 @@ async function adminSegmentUsersHandler(req, res) {
       ) child_profile ON child_profile.user_id = u.id
       WHERE ${filters.join(' AND ')}
       ORDER BY ${definition.orderBy}
-      LIMIT ${limit}`
+      LIMIT ${limit} OFFSET ${offset}`
   );
 
   res.json({
@@ -1912,11 +1914,13 @@ async function adminSegmentUsersHandler(req, res) {
       filters: {
         expiring_only: expiringOnly,
         high_activity_only: highActivityOnly,
-        limit
+        limit,
+        offset
       },
       items: rows.map((row) => ({
         id: row.id,
         nickname: row.nickname || `用户${row.id}`,
+        phone: row.phone_number || '',
         child_name: row.child_name || '',
         child_age_label: row.age_label || '年龄待补充',
         child_gender: row.gender || 'unknown',
