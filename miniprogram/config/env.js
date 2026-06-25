@@ -5,13 +5,13 @@ var CURRENT_ENV = 'auto';
 
 var ENV_CONFIG = {
   development: {
-    apiBaseUrl: '',
-    baseUrl: '',
+    apiBaseUrl: 'https://api.woyai.cn/api/v1',
+    baseUrl: 'https://api.woyai.cn',
     allowHttp: false,
     requestTimeoutMs: 15000,
     apiStrictMode: true,
     allowMockFallback: false,
-    requireCustomApiHost: true,
+    requireCustomApiHost: false,
     enableDevLoginFallback: false,
     enableNativeApiDiagnostics: true,
     enableNetworkProbe: false,
