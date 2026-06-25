@@ -1,0 +1,126 @@
+.page {
+  min-height: 100vh;
+  background: #F5F5F5;
+  padding: 32rpx;
+}
+
+.form-card {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.05);
+}
+
+.form-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #2F2F2F;
+  margin-bottom: 8rpx;
+}
+
+.form-desc {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 36rpx;
+}
+
+.field {
+  margin-bottom: 28rpx;
+}
+
+.field-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.picker-value {
+  padding: 20rpx 24rpx;
+  background: #F8F8F8;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.content-input {
+  width: 100%;
+  min-height: 240rpx;
+  padding: 20rpx 24rpx;
+  background: #F8F8F8;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.char-count {
+  text-align: right;
+  font-size: 22rpx;
+  color: #BBB;
+  margin-top: 8rpx;
+}
+
+.contact-input {
+  width: 100%;
+  padding: 20rpx 24rpx;
+  background: #F8F8F8;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 92rpx;
+  line-height: 92rpx;
+  background: linear-gradient(145deg, #E85A29, #FF6B35);
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 700;
+  border-radius: 46rpx;
+  border: none;
+  margin-top: 16rpx;
+}
+
+.submit-btn[disabled] {
+  opacity: 0.4;
+}
+
+.history-section {
+  margin-top: 32rpx;
+}
+
+.history-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.history-item {
+  background: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03);
+}
+
+.history-type {
+  font-size: 22rpx;
+  color: #E85A29;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.history-content {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 10rpx;
+}
+
+.history-time {
+  font-size: 20rpx;
+  color: #BBB;
+}

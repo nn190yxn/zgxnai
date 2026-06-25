@@ -8,6 +8,7 @@
     "pages/profile/privacy/privacy",
     "pages/profile/agreement/agreement",
     "pages/profile/account-deletion/account-deletion",
+    "pages/profile/feedback/feedback",
     "pages/assessment/assessment",
     "pages/assessment/do/do",
     "pages/assessment/result/result",

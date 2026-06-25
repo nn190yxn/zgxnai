@@ -291,6 +291,8 @@ for (const prefix of API_PREFIXES) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.status(204).end();
   });
+  app.get(`${prefix}/feedback`, authenticateToken, asyncHandler(feedbackListHandler));
+  app.post(`${prefix}/feedback`, authenticateToken, asyncHandler(feedbackSubmitHandler));
   app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
 }
@@ -352,6 +354,45 @@ async function marketingGenerateHandler(req, res) {
       }
     });
   }
+}
+
+async function feedbackSubmitHandler(req, res) {
+  const userId = req.user.id;
+  const type = String((req.body && req.body.type) || '其他');
+  const content = String((req.body && req.body.content) || '').trim();
+  const contact = String((req.body && req.body.contact) || '').trim();
+
+  if (!content || content.length < 5) {
+    res.status(400).json({ success: false, message: '反馈内容不能少于5个字' });
+    return;
+  }
+
+  const validTypes = ['功能异常/Bug', '体验建议', '内容问题', '其他'];
+  const finalType = validTypes.includes(type) ? type : '其他';
+
+  await pool.execute(
+    'INSERT INTO feedbacks (user_id, type, content, contact) VALUES (?, ?, ?, ?)',
+    [userId, finalType, content, contact]
+  );
+
+  res.json({ success: true, message: '感谢你的反馈！' });
+}
+
+async function feedbackListHandler(req, res) {
+  const userId = req.user.id;
+  const [rows] = await pool.execute(
+    'SELECT id, type, content, status, created_at FROM feedbacks WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+    [userId]
+  );
+
+  const list = rows.map(row => ({
+    ...row,
+    created_at: formatDateValue(row.created_at),
+    type_text: row.type || '其他',
+    content: row.content.length > 200 ? row.content.substring(0, 200) + '...' : row.content
+  }));
+
+  res.json({ success: true, list });
 }
 
 const MARKETING_SYSTEM_PROMPT_BASE = `你是资深母婴/亲子类新媒体内容策划专家，专注于为儿童体育培训机构和育儿成长类小程序创作传播内容。
@@ -7465,6 +7506,20 @@ async function ensureProductionTables() {
   await ensureIndexExists('parenting_tips', 'idx_pt_display_type', 'INDEX idx_pt_display_type (is_active, display_type)');
   await ensureColumnExists('articles', 'content_form', 'VARCHAR(10) DEFAULT NULL');
   await ensureIndexExists('articles', 'idx_articles_content_form', 'INDEX idx_articles_content_form (is_published, content_form)');
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS feedbacks (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      type VARCHAR(50) DEFAULT '其他',
+      content TEXT NOT NULL,
+      contact VARCHAR(200) DEFAULT '',
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_fb_user (user_id),
+      INDEX idx_fb_status (status),
+      INDEX idx_fb_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
   await seedContentIfNeeded();
 }
 

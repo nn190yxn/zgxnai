@@ -233,10 +233,11 @@ Page({
 
   // 意见反馈
   feedback: function() {
-    wx.showModal({
-      title: '意见反馈',
-      content: '请通过小程序内意见反馈或运营人员公布的官方渠道联系我们。',
-      showCancel: false
+    wx.navigateTo({
+      url: '/pages/profile/feedback/feedback',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
     });
   },
 
