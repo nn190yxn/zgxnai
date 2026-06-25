@@ -365,7 +365,6 @@ body {
 </div>
 
 <script>
-const mdPath = "./marketing-plan-interactive.md";
 const STORE = "niuniu-marketing-plan-v2";
 const state = { sections:{}, days:[], selectedDay:1, progress: loadProgress(), funnel: loadFunnel() };
 const baseUrl = location.href.replace(/marketing-plan-interactive\.html.*$/,"");
@@ -428,18 +427,7 @@ function showToast(msg) {
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 async function init() {
   try {
-    let mdText;
-    if(location.protocol==="file:"){
-      mdText=EMBEDDED_MD;
-    }else{
-      try {
-        const r=await fetch(mdPath);
-        if(r.ok){mdText=await r.text();}
-        else{throw new Error("status "+r.status);}
-      }catch(fetchErr){
-        mdText=EMBEDDED_MD;
-      }
-    }
+    const mdText = EMBEDDED_MD;
     state.sections = splitSections(mdText);
     state.days = buildDays(state.sections);
     document.getElementById("topTagline").textContent = extractTagline(state.sections["2. 产品卖点与对外口径"]||"")||"看懂孩子当前成长短板，少走弯路，带娃更省心";
