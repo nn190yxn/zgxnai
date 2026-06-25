@@ -463,6 +463,7 @@ function getMarketingSystemPrompt(platform, contentType) {
 }
 
 app.post(`${ADMIN_API_PREFIX}/auth/login`, asyncHandler(adminLoginHandler));
+app.post(`${ADMIN_API_PREFIX}/auth/password`, authenticateAdmin, asyncHandler(adminChangePasswordHandler));
 app.get(`${ADMIN_API_PREFIX}/auth/me`, authenticateAdmin, asyncHandler(adminMeHandler));
 app.get(`${ADMIN_API_PREFIX}/dashboard/overview`, authenticateAdmin, asyncHandler(adminDashboardOverviewHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/users/trends`, authenticateAdmin, asyncHandler(adminUserTrendsHandler));
@@ -697,6 +698,34 @@ async function adminMeHandler(req, res) {
     return;
   }
   res.json({ success: true, data: rows[0] });
+}
+
+async function adminChangePasswordHandler(req, res) {
+  const adminUserId = req.admin.adminUserId;
+  const oldPassword = String((req.body && req.body.old_password) || (req.body && req.body.oldPassword) || '').trim();
+  const newPassword = String((req.body && req.body.new_password) || (req.body && req.body.newPassword) || '').trim();
+
+  if (!oldPassword || !newPassword) {
+    res.status(400).json({ success: false, message: '请输入原密码和新密码' });
+    return;
+  }
+  if (newPassword.length < 8) {
+    res.status(400).json({ success: false, message: '新密码至少 8 位' });
+    return;
+  }
+
+  const [rows] = await pool.execute('SELECT password_hash FROM admin_users WHERE id = ? LIMIT 1', [adminUserId]);
+  if (!rows.length) {
+    res.status(404).json({ success: false, message: '后台账号不存在' });
+    return;
+  }
+  if (!verifyAdminPassword(oldPassword, rows[0].password_hash)) {
+    res.status(401).json({ success: false, message: '原密码不正确' });
+    return;
+  }
+
+  await pool.execute('UPDATE admin_users SET password_hash = ? WHERE id = ?', [hashAdminPassword(newPassword), adminUserId]);
+  res.json({ success: true, message: '密码已更新' });
 }
 
 async function adminDashboardOverviewHandler(req, res) {

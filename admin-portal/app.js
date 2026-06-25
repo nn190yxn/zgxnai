@@ -20,6 +20,11 @@ const loginHint = document.getElementById('loginHint');
 const loginForm = document.getElementById('loginForm');
 const refreshButton = document.getElementById('refreshButton');
 const demoButton = document.getElementById('demoButton');
+const changePasswordButton = document.getElementById('changePasswordButton');
+const passwordModal = document.getElementById('passwordModal');
+const closePasswordModalButton = document.getElementById('closePasswordModalButton');
+const passwordForm = document.getElementById('passwordForm');
+const passwordHint = document.getElementById('passwordHint');
 
 const demoSnapshot = {
   me: {
@@ -45,6 +50,7 @@ const demoSnapshot = {
     },
     revenue: {
       total_revenue: 428630.5,
+      today_revenue: 3900,
       today_paid_order_count: 37
     },
     family: {
@@ -365,6 +371,65 @@ loginForm.addEventListener('submit', async (event) => {
   }
 });
 
+changePasswordButton.addEventListener('click', () => {
+  if (!state.token) {
+    setHint('请先完成后台登录，再修改密码。', 'status-error');
+    return;
+  }
+  openPasswordModal();
+});
+
+closePasswordModalButton.addEventListener('click', () => {
+  closePasswordModal();
+});
+
+passwordModal.addEventListener('click', (event) => {
+  if (event.target === passwordModal) {
+    closePasswordModal();
+  }
+});
+
+passwordForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!state.token) {
+    setPasswordHint('请先登录后台。', 'status-error');
+    return;
+  }
+
+  const formData = new FormData(passwordForm);
+  const oldPassword = String(formData.get('oldPassword') || '').trim();
+  const newPassword = String(formData.get('newPassword') || '').trim();
+  const confirmPassword = String(formData.get('confirmPassword') || '').trim();
+
+  if (newPassword.length < 8) {
+    setPasswordHint('新密码至少 8 位。', 'status-error');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setPasswordHint('两次输入的新密码不一致。', 'status-error');
+    return;
+  }
+
+  setPasswordHint('正在保存新密码...', '');
+  toggleLoading(true);
+  try {
+    await request('/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({
+        old_password: oldPassword,
+        new_password: newPassword
+      })
+    });
+    closePasswordModal();
+    passwordForm.reset();
+    setHint('后台密码已更新。', 'status-success');
+  } catch (error) {
+    setPasswordHint(error.message || '密码修改失败', 'status-error');
+  } finally {
+    toggleLoading(false);
+  }
+});
+
 refreshButton.addEventListener('click', async () => {
   if (!state.token) {
     setHint('请先完成后台登录。', 'status-error');
@@ -495,7 +560,7 @@ function renderOverview(overview) {
   setText('dauValue', formatNumber(overview.users.dau));
   setText('mauValue', `MAU ${formatNumber(overview.users.mau)} / WAU ${formatNumber(overview.users.wau)}`);
   setText('revenueValue', formatCurrency(overview.revenue.total_revenue));
-  setText('paidOrdersValue', `今日支付单量 ${formatNumber(overview.revenue.today_paid_order_count)}`);
+  setText('paidOrdersValue', `今日支付金额 ${formatCurrency(overview.revenue.today_revenue || 0)}`);
   setText('membershipValue', formatNumber(overview.memberships.active_memberships));
   setText(
     'membershipMixValue',
@@ -1064,6 +1129,7 @@ function renderAiRecent(data) {
 
 function updateAuthState() {
   authStateText.textContent = state.admin ? `${state.admin.display_name || state.admin.username}` : state.token ? '登录态待校验' : '未登录';
+  changePasswordButton.disabled = !state.token;
 }
 
 function toggleLoading(loading) {
@@ -1074,6 +1140,24 @@ function toggleLoading(loading) {
 function setHint(message, className) {
   loginHint.textContent = message;
   loginHint.className = `hint ${className || ''}`.trim();
+}
+
+function setPasswordHint(message, className) {
+  passwordHint.textContent = message;
+  passwordHint.className = `hint ${className || ''}`.trim();
+}
+
+function openPasswordModal() {
+  passwordModal.classList.add('open');
+  passwordModal.setAttribute('aria-hidden', 'false');
+  setPasswordHint('密码建议不少于 8 位，包含字母和数字。', '');
+  passwordForm.reset();
+  document.getElementById('oldPasswordInput').focus();
+}
+
+function closePasswordModal() {
+  passwordModal.classList.remove('open');
+  passwordModal.setAttribute('aria-hidden', 'true');
 }
 
 function setText(id, value) {
