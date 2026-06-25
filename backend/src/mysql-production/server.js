@@ -285,11 +285,18 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
   app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
   app.post(`${prefix}/marketing/generate`, asyncHandler(marketingGenerateHandler));
+  app.options(`${prefix}/marketing/generate`, (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.status(204).end();
+  });
   app.all(`${prefix}/chat*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
   app.all(`${prefix}/recommendations*`, authenticateToken, requireActiveMembership, paidFeaturePlaceholderHandler);
 }
 
 async function marketingGenerateHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   const topic = String((req.body && req.body.topic) || '').trim();
   const platform = String((req.body && req.body.platform) || 'xhs').trim();
   const contentType = String((req.body && req.body.content_type) || 'post').trim();
