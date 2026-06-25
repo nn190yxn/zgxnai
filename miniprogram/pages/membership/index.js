@@ -1,6 +1,6 @@
 // 成长服务页面 - 审核期版本
 const app = getApp();
-const { ENABLE_WECHAT_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
+const { ENABLE_VIRTUAL_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
 
 Page({
   data: {
@@ -16,8 +16,8 @@ Page({
     
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
-    showPayment: ENABLE_WECHAT_PAY,
-    paymentNotice: ENABLE_WECHAT_PAY ? '选择方案后可发起微信支付' : '微信支付暂未开放，新用户注册可先领取7天成长服务，再使用试用资格和邀请奖励',
+    showPayment: ENABLE_VIRTUAL_PAY,
+    paymentNotice: ENABLE_VIRTUAL_PAY ? '选择方案后可发起微信虚拟支付' : '虚拟支付暂未开放，新用户注册可先领取7天成长服务，再使用试用资格和邀请奖励',
     signupBenefitText: '新用户首次注册自动赠送7天成长服务，可与邀请奖励叠加。',
     
     // 套餐列表
@@ -200,13 +200,17 @@ Page({
     this.setData({ selectedPlan: code });
     this.trackMembershipEvent('membership_plan_select', { plan_code: code });
     if (!this.data.showPayment) {
-      wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
+      wx.showToast({ title: '虚拟支付暂未开放', icon: 'none' });
     }
   },
 
   paySelectedPlan() {
     if (!this.data.showPayment) {
-      wx.showToast({ title: '微信支付暂未开放', icon: 'none' });
+      wx.showToast({ title: '虚拟支付暂未开放', icon: 'none' });
+      return;
+    }
+    if (!wx.requestVirtualPayment) {
+      wx.showToast({ title: '当前微信版本暂不支持虚拟支付', icon: 'none' });
       return;
     }
     if (!this.data.selectedPlan) {
@@ -222,36 +226,24 @@ Page({
     that.ensureLoggedIn('请先完成微信登录，再开通成长服务').then(function() {
       that.setData({ isPaying: true });
       return app.request({
-        url: '/payment/create',
+        url: '/payment/virtual-order',
         method: 'POST',
         data: {
           plan_code: that.data.selectedPlan,
           auto_renew: true
         }
       });
-    }).then(function(order) {
-      if (!order || !order.order_no) {
-        throw new Error((order && order.message) || '创建订单失败');
-      }
-      currentOrderNo = order.order_no;
-      return app.request({
-        url: '/payment/unified-order',
-        method: 'POST',
-        data: {
-          order_no: currentOrderNo
-        }
-      });
     }).then(function(payParams) {
-      if (!payParams || !payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.paySign) {
-        throw new Error((payParams && payParams.message) || '获取支付参数失败');
+      if (!payParams || !payParams.order_no || !payParams.signData || !payParams.paySig || !payParams.signature) {
+        throw new Error((payParams && payParams.message) || '获取虚拟支付参数失败');
       }
+      currentOrderNo = payParams.order_no;
       return new Promise(function(resolve, reject) {
-        wx.requestPayment({
-          timeStamp: payParams.timeStamp,
-          nonceStr: payParams.nonceStr,
-          package: payParams.package,
-          signType: payParams.signType || 'RSA',
-          paySign: payParams.paySign,
+        wx.requestVirtualPayment({
+          mode: payParams.mode || 'short_series_goods',
+          signData: payParams.signData,
+          paySig: payParams.paySig,
+          signature: payParams.signature,
           success: resolve,
           fail: reject
         });

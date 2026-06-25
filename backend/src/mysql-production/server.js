@@ -80,6 +80,23 @@ const wxPayConfig = {
   platformCertPath: process.env.WECHAT_PAY_PLATFORM_CERT_PATH || process.env.WX_PLATFORM_CERT_PATH || ''
 };
 
+const virtualPayConfig = {
+  offerId: process.env.WECHAT_VIRTUAL_PAY_OFFER_ID || process.env.XPAY_OFFER_ID || '',
+  env: Number(process.env.WECHAT_VIRTUAL_PAY_ENV || process.env.XPAY_ENV || 1) === 0 ? 0 : 1,
+  sandboxAppKey: process.env.WECHAT_VIRTUAL_PAY_SANDBOX_APP_KEY || process.env.XPAY_SANDBOX_APP_KEY || '',
+  appKey: process.env.WECHAT_VIRTUAL_PAY_APP_KEY || process.env.XPAY_APP_KEY || '',
+  mode: process.env.WECHAT_VIRTUAL_PAY_MODE || process.env.XPAY_MODE || 'short_series_goods',
+  productIds: {
+    month: process.env.WECHAT_VIRTUAL_PAY_PRODUCT_MONTH || process.env.XPAY_PRODUCT_MONTH || '',
+    quarter: process.env.WECHAT_VIRTUAL_PAY_PRODUCT_QUARTER || process.env.XPAY_PRODUCT_QUARTER || '',
+    year: process.env.WECHAT_VIRTUAL_PAY_PRODUCT_YEAR || process.env.XPAY_PRODUCT_YEAR || ''
+  }
+};
+
+const wechatMessagePushConfig = {
+  token: process.env.WECHAT_MESSAGE_PUSH_TOKEN || process.env.WX_MESSAGE_PUSH_TOKEN || ''
+};
+
 const READING_TASK_MAP = READING_TASKS.reduce((acc, task) => {
   if (task && task.task_code) {
     acc[task.task_code] = task;
@@ -185,10 +202,11 @@ function findCanonicalReadingTask(row) {
   }) || null;
 }
 
+app.use(['/wechat/message-push'].concat(API_PREFIXES.map((prefix) => `${prefix}/wechat/message-push`)), express.text({ type: '*/*', limit: '2mb' }));
 app.use(express.json({
   limit: '2mb',
   verify: (req, res, buf) => {
-    if (req.originalUrl === `${API_PREFIX}/payment/notify`) {
+    if (API_PREFIXES.some((prefix) => req.originalUrl === `${prefix}/payment/notify`)) {
       req.rawBody = buf.toString('utf8');
     }
   }
@@ -200,6 +218,8 @@ app.get('/admin-console/*', adminPortalHandler);
 app.use('/marketing', express.static(path.resolve(__dirname, '../../../宣传计划')));
 
 app.get('/health', healthHandler);
+app.get('/wechat/message-push', asyncHandler(wechatMessagePushHandler));
+app.all('/wechat/message-push', asyncHandler(wechatMessagePushHandler));
 for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/health`, healthHandler);
   app.get(`${prefix}/runtime/config`, runtimeConfigHandler);
@@ -214,9 +234,12 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/referral/stats`, authenticateToken, asyncHandler(referralStatsHandler));
   app.get(`${prefix}/referral/code`, authenticateToken, asyncHandler(referralCodeHandler));
   app.post(`${prefix}/payment/create`, authenticateToken, asyncHandler(createPaymentOrderHandler));
+  app.post(`${prefix}/payment/virtual-order`, authenticateToken, asyncHandler(virtualOrderHandler));
   app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
   app.get(`${prefix}/payment/query/:order_no`, authenticateToken, asyncHandler(queryPaymentHandler));
   app.post(`${prefix}/payment/notify`, asyncHandler(paymentNotifyHandler));
+  app.get(`${prefix}/wechat/message-push`, asyncHandler(wechatMessagePushHandler));
+  app.all(`${prefix}/wechat/message-push`, asyncHandler(wechatMessagePushHandler));
   app.get(`${prefix}/children`, authenticateToken, asyncHandler(childrenListHandler));
   app.post(`${prefix}/children`, authenticateToken, asyncHandler(childrenCreateHandler));
   app.post(`${prefix}/children/upload-avatar`, authenticateToken, asyncHandler(childAvatarUploadHandler));
@@ -3377,7 +3400,7 @@ async function loginHandler(req, res) {
       }
       throw err;
     }
-    const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {});
+    const { user, isNew: isNewUser } = await findOrCreateUser(session.openid, req.body.userInfo || {}, session.session_key || '');
     let signupReward = null;
     let referralReward = null;
 
@@ -3604,16 +3627,16 @@ async function getWechatPhoneNumber(code) {
   return (data && data.phone_info) || {};
 }
 
-async function findOrCreateUser(openid, profile) {
+async function findOrCreateUser(openid, profile, sessionKey) {
   const nickname = profile.nickName || profile.nickname || '微信用户';
   const avatarUrl = profile.avatarUrl || profile.avatar_url || '';
   const [existing] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE openid = ?', [openid]);
   if (existing.length) {
     const currentUser = existing[0];
-    if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url)) {
+    if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url) || sessionKey) {
       await pool.execute(
-        'UPDATE users SET nickname = ?, avatar_url = ? WHERE id = ?',
-        [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, currentUser.id]
+        'UPDATE users SET nickname = ?, avatar_url = ?, session_key = COALESCE(NULLIF(?, \'\'), session_key), session_key_updated_at = IF(? = \'\', session_key_updated_at, NOW()) WHERE id = ?',
+        [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, sessionKey || '', sessionKey || '', currentUser.id]
       );
       currentUser.nickname = nickname || currentUser.nickname;
       currentUser.avatar_url = avatarUrl || currentUser.avatar_url;
@@ -3622,8 +3645,8 @@ async function findOrCreateUser(openid, profile) {
   }
   try {
     const [result] = await pool.execute(
-      'INSERT INTO users (openid, nickname, avatar_url) VALUES (?, ?, ?)',
-      [openid, nickname, avatarUrl]
+      'INSERT INTO users (openid, nickname, avatar_url, session_key, session_key_updated_at) VALUES (?, ?, ?, ?, IF(? = \'\', NULL, NOW()))',
+      [openid, nickname, avatarUrl, sessionKey || '', sessionKey || '']
     );
     const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
     return { user: rows[0], isNew: true };
@@ -3632,10 +3655,10 @@ async function findOrCreateUser(openid, profile) {
       const [rows] = await pool.execute('SELECT id, openid, nickname, avatar_url, phone_number, phone_bound_at, created_at, updated_at FROM users WHERE openid = ? LIMIT 1', [openid]);
       if (rows.length) {
         const currentUser = rows[0];
-        if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url)) {
+        if ((nickname && nickname !== currentUser.nickname) || (avatarUrl && avatarUrl !== currentUser.avatar_url) || sessionKey) {
           await pool.execute(
-            'UPDATE users SET nickname = ?, avatar_url = ? WHERE id = ?',
-            [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, currentUser.id]
+            'UPDATE users SET nickname = ?, avatar_url = ?, session_key = COALESCE(NULLIF(?, \'\'), session_key), session_key_updated_at = IF(? = \'\', session_key_updated_at, NOW()) WHERE id = ?',
+            [nickname || currentUser.nickname, avatarUrl || currentUser.avatar_url, sessionKey || '', sessionKey || '', currentUser.id]
           );
           currentUser.nickname = nickname || currentUser.nickname;
           currentUser.avatar_url = avatarUrl || currentUser.avatar_url;
@@ -5857,6 +5880,136 @@ function paymentConfigError() {
   return { success: false, code: 'WECHAT_PAY_NOT_CONFIGURED', message: '微信支付配置中，请使用试用或兑换码功能', missing_config: getMissingPayConfig() };
 }
 
+function virtualPayConfigError(planCode) {
+  return {
+    success: false,
+    code: 'WECHAT_VIRTUAL_PAY_NOT_CONFIGURED',
+    message: '小程序虚拟支付配置中，请使用试用、兑换码或邀请奖励',
+    missing_config: getMissingVirtualPayConfig(planCode)
+  };
+}
+
+function getVirtualPayAppKey() {
+  return virtualPayConfig.env === 0 ? virtualPayConfig.appKey : (virtualPayConfig.sandboxAppKey || virtualPayConfig.appKey);
+}
+
+function getVirtualPayProductId(planCode) {
+  return virtualPayConfig.productIds[String(planCode || '').trim()] || '';
+}
+
+function getMissingVirtualPayConfig(planCode) {
+  return [
+    ['WECHAT_VIRTUAL_PAY_OFFER_ID', virtualPayConfig.offerId],
+    [virtualPayConfig.env === 0 ? 'WECHAT_VIRTUAL_PAY_APP_KEY' : 'WECHAT_VIRTUAL_PAY_SANDBOX_APP_KEY', getVirtualPayAppKey()],
+    [`WECHAT_VIRTUAL_PAY_PRODUCT_${String(planCode || '').toUpperCase()}`, getVirtualPayProductId(planCode)]
+  ].filter(([, value]) => !value).map(([key]) => key);
+}
+
+function isVirtualPayConfigured(planCode) {
+  return getMissingVirtualPayConfig(planCode).length === 0;
+}
+
+function buildVirtualPayOutTradeNo() {
+  return `VP${Date.now()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+}
+
+function hmacSha256Hex(key, value) {
+  return crypto.createHmac('sha256', key).update(value).digest('hex');
+}
+
+function yuanToFen(priceYuan) {
+  return Math.round(Number(priceYuan || 0));
+}
+
+function verifyWechatMessagePushSignature(query) {
+  if (!wechatMessagePushConfig.token) {
+    return true;
+  }
+  const signature = String((query && query.signature) || '');
+  const timestamp = String((query && query.timestamp) || '');
+  const nonce = String((query && query.nonce) || '');
+  if (!signature || !timestamp || !nonce) {
+    return false;
+  }
+  const expected = crypto.createHash('sha1')
+    .update([wechatMessagePushConfig.token, timestamp, nonce].sort().join(''))
+    .digest('hex');
+  return expected === signature;
+}
+
+function parseWechatMessagePayload(req) {
+  if (!req.body) {
+    return {};
+  }
+  if (typeof req.body === 'object') {
+    return req.body;
+  }
+  const rawBody = String(req.body || '').trim();
+  if (!rawBody) {
+    return {};
+  }
+  if (rawBody[0] === '{') {
+    return JSON.parse(rawBody);
+  }
+  return parseSimpleXml(rawBody);
+}
+
+function parseSimpleXml(xmlText) {
+  const result = {};
+  String(xmlText || '').replace(/<([A-Za-z0-9_]+)>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))<\/\1>/g, (match, key, cdataValue, textValue) => {
+    if (key !== 'xml') {
+      result[key] = cdataValue !== undefined ? cdataValue : textValue;
+    }
+    return match;
+  });
+  return result;
+}
+
+function getVirtualPayOrderNo(payload) {
+  return payload.OutTradeNo || payload.outTradeNo || payload.out_trade_no || payload.order_no || payload.attach || '';
+}
+
+function getVirtualPayTransactionId(payload) {
+  const payInfo = payload.WeChatPayInfo || payload.weChatPayInfo || payload.pay_info || {};
+  return payload.TransactionId || payload.transactionId || payload.transaction_id || payInfo.TransactionId || payInfo.transactionId || payInfo.transaction_id || '';
+}
+
+function getVirtualPayEnv(payload) {
+  const value = payload.Env !== undefined ? payload.Env : payload.env;
+  return value === undefined || value === '' ? null : Number(value);
+}
+
+function getVirtualPayGoodsInfo(payload) {
+  return payload.GoodsInfo || payload.goodsInfo || payload.goods_info || {};
+}
+
+function getVirtualPayProductIdFromPayload(payload) {
+  const goodsInfo = getVirtualPayGoodsInfo(payload);
+  return String(payload.ProductId || payload.productId || payload.product_id || goodsInfo.ProductId || goodsInfo.productId || goodsInfo.product_id || '');
+}
+
+function getVirtualPayPriceFromPayload(payload) {
+  const goodsInfo = getVirtualPayGoodsInfo(payload);
+  const value = payload.GoodsPrice || payload.goodsPrice || payload.goods_price || goodsInfo.GoodsPrice || goodsInfo.goodsPrice || goodsInfo.OrigPrice || goodsInfo.origPrice || goodsInfo.orig_price;
+  return value === undefined || value === '' ? null : Number(value);
+}
+
+function assertVirtualPayDeliveryMatchesOrder(payload, order) {
+  const env = getVirtualPayEnv(payload);
+  if (env !== null && env !== virtualPayConfig.env) {
+    throw new Error(`虚拟支付环境不匹配: ${env}`);
+  }
+  const productId = getVirtualPayProductIdFromPayload(payload);
+  const expectedProductId = getVirtualPayProductId(order.plan_code);
+  if (productId && expectedProductId && productId !== expectedProductId) {
+    throw new Error(`虚拟支付商品不匹配: ${productId}`);
+  }
+  const price = getVirtualPayPriceFromPayload(payload);
+  if (price !== null && price !== yuanToFen(order.amount)) {
+    throw new Error(`虚拟支付金额不匹配: ${price}`);
+  }
+}
+
 function getMissingPayConfig() {
   return [
     ['WECHAT_APPID', wxPayConfig.appid],
@@ -5895,6 +6048,115 @@ async function createPaymentOrderHandler(req, res) {
     [req.user.userId, planCode, orderNo, plan.price_yuan, 'pending', autoRenew]
   );
   res.json({ success: true, data: { success: true, order_no: orderNo, amount: plan.price_yuan, plan_name: plan.name, auto_renew: autoRenew === 1 } });
+}
+
+async function virtualOrderHandler(req, res) {
+  const planCode = req.body && req.body.plan_code;
+  if (!planCode) {
+    res.status(400).json({ success: false, message: '请选择套餐' });
+    return;
+  }
+  if (!isVirtualPayConfigured(planCode)) {
+    res.status(503).json(virtualPayConfigError(planCode));
+    return;
+  }
+
+  const [plans] = await pool.execute('SELECT * FROM plans WHERE code = ? AND is_active = 1', [planCode]);
+  if (!plans.length) {
+    res.status(400).json({ success: false, message: '套餐不存在' });
+    return;
+  }
+  const [users] = await pool.execute('SELECT session_key FROM users WHERE id = ? LIMIT 1', [req.user.userId]);
+  const sessionKey = users[0] && users[0].session_key;
+  if (!sessionKey) {
+    res.status(401).json({ success: false, code: 'WECHAT_SESSION_REQUIRED', message: '请重新进入小程序后再发起支付' });
+    return;
+  }
+
+  const plan = plans[0];
+  const orderNo = buildVirtualPayOutTradeNo();
+  const signPayload = {
+    offerId: virtualPayConfig.offerId,
+    buyQuantity: 1,
+    env: virtualPayConfig.env,
+    currencyType: 'CNY',
+    productId: getVirtualPayProductId(planCode),
+    goodsPrice: yuanToFen(plan.price_yuan),
+    outTradeNo: orderNo,
+    attach: orderNo
+  };
+  const signData = JSON.stringify(signPayload);
+  const paySig = hmacSha256Hex(getVirtualPayAppKey(), `requestVirtualPayment&${signData}`);
+  const signature = hmacSha256Hex(sessionKey, signData);
+
+  await pool.execute(
+    'INSERT INTO payment_orders (user_id, plan_code, order_no, amount, status, auto_renew) VALUES (?, ?, ?, ?, ?, ?)',
+    [req.user.userId, planCode, orderNo, Number(plan.price_yuan || 0), 'pending', req.body.auto_renew === false ? 0 : 1]
+  );
+
+  res.json({
+    success: true,
+    data: {
+      success: true,
+      order_no: orderNo,
+      amount: Number(plan.price_yuan || 0),
+      plan_name: plan.name,
+      mode: virtualPayConfig.mode,
+      signData,
+      paySig,
+      signature
+    }
+  });
+}
+
+async function wechatMessagePushHandler(req, res) {
+  if (!verifyWechatMessagePushSignature(req.query || {})) {
+    res.status(403).send('signature invalid');
+    return;
+  }
+  if (req.method === 'GET') {
+    res.type('text/plain').send(String((req.query && req.query.echostr) || ''));
+    return;
+  }
+
+  const payload = parseWechatMessagePayload(req);
+  const eventName = payload.Event || payload.event || '';
+  if (eventName === 'xpay_goods_deliver_notify') {
+    await handleVirtualPayGoodsDeliver(payload);
+  }
+  res.type('text/plain').send('success');
+}
+
+async function handleVirtualPayGoodsDeliver(payload) {
+  const orderNo = getVirtualPayOrderNo(payload);
+  if (!orderNo) {
+    throw new Error('虚拟支付发货通知缺少订单号');
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [orders] = await connection.execute('SELECT * FROM payment_orders WHERE order_no = ? FOR UPDATE', [orderNo]);
+    if (!orders.length) {
+      await connection.rollback();
+      throw new Error(`虚拟支付订单不存在: ${orderNo}`);
+    }
+    const order = orders[0];
+    assertVirtualPayDeliveryMatchesOrder(payload, order);
+    if (order.status !== 'paid') {
+      await connection.execute(
+        'UPDATE payment_orders SET status = ?, wx_transaction_id = COALESCE(NULLIF(?, \'\'), wx_transaction_id), paid_at = NOW() WHERE order_no = ?',
+        ['paid', getVirtualPayTransactionId(payload), orderNo]
+      );
+      await activateSubscription(connection, order.user_id, order.plan_code, orderNo, order.auto_renew === 1, 'wx_virtual_pay');
+    }
+    await connection.commit();
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
 async function unifiedOrderHandler(req, res) {
@@ -5965,7 +6227,7 @@ async function paymentNotifyHandler(req, res) {
     const order = orders[0];
     if (order.status !== 'paid') {
       await connection.execute('UPDATE payment_orders SET status = ?, wx_transaction_id = ?, paid_at = NOW() WHERE order_no = ?', ['paid', transactionId, orderNo]);
-      await activateSubscription(connection, order.user_id, order.plan_code, orderNo, order.auto_renew === 1);
+      await activateSubscription(connection, order.user_id, order.plan_code, orderNo, order.auto_renew === 1, 'wxpay');
     }
     await connection.commit();
     res.json({ code: 'SUCCESS', message: '成功' });
@@ -5977,7 +6239,7 @@ async function paymentNotifyHandler(req, res) {
   }
 }
 
-async function activateSubscription(connection, userId, planCode, orderNo, autoRenew) {
+async function activateSubscription(connection, userId, planCode, orderNo, autoRenew, payMethod) {
   const [plans] = await connection.execute('SELECT * FROM plans WHERE code = ? AND is_active = 1', [planCode]);
   if (!plans.length) {
     throw new Error('套餐不存在');
@@ -5985,7 +6247,7 @@ async function activateSubscription(connection, userId, planCode, orderNo, autoR
   const endDate = new Date(Date.now() + plans[0].duration_days * 86400000);
   await connection.execute(
     'INSERT INTO subscriptions (user_id, plan_code, status, start_date, end_date, auto_renew, pay_method, order_no) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?)',
-    [userId, planCode, 'active', endDate, autoRenew ? 1 : 0, 'wxpay', orderNo]
+    [userId, planCode, 'active', endDate, autoRenew ? 1 : 0, payMethod || 'wxpay', orderNo]
   );
   await connection.execute(
     `INSERT INTO user_memberships (user_id, current_plan, current_end_date, membership_type, status, auto_renew)
@@ -6567,12 +6829,16 @@ async function ensureProductionTables() {
       openid VARCHAR(128) NOT NULL UNIQUE,
       nickname VARCHAR(255),
       avatar_url TEXT,
+      session_key VARCHAR(255) DEFAULT NULL,
+      session_key_updated_at DATETIME NULL,
       phone_number VARCHAR(32) DEFAULT NULL,
       phone_bound_at DATETIME NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await ensureColumnExists('users', 'session_key', 'VARCHAR(255) DEFAULT NULL');
+  await ensureColumnExists('users', 'session_key_updated_at', 'DATETIME NULL');
   await ensureColumnExists('users', 'phone_number', 'VARCHAR(32) DEFAULT NULL');
   await ensureColumnExists('users', 'phone_bound_at', 'DATETIME NULL');
   await ensureIndexExists('users', 'uniq_users_phone_number', 'UNIQUE KEY uniq_users_phone_number (phone_number)');
