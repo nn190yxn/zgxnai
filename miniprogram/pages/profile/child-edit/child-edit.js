@@ -23,6 +23,7 @@ Page({
       { value: 'female', label: '女' }
     ],
     tagOptions: ['活泼好动', '内向安静', '喜欢运动', '喜欢阅读', '挑食', '睡眠不好', '过敏体质', '早产'],
+    tagItems: [],
     selectedTags: [],
     maxTags: 5,
     errors: {},
@@ -37,6 +38,7 @@ Page({
     var that = this;
     that.setData({
       today: that.getToday(),
+      tagItems: that.buildTagItems([]),
       formData: Object.assign({}, that.data.formData)
     });
     if (options.id) {
@@ -95,6 +97,7 @@ Page({
           tags: cachedTags
         },
         selectedTags: cachedTags,
+        tagItems: that.buildTagItems(cachedTags),
         loading: false
       });
     }
@@ -132,6 +135,7 @@ Page({
           tags: childTags
         },
         selectedTags: childTags,
+        tagItems: that.buildTagItems(childTags),
         loading: false
       });
     }).catch(function(err) {
@@ -171,6 +175,16 @@ Page({
     this.setData({ formData: nextFormData });
   },
 
+  buildTagItems: function(selectedTags) {
+    var selected = app.normalizeStringArray(selectedTags);
+    return this.data.tagOptions.map(function(tag) {
+      return {
+        name: tag,
+        selected: selected.indexOf(tag) > -1
+      };
+    });
+  },
+
   // 标签选择
   onTagToggle: function(e) {
     var that = this;
@@ -208,6 +222,7 @@ Page({
     nextFormData.tags = selectedTags.slice();
     that.setData({
       selectedTags: selectedTags.slice(),
+      tagItems: that.buildTagItems(selectedTags),
       formData: nextFormData
     });
   },

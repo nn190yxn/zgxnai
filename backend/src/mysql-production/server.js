@@ -709,8 +709,8 @@ async function adminChangePasswordHandler(req, res) {
     res.status(400).json({ success: false, message: '请输入原密码和新密码' });
     return;
   }
-  if (newPassword.length < 8) {
-    res.status(400).json({ success: false, message: '新密码至少 8 位' });
+  if (newPassword.length < 6) {
+    res.status(400).json({ success: false, message: '新密码至少 6 位' });
     return;
   }
 
@@ -883,7 +883,7 @@ async function adminDashboardOverviewHandler(req, res) {
   );
   const [segmentRows] = await pool.execute(
     `SELECT
-       SUM(CASE WHEN COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 199 OR COALESCE(payments.paid_order_count, 0) >= 2) THEN 1 ELSE 0 END) AS high_value_paid_users,
+       SUM(CASE WHEN COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 19900 OR COALESCE(payments.paid_order_count, 0) >= 2) THEN 1 ELSE 0 END) AS high_value_paid_users,
        SUM(CASE WHEN memberships.current_end_date IS NOT NULL AND memberships.current_end_date >= NOW() AND memberships.current_end_date < DATE_ADD(NOW(), INTERVAL 7 DAY) AND COALESCE(memberships.auto_renew, 0) = 0 THEN 1 ELSE 0 END) AS churn_risk_users,
        SUM(CASE WHEN COALESCE(payments.paid_order_count, 0) > 0 AND COALESCE(activity.active_14d, 0) = 0 THEN 1 ELSE 0 END) AS paid_low_activity_users,
        SUM(CASE WHEN COALESCE(activity.active_14d, 0) = 1 AND COALESCE(payments.paid_order_count, 0) = 0 THEN 1 ELSE 0 END) AS active_unpaid_users,
@@ -929,7 +929,13 @@ async function adminDashboardOverviewHandler(req, res) {
   const familiesWithChildren = Number(families.families_with_children || 0);
   const totalChildren = Number(families.total_children || 0);
   const paidOrderCount = Number(revenue.paid_order_count || 0);
-  const totalRevenue = Number(revenue.total_revenue || 0);
+  const totalRevenue = fenToYuan(revenue.total_revenue);
+  const todayRevenue = fenToYuan(revenue.today_revenue);
+  const displayRevenue = {
+    ...revenue,
+    total_revenue: totalRevenue,
+    today_revenue: todayRevenue
+  };
   const funnel = funnelRows[0] || {};
   const lifecycle = lifecycleRows[0] || {};
   const segments = segmentRows[0] || {};
@@ -949,7 +955,7 @@ async function adminDashboardOverviewHandler(req, res) {
     data: {
       users,
       memberships,
-      revenue,
+      revenue: displayRevenue,
       family: {
         total_children: totalChildren,
         families_with_children: familiesWithChildren,
@@ -1049,14 +1055,18 @@ function formatAgeFeatureRows(rows) {
   const featureLabelMap = {
     assessment: '成长测评',
     ai_chat: 'AI 问答',
-    membership: '会员页',
+    membership: '会员中心',
     nutrition_recipe: '营养食谱',
     nutrition: '营养模块',
     parenting: '家长知识',
-    knowledge: '知识卡片',
+    knowledge: '知识内容',
     reading_tasks: '阅读任务',
     education: '能力成长',
     share: '分享传播',
+    daily_guidance: '每日指导',
+    scene_search: '场景搜索',
+    growth_record: '成长记录',
+    weekly_summary: '周报总结',
     unknown: '未标记功能'
   };
   const grouped = new Map();
@@ -1107,7 +1117,7 @@ function getUserSegmentDefinitions() {
       label: '高价值付费用户',
       description: '累计支付金额较高或已支付 2 单及以上，适合重点维系和转介绍。',
       countField: 'high_value_paid_users',
-      sql: "COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 199 OR COALESCE(payments.paid_order_count, 0) >= 2)",
+      sql: "COALESCE(payments.paid_order_count, 0) > 0 AND (COALESCE(payments.total_paid_amount, 0) >= 19900 OR COALESCE(payments.paid_order_count, 0) >= 2)",
       orderBy: 'payments.total_paid_amount DESC, payments.paid_order_count DESC, COALESCE(activity.last_active_at, u.created_at) DESC, u.id DESC'
     },
     {
@@ -1152,16 +1162,67 @@ function getUserSegmentDefinition(segmentKey) {
 function buildFeatureKeySql(alias) {
   const prefix = alias ? `${alias}.` : '';
   return `CASE
+    WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IN ('membership_center', 'membership_touchpoint') THEN 'membership'
+    WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IN ('daily_guidance') THEN 'daily_guidance'
+    WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IN ('scene_search') THEN 'scene_search'
     WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IS NOT NULL THEN JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key'))
-    WHEN ${prefix}event_type LIKE 'task_%' OR ${prefix}event_type = 'retell_complete' THEN 'reading_tasks'
+    WHEN ${prefix}event_type LIKE 'task_%' OR ${prefix}event_type IN ('retell_complete', 'path_day_complete', 'path_dropout') THEN 'reading_tasks'
     WHEN ${prefix}event_type LIKE 'ai_chat_%' THEN 'ai_chat'
-    WHEN ${prefix}event_type LIKE 'assessment_%' THEN 'assessment'
+    WHEN ${prefix}event_type LIKE 'assessment_%' OR ${prefix}event_type = 'output_submit' THEN 'assessment'
     WHEN ${prefix}event_type LIKE 'recipe_%' THEN 'nutrition_recipe'
     WHEN ${prefix}event_type LIKE 'article_%' OR ${prefix}event_type LIKE 'knowledge_%' THEN 'knowledge'
     WHEN ${prefix}event_type LIKE 'membership_%' OR ${prefix}event_type LIKE 'payment_%' THEN 'membership'
     WHEN ${prefix}event_type LIKE 'share_%' THEN 'share'
+    WHEN ${prefix}event_type LIKE 'daily_plan_%' THEN 'daily_guidance'
+    WHEN ${prefix}event_type LIKE 'scene_search_%' THEN 'scene_search'
+    WHEN ${prefix}event_type LIKE 'growth_record_%' THEN 'growth_record'
+    WHEN ${prefix}event_type LIKE 'weekly_summary_%' THEN 'weekly_summary'
     ELSE NULL
   END`;
+}
+
+function getFeatureLabel(featureKey) {
+  const map = {
+    assessment: '成长测评',
+    ai_chat: 'AI 问答',
+    membership: '会员中心',
+    nutrition_recipe: '营养食谱',
+    nutrition: '营养模块',
+    parenting: '家长知识',
+    knowledge: '知识内容',
+    reading_tasks: '阅读任务',
+    education: '能力成长',
+    share: '分享传播',
+    daily_guidance: '每日指导',
+    scene_search: '场景搜索',
+    growth_record: '成长记录',
+    weekly_summary: '周报总结'
+  };
+  return map[String(featureKey || '')] || '未归类功能';
+}
+
+function getContentTypeLabel(contentType) {
+  const map = {
+    article: '家长文章',
+    recipe: '营养食谱',
+    reading_task: '阅读任务',
+    knowledge_point: '知识卡片',
+    daily_plan: '每日指导'
+  };
+  return map[String(contentType || '')] || '未归类内容';
+}
+
+function buildContentDisplayTitle(row) {
+  const label = getContentTypeLabel(row.content_type);
+  const id = row.content_id ? `#${row.content_id}` : '';
+  const title = String(row.title || '').trim();
+  if (title && id) {
+    return `${title}（${label} ${id}）`;
+  }
+  if (title) {
+    return `${title}（${label}）`;
+  }
+  return id ? `${label} ${id}` : label;
 }
 
 function calculateRatio(part, total) {
@@ -1194,7 +1255,11 @@ async function adminRevenueTrendsHandler(req, res) {
       ORDER BY stat_date ASC`,
     [range.startDate, range.endDate]
   );
-  res.json({ success: true, data: { range, items: rows } });
+  const items = rows.map((row) => ({
+    ...row,
+    revenue_amount: fenToYuan(row.revenue_amount)
+  }));
+  res.json({ success: true, data: { range, items } });
 }
 
 async function adminFeatureRankingHandler(req, res) {
@@ -1215,7 +1280,11 @@ async function adminFeatureRankingHandler(req, res) {
       LIMIT ${limit}`,
     [range.startDate, range.endDate]
   );
-  res.json({ success: true, data: { range, items: rows } });
+  const items = rows.map((row) => ({
+    ...row,
+    feature_label: getFeatureLabel(row.feature_key)
+  }));
+  res.json({ success: true, data: { range, items } });
 }
 
 async function adminContentRankingHandler(req, res) {
@@ -1244,7 +1313,12 @@ async function adminContentRankingHandler(req, res) {
       LIMIT ${limit}`,
     params
   );
-  res.json({ success: true, data: { range, content_type: contentType || null, items: rows } });
+  const items = rows.map((row) => ({
+    ...row,
+    content_type_label: getContentTypeLabel(row.content_type),
+    display_title: buildContentDisplayTitle(row)
+  }));
+  res.json({ success: true, data: { range, content_type: contentType || null, items } });
 }
 
 async function adminWeeklyInsightsHandler(req, res) {
@@ -1335,14 +1409,18 @@ function buildWeeklyInsightCards(featureRows, contentRows, contentSummary, lifec
   const featureLabels = {
     assessment: '成长测评',
     ai_chat: 'AI 问答',
-    membership: '会员页',
+    membership: '会员中心',
     nutrition_recipe: '营养食谱',
     nutrition: '营养模块',
     parenting: '家长知识',
-    knowledge: '知识卡片',
+    knowledge: '知识内容',
     reading_tasks: '阅读任务',
     education: '能力成长',
-    share: '分享传播'
+    share: '分享传播',
+    daily_guidance: '每日指导',
+    scene_search: '场景搜索',
+    growth_record: '成长记录',
+    weekly_summary: '周报总结'
   };
   const featureCandidates = (Array.isArray(featureRows) ? featureRows : [])
     .map((row) => {
@@ -1846,7 +1924,7 @@ async function adminSegmentUsersHandler(req, res) {
         current_plan: row.current_plan || 'free',
         current_end_date: row.current_end_date || null,
         auto_renew: Number(row.auto_renew || 0) === 1,
-        total_paid_amount: Number(row.total_paid_amount || 0),
+        total_paid_amount: fenToYuan(row.total_paid_amount),
         paid_order_count: Number(row.paid_order_count || 0),
         last_active_at: row.last_active_at || null,
         active_event_count_14d: Number(row.active_event_count_14d || 0),
@@ -1864,7 +1942,7 @@ function normalizeBooleanQuery(value) {
 }
 
 function buildSegmentUserSuggestedAction(segmentKey, row) {
-  const amount = Number(row.total_paid_amount || 0);
+  const amount = fenToYuan(row.total_paid_amount);
   const activeEvents = Number(row.active_event_count_14d || 0);
   const autoRenew = Number(row.auto_renew || 0) === 1;
   if (segmentKey === 'high_value_paid') {
@@ -1886,7 +1964,7 @@ function buildSegmentUserSuggestedAction(segmentKey, row) {
 }
 
 function buildSegmentUserActionPriority(segmentKey, row) {
-  const amount = Number(row.total_paid_amount || 0);
+  const amount = fenToYuan(row.total_paid_amount);
   const activeEvents = Number(row.active_event_count_14d || 0);
   if (segmentKey === 'churn_risk') {
     return 'high';
@@ -3876,7 +3954,7 @@ async function membershipInfoHandler(req, res) {
       current_end_date: isActive && membership.current_end_date ? new Date(membership.current_end_date).toISOString() : null,
       is_trial_used: !!membership.is_trial_used,
       promo_enabled: !!UNIFIED_PROMO_CODE,
-      promo_benefit_text: `输入统一兑换码可领取${Math.round(UNIFIED_PROMO_DAYS / 30)}个月会员`,
+      promo_benefit_text: '兑换码兑换区',
       plans
     }
   });
@@ -5998,6 +6076,10 @@ function yuanToFen(priceYuan) {
   return Math.round(Number(priceYuan || 0));
 }
 
+function fenToYuan(priceFen) {
+  return Number((Number(priceFen || 0) / 100).toFixed(2));
+}
+
 function verifyWechatMessagePushSignature(query) {
   if (!wechatMessagePushConfig.token) {
     return true;
@@ -6510,8 +6592,11 @@ async function ensureAdminBootstrapUser() {
   if (!username || !password) {
     return;
   }
-  const [rows] = await pool.execute('SELECT id FROM admin_users WHERE username = ? LIMIT 1', [username]);
+  const [rows] = await pool.execute('SELECT id, password_hash FROM admin_users WHERE username = ? LIMIT 1', [username]);
   if (rows.length) {
+    if (process.env.ADMIN_BOOTSTRAP_RESET_PASSWORD === 'true' && !verifyAdminPassword(password, rows[0].password_hash)) {
+      await pool.execute('UPDATE admin_users SET password_hash = ?, status = ? WHERE id = ?', [hashAdminPassword(password), 'active', rows[0].id]);
+    }
     return;
   }
   await pool.execute(

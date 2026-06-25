@@ -401,8 +401,8 @@ passwordForm.addEventListener('submit', async (event) => {
   const newPassword = String(formData.get('newPassword') || '').trim();
   const confirmPassword = String(formData.get('confirmPassword') || '').trim();
 
-  if (newPassword.length < 8) {
-    setPasswordHint('新密码至少 8 位。', 'status-error');
+  if (newPassword.length < 6) {
+    setPasswordHint('新密码至少 6 位。', 'status-error');
     return;
   }
   if (newPassword !== confirmPassword) {
@@ -455,30 +455,39 @@ demoButton.addEventListener('click', () => {
 });
 
 if (state.token) {
-  loadDashboard().catch((error) => {
-    state.token = '';
-    state.admin = null;
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  updateAuthState();
+  loadDashboard().then(() => {
+    setHint('已恢复登录态，后台数据已加载。', 'status-success');
+  }).catch((error) => {
     updateAuthState();
-    setHint(error.message || '登录态已失效，请重新登录。', 'status-error');
+    setHint(error.message || '后台数据加载失败，请刷新重试。', 'status-error');
   });
 }
 
 async function loadDashboard() {
-  const [me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
-    request('/auth/me'),
-    request('/dashboard/overview'),
-    request('/analytics/users/trends?days=14'),
-    request('/analytics/revenue/trends?days=14'),
-    request('/analytics/features/ranking?days=14&limit=8'),
-    request('/analytics/content/ranking?days=14&limit=8'),
-    request('/insights/weekly?days=7'),
-    request('/content/ops/overview'),
-    request('/content/ops/tips?limit=8'),
-    request('/content/ops/articles?limit=8'),
-    request('/analytics/ai-chat/overview?days=14'),
-    request('/analytics/ai-chat/fallback-queries?days=14&limit=8'),
-    request('/analytics/ai-chat/recent?days=7&limit=8')
+  let me;
+  try {
+    me = await request('/auth/me');
+  } catch (error) {
+    if (isAuthError(error)) {
+      clearAuthState();
+    }
+    throw error;
+  }
+
+  const [overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
+    safeRequest('/dashboard/overview', { users: {}, memberships: {}, revenue: {}, family: {}, operations: {}, membership_structure: [], child_age_distribution: [], child_gender_distribution: [], conversion_funnel: [], membership_lifecycle: {}, age_feature_preferences: [], feature_conversion: [], user_segments: [] }),
+    safeRequest('/analytics/users/trends?days=14', { items: [] }),
+    safeRequest('/analytics/revenue/trends?days=14', { items: [] }),
+    safeRequest('/analytics/features/ranking?days=14&limit=8', { items: [] }),
+    safeRequest('/analytics/content/ranking?days=14&limit=8', { items: [] }),
+    safeRequest('/insights/weekly?days=7', { cards: [] }),
+    safeRequest('/content/ops/overview', {}),
+    safeRequest('/content/ops/tips?limit=8', { items: [] }),
+    safeRequest('/content/ops/articles?limit=8', { items: [] }),
+    safeRequest('/analytics/ai-chat/overview?days=14', {}),
+    safeRequest('/analytics/ai-chat/fallback-queries?days=14&limit=8', { items: [] }),
+    safeRequest('/analytics/ai-chat/recent?days=7', { items: [] })
   ]);
 
   renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent });
@@ -507,8 +516,8 @@ function renderDashboard(snapshot) {
   renderAiChatOverview(snapshot.aiChatOverview || {});
   renderAiFallbackQueries(snapshot.aiFallbackQueries || {});
   renderAiRecent(snapshot.aiRecent || {});
-  renderTrendBars('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
-  renderTrendBars('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
+  renderTrendLine('userTrendChart', snapshot.userTrends.items, 'active_users', 'users');
+  renderTrendLine('revenueTrendChart', snapshot.revenueTrends.items, 'revenue_amount', 'revenue');
   renderTrendTable('userTrendTable', snapshot.userTrends.items, [
     ['日期', 'stat_date'],
     ['新增', 'new_users'],
@@ -524,14 +533,14 @@ function renderDashboard(snapshot) {
     ['新付费', 'new_paid_users']
   ]);
   renderRanking('featureRanking', snapshot.featureRanking.items, (item) => ({
-    title: item.feature_key || '未命名功能',
+    title: item.feature_label || formatFeatureLabel(item.feature_key),
     score: formatNumber(item.view_count),
-    meta: `点击 ${formatNumber(item.click_count)} / 开始 ${formatNumber(item.start_count)} / 转化 ${formatNumber(item.membership_conversion_count)}`
+    meta: `浏览 ${formatNumber(item.view_count)} / 点击 ${formatNumber(item.click_count)} / 开始 ${formatNumber(item.start_count)} / 转化 ${formatNumber(item.membership_conversion_count)}`
   }));
   renderRanking('contentRanking', snapshot.contentRanking.items, (item) => ({
-    title: item.title || `${item.content_type || 'content'}:${item.content_id || '-'}`,
+    title: item.display_title || item.title || buildContentTitle(item),
     score: formatNumber(item.view_count),
-    meta: `${item.content_type || 'unknown'} / 完成 ${formatNumber(item.completion_count)} / 收藏 ${formatNumber(item.favorite_count)}`
+    meta: `${item.content_type_label || formatContentTypeLabel(item.content_type)} / 完成 ${formatNumber(item.completion_count)} / 收藏 ${formatNumber(item.favorite_count)}`
   }));
 }
 
@@ -549,9 +558,34 @@ async function request(path, options = {}) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.success === false) {
-    throw new Error(payload.message || `请求失败：${response.status}`);
+    const error = new Error(payload.message || `请求失败：${response.status}`);
+    error.status = response.status;
+    error.code = payload.code || '';
+    throw error;
   }
   return payload.data;
+}
+
+async function safeRequest(path, fallback) {
+  try {
+    return await request(path);
+  } catch (error) {
+    if (isAuthError(error)) {
+      throw error;
+    }
+    return fallback;
+  }
+}
+
+function isAuthError(error) {
+  return error && (error.status === 401 || error.status === 403 || error.code === 'ADMIN_TOKEN_EXPIRED');
+}
+
+function clearAuthState() {
+  state.token = '';
+  state.admin = null;
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  updateAuthState();
 }
 
 function renderOverview(overview) {
@@ -929,28 +963,64 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
   });
 }
 
-function renderTrendBars(containerId, items, valueKey, tone) {
+function renderTrendLine(containerId, items, valueKey, tone) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前区间暂无聚合数据，请先执行 admin:stats。</div>';
+    container.innerHTML = '<div class="empty-state">当前区间暂无聚合数据。请稍后刷新或重新生成运营统计。</div>';
     return;
   }
-  const maxValue = items.reduce((max, item) => Math.max(max, Number(item[valueKey] || 0)), 0) || 1;
-  items.forEach((item) => {
-    const column = document.createElement('div');
-    column.className = 'bar-column';
-    const value = Number(item[valueKey] || 0);
-    const height = Math.max(8, Math.round((value / maxValue) * 120));
-    column.innerHTML = `
-      <span class="bar-value">${formatCompact(value)}</span>
-      <div class="bar-track">
-        <div class="bar-fill ${tone}" style="height:${height}px"></div>
-      </div>
-      <span class="bar-label">${String(item.stat_date || '').slice(5)}</span>
-    `;
-    container.appendChild(column);
+  const values = items.map((item) => Number(item[valueKey] || 0));
+  const maxValue = Math.max(...values, 1);
+  const minValue = Math.min(...values, 0);
+  const width = 520;
+  const height = 180;
+  const padding = 28;
+  const drawableWidth = width - padding * 2;
+  const drawableHeight = height - padding * 2;
+  const range = Math.max(1, maxValue - minValue);
+  const points = items.map((item, index) => {
+    const x = padding + (items.length === 1 ? drawableWidth / 2 : (index / (items.length - 1)) * drawableWidth);
+    const y = padding + drawableHeight - ((Number(item[valueKey] || 0) - minValue) / range) * drawableHeight;
+    return { x, y, value: Number(item[valueKey] || 0), label: formatTrendDate(item.stat_date) };
   });
+  const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+  const labelStep = Math.max(1, Math.ceil(points.length / 3));
+  const pointNodes = points.map((point, index) => {
+    const showLabel = index === 0 || index === points.length - 1 || index % labelStep === 0;
+    return `
+      <g>
+        <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4" class="line-dot ${tone}"></circle>
+        ${showLabel ? `<text x="${point.x.toFixed(1)}" y="${height - 6}" text-anchor="middle" class="line-label">${escapeHtml(point.label)}</text>` : ''}
+      </g>
+    `;
+  }).join('');
+  container.innerHTML = `
+    <svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img">
+      <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" class="line-axis"></line>
+      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" class="line-axis"></line>
+      <polyline points="${polyline}" class="line-path ${tone}"></polyline>
+      ${pointNodes}
+    </svg>
+    <div class="line-summary">
+      <span>最高 ${formatCompact(maxValue)}</span>
+      <span>最低 ${formatCompact(minValue)}</span>
+      <span>最新 ${formatCompact(values[values.length - 1] || 0)}</span>
+    </div>
+  `;
+}
+
+function formatTrendDate(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/^(?:\d{4}-)?(\d{2}-\d{2})/);
+  if (match) {
+    return match[1];
+  }
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  return text.slice(0, 5);
 }
 
 function renderTrendTable(containerId, items, columns) {
@@ -961,16 +1031,23 @@ function renderTrendTable(containerId, items, columns) {
   }
   const header = columns.map(([label]) => `<th>${label}</th>`).join('');
   const body = items
-    .map((item) => `<tr>${columns.map(([, key]) => `<td>${escapeHtml(String(item[key] ?? '-'))}</td>`).join('')}</tr>`)
+    .map((item) => `<tr>${columns.map(([, key]) => `<td>${escapeHtml(String(formatTrendCell(item, key)))}</td>`).join('')}</tr>`)
     .join('');
   container.innerHTML = `<table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function formatTrendCell(item, key) {
+  if (key === 'stat_date') {
+    return formatTrendDate(item[key]);
+  }
+  return item[key] ?? '-';
 }
 
 function renderRanking(containerId, items, mapper) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前区间暂无排行数据，请补齐埋点并执行 admin:stats。</div>';
+    container.innerHTML = '<div class="empty-state">当前区间暂无可展示排行。系统会按已采集的浏览、点击、完成和支付事件自动生成。</div>';
     return;
   }
   items.forEach((item, index) => {
@@ -1150,7 +1227,7 @@ function setPasswordHint(message, className) {
 function openPasswordModal() {
   passwordModal.classList.add('open');
   passwordModal.setAttribute('aria-hidden', 'false');
-  setPasswordHint('密码建议不少于 8 位，包含字母和数字。', '');
+  setPasswordHint('密码至少 6 位。', '');
   passwordForm.reset();
   document.getElementById('oldPasswordInput').focus();
 }
@@ -1232,6 +1309,43 @@ function formatContentForm(value) {
     both: '理论+方法'
   };
   return map[String(value || '')] || '待分类';
+}
+
+function formatFeatureLabel(value) {
+  var map = {
+    assessment: '成长测评',
+    ai_chat: 'AI 问答',
+    membership: '会员中心',
+    nutrition_recipe: '营养食谱',
+    nutrition: '营养模块',
+    parenting: '家长知识',
+    knowledge: '知识内容',
+    reading_tasks: '阅读任务',
+    education: '能力成长',
+    share: '分享传播',
+    daily_guidance: '每日指导',
+    scene_search: '场景搜索',
+    growth_record: '成长记录',
+    weekly_summary: '周报总结',
+    unknown: '未归类功能'
+  };
+  return map[String(value || '')] || String(value || '未归类功能');
+}
+
+function formatContentTypeLabel(value) {
+  var map = {
+    article: '家长文章',
+    recipe: '营养食谱',
+    reading_task: '阅读任务',
+    knowledge_point: '知识卡片',
+    daily_plan: '每日指导'
+  };
+  return map[String(value || '')] || '未归类内容';
+}
+
+function buildContentTitle(item) {
+  var label = formatContentTypeLabel(item.content_type);
+  return item.content_id ? `${label} ${item.content_id}` : label;
 }
 
 function escapeHtml(value) {

@@ -30,7 +30,7 @@ Page({
     // 兑换码
     promoCode: '',
     promoEnabled: false,
-    promoBenefitText: '输入统一兑换码可领取2个月成长服务',
+    promoBenefitText: '兑换码兑换区',
     premiumFeatures: [
       { key: 'weekly_summary', title: '宝贝每周成长总结', desc: '持续查看记录趋势、计划完成度和下周重点' },
       { key: 'scene_search', title: '育儿场景内容', desc: '把“发脾气、挑食、睡前拖延”直接变成可参考的方法' },
@@ -130,7 +130,7 @@ Page({
       this.setData({
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
-        promoBenefitText: data.promo_benefit_text || '输入统一兑换码可领取2个月成长服务',
+        promoBenefitText: data.promo_benefit_text || '兑换码兑换区',
         displayFeatures: this.buildDisplayFeatures(data)
       });
     }).catch(err => {

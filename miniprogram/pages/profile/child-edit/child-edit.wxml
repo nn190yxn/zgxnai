@@ -92,15 +92,15 @@
       </view>
       
       <view class="tags-container">
-        <view class="tag-item {{selectedTags.indexOf(item) > -1 ? 'selected' : ''}}"
-              wx:for="{{tagOptions}}"
-              wx:key="*this"
+        <view class="tag-item {{item.selected ? 'selected' : ''}}"
+              wx:for="{{tagItems}}"
+              wx:key="name"
               wx:for-item="item"
               wx:for-index="index"
-              data-tag="{{item}}"
+              data-tag="{{item.name}}"
               data-index="{{index}}"
-              catchtap="onTagToggle">
-          <text class="tag-text">{{item}}</text>
+              bindtap="onTagToggle">
+          <text class="tag-text">{{item.name}}</text>
         </view>
       </view>
     </view>

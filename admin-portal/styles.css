@@ -272,47 +272,55 @@ td {
 }
 
 .bars {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
-  align-items: end;
-  gap: 10px;
-  min-height: 180px;
-  padding: 16px 0 10px;
+  min-height: 220px;
+  padding: 8px 0 10px;
 }
 
-.bar-column {
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-}
-
-.bar-track {
+.line-chart {
   width: 100%;
-  min-height: 120px;
-  border-radius: 999px;
-  background: rgba(61, 42, 24, 0.08);
-  display: flex;
-  align-items: end;
-  overflow: hidden;
+  height: 200px;
+  overflow: visible;
 }
 
-.bar-fill {
-  width: 100%;
-  border-radius: 999px;
-  min-height: 8px;
+.line-axis {
+  stroke: rgba(61, 42, 24, 0.12);
+  stroke-width: 1;
 }
 
-.bar-fill.users {
-  background: linear-gradient(180deg, rgba(182, 84, 47, 0.9) 0%, rgba(182, 84, 47, 0.38) 100%);
+.line-path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.bar-fill.revenue {
-  background: linear-gradient(180deg, rgba(47, 122, 120, 0.9) 0%, rgba(47, 122, 120, 0.36) 100%);
+.line-path.users,
+.line-dot.users {
+  stroke: var(--brand);
 }
 
-.bar-label,
-.bar-value {
+.line-path.revenue,
+.line-dot.revenue {
+  stroke: var(--teal);
+}
+
+.line-dot {
+  fill: #fffaf2;
+  stroke-width: 3;
+}
+
+.line-label,
+.line-summary {
   font-size: 12px;
+  fill: var(--muted);
+  color: var(--muted);
+}
+
+.line-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
 }
 
 .table-wrap {
