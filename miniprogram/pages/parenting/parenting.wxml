@@ -46,14 +46,14 @@
     <view class="milestone-cover milestone-cover-placeholder" bindtap="goToMilestone">
       <text class="milestone-cover-emoji">🎯</text>
       <text class="milestone-cover-title">里程碑追踪</text>
-      <text class="milestone-cover-desc">按年龄查看发展重点与家庭训练建议</text>
+      <text class="milestone-cover-desc">看看这个阶段重点练什么</text>
     </view>
     <view class="milestone-entry" bindtap="goToMilestone">
       <view class="milestone-content">
         <text class="milestone-icon">🎯</text>
         <view class="milestone-text">
           <text class="milestone-title">发展里程碑评估</text>
-          <text class="milestone-desc">了解孩子在各年龄段的发展情况</text>
+          <text class="milestone-desc">看看孩子在同龄人里的发展进度</text>
         </view>
       </view>
       <text class="milestone-arrow">></text>
@@ -115,7 +115,7 @@
     <view class="empty-wrap" wx:if="{{!loading && !loadError && latestArticles.length === 0}}">
       <text class="empty-icon">📚</text>
       <text class="empty-text">暂无文章</text>
-      <text class="empty-desc">敬请期待更多精彩内容</text>
+      <text class="empty-desc">我们还在准备新的内容，稍后再来看看</text>
     </view>
     
     <!-- 文章列表 -->
@@ -154,12 +154,12 @@
     <!-- 加载更多 -->
     <view class="load-more" wx:if="{{latestArticles.length > 0}}">
       <text wx:if="{{loading}}">加载中...</text>
-      <text wx:if="{{!loading && !hasMore}}">没有更多了</text>
+      <text wx:if="{{!loading && !hasMore}}">已经看完啦，换个分类试试</text>
     </view>
   </view>
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">更多育儿知识，持续更新中</text>
+    <text class="footer-text">我们会继续更新，把更多育儿方法带给你</text>
   </view>
 </view>

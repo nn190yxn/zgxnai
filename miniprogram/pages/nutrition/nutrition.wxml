@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">营养中心</text>
-    <text class="page-subtitle">科学饮食，助力孩子健康成长</text>
+    <text class="page-subtitle">帮孩子吃得对，生长发育更有底</text>
   </view>
 
   <!-- 搜索入口 -->
@@ -25,7 +25,7 @@
     <view class="nutrition-cover nutrition-cover-placeholder">
       <text class="nutrition-cover-emoji">🥣</text>
       <text class="nutrition-cover-title">应季搭配</text>
-      <text class="nutrition-cover-desc">轻量营养建议，帮助家长快速选择</text>
+      <text class="nutrition-cover-desc">按季节给你搭配，不用每天纠结做什么</text>
     </view>
   </view>
 
@@ -109,7 +109,7 @@
   <view class="section" wx:if="{{nutritionAdviceList.length > 0}}">
     <view class="section-header">
       <text class="section-title">营养建议</text>
-      <text class="section-tag">更贴近年龄段</text>
+      <text class="section-tag">适合你家孩子的</text>
     </view>
     <view class="advice-list">
       <view class="advice-card" wx:for="{{nutritionAdviceList}}" wx:key="id">
@@ -192,6 +192,6 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">更多美味食谱，持续更新中</text>
+    <text class="footer-text">我们会继续上新，把更好做的菜带给你</text>
   </view>
 </view>

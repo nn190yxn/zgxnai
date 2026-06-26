@@ -120,6 +120,10 @@ Page({
     if (!this.data.currentChild || !this.data.currentChild.id) {
       return;
     }
+    var pendingNote = String(wx.getStorageSync('pendingGrowthRecordNote') || '').trim();
+    if (pendingNote) {
+      wx.removeStorageSync('pendingGrowthRecordNote');
+    }
     this.setData({ loading: true });
     app.ensureLogin().then(function() {
       return app.request({
@@ -138,10 +142,15 @@ Page({
           sleepStatus: data.sleepStatus || 'stable',
           exerciseStatus: data.exerciseStatus || 'enough',
           socialStatus: data.socialStatus || 'smooth',
-          noteText: data.noteText || ''
+          noteText: pendingNote || data.noteText || ''
         }
       });
     }).catch(function() {
+      if (pendingNote) {
+        var form = Object.assign({}, that.data.form);
+        form.noteText = pendingNote;
+        that.setData({ form: form });
+      }
       wx.showToast({ title: '加载失败', icon: 'none' });
     }).finally(function() {
       that.setData({ loading: false });

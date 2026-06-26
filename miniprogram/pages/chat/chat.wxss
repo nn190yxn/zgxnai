@@ -374,6 +374,49 @@
   margin-right: 12rpx;
 }
 
+.answer-next-actions {
+  margin-top: 22rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid var(--border);
+}
+
+.answer-next-title {
+  display: block;
+  margin-bottom: 14rpx;
+  font-size: 23rpx;
+  color: #7A6660;
+  font-weight: 700;
+}
+
+.answer-next-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.answer-next-btn {
+  flex: 1;
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 10rpx;
+  border-radius: 14rpx;
+  background: #F8FAFC;
+  color: #334155;
+  border: 1rpx solid #CBD5E1;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.answer-next-btn::after {
+  border: none;
+}
+
+.answer-next-btn.primary {
+  background: #FF6B35;
+  color: #FFFFFF;
+  border-color: #FF6B35;
+}
+
 /* 加载动画 */
 .loading-bubble {
   padding: 32rpx 48rpx;

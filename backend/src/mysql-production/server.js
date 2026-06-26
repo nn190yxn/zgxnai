@@ -1788,6 +1788,7 @@ async function adminAiChatRecentHandler(req, res) {
     `SELECT
        created_at,
        JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.query_text')) AS query_text,
+       JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_summary')) AS answer_summary,
        JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.intent')) AS intent,
        JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.sub_intent')) AS sub_intent,
        JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.answer_source')) AS answer_source,
@@ -1811,6 +1812,7 @@ async function adminAiChatRecentHandler(req, res) {
       items: rows.map((row) => ({
         created_at: row.created_at || null,
         query_text: row.query_text || '',
+        answer_summary: row.answer_summary || '',
         intent: row.intent || '',
         sub_intent: row.sub_intent || '',
         answer_source: row.answer_source || '',
@@ -2248,6 +2250,13 @@ function normalizeChatQuestionSignature(message) {
     .slice(0, 80);
 }
 
+function buildChatAnswerSummary(answer) {
+  return String(answer || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
 async function recordChatAnalyticsEvent(payload) {
   try {
     const message = String(payload.message || '').trim();
@@ -2264,6 +2273,7 @@ async function recordChatAnalyticsEvent(payload) {
       duration_sec: Number((durationMs / 1000).toFixed(2)),
       event_meta: {
         query_text: message.slice(0, 200),
+        answer_summary: buildChatAnswerSummary(payload.answerSummary || payload.answer || ''),
         query_signature: normalizeChatQuestionSignature(message),
         intent: payload.intent || '',
         sub_intent: payload.subIntent || '',
@@ -2299,6 +2309,8 @@ async function chatHandler(req, res) {
     return;
   }
   const startedAt = Date.now();
+  let loggedAgeGroup = '';
+  let loggedAnswerSource = '';
   try {
     const rateLimit = consumeChatRateLimit(getUserId(req));
     if (!rateLimit.allowed) {
@@ -2309,6 +2321,7 @@ async function chatHandler(req, res) {
 
     const chatChildContext = await resolveChatChildContext(req);
     const ageGroup = extractChatAgeGroupFromMessage(message) || chatChildContext.ageGroup;
+    loggedAgeGroup = ageGroup || '';
     const childName = chatChildContext.childName;
     const intent = analyzeChatIntent(message);
     const subIntent = analyzeChatSubIntent(message, intent);
@@ -2318,6 +2331,7 @@ async function chatHandler(req, res) {
     const sessionId = String((req.body && req.body.session_id) || `session_${Date.now()}`);
     if (!ageGroup) {
       const clarificationAnswer = buildChatAgeClarificationAnswer(chatChildContext);
+      loggedAnswerSource = 'age_clarification';
       await recordChatAnalyticsEvent({
         userId: getUserId(req),
         sessionId,
@@ -2330,6 +2344,7 @@ async function chatHandler(req, res) {
         answerSource: 'age_clarification',
         aiStatus: getAIStatus(),
         fallbackReason: 'AGE_REQUIRED',
+        answerSummary: clarificationAnswer,
         structured: null,
         matchedTypes: [],
         references: [],
@@ -2367,6 +2382,7 @@ async function chatHandler(req, res) {
     const answer = normalizeChatAnswerOutput(aiResult.success ? aiResult.answer : fallbackAnswer, riskLevel);
     const aiStatus = getAIStatus();
     const fallbackSource = getChatFallbackSource(references);
+    loggedAnswerSource = aiResult.success ? 'ai' : fallbackSource;
     const matchedTypes = getChatMatchedTypes(references);
 
     const structured = buildStructuredResponse(answer, references, chatAnalysis);
@@ -2383,6 +2399,7 @@ async function chatHandler(req, res) {
       answerSource: aiResult.success ? 'ai' : fallbackSource,
       aiStatus,
       fallbackReason: aiResult.success ? '' : aiResult.code || '',
+      answerSummary: answer,
       structured,
       matchedTypes,
       references,
@@ -2414,8 +2431,8 @@ async function chatHandler(req, res) {
       userId: getUserId(req),
       messageLength: message.length,
       statusCode: res.statusCode,
-      ageGroup: ageGroup || '(missing)',
-      answerSource: aiResult.success ? 'ai' : fallbackSource
+      ageGroup: loggedAgeGroup || '(missing)',
+      answerSource: loggedAnswerSource || '(unknown)'
     });
   }
 }

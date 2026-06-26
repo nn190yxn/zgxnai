@@ -67,7 +67,7 @@
       <text class="task-count">用于表达训练</text>
     </view>
     <view class="recording-card">
-      <text class="recording-tip">读完后用一句话复述要点，可录音回放。</text>
+      <text class="recording-tip">读完后让孩子用自己的话说一遍，录下来听听看。</text>
       <view class="recording-actions">
         <text class="recording-btn" wx:if="{{!isRecording}}" bindtap="startRecording">开始录音</text>
         <text class="recording-btn recording-btn-stop" wx:if="{{isRecording}}" bindtap="stopRecording">停止录音</text>
@@ -191,7 +191,7 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">完成今日任务后可分享打卡文案到朋友圈，邀请家长一起坚持</text>
+    <text class="footer-text">完成任务后可以分享到朋友圈，找其他家长一起坚持</text>
   </view>
 </view>
 

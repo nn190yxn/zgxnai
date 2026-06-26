@@ -28,7 +28,7 @@
       <view class="ai-intro-avatar" style="width:84rpx;height:84rpx;border-radius:42rpx;background:#FFF3ED;color:#FF6B35;font-size:28rpx;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">AI</view>
       <view class="ai-intro-content" style="flex:1;min-width:0;padding-right:12rpx;box-sizing:border-box;overflow:hidden;">
         <text class="ai-intro-title" style="display:block;font-size:34rpx;font-weight:700;line-height:1.4;color:#1B2A1B;margin-bottom:12rpx;">小牛育儿AI助理</text>
-        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">我们基于专业的儿童发展认知体系和超过 100 项育儿知识库，为您提供 AI 育儿咨询服务。您可以输入任何育儿相关问题，AI 将尽力为您解答。</text>
+        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">我基于儿童发展认知体系和育儿知识库，为你提供 AI 育儿咨询。有什么育儿问题直接问我，我会尽力给你回答。</text>
         <view class="ai-intro-hint" style="display:flex;flex-wrap:wrap;gap:12rpx 12rpx;margin-top:20rpx;padding-right:12rpx;box-sizing:border-box;">
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">成长观察与训练问题</text>
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">儿童营养与饮食</text>
@@ -75,6 +75,17 @@
           <view wx:if="{{item.sources && item.sources.length > 0}}" class="sources">
             <text class="sources-label">📚 参考资料：</text>
             <text wx:for="{{item.sources}}" wx:for-item="source" wx:key="*this">{{source}}</text>
+          </view>
+          <view wx:if="{{item.role !== 'user' && !item.isError}}" class="answer-next-actions">
+            <text class="answer-next-title">接下来把建议用起来</text>
+            <view class="answer-next-row">
+              <button class="answer-next-btn primary" bindtap="askForTodaySteps">生成今晚三步</button>
+              <button class="answer-next-btn" bindtap="goToGrowthRecord">记录孩子反应</button>
+            </view>
+            <view class="answer-next-row">
+              <button class="answer-next-btn" bindtap="goToParentingSearch">找相关锦囊</button>
+              <button class="answer-next-btn" bindtap="goToAssessment">做成长观察</button>
+            </view>
           </view>
         </view>
       </view>

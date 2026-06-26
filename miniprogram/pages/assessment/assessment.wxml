@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">成长观察</text>
-    <text class="page-subtitle">用结构化问题了解孩子近期表现</text>
+    <text class="page-subtitle">通过一些问题，帮你看看孩子最近的整体状态</text>
   </view>
 
   <!-- 当前孩子信息 -->
@@ -23,7 +23,7 @@
   <view class="age-filter">
     <view class="age-filter-header">
       <text class="age-filter-title">选择年龄段</text>
-      <text class="age-filter-subtitle">当前显示适合 {{selectedAgeGroup}} 的观察工具</text>
+      <text class="age-filter-subtitle">正在展示适合 {{selectedAgeGroup}} 岁孩子的观察项目</text>
     </view>
     <scroll-view class="age-scroll" scroll-x enable-flex>
       <view class="age-option {{selectedAgeGroup === item.value ? 'active' : ''}}" wx:for="{{ageOptions}}" wx:key="value" data-age="{{item.value}}" bindtap="onAgeFilterTap">
@@ -59,14 +59,14 @@
       </view>
     </block>
     <view class="empty-assessment" wx:if="{{!loadError && filteredAssessmentList.length === 0}}">
-      <text class="empty-title">该年龄段暂无可用观察工具</text>
-      <text class="empty-desc">可切换其他年龄段，或先完善孩子档案后再查看。</text>
+      <text class="empty-title">这个年龄段暂时还没有观察工具</text>
+      <text class="empty-desc">换个年龄段试试，或者先去完善一下孩子档案。</text>
     </view>
   </view>
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">结构化观察工具，帮助您更了解孩子</text>
+    <text class="footer-text">通过科学的问题，帮你了解孩子的成长状态</text>
     <text class="footer-subtext">结果仅供家庭教育参考，如有明显担忧请咨询专业人士</text>
   </view>
 </view>
@@ -82,7 +82,7 @@
     
     <view class="modal-body">
       <view class="intro-section">
-        <text class="intro-label">使用说明</text>
+        <text class="intro-label">怎么用</text>
         <text class="intro-text">{{currentAssessment.desc}}</text>
       </view>
       
@@ -107,9 +107,9 @@
       <view class="intro-tips">
         <text class="tips-title">温馨提示</text>
         <view class="tips-list">
-          <text class="tips-item">• 请在安静环境下完成作答</text>
-          <text class="tips-item">• 根据孩子最近一个月的表现作答</text>
-          <text class="tips-item">• 答题过程中可随时退出保存进度</text>
+          <text class="tips-item">• 找一个安静的时间，大约需要 {{currentAssessment.duration}} 分钟</text>
+          <text class="tips-item">• 回想孩子最近一个月的情况来回答就行</text>
+          <text class="tips-item">• 中间有事可以退出，进度会帮你保存</text>
           <text class="tips-item">• 结果仅供参考，不作为医学或心理诊断依据</text>
         </view>
       </view>

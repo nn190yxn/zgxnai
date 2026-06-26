@@ -302,7 +302,10 @@ function ngrams(text, n) {
 }
 
 async function insertTips(pool, tips) {
-  await pool.query('TRUNCATE TABLE parenting_tips');
+  const [[{ existingCount }]] = await pool.query('SELECT COUNT(*) AS existingCount FROM parenting_tips');
+  if (Number(existingCount || 0) > 0) {
+    throw new Error(`parenting_tips 已有 ${existingCount} 条记录，请先确认备份和清理策略后再导入`);
+  }
   let inserted = 0;
   for (const tip of tips) {
     try {

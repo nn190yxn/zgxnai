@@ -18,13 +18,13 @@
     <view class="auth-card">
       <view class="auth-copy">
         <text class="auth-title">先完成微信登录，再继续孩子档案和成长记录</text>
-        <text class="auth-desc">登录后可以同步孩子资料、保存成长记录，补充手机号后也方便后续服务联系。</text>
+        <text class="auth-desc">登录后你的孩子档案和成长记录就能一直保存着，补充手机号后服务通知也方便。</text>
       </view>
       <button class="auth-primary-btn" wx:if="{{!isLoggedIn}}" bindtap="login">微信一键登录</button>
       <button class="auth-secondary-btn" wx:elif="{{!phoneNumber}}" open-type="getPhoneNumber" bindgetphonenumber="bindPhoneNumber">获取手机号</button>
       <view class="auth-success" wx:else>
         <text class="auth-success-title">登录和手机号绑定都已完成</text>
-        <text class="auth-success-desc">现在可以继续添加孩子档案、查看记录和使用成长服务。</text>
+        <text class="auth-success-desc">接下来添加孩子档案，查看成长记录，就可以使用成长服务了。</text>
       </view>
     </view>
   </view>
@@ -53,7 +53,7 @@
         <view class="child-entry-info">
           <text class="child-entry-title">孩子档案</text>
           <text class="child-entry-desc" wx:if="{{currentChild}}">当前：{{currentChild.name}} {{currentChild.gender === 'male' ? '👦' : currentChild.gender === 'female' ? '👧' : ''}}</text>
-          <text class="child-entry-desc" wx:else>添加孩子信息，获取更精准的建议</text>
+          <text class="child-entry-desc" wx:else>填一下孩子的基本信息，我给你的建议会更准</text>
         </view>
       </view>
       <view class="child-entry-right">

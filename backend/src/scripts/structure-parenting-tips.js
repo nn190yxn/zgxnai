@@ -184,9 +184,10 @@ async function main() {
     let offset = 0;
 
     while (offset < total) {
-      const [rows] = await pool.execute(
-        'SELECT * FROM parenting_tips WHERE is_active = 1 ORDER BY id LIMIT ? OFFSET ?',
-        [batchSize, offset]
+      const safeLimit = Number.parseInt(batchSize, 10);
+      const safeOffset = Number.parseInt(offset, 10);
+      const [rows] = await pool.query(
+        `SELECT * FROM parenting_tips WHERE is_active = 1 ORDER BY id LIMIT ${safeLimit} OFFSET ${safeOffset}`
       );
 
       if (!rows.length) break;

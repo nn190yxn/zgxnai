@@ -83,6 +83,16 @@
       </view>
     </view>
 
+    <view class="practice-section">
+      <text class="practice-eyebrow">读完就行动</text>
+      <text class="practice-title">把这篇内容变成你家今晚的一步</text>
+      <text class="practice-desc">先选一个最容易执行的小动作，今晚试一次，明天再看孩子反应有没有变化。</text>
+      <view class="practice-actions">
+        <view class="practice-btn primary" bindtap="askAiAboutArticle">问 AI 拆成三步</view>
+        <view class="practice-btn secondary" bindtap="recordArticlePractice">记录一次实践</view>
+      </view>
+    </view>
+
     <!-- 关键要点 -->
     <view class="key-points-section" wx:if="{{article.keyPoints && article.keyPoints.length > 0}}">
       <view class="section-header">

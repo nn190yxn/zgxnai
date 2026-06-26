@@ -81,6 +81,12 @@ function classifyArticle(row) {
   return null;
 }
 
+function buildLimitOffsetClause(limit, offset) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 200, 1000));
+  const safeOffset = Math.max(0, Number(offset) || 0);
+  return `LIMIT ${safeLimit} OFFSET ${safeOffset}`;
+}
+
 async function main() {
   loadEnv(path.resolve(__dirname, '../../../.env'));
   loadEnv('/home/ubuntu/niuniu-parenting/.env');
@@ -109,8 +115,7 @@ async function main() {
 
     while (offset < total) {
       const [rows] = await pool.execute(
-        'SELECT id, title, summary, content FROM articles WHERE is_published = 1 ORDER BY id LIMIT ? OFFSET ?',
-        [batchSize, offset]
+        `SELECT id, title, summary, content FROM articles WHERE is_published = 1 ORDER BY id ${buildLimitOffsetClause(batchSize, offset)}`
       );
 
       if (!rows.length) break;

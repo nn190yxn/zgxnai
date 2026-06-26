@@ -70,6 +70,21 @@ Page({
       });
       flushScrollToBottom(this, 150);
     }
+    this.applyPendingQuestion();
+  },
+
+  onShow: function() {
+    this.applyPendingQuestion();
+  },
+
+  applyPendingQuestion: function() {
+    var question = String(wx.getStorageSync('pendingChatQuestion') || '').trim();
+    if (!question) {
+      return;
+    }
+    wx.removeStorageSync('pendingChatQuestion');
+    this.setData({ inputValue: question });
+    wx.showToast({ title: '已带入问题，可直接发送', icon: 'none' });
   },
 
   onHide: function() {
@@ -238,6 +253,23 @@ Page({
     this.sendMessage();
   },
 
+  askForTodaySteps: function() {
+    if (this.data.loading) {
+      return;
+    }
+    var messages = this.data.messages || [];
+    var lastAnswer = '';
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role !== 'user' && !messages[i].isError && messages[i].content) {
+        lastAnswer = String(messages[i].content).trim();
+        break;
+      }
+    }
+    var context = lastAnswer ? ('这是刚才的建议：' + lastAnswer.slice(0, 600) + '\n\n') : '';
+    this.setData({ inputValue: context + '请把刚才的建议整理成今晚可以执行的三步，每一步都要简单、可观察。' });
+    this.sendMessage();
+  },
+
   onEditVoiceResult: function() {
     this.setData({
       inputValue: this.data.voiceResultText,
@@ -386,6 +418,24 @@ Page({
   goToParenting: function() {
     wx.navigateTo({
       url: '/pages/parenting/parenting',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  goToParentingSearch: function() {
+    wx.navigateTo({
+      url: '/pages/parenting/search/search',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  goToGrowthRecord: function() {
+    wx.navigateTo({
+      url: '/pages/growth-record/index',
       fail: function() {
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }

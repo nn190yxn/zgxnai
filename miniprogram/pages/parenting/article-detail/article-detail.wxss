@@ -441,6 +441,64 @@
   white-space: nowrap;
 }
 
+.practice-section {
+  margin: 20rpx 0;
+  padding: 32rpx;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+  border-top: 1rpx solid #FAD7C5;
+  border-bottom: 1rpx solid #FAD7C5;
+}
+
+.practice-eyebrow {
+  display: block;
+  font-size: 22rpx;
+  color: #D85C26;
+  font-weight: 800;
+  margin-bottom: 10rpx;
+}
+
+.practice-title {
+  display: block;
+  font-size: 34rpx;
+  line-height: 1.4;
+  color: #24312A;
+  font-weight: 800;
+}
+
+.practice-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: #765B50;
+}
+
+.practice-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.practice-btn {
+  flex: 1;
+  padding: 18rpx 12rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.practice-btn.primary {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.practice-btn.secondary {
+  background: #FFFFFF;
+  color: #D85C26;
+  border: 2rpx solid #FFD6C2;
+}
+
 /* 底部操作栏 */
 .bottom-bar {
   position: fixed;

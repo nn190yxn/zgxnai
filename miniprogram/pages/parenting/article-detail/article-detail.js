@@ -584,6 +584,37 @@ Page({
     });
   },
 
+  askAiAboutArticle: function() {
+    var article = this.data.article || {};
+    var title = article.title || '这篇育儿内容';
+    wx.setStorageSync('pendingChatQuestion', '我刚看完《' + title + '》，请结合我家孩子情况，拆成今晚可以执行的三步。');
+    app.trackKbEvent(this.buildArticleTrackPayload({
+      event_type: 'article_ai_followup',
+      event_meta: { action: 'ask_ai_steps' }
+    }));
+    wx.switchTab({
+      url: '/pages/chat/chat',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
+  recordArticlePractice: function() {
+    var article = this.data.article || {};
+    wx.setStorageSync('pendingGrowthRecordNote', '今天尝试了《' + (article.title || '育儿文章') + '》里的一个方法：');
+    app.trackKbEvent(this.buildArticleTrackPayload({
+      event_type: 'article_practice_record_click',
+      event_meta: { action: 'open_growth_record' }
+    }));
+    wx.navigateTo({
+      url: '/pages/growth-record/index',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
   // 下拉刷新
   onPullDownRefresh: function() {
     if (this.data.loading) {

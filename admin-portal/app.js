@@ -314,9 +314,9 @@ const demoSnapshot = {
   },
   aiRecent: {
     items: [
-      { created_at: '2026-06-20 11:36:00', query_text: '孩子晚饭老是吃两口就跑', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'article,tip', structured_available: true, reference_count: 3 },
-      { created_at: '2026-06-20 11:28:00', query_text: '最近总是睡前哭闹不肯洗漱', intent: 'parenting', sub_intent: 'sleep_bedtime', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'scene,tip', structured_available: true, reference_count: 2 },
-      { created_at: '2026-06-20 11:20:00', query_text: '我家孩子怎么总是不吃青菜', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'ai', fallback_reason: '', matched_type_text: 'article,tip', structured_available: true, reference_count: 4 }
+      { created_at: '2026-06-20 11:36:00', query_text: '孩子晚饭老是吃两口就跑', answer_summary: '可以先固定晚饭流程，把饭量拆小，减少追喂和临时加餐。', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'article,tip', structured_available: true, reference_count: 3 },
+      { created_at: '2026-06-20 11:28:00', query_text: '最近总是睡前哭闹不肯洗漱', answer_summary: '先把洗漱变成固定顺序，用预告和选择降低睡前对抗。', intent: 'parenting', sub_intent: 'sleep_bedtime', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'scene,tip', structured_available: true, reference_count: 2 },
+      { created_at: '2026-06-20 11:20:00', query_text: '我家孩子怎么总是不吃青菜', answer_summary: '先保留孩子愿意吃的熟悉食物，再少量加入一种蔬菜连续尝试。', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'ai', fallback_reason: '', matched_type_text: 'article,tip', structured_available: true, reference_count: 4 }
     ]
   }
 };
@@ -498,6 +498,8 @@ function renderDashboard(snapshot) {
   state.segmentUsersByKey = snapshot.segmentUsersByKey || {};
   updateAuthState();
   renderOverview(snapshot.overview);
+  renderOperationPriorities(snapshot.overview || {}, snapshot.aiChatOverview || {});
+  renderRetentionDiagnosis(snapshot.overview || {});
   renderMembershipStructure(snapshot.membershipStructure || snapshot.overview.membership_structure || [], snapshot.overview);
   renderChildDemographics(
     snapshot.childAgeDistribution || snapshot.overview.child_age_distribution || [],
@@ -600,6 +602,142 @@ function renderOverview(overview) {
     'membershipMixValue',
     `试用 ${formatNumber(overview.memberships.trial_memberships)} / 月 ${formatNumber(overview.memberships.month_memberships)} / 季 ${formatNumber(overview.memberships.quarter_memberships)} / 年 ${formatNumber(overview.memberships.year_memberships)}`
   );
+}
+
+function renderOperationPriorities(overview, aiChatOverview) {
+  const container = document.getElementById('operationPriorities');
+  if (!container) {
+    return;
+  }
+  const users = overview.users || {};
+  const family = overview.family || {};
+  const lifecycle = overview.membership_lifecycle || {};
+  const segments = overview.user_segments || [];
+  const aiSummary = (aiChatOverview && aiChatOverview.summary) || {};
+  const churnRisk = findSegmentCount(segments, 'churn_risk');
+  const activeUnpaid = findSegmentCount(segments, 'active_unpaid');
+  const profileGap = Math.max(0, Number(users.total_users || 0) - Number(family.families_with_children || 0));
+  const zeroReferenceRate = Number(aiSummary.zero_reference_rate || 0);
+  const cards = [
+    {
+      tone: 'danger',
+      label: '会员召回',
+      value: formatNumber(churnRisk || lifecycle.expiring_in_7_days),
+      title: '优先触达即将流失会员',
+      meta: `7 天内到期 ${formatNumber(lifecycle.expiring_in_7_days)} 位，自动续费关闭 ${formatNumber(lifecycle.auto_renew_off)} 位`,
+      action: '今天先跟进到期 1-3 天且有手机号的用户，突出已解锁权益和续费价值。'
+    },
+    {
+      tone: 'growth',
+      label: '转化承接',
+      value: formatNumber(activeUnpaid),
+      title: '高活跃未付费用户值得承接',
+      meta: `近 30 天活跃 ${formatNumber(users.mau)} 位，累计付费渗透 ${formatPercent((overview.operations || {}).paid_user_penetration)}`,
+      action: '在每日指导和营养食谱高频入口强化会员权益，缩短从体验到支付的路径。'
+    },
+    {
+      tone: 'profile',
+      label: '档案补全',
+      value: formatNumber(profileGap),
+      title: '孩子档案仍是推荐精度瓶颈',
+      meta: `档案渗透 ${formatPercent(family.child_profile_penetration)}，有档案家庭 ${formatNumber(family.families_with_children)}`,
+      action: '把补生日和孩子年龄放到首屏任务前，告诉家长补完后能获得更准的每日建议。'
+    },
+    {
+      tone: 'ai',
+      label: 'AI 质检',
+      value: formatPercent(zeroReferenceRate),
+      title: 'AI 零引用率需要继续压低',
+      meta: `14 天回复 ${formatNumber(aiSummary.total_replies)} 次，AI 直答率 ${formatPercent(aiSummary.ai_reply_rate)}`,
+      action: '优先补充高频问题知识库，让问答更多命中育儿锦囊、食谱和场景建议。'
+    }
+  ];
+  container.innerHTML = cards.map((card) => `
+    <article class="priority-card ${escapeHtml(card.tone)}">
+      <div class="priority-topline">
+        <span>${escapeHtml(card.label)}</span>
+        <strong>${escapeHtml(card.value)}</strong>
+      </div>
+      <h4>${escapeHtml(card.title)}</h4>
+      <p>${escapeHtml(card.meta)}</p>
+      <small>${escapeHtml(card.action)}</small>
+    </article>
+  `).join('');
+}
+
+function findSegmentCount(segments, key) {
+  const match = (segments || []).find((item) => item.key === key);
+  return Number((match && match.count) || 0);
+}
+
+function renderRetentionDiagnosis(overview) {
+  const container = document.getElementById('retentionDiagnosis');
+  if (!container) {
+    return;
+  }
+  const users = overview.users || {};
+  const funnel = overview.conversion_funnel || [];
+  const active30d = findFunnelCount(funnel, 'active30d');
+  const order30d = findFunnelCount(funnel, 'order30d');
+  const paid30d = findFunnelCount(funnel, 'paid30d');
+  const dauMau = calculatePercentage(users.dau, users.mau);
+  const wauMau = calculatePercentage(users.wau, users.mau);
+  const activeToOrder = calculatePercentage(order30d, active30d);
+  const orderToPaid = calculatePercentage(paid30d, order30d);
+  const cards = [
+    {
+      label: '日常粘性',
+      value: formatPercent(dauMau),
+      detail: `DAU ${formatNumber(users.dau)} / MAU ${formatNumber(users.mau)}`,
+      insight: buildRetentionInsight(dauMau, 'daily')
+    },
+    {
+      label: '周留存面',
+      value: formatPercent(wauMau),
+      detail: `WAU ${formatNumber(users.wau)} / MAU ${formatNumber(users.mau)}`,
+      insight: buildRetentionInsight(wauMau, 'weekly')
+    },
+    {
+      label: '活跃到下单',
+      value: formatPercent(activeToOrder),
+      detail: `下单 ${formatNumber(order30d)} / 活跃 ${formatNumber(active30d)}`,
+      insight: activeToOrder >= 20 ? '体验到下单承接较顺，继续放大高频入口。' : '高活跃用户转订单偏弱，优先优化权益露出和支付入口。'
+    },
+    {
+      label: '下单到支付',
+      value: formatPercent(orderToPaid),
+      detail: `支付 ${formatNumber(paid30d)} / 下单 ${formatNumber(order30d)}`,
+      insight: orderToPaid >= 50 ? '支付链路完成度较好，重点扩大下单人数。' : '下单后支付流失明显，优先排查支付信任、价格解释和支付链路。'
+    }
+  ];
+  container.innerHTML = cards.map((card) => `
+    <article class="retention-card">
+      <span>${escapeHtml(card.label)}</span>
+      <strong>${escapeHtml(card.value)}</strong>
+      <p>${escapeHtml(card.detail)}</p>
+      <small>${escapeHtml(card.insight)}</small>
+    </article>
+  `).join('');
+}
+
+function findFunnelCount(funnel, key) {
+  const match = (funnel || []).find((item) => item.key === key);
+  return Number((match && match.count) || 0);
+}
+
+function calculatePercentage(part, total) {
+  const denominator = Number(total || 0);
+  if (!denominator) {
+    return 0;
+  }
+  return Number(((Number(part || 0) / denominator) * 100).toFixed(2));
+}
+
+function buildRetentionInsight(value, type) {
+  if (type === 'weekly') {
+    return value >= 60 ? '近一周触达面较好，重点提升日常打开频次。' : '周活用户覆盖偏低，需要增加订阅提醒和固定使用场景。';
+  }
+  return value >= 20 ? '日常打开频次健康，继续强化每日计划习惯。' : '日常打开偏低，优先做每日计划提醒和首页任务牵引。';
 }
 
 function renderMembershipStructure(items, overview) {
@@ -1272,19 +1410,60 @@ function renderAiFallbackQueries(data) {
 function renderAiRecent(data) {
   var items = (data.items || []).map(function(item) {
     return Object.assign({}, item, {
-      structured_label: item.structured_available ? '已生效' : '未生效'
+      reply_status: formatAiReplyStatus(item),
+      knowledge_hit_label: formatAiKnowledgeHit(item),
+      age_required_label: item.fallback_reason === 'AGE_REQUIRED' ? '需要补年龄' : '不需要',
+      operation_conclusion: formatAiOperationConclusion(item),
+      answer_summary_label: item.answer_summary || '历史记录未保存摘要'
     });
   });
   renderTrendTable('aiRecentTable', items, [
     ['时间', 'created_at'],
     ['问题', 'query_text'],
-    ['意图', 'intent'],
-    ['来源', 'answer_source'],
-    ['引用数', 'reference_count'],
-    ['Structured', 'structured_label'],
-    ['命中类型', 'matched_type_text'],
-    ['回退原因', 'fallback_reason']
+    ['是否已回复', 'reply_status'],
+    ['是否命中知识库', 'knowledge_hit_label'],
+    ['是否需补年龄', 'age_required_label'],
+    ['AI 回复摘要', 'answer_summary_label'],
+    ['运营结论', 'operation_conclusion']
   ]);
+}
+
+function formatAiReplyStatus(item) {
+  if (item.answer_source === 'age_clarification') {
+    return '已回复：请家长补充年龄';
+  }
+  if (item.answer_source === 'ai') {
+    return '已回复：AI 直答';
+  }
+  if (item.answer_source === 'knowledge_fallback') {
+    return '已回复：知识库兜底';
+  }
+  if (item.answer_source) {
+    return `已回复：${item.answer_source}`;
+  }
+  return '已回复';
+}
+
+function formatAiKnowledgeHit(item) {
+  var count = Number(item.reference_count || 0);
+  if (count > 0) {
+    return `命中 ${count} 条资料`;
+  }
+  return '未命中';
+}
+
+function formatAiOperationConclusion(item) {
+  if (item.fallback_reason === 'AGE_REQUIRED') {
+    return '泛问题或缺少孩子年龄，可引导完善孩子档案。';
+  }
+  var count = Number(item.reference_count || 0);
+  if (count === 0) {
+    return '知识库未覆盖，建议补充该类问答素材。';
+  }
+  if (item.structured_available) {
+    return '回复已结构化，可作为优质样例复用。';
+  }
+  return '已命中资料，但结构化未生效，可优化卡片化回复。';
 }
 
 function updateAuthState() {

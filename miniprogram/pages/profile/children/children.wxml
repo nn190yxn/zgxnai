@@ -2,7 +2,7 @@
 <view class="page">
   <!-- 顶部提示 -->
   <view class="header-tip" wx:if="{{children.length > 0}}">
-    <text class="tip-text">点击星标可设置默认孩子，点击卡片可编辑信息</text>
+    <text class="tip-text">点星星设为默认孩子，点卡片修改信息</text>
   </view>
 
   <!-- 孩子列表 -->

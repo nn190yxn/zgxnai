@@ -35,15 +35,27 @@
     </view>
   </view>
 
+  <view class="section daily-action-section">
+    <view class="daily-action-card">
+      <text class="daily-action-eyebrow">今天先解决一个真实问题</text>
+      <text class="daily-action-title">把育儿知识变成今晚能做的一步</text>
+      <text class="daily-action-desc">从今日计划开始，完成后记录孩子反应；拿不准时直接问 AI，系统会结合年龄和知识库给出下一步。</text>
+      <view class="daily-action-buttons">
+        <view class="daily-action-primary" bindtap="goToTodayTask">做今天第一步</view>
+        <view class="daily-action-secondary" bindtap="askAiForToday">问 AI 怎么落地</view>
+      </view>
+    </view>
+  </view>
+
   <view class="section">
     <view class="section-header">
-      <text class="section-title">育儿功能入口</text>
+      <text class="section-title">从这里开始</text>
     </view>
 
     <view class="module-grid">
       <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card" bindtap="goToAssessment">
         <text class="module-name">成长观察评估</text>
-        <text class="module-desc">了解近期状态</text>
+        <text class="module-desc">看看孩子最近的整体状态</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToAssessment">
         <text class="module-name">成长观察评估</text>
@@ -75,7 +87,7 @@
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
         <text class="module-name">AI育儿问答</text>
-        <text class="module-desc">输入问题获取建议</text>
+        <text class="module-desc">有问题直接问</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
         <text class="module-name">AI育儿问答</text>
@@ -84,7 +96,7 @@
 
       <view class="module-card" bindtap="goToGrowthRecord">
         <text class="module-name">成长记录</text>
-        <text class="module-desc">记录每日变化</text>
+        <text class="module-desc">每天花30秒记一下</text>
       </view>
     </view>
   </view>

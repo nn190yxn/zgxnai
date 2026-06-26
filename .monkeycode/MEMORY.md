@@ -182,3 +182,10 @@
   - HTML 右侧面板已含 AI 文案生成器：输入主题 → 选平台 → 生成 → 复制，调用 `/api/v1/marketing/generate`
   - MD 新增 `9.9 会员群引爆策略`（前三板斧+运营节奏表）和 `9.10 运动馆场景专属话术`
   - 宣传计划 MD/HTML 文件部署路径：`/home/ubuntu/niuniu-parenting/宣传计划/`
+
+[生产数据库备份参数]
+- Date: 2026-06-26
+- Context: Agent 在执行小牛育儿知识库恢复时发现
+- Category: 运维部署
+- Instructions:
+  - 生产 MySQL 账号执行 `mysqldump` 备份业务表时需加 `--no-tablespaces`，避免缺少 `PROCESS` 权限导致 tablespaces 导出报错。

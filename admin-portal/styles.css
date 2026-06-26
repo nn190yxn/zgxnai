@@ -241,6 +241,127 @@ td {
   line-height: 1;
 }
 
+.priority-panel {
+  padding: 22px;
+}
+
+.priority-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.priority-card {
+  display: grid;
+  gap: 12px;
+  min-height: 210px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(61, 42, 24, 0.1);
+  background: rgba(255, 255, 255, 0.62);
+  position: relative;
+  overflow: hidden;
+}
+
+.priority-card::after {
+  content: '';
+  position: absolute;
+  right: -28px;
+  top: -28px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  opacity: 0.14;
+}
+
+.priority-card.danger::after { background: var(--brand-deep); }
+.priority-card.growth::after { background: var(--olive); }
+.priority-card.profile::after { background: var(--gold); }
+.priority-card.ai::after { background: var(--teal); }
+
+.priority-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.priority-topline span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(61, 42, 24, 0.08);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.priority-topline strong {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.priority-card h4,
+.priority-card p,
+.priority-card small {
+  margin: 0;
+}
+
+.priority-card h4 {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.priority-card p,
+.priority-card small {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.priority-card small {
+  padding-top: 10px;
+  border-top: 1px solid rgba(61, 42, 24, 0.08);
+}
+
+.retention-panel {
+  padding: 22px;
+}
+
+.retention-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.retention-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 250, 242, 0.58));
+  border: 1px solid rgba(61, 42, 24, 0.1);
+}
+
+.retention-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.retention-card strong {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.retention-card p,
+.retention-card small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.retention-card small {
+  padding-top: 10px;
+  border-top: 1px solid rgba(61, 42, 24, 0.08);
+}
+
 .analytics-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -764,7 +885,9 @@ td {
   .shell,
   .analytics-grid,
   .hero,
-  .stats-grid {
+  .stats-grid,
+  .priority-grid,
+  .retention-grid {
     grid-template-columns: 1fr;
   }
 
@@ -795,6 +918,8 @@ td {
 
   .panel,
   .stat-card,
+  .priority-panel,
+  .retention-panel,
   .chart-panel,
   .ranking-panel,
   .hero {
