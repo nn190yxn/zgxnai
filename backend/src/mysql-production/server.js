@@ -259,6 +259,8 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/growth-records`, authenticateToken, asyncHandler(growthRecordUpsertHandler));
   app.get(`${prefix}/growth-records/history`, authenticateToken, asyncHandler(growthRecordHistoryHandler));
   app.get(`${prefix}/growth-records/summary`, authenticateToken, asyncHandler(growthRecordSummaryHandler));
+  app.post(`${prefix}/growth-records/entry`, authenticateToken, asyncHandler(growthRecordEntrySaveHandler));
+  app.get(`${prefix}/growth-records/entries`, authenticateToken, asyncHandler(growthRecordEntriesListHandler));
   app.get(`${prefix}/weekly-summary`, authenticateToken, asyncHandler(weeklySummaryHandler));
   app.get(`${prefix}/search/scenes`, optionalAuthenticateToken, asyncHandler(sceneSearchTagsHandler));
   app.get(`${prefix}/search/solutions`, optionalAuthenticateToken, asyncHandler(sceneSearchSolutionsHandler));
@@ -4218,6 +4220,8 @@ async function getUserRetentionState(userId) {
   const activeEvents14d = Number(activity.active_events_14d || 0);
   const paidOrderCount = Number(payments.paid_order_count || 0);
   const recentRecord = recordRows[0] || null;
+  const recentEntries = child ? await getRecentGrowthRecordEntries(userId, child.id, 3) : [];
+  const mergedSummary = buildMergedRecentSummary(recentRecord, recentEntries);
   const state = {
     ...membershipState,
     user_id: userId,
@@ -4233,7 +4237,7 @@ async function getUserRetentionState(userId) {
       target_path: planRows[0].target_path || '',
       plan_date: formatStoredDateValue(planRows[0].plan_date)
     } : null,
-    recent_record_summary: recentRecord ? buildRecentGrowthRecordSummary(recentRecord) : null,
+    recent_record_summary: mergedSummary,
     last_active_at: activity.last_active_at ? new Date(activity.last_active_at).toISOString() : null,
     active_events_7d: Number(activity.active_events_7d || 0),
     active_events_14d: activeEvents14d,
@@ -4245,6 +4249,30 @@ async function getUserRetentionState(userId) {
     ...state,
     recommended_touchpoint: buildRetentionTouchpoint(state)
   };
+}
+
+function buildMergedRecentSummary(recentRecord, entries) {
+  const items = [];
+  if (recentRecord && recentRecord.note_text) {
+    items.push({
+      date: formatStoredDateValue(recentRecord.record_date),
+      summary: String(recentRecord.note_text).substring(0, 60)
+    });
+  } else if (recentRecord) {
+    items.push({
+      date: formatStoredDateValue(recentRecord.record_date),
+      summary: '最近完成了一次成长状态记录'
+    });
+  }
+  (entries || []).forEach(function(entry) {
+    if (entry.type === 'growth_entry') {
+      items.push({
+        date: entry.createdAt ? entry.createdAt.split('T')[0] : '',
+        summary: (entry.title || '') + ': ' + (entry.summary || '').substring(0, 40)
+      });
+    }
+  });
+  return items.slice(0, 3);
 }
 
 function buildRecentGrowthRecordSummary(row) {
@@ -7816,6 +7844,21 @@ async function ensureProductionTables() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
+    CREATE TABLE IF NOT EXISTS growth_record_entries (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      user_id BIGINT NOT NULL,
+      child_id BIGINT NOT NULL,
+      entry_type VARCHAR(32) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      source_id VARCHAR(128) DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_growth_entries_user (user_id),
+      INDEX idx_growth_entries_child (child_id),
+      INDEX idx_growth_entries_type (entry_type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
     CREATE TABLE IF NOT EXISTS weekly_growth_summaries (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
       user_id BIGINT NOT NULL,
@@ -9786,6 +9829,137 @@ async function growthRecordSummaryHandler(req, res) {
   });
 }
 
+async function growthRecordEntrySaveHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number((req.body && req.body.childId) || 0);
+  const entryType = String((req.body && req.body.entry_type) || '').substring(0, 32);
+  const title = String((req.body && req.body.title) || '').substring(0, 255);
+  const summary = String((req.body && req.body.summary) || '').substring(0, 2000);
+  const sourceId = String((req.body && req.body.source_id) || '').substring(0, 128);
+  if (!entryType || !title || !childId) {
+    res.status(400).json({ success: false, message: 'entry_type、title和childId不能为空' });
+    return;
+  }
+  const validTypes = ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note'];
+  if (validTypes.indexOf(entryType) === -1) {
+    res.status(400).json({ success: false, message: 'entry_type必须是 ai_answer/assessment_result/daily_plan_complete/user_note 之一' });
+    return;
+  }
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const [result] = await pool.execute(
+    `INSERT INTO growth_record_entries (user_id, child_id, entry_type, title, summary, source_id)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId, childId, entryType, title, summary, sourceId]
+  );
+  const [rows] = await pool.execute(
+    'SELECT * FROM growth_record_entries WHERE id = ? LIMIT 1',
+    [result.insertId]
+  );
+  res.json({ success: true, data: normalizeGrowthRecordEntry(rows[0]) });
+}
+
+function normalizeGrowthRecordEntry(row) {
+  return {
+    id: row.id,
+    childId: row.child_id,
+    entryType: row.entry_type,
+    title: row.title,
+    summary: row.summary || '',
+    sourceId: row.source_id || '',
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+  };
+}
+
+async function growthRecordEntriesListHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const entryType = String(req.query.entryType || '');
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const pageSize = Math.min(50, Math.max(1, Number(req.query.pageSize) || 10));
+  const offset = (page - 1) * pageSize;
+  let whereClause = 'WHERE user_id = ?';
+  const params = [userId];
+  if (childId) {
+    const child = await requireOwnedChildForRead(req, res, childId);
+    if (!child) {
+      return;
+    }
+    whereClause += ' AND child_id = ?';
+    params.push(childId);
+  }
+  if (entryType && ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note'].indexOf(entryType) !== -1) {
+    whereClause += ' AND entry_type = ?';
+    params.push(entryType);
+  }
+  const [countRows] = await pool.execute(
+    `SELECT COUNT(*) AS total FROM growth_record_entries ${whereClause}`,
+    params
+  );
+  const total = countRows[0].total;
+  const [rows] = await pool.execute(
+    `SELECT * FROM growth_record_entries ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    params.concat([pageSize, offset])
+  );
+  const list = rows.map(normalizeGrowthRecordEntry);
+  res.json({
+    success: true,
+    data: {
+      list,
+      pagination: { page, pageSize, total }
+    }
+  });
+}
+
+async function getRecentGrowthRecordEntries(userId, childId, limit) {
+  limit = Math.min(30, Math.max(1, Number(limit) || 5));
+  const [gdrRows] = await pool.execute(
+    `SELECT record_date, note_text, source, created_at
+       FROM growth_daily_records
+      WHERE user_id = ? AND child_id = ?
+      ORDER BY record_date DESC
+      LIMIT ${limit}`,
+    [userId, childId]
+  );
+  const [greRows] = await pool.execute(
+    `SELECT id, entry_type, title, summary, source_id, created_at
+       FROM growth_record_entries
+      WHERE user_id = ? AND child_id = ?
+      ORDER BY created_at DESC
+      LIMIT ${limit}`,
+    [userId, childId]
+  );
+  const items = [];
+  gdrRows.forEach((row) => {
+    if (row.note_text) {
+      items.push({
+        date: formatStoredDateValue(row.record_date),
+        type: 'growth_daily',
+        label: '成长记录',
+        note: row.note_text.substring(0, 200),
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+      });
+    }
+  });
+  greRows.forEach((row) => {
+    items.push({
+      type: 'growth_entry',
+      label: row.entry_type === 'ai_answer' ? 'AI问答保存' : row.entry_type === 'assessment_result' ? '测评结果' : row.entry_type === 'daily_plan_complete' ? '任务完成' : '用户笔记',
+      title: row.title,
+      summary: (row.summary || '').substring(0, 200),
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+    });
+  });
+  items.sort(function(a, b) {
+    var dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    var dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+  return items.slice(0, limit);
+}
+
 async function buildWeeklySummaryPayload(userId, child, weekStart) {
   const weekEnd = getWeekEndDateValue(weekStart);
   const ageGroup = inferAgeRangeFromChild(child) || '3-4岁';
@@ -10755,6 +10929,7 @@ async function accountDeletionHandler(req, res) {
     await executeIfTableExists(connection, 'daily_plan_completions', 'DELETE FROM daily_plan_completions WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'daily_plan_records', 'DELETE FROM daily_plan_records WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'growth_daily_records', 'DELETE FROM growth_daily_records WHERE user_id = ?', [userId]);
+    await executeIfTableExists(connection, 'growth_record_entries', 'DELETE FROM growth_record_entries WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'weekly_growth_summaries', 'DELETE FROM weekly_growth_summaries WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'chat_messages', 'DELETE FROM chat_messages WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'event_tracks', 'DELETE FROM event_tracks WHERE user_id = ?', [userId]);
