@@ -58,7 +58,7 @@ App({
       weeklySummaryEnabled: true,
       sceneSearchEnabled: true,
       multimodalEnabled: envConfig.enableMultimodal === true,
-      paymentEnabled: false,
+      paymentEnabled: envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true,
       aiMockFallback: !!envConfig.allowMockFallback,
       aiServiceReady: envConfig.envName !== 'production',
       configLoaded: !envConfig.enableRuntimeConfigFetch

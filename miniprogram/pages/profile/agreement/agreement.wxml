@@ -1,7 +1,7 @@
 <view class="container">
   <view class="header">
     <text class="title">用户服务协议</text>
-    <text class="date">更新日期：2026年6月5日</text>
+    <text class="date">更新日期：2026年6月27日</text>
   </view>
 
   <view class="content">
@@ -63,24 +63,26 @@
     <text class="section-text">
       10.1 会员服务内容
     </text>
-    <text class="list-item">• 月卡会员：30天全功能使用权限，享受专业育儿服务</text>
-    <text class="list-item">• 季卡会员：90天全功能使用权限，享受30%优惠</text>
-    <text class="list-item">• 年卡会员：365天全功能使用权限，享受60%优惠</text>
+    <text class="list-item">• 月卡成长服务：30天全功能使用权限，享受专业育儿服务</text>
+    <text class="list-item">• 季卡成长服务：90天全功能使用权限</text>
+    <text class="list-item">• 年卡成长服务：365天全功能使用权限</text>
     <text class="list-item">• 具体权益以会员页面展示为准</text>
+    <text class="list-item">• 成长服务属于虚拟内容服务，购买链路调用微信官方小程序虚拟支付能力</text>
+    <text class="list-item">• iOS 端支付由微信按官方能力拉起 Apple 支付</text>
     
     <text class="section-text">
       10.2 退款政策
     </text>
-    <text class="list-item">• 未使用的会员服务可申请退款</text>
-    <text class="list-item">• 退款将在7个工作日内处理</text>
-    <text class="list-item">• 已使用部分不予退款</text>
-    <text class="list-item">• 因违反协议导致的会员终止不予退款</text>
+    <text class="list-item">• Android、鸿蒙、Windows 端虚拟支付订单的退款规则以微信官方虚拟支付能力和订单页展示为准</text>
+    <text class="list-item">• iOS 端 Apple 支付订单由用户按 Apple 官方流程发起退款申请，最终结果以 Apple 审核处理为准</text>
+    <text class="list-item">• 已发放并已消耗的虚拟内容权益，平台将结合实际履约情况处理售后</text>
+    <text class="list-item">• 如存在违规使用、作弊或违反协议情形，平台可依据规则限制权益并保留处置记录</text>
     
     <text class="section-text">
       10.3 服务终止
     </text>
     <text class="list-item">• 会员到期后自动终止服务</text>
-    <text class="list-item">• 可通过自动续费延长服务</text>
+    <text class="list-item">• 当前版本支持用户主动选择并购买新的成长服务周期</text>
     <text class="list-item">• 账号注销后会员服务同步终止</text>
     <text class="list-item">• 会员权益不可转让给其他用户</text>
 

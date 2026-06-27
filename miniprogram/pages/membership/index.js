@@ -17,8 +17,9 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_VIRTUAL_PAY,
-    paymentNotice: ENABLE_VIRTUAL_PAY ? '选择方案后可发起微信虚拟支付' : '虚拟支付暂未开放，新用户注册可先领取7天成长服务，再使用试用资格和邀请奖励',
+    paymentNotice: ENABLE_VIRTUAL_PAY ? '成长服务属于虚拟内容服务，购买时将调用微信官方小程序虚拟支付能力' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励',
     signupBenefitText: '新用户首次注册自动赠送7天成长服务，可与邀请奖励叠加。',
+    paymentCapabilityHint: 'Android、鸿蒙、Windows 端使用微信虚拟支付，iOS 端按微信官方能力自动拉起 Apple 支付。',
     
     // 套餐列表
     plans: [
@@ -53,6 +54,7 @@ Page({
 
   onLoad() {
     this._redeemSuccessTimer = null;
+    this.syncPaymentStatus();
     this.setData({
       displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
     });
@@ -72,9 +74,30 @@ Page({
   },
 
   onShow() {
+    this.syncPaymentStatus();
     this.loadMembershipInfo();
     this.loadReferralStats();
     this.trackMembershipEvent('membership_center_view');
+  },
+
+  syncPaymentStatus() {
+    const runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
+    const runtimePaymentEnabled = runtimeConfig.paymentEnabled;
+    const showPayment = runtimePaymentEnabled !== undefined ? !!runtimePaymentEnabled : ENABLE_VIRTUAL_PAY;
+    this.setData({
+      showPayment: showPayment,
+      paymentNotice: showPayment ? '成长服务属于虚拟内容服务，购买时将调用微信官方小程序虚拟支付能力' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励'
+    });
+    if (app.globalData && app.globalData.enableRuntimeConfigFetch && app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
+      app.loadRuntimeConfig().then(() => {
+        const latestConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
+        const latestShowPayment = latestConfig.paymentEnabled !== undefined ? !!latestConfig.paymentEnabled : ENABLE_VIRTUAL_PAY;
+        this.setData({
+          showPayment: latestShowPayment,
+          paymentNotice: latestShowPayment ? '成长服务属于虚拟内容服务，购买时将调用微信官方小程序虚拟支付能力' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励'
+        });
+      });
+    }
   },
 
   ensureLoggedIn(message) {
@@ -200,13 +223,13 @@ Page({
     this.setData({ selectedPlan: code });
     this.trackMembershipEvent('membership_plan_select', { plan_code: code });
     if (!this.data.showPayment) {
-      wx.showToast({ title: '虚拟支付暂未开放', icon: 'none' });
+      wx.showToast({ title: '虚拟支付能力配置中', icon: 'none' });
     }
   },
 
   paySelectedPlan() {
     if (!this.data.showPayment) {
-      wx.showToast({ title: '虚拟支付暂未开放', icon: 'none' });
+      wx.showToast({ title: '虚拟支付能力配置中', icon: 'none' });
       return;
     }
     if (!wx.requestVirtualPayment) {
@@ -230,7 +253,7 @@ Page({
         method: 'POST',
         data: {
           plan_code: that.data.selectedPlan,
-          auto_renew: true
+          auto_renew: false
         }
       });
     }).then(function(payParams) {
@@ -257,10 +280,10 @@ Page({
       return that.waitForMembershipActivation(currentOrderNo).then(function(activated) {
         wx.hideLoading();
         if (activated) {
-          wx.showToast({ title: '支付成功', icon: 'success' });
+          wx.showToast({ title: '开通成功', icon: 'success' });
           return;
         }
-        wx.showToast({ title: '支付成功，成长服务稍后到账', icon: 'none' });
+        wx.showToast({ title: '已完成支付，成长服务稍后到账', icon: 'none' });
       }).catch(function(err) {
         wx.hideLoading();
         throw err;

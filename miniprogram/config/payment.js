@@ -1,17 +1,17 @@
-// 支付开关配置
+// 小程序虚拟支付开关配置
 const envConfig = require('../config/env.js');
 
-// 会员展示与真实微信支付能力分离，避免未配置商户信息时展示可支付状态。
+// 会员展示与官方虚拟支付能力分离，避免未完成配置时展示可支付状态。
 const SHOW_MEMBERSHIP = envConfig.showMembership !== false;
-const ENABLE_VIRTUAL_PAY = envConfig.enableWechatPay === true;
+const ENABLE_VIRTUAL_PAY = envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true;
 
-// 微信支付配置
+// 官方小程序虚拟支付配置
 const WX_CONFIG = {
-  // 是否启用真实支付（沙箱环境关闭）
+  // 是否启用真实支付
   enabled: ENABLE_VIRTUAL_PAY,
   
-  // 沙箱环境提示
-  sandboxTip: '支付功能即将上线，敬请期待',
+  // 未开通提示
+  sandboxTip: '虚拟支付能力正在配置中',
   
   // 支付套餐
   plans: [

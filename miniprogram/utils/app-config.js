@@ -15,7 +15,7 @@ function normalizeRuntimeConfig(payload) {
     weeklySummaryEnabled: data.weekly_summary_enabled !== undefined ? !!data.weekly_summary_enabled : true,
     sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
-    paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : false,
+    paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : (envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true),
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
     aiServiceReady: data.ai_service_ready !== undefined ? !!data.ai_service_ready : (envConfig.envName !== 'production'),
     configLoaded: true

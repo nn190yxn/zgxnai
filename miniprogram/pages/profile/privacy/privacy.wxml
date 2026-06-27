@@ -1,7 +1,7 @@
 <view class="container">
   <view class="header">
     <text class="title">隐私保护指引</text>
-    <text class="date">更新日期：2026年6月21日</text>
+    <text class="date">更新日期：2026年6月27日</text>
   </view>
 
   <view class="content">
@@ -55,7 +55,7 @@
     <text class="list-item">• 微信登录：用于完成账号识别和登录</text>
     <text class="list-item">• 微信手机号能力：用于手机号快捷绑定</text>
     <text class="list-item">• 微信同声传译插件 WechatSI：用于语音识别转文字</text>
-    <text class="list-item">• 微信支付：用于成长服务开通与订单支付</text>
+    <text class="list-item">• 微信官方小程序虚拟支付：用于成长服务等虚拟内容购买，iOS 端由微信按官方能力拉起 Apple 支付</text>
 
     <text class="section-title">八、您的权利</text>
     <text class="section-text">您对自己的个人信息享有以下权利：</text>

@@ -537,6 +537,7 @@ function parseRuntimeBooleanEnv(name, fallbackValue) {
 }
 
 function getRuntimeFeatureFlags(aiStatus) {
+  const virtualPayEnabled = ['month', 'quarter', 'year'].some(isVirtualPayConfigured);
   return {
     ai_chat_enabled: parseRuntimeBooleanEnv('RUNTIME_AI_CHAT_ENABLED', aiStatus.configured),
     assessments_enabled: parseRuntimeBooleanEnv('RUNTIME_ASSESSMENTS_ENABLED', true),
@@ -547,7 +548,7 @@ function getRuntimeFeatureFlags(aiStatus) {
     weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true),
     scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true),
     multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),
-    payment_enabled: parseRuntimeBooleanEnv('RUNTIME_PAYMENT_ENABLED', false),
+    payment_enabled: parseRuntimeBooleanEnv('RUNTIME_PAYMENT_ENABLED', virtualPayEnabled),
     ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false)
   };
 }

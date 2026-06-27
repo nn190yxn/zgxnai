@@ -20,9 +20,9 @@
   <!-- 支付状态提示 -->
     <view class="audit-notice" wx:if="{{!showPayment}}">
       <view class="notice-icon">VIP</view>
-      <text class="notice-title">成长服务即将上线</text>
+      <text class="notice-title">成长服务购买能力配置中</text>
       <text class="notice-desc">{{paymentNotice}}</text>
-    <text class="notice-desc">当前可先使用注册赠送、试用资格和邀请奖励</text>
+      <text class="notice-desc">当前可先使用注册赠送、试用资格和邀请奖励</text>
   </view>
 
   <!-- 成长服务方案 -->
@@ -40,8 +40,11 @@
         <view class="plan-desc">{{item.description}}</view>
       </view>
     </view>
-    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '支付处理中' : '立即开通成长服务'}}</button>
-    <button wx:else class="btn-pay btn-pay-disabled" disabled="true">微信支付暂未开放</button>
+    <view class="referral-info" wx:if="{{showPayment}}">
+      <text class="referral-desc">{{paymentCapabilityHint}}</text>
+    </view>
+    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '开通处理中' : '使用官方虚拟支付开通'}}</button>
+    <button wx:else class="btn-pay btn-pay-disabled" disabled="true">官方虚拟支付能力配置中</button>
   </view>
 
   <!-- 兑换码 -->

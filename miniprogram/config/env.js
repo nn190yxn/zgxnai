@@ -22,6 +22,7 @@ var ENV_CONFIG = {
     enableEducation: true,
     enableParenting: true,
     showMembership: true,
+    enableVirtualPay: true,
     enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false
@@ -44,6 +45,7 @@ var ENV_CONFIG = {
     enableEducation: true,
     enableParenting: true,
     showMembership: true,
+    enableVirtualPay: true,
     enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false
