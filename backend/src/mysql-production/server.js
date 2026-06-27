@@ -110,6 +110,8 @@ const VALID_PARENTING_AGE_GROUPS = new Set(['2-3岁', '3-4岁', '4-5岁', '5-6�
 const VALID_SUBJECT_CODES = new Set(['logical_thinking', 'reading_comprehension', 'expression_communication', 'learning_metacognition', 'inquiry_creativity']);
 const VALID_CONTENT_FORMS = new Set(['theory', 'method', 'both']);
 const VALID_TIP_DISPLAY_TYPES = new Set(['action', 'insight', 'raw']);
+const CORE_TIP_CATEGORIES = ['情绪管理', '行为习惯', '认知发展', '社交能力', '营养健康'];
+const CORE_TIP_AGE_GROUPS = ['2-3岁', '3-4岁', '4-5岁', '5-6岁', '6-9岁'];
 const chatRateLimitStore = new Map();
 let sceneTagsCache = {
   expiresAt: 0,
@@ -1536,6 +1538,11 @@ function pickWeeklyInsightCandidate(items, rateKey) {
 }
 
 async function adminContentOpsOverviewHandler(req, res) {
+  const coreTipParams = [
+    ...CORE_TIP_CATEGORIES,
+    ...CORE_TIP_AGE_GROUPS
+  ];
+  const coreTipFilter = `category IN (${CORE_TIP_CATEGORIES.map(() => '?').join(',')}) AND age_group IN (${CORE_TIP_AGE_GROUPS.map(() => '?').join(',')})`;
   const [tipRows] = await pool.execute(
     `SELECT
        COUNT(*) AS total_active,
@@ -1548,6 +1555,14 @@ async function adminContentOpsOverviewHandler(req, res) {
        MAX(updated_at) AS latest_tip_updated_at
       FROM parenting_tips
      WHERE is_active = 1`
+  );
+  const [coreTipRows] = await pool.execute(
+    `SELECT
+       COUNT(*) AS core_total,
+       SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_title, '')), '') IS NOT NULL AND NULLIF(TRIM(COALESCE(display_text, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS core_ready_count
+      FROM parenting_tips
+     WHERE is_active = 1 AND ${coreTipFilter}`,
+    coreTipParams
   );
   const [articleRows] = await pool.execute(
     `SELECT
@@ -1563,8 +1578,11 @@ async function adminContentOpsOverviewHandler(req, res) {
   );
 
   const tips = tipRows[0] || {};
+  const coreTips = coreTipRows[0] || {};
   const articles = articleRows[0] || {};
   const totalActiveTips = Number(tips.total_active || 0);
+  const coreTotalTips = Number(coreTips.core_total || 0);
+  const coreReadyTips = Number(coreTips.core_ready_count || 0);
   const totalPublishedArticles = Number(articles.total_published || 0);
 
   res.json({
@@ -1579,6 +1597,12 @@ async function adminContentOpsOverviewHandler(req, res) {
         missing_display_title_count: Number(tips.missing_display_title_count || 0),
         missing_display_text_count: Number(tips.missing_display_text_count || 0),
         structured_ready_rate: calculateRatio(tips.structured_ready_count, totalActiveTips),
+        core_total: coreTotalTips,
+        core_ready_count: coreReadyTips,
+        core_pending_count: Math.max(0, coreTotalTips - coreReadyTips),
+        core_ready_rate: calculateRatio(coreReadyTips, coreTotalTips),
+        core_category_labels: CORE_TIP_CATEGORIES,
+        core_age_group_labels: CORE_TIP_AGE_GROUPS,
         latest_updated_at: tips.latest_tip_updated_at || null
       },
       articles: {

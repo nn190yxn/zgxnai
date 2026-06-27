@@ -1332,18 +1332,28 @@ function renderContentOpsOverview(data) {
   var readyTips = Number(tips.structured_ready_count || 0);
   var totalTips = Number(tips.total_active || 0);
   var pendingTips = Math.max(0, totalTips - readyTips);
+  var coreReadyTips = Number(tips.core_ready_count || 0);
+  var coreTotalTips = Number(tips.core_total || 0);
+  var corePendingTips = Number(tips.core_pending_count || Math.max(0, coreTotalTips - coreReadyTips));
   renderMiniStats('contentOpsHealth', [
     {
-      label: '可用锦囊',
-      value: formatPercent(tips.structured_ready_rate),
-      meta: `${formatNumber(readyTips)} 条已整理好，可用于小程序推荐和 AI 回答引用。`
+      label: '核心场景覆盖率',
+      value: formatPercent(tips.core_ready_rate || tips.structured_ready_rate),
+      meta: coreTotalTips > 0
+        ? `${formatNumber(coreReadyTips)} / ${formatNumber(coreTotalTips)} 条核心锦囊可用于小程序推荐和 AI 回答。`
+        : `${formatNumber(readyTips)} 条可用锦囊，建议先补齐核心主题和主要年龄段。`
     },
     {
-      label: '待整理锦囊',
-      value: formatNumber(pendingTips),
-      meta: pendingTips > 0
-        ? '建议优先整理高频年龄段、高频问题和会员常用场景。'
-        : `全部可用，原始未清洗内容 ${formatNumber(tips.raw_count)} 条。`
+      label: '高价值待整理',
+      value: formatNumber(corePendingTips || pendingTips),
+      meta: (corePendingTips || pendingTips) > 0
+        ? '下一版先把这部分做到 70%-80%，优先覆盖高频问题和会员常用场景。'
+        : `核心场景已覆盖，全量待整理 ${formatNumber(pendingTips)} 条。`
+    },
+    {
+      label: '全量整理率',
+      value: formatPercent(tips.structured_ready_rate),
+      meta: `${formatNumber(readyTips)} / ${formatNumber(totalTips)} 条已整理好，作为长期内容治理指标。`
     },
     {
       label: '文章分类进度',
