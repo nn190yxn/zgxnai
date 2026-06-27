@@ -47,6 +47,20 @@
     </view>
   </view>
 
+  <view class="section touchpoint-section" wx:if="{{operationTouchpoint.key}}">
+    <view class="touchpoint-card" bindtap="onOperationTouchpointTap">
+      <view class="touchpoint-top">
+        <text class="touchpoint-eyebrow">为你推荐</text>
+        <text class="touchpoint-arrow">></text>
+      </view>
+      <text class="touchpoint-title">{{operationTouchpoint.title}}</text>
+      <text class="touchpoint-desc">{{operationTouchpoint.desc}}</text>
+      <view class="touchpoint-cta">
+        <text class="touchpoint-cta-text">{{operationTouchpoint.cta}}</text>
+      </view>
+    </view>
+  </view>
+
   <view class="section">
     <view class="section-header">
       <text class="section-title">从这里开始</text>

@@ -526,6 +526,68 @@
   color: #2F80ED;
 }
 
+/* 运营位卡片 */
+.touchpoint-section {
+  margin-bottom: 0;
+}
+
+.touchpoint-card {
+  background: linear-gradient(135deg, #FFF7F0, #FFFCF8);
+  border: 2rpx solid #FFE0C8;
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.touchpoint-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.touchpoint-eyebrow {
+  font-size: 22rpx;
+  color: #FF6B35;
+  background: #FFF0E5;
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  display: inline-block;
+}
+
+.touchpoint-arrow {
+  font-size: 28rpx;
+  color: #CCB0A0;
+}
+
+.touchpoint-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1B2A1B;
+  line-height: 1.5;
+  margin-bottom: 8rpx;
+}
+
+.touchpoint-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #7A6660;
+  line-height: 1.6;
+}
+
+.touchpoint-cta {
+  margin-top: 16rpx;
+}
+
+.touchpoint-cta-text {
+  display: inline-block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #FF6B35;
+  padding: 8rpx 0;
+}
+
 /* 提示卡片 */
 .tips-card {
   margin: 0 32rpx;

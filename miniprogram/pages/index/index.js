@@ -775,6 +775,55 @@ Page({
     });
   },
 
+  onOperationTouchpointTap: function() {
+    var tp = this.data.operationTouchpoint;
+    if (!tp || !tp.key) {
+      return;
+    }
+    if (app.trackKbEvent) {
+      app.trackKbEvent({
+        event_type: 'retention_touchpoint_click',
+        module_key: 'retention_touchpoint',
+        page_key: 'home_index',
+        event_meta: {
+          touchpoint_key: tp.key,
+          title: tp.title,
+          source: 'retention_status_api'
+        }
+      });
+    }
+    if (tp.key === 'login_to_personalize') {
+      app.requireLoginForAction('请先登录，获得个性化育儿陪伴').then(function(canOperate) {
+        if (canOperate) {
+          wx.showToast({ title: '登录成功，刷新中', icon: 'success' });
+          setTimeout(function() {
+            wx.reLaunch({ url: '/pages/index/index' });
+          }, 800);
+        }
+      });
+      return;
+    }
+    if (!tp.targetPath) {
+      wx.showToast({ title: '入口暂未准备好', icon: 'none' });
+      return;
+    }
+    if (tp.targetPath === '/pages/chat/chat') {
+      wx.switchTab({
+        url: tp.targetPath,
+        fail: function() {
+          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        }
+      });
+      return;
+    }
+    wx.navigateTo({
+      url: tp.targetPath,
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
+    });
+  },
+
   navigateByDailyPlan: function(plan) {
     if (!plan || !plan.targetPath) {
       wx.showToast({ title: '入口暂未准备好', icon: 'none' });
