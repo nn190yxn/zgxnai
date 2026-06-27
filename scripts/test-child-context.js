@@ -50,12 +50,12 @@ function testRecommendation() {
   assert.deepStrictEqual(childContext.buildParentingRecommendation({ id: 1, name: '牛牛' }, fixedNow), {
     ageGroup: '',
     label: '',
-    fallback: '补充孩子生日后，会优先推荐对应年龄内容'
+    fallback: '补充生日后，内容按年龄展示。'
   });
   assert.deepStrictEqual(childContext.buildParentingRecommendation(null, fixedNow), {
     ageGroup: '',
     label: '',
-    fallback: '先补充孩子信息，会优先推荐更贴近你家的内容'
+    fallback: '补充孩子信息后，推荐更贴近。'
   });
 }
 

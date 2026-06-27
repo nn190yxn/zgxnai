@@ -11,24 +11,24 @@
     scroll-with-animation
   >
     <view class="service-closed" wx:if="{{!featureFlags.aiChatEnabled}}">
-      <text class="service-closed-title">小牛育儿AI问答</text>
-      <text class="service-closed-desc">本页面提供儿童成长、营养食谱、亲子沟通、能力成长训练等育儿咨询服务。当前版本的在线AI生成服务正在合规配置中，审核人员可先查看下方正式运营内容与功能入口。</text>
+      <text class="service-closed-title">小牛问答</text>
+      <text class="service-closed-desc">小牛问答功能升级中。</text>
       <view class="service-actions">
         <button class="service-action" size="mini" bindtap="goToAssessment">成长观察</button>
         <button class="service-action secondary" size="mini" bindtap="goToParenting">育儿知识</button>
       </view>
     </view>
     <view class="service-banner info">
-      <text class="service-banner-title">AI生成内容提示</text>
-      <text class="service-banner-desc">本页面涉及文本深度合成能力。开启AI问答后，回答内容由人工智能生成，仅供家庭教育参考，不能替代医生、心理咨询师或其他专业人员的判断。</text>
+      <text class="service-banner-title">免责声明</text>
+      <text class="service-banner-desc">小牛回答由 AI 生成，仅供家庭教育参考，不能替代医生、心理咨询师等专业判断。</text>
     </view>
 
     <!-- AI 介绍（未开始对话时展示） -->
     <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}" style="margin:24rpx 24rpx 32rpx;padding:28rpx 28rpx 32rpx;background:#FFFFFF;border:1rpx solid #E9D7CF;border-radius:24rpx;display:flex;gap:20rpx;box-sizing:border-box;">
       <view class="ai-intro-avatar" style="width:84rpx;height:84rpx;border-radius:42rpx;background:#FFF3ED;color:#FF6B35;font-size:28rpx;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">AI</view>
       <view class="ai-intro-content" style="flex:1;min-width:0;padding-right:12rpx;box-sizing:border-box;overflow:hidden;">
-        <text class="ai-intro-title" style="display:block;font-size:34rpx;font-weight:700;line-height:1.4;color:#1B2A1B;margin-bottom:12rpx;">小牛育儿AI助理</text>
-        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">我基于儿童发展认知体系和育儿知识库，为你提供 AI 育儿咨询。有什么育儿问题直接问我，我会尽力给你回答。</text>
+        <text class="ai-intro-title" style="display:block;font-size:34rpx;font-weight:700;line-height:1.4;color:#1B2A1B;margin-bottom:12rpx;">小牛问答</text>
+        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">输入问题，小牛为您回答。</text>
         <view class="ai-intro-hint" style="display:flex;flex-wrap:wrap;gap:12rpx 12rpx;margin-top:20rpx;padding-right:12rpx;box-sizing:border-box;">
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">成长观察与训练问题</text>
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">儿童营养与饮食</text>
@@ -44,7 +44,7 @@
         <view wx:if="{{item.role === 'user'}}" class="avatar">家</view>
         <view wx:else class="avatar avatar-image avatar-ai">AI</view>
         <view class="bubble">
-          <text class="ai-label" wx:if="{{item.role !== 'user'}}">AI生成</text>
+          <text class="ai-label" wx:if="{{item.role !== 'user'}}">小牛回答</text>
           <rich-text wx:if="{{item.markdownNodes && item.markdownNodes.length > 0}}" nodes="{{item.markdownNodes}}"></rich-text>
           <text wx:elif="{{!item.structured || !item.structured.available}}">{{item.content}}</text>
           <!-- 结构化渲染（新路径） -->
@@ -113,13 +113,13 @@
           <view class="dot"></view>
           <view class="dot"></view>
         </view>
-        <text class="loading-hint">AI 正在深度思考，预计需要 20-30 秒</text>
+        <text class="loading-hint">小牛正在回答</text>
       </view>
     </view>
   </scroll-view>
 
   <view class="bottom-dock {{voiceResultVisible && voiceResultText ? 'bottom-dock-with-voice-result' : ''}}">
-    <view class="ai-input-notice" wx:if="{{featureFlags.aiChatEnabled}}">AI生成内容仅供参考，请家长结合实际情况判断。</view>
+    <view class="ai-input-notice" wx:if="{{featureFlags.aiChatEnabled}}">小牛回答仅供参考，请结合实际情况判断。</view>
     <view class="voice-hint" wx:if="{{featureFlags.aiChatEnabled && voiceHint}}">{{voiceHint}}</view>
 
     <!-- 语音识别结果卡片 -->

@@ -127,8 +127,8 @@ function buildParentingRecommendation(child, now) {
     ageGroup: '',
     label: '',
     fallback: child && (child.id || child.name || child.nickname)
-      ? '补充孩子生日后，会优先推荐对应年龄内容'
-      : '先补充孩子信息，会优先推荐更贴近你家的内容'
+      ? '补充生日后，内容按年龄展示。'
+      : '补充孩子信息后，推荐更贴近。'
   };
 }
 

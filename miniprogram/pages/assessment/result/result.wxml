@@ -164,8 +164,8 @@
     <!-- 底部提示 -->
     <view class="section membership-cta-section" wx:if="{{showMembershipPrompt}}">
       <view class="membership-cta-card">
-        <text class="cta-title">开通成长服务，解锁更多内容</text>
-        <text class="cta-desc">保存测评报告、查看完整成长建议、获得每周总结和个性化陪伴计划。</text>
+        <text class="cta-title">开通成长服务，可查看完整报告。</text>
+        <text class="cta-desc">保存评估报告、查看完整建议、获得每周成长总结。</text>
         <view class="cta-btn" bindtap="goToMembershipFromResult">了解成长服务</view>
       </view>
     </view>

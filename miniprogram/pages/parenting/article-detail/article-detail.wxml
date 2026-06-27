@@ -85,10 +85,10 @@
 
     <view class="practice-section">
       <text class="practice-eyebrow">读完就行动</text>
-      <text class="practice-title">把这篇内容变成你家今晚的一步</text>
-      <text class="practice-desc">先选一个最容易执行的小动作，今晚试一次，明天再看孩子反应有没有变化。</text>
+      <text class="practice-title">今晚试一个方法</text>
+      <text class="practice-desc">选一个方法，今晚试，明天看效果。</text>
       <view class="practice-actions">
-        <view class="practice-btn primary" bindtap="askAiAboutArticle">问 AI 拆成三步</view>
+        <view class="practice-btn primary" bindtap="askAiAboutArticle">小牛拆为步骤</view>
         <view class="practice-btn secondary" bindtap="recordArticlePractice">记录一次实践</view>
       </view>
     </view>
@@ -202,7 +202,7 @@
   </view>
 
   <view class="reading-annotation {{showArticleAnnotation ? 'annotation-visible' : ''}}" bindtap="dismissArticleAnnotation" wx:if="{{showArticleAnnotation}}">
-    <text class="annotation-text">读完这篇说明你真的很关心孩子的成长，每多了解一点都是对孩子更好的陪伴</text>
+    <text class="annotation-text">已读完。</text>
     <text class="annotation-close">x</text>
   </view>
 </view>

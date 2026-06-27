@@ -24,7 +24,7 @@
       <button class="auth-secondary-btn" wx:elif="{{!phoneNumber}}" open-type="getPhoneNumber" bindgetphonenumber="bindPhoneNumber">获取手机号</button>
       <view class="auth-success" wx:else>
         <text class="auth-success-title">登录和手机号绑定都已完成</text>
-        <text class="auth-success-desc">接下来添加孩子档案，查看成长记录，就可以使用成长服务了。</text>
+        <text class="auth-success-desc">添加孩子档案后即可查看成长记录和成长服务。</text>
       </view>
     </view>
   </view>
@@ -53,7 +53,7 @@
         <view class="child-entry-info">
           <text class="child-entry-title">孩子档案</text>
           <text class="child-entry-desc" wx:if="{{currentChild}}">当前：{{currentChild.name}} {{currentChild.gender === 'male' ? '👦' : currentChild.gender === 'female' ? '👧' : ''}}</text>
-          <text class="child-entry-desc" wx:else>填一下孩子的基本信息，我给你的建议会更准</text>
+          <text class="child-entry-desc" wx:else>填一下孩子的基本信息，建议会更贴合实际情况</text>
         </view>
       </view>
       <view class="child-entry-right">

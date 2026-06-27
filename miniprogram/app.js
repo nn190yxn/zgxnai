@@ -320,76 +320,76 @@ onError: function(error) {
     var streakDays = metrics.streakDays || 0;
 
     if (data.type === 'weekly_report') {
-      return '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟就能练，家长更容易看见孩子一点点进步。';
+      return '本周坚持 ' + streakDays + ' 天，完成 ' + completed + '/' + total + ' 个成长任务。';
     }
 
     if (data.type === 'app_intro' || data.type === 'home_intro') {
-      return '我在用小牛育儿AI助理，3分钟看懂孩子近况，专注、表达、阅读、吃饭睡眠都有对应建议，家长更快知道先做什么。';
+      return '小牛育儿——记录成长变化，获取分龄育儿建议。';
     }
 
-    return '我在用小牛育儿AI助理记录孩子变化，遇到吃饭睡眠、表达专注问题时，能更快找到合适做法，家长少走很多弯路。';
+    return '小牛育儿——记录成长变化，按年龄获取育儿建议。';
   },
 
   buildShareTitle: function(scene, payload) {
     var data = payload || {};
 
     if (scene === 'membership_invite') {
-      return '送你7天成长服务，先把孩子近况看明白';
+      return '邀请你体验 7 天成长服务。';
     }
 
     if (scene === 'assessment') {
-      return '看懂孩子当前成长短板，少走弯路，带娃更省心';
+      return '了解孩子当前成长状态，获取针对性建议。';
     }
 
     if (scene === 'assessment_result') {
-      return (data.assessmentName || '成长观察') + '结果出来了，家长马上知道怎么带';
+      return (data.assessmentName || '成长观察') + '评估完成，查看孩子当前状态。';
     }
 
     if (scene === 'assessment_history') {
-      return '成长记录都在这里，孩子变化一眼就能看懂';
+      return '查看成长记录，跟踪孩子变化趋势。';
     }
 
     if (scene === 'chat') {
-      return '孩子吃饭睡眠专注表达卡住时，家长这里能更快找到办法';
+      return '孩子吃饭、睡眠、专注、表达卡住时，来这里找办法。';
     }
 
     if (scene === 'nutrition') {
-      return '分龄营养建议和食谱都有，做饭省心很多';
+      return '分龄营养搭配和食谱推荐。';
     }
 
     if (scene === 'recipe_list') {
-      return '孩子每天吃什么更合适，这里直接给你思路';
+      return '分龄搭配和食谱推荐，解决每天吃什么。';
     }
 
     if (scene === 'recipe_detail') {
-      return (data.name || '这道食谱') + '，孩子更愿意吃，家长更省心';
+      return (data.name || '这道食谱') + '，孩子接受度更高。';
     }
 
     if (scene === 'parenting') {
-      return '从吃饭睡眠到表达专注，这里帮家长更快找到办法';
+      return '分龄育儿知识库，覆盖常见育儿问题。';
     }
 
     if (scene === 'article_list') {
-      return '育儿高频难题这里都有，家长少走很多弯路';
+      return '分龄育儿知识库，找到适合你家的方法。';
     }
 
     if (scene === 'article_detail') {
-      return (data.title || '这篇育儿方法') + '，看完更知道下一步怎么做';
+      return (data.title || '这篇育儿方法') + '，看完知道下一步怎么做。';
     }
 
     if (scene === 'textbook') {
-      return '每天10分钟练阅读表达，家长更容易看见进步';
+      return '每天 10 分钟阅读表达练习。';
     }
 
     if (scene === 'knowledge_list') {
-      return (data.subjectName || '能力成长') + '训练方法都整理好了，在家就能练';
+      return (data.subjectName || '能力成长') + '训练方法，在家就能练。';
     }
 
     if (scene === 'knowledge_detail') {
-      return (data.pointName || '这个训练点') + '，家长看完就能带着练';
+      return (data.pointName || '这个训练点') + '，看完就能带着练。';
     }
 
-    return '看懂孩子当前成长短板，少走弯路，带娃更省心';
+    return '了解孩子当前成长状态，获取针对性建议。';
   },
 
   appendShareEventLog: function(event) {

@@ -23,7 +23,7 @@
         <text class="badge-text">{{expiryRecallLevel === 'urgent' ? '即将到期' : '快到期了'}}</text>
       </view>
       <text class="recall-title">{{expiryRecallLevel === 'urgent' ? '您的成长服务将在3天内到期' : '您的成长服务将在7天内到期'}}</text>
-      <text class="recall-desc">{{expiryRecallLevel === 'urgent' ? '续费可继续享受1v1育儿陪伴、AI问答和每周成长总结。到期后基础功能不受影响，但专属内容将暂停。' : '提前续费可避免服务中断，连续记录不丢失，AI陪伴不暂停。'}}</text>
+      <text class="recall-desc">{{expiryRecallLevel === 'urgent' ? '续费后可继续使用成长总结、AI 问答和每周报告。到期后基础功能不受影响。' : '服务不中断'}}</text>
     </view>
   </view>
 

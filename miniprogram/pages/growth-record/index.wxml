@@ -41,7 +41,7 @@
 
     <view class="section-card">
       <text class="section-title">记录建议</text>
-      <text class="helper-copy">每天睡前花30秒记一下，坚持一周，你就会看到孩子的变化趋势了。</text>
+      <text class="helper-copy">每天睡前花 30 秒记录，一周后查看孩子的变化趋势。</text>
     </view>
 
     <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存成长记录'}}</view>

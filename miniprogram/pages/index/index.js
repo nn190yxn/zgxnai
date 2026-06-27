@@ -52,8 +52,8 @@ Page({
       duration: '3分钟了解孩子近期状态'
     },
     weeklyProgress: {
-      headline: '连续记录几天后，本周成长总结会更完整',
-      summary: '把每天的成长变化记录下来，系统会整理出更清晰的阶段总结。',
+      headline: '记录满3天后，本周将生成成长总结',
+      summary: '记录每天的成长变化，你会看到阶段性的变化趋势。',
       streakDays: 0,
       actionText: '查看完整周报',
       premiumUnlocked: false
@@ -68,7 +68,7 @@ Page({
       {
         title: '育儿问题解答',
         desc: '结合孩子的具体情况，获得更清晰的家庭陪伴建议',
-        cta: '问问AI助理',
+        cta: '问问小牛',
         action: 'chat'
       },
       {
@@ -228,7 +228,7 @@ Page({
       that.setData({
         weeklyProgress: {
           headline: '当前为演示模式，周总结展示为示例内容',
-          summary: '接入真实记录后，这里会展示孩子本周的成长趋势和建议。',
+          summary: '添加真实记录后即可查看成长趋势。',
           streakDays: 0,
           actionText: '查看完整周报',
           premiumUnlocked: false
@@ -240,7 +240,7 @@ Page({
       that.setData({
         weeklyProgress: {
           headline: '完善孩子档案后，可以获得更准确的成长总结',
-          summary: '补充年龄和基础情况后，系统会提供更贴合成长阶段的记录和建议。',
+          summary: '补充年龄和基础信息后，建议会更贴合当前阶段。',
           streakDays: 0,
           actionText: '先去完善',
           premiumUnlocked: false
@@ -252,7 +252,7 @@ Page({
       that.setData({
         weeklyProgress: {
           headline: '登录后可查看孩子本周的成长总结',
-          summary: '登录后系统会结合最近 7 天记录，整理趋势和陪伴建议。',
+          summary: '登录后可查看最近 7 天的成长趋势。',
           streakDays: 0,
           actionText: '立即登录',
           premiumUnlocked: false
@@ -371,7 +371,7 @@ Page({
         type: 'onboarding',
         title: '完善孩子档案，获取更准确的成长建议',
         reason: '年龄和基础情况越完整，首页推荐内容越准确。',
-        summary: '补完档案后，系统会按年龄和当前重点生成今日育儿建议。',
+        summary: '补完档案后，将按年龄生成今日育儿建议。',
         actionText: '去完善',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -381,9 +381,9 @@ Page({
         id: 'guest_2',
         planDate: dateText,
         type: 'parenting_article',
-        title: '先登录并完善孩子档案，再生成更贴合年龄的育儿建议',
-        reason: '年龄、阶段和当前重点不同，首页建议内容也会不同。',
-        summary: '先完成登录，再补充孩子生日和基础情况，系统才会按年龄生成更准确的今日建议。',
+        title: '先登录并完善孩子档案，再生成育儿建议',
+        reason: '年龄和阶段不同，建议内容也会不同。',
+        summary: '登录并补充孩子生日和基础信息后，将生成年龄匹配的建议。',
         actionText: '先登录',
         durationMinutes: 2,
         targetType: 'profile',
@@ -420,8 +420,8 @@ Page({
         planDate: dateText,
         type: 'onboarding',
         title: '演示模式：今日建议展示为示例内容',
-        reason: '当前环境使用演示数据，内容仅用于展示首页布局和交互。',
-        summary: '接入真实孩子档案和记录后，这里会生成当天的实际陪伴建议。',
+        reason: '以下为演示内容，添加真实档案后这里会展示实际建议。',
+        summary: '添加孩子档案后，将基于年龄生成每日建议。',
         actionText: '查看示例',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -431,9 +431,9 @@ Page({
         id: 'mock_2',
         planDate: dateText,
         type: 'habit_reminder',
-        title: '演示模式：成长观察入口示例',
-        reason: '用于展示首页如何引导用户进入成长观察。',
-        summary: '真实模式下会根据孩子年龄和近期记录推荐更具体的观察方向。',
+        title: '演示模式：成长观察入口',
+        reason: '以下为演示：从成长观察开始了解孩子当前状态。',
+        summary: '基于孩子年龄和近期记录推荐观察方向。',
         actionText: '查看示例',
         durationMinutes: 3,
         targetType: 'assessment',
@@ -638,7 +638,7 @@ Page({
     var mapping = {
       complete_child_profile: {
         title: '完善孩子档案',
-        desc: '填写孩子的年龄和性别后，AI 会算出更精准的每日建议。',
+        desc: '填写孩子的年龄和性别后，每日建议会更精准。',
         cta: '立即完善',
         targetType: 'child_profile',
         targetPath: '/pages/profile/child-edit/child-edit'
@@ -659,23 +659,23 @@ Page({
         return {
           title: level === 'urgent' ? '会员即将到期' : '会员快到期了',
           desc: level === 'urgent'
-            ? '您的会员将在3天内到期，续费可继续享受1v1成长陪伴服务。'
-            : '您的会员将在7天内到期，提前续费享受连续陪伴。',
+            ? '您的会员将在3天内到期，续费可继续使用成长总结和AI问答。'
+            : '您的会员将在7天内到期，提前续费避免服务中断。',
           cta: '查看会员',
           targetType: 'membership',
           targetPath: '/pages/membership/index'
         };
       },
       membership_conversion: {
-        title: '解锁完整成长陪伴',
-        desc: '开通会员可获得AI专属陪伴建议、成长曲线分析和周总结报告。',
+        title: '开通成长服务',
+        desc: '开通后可查看成长曲线、每周总结和定制建议。',
         cta: '了解会员',
         targetType: 'membership',
         targetPath: '/pages/membership/index'
       },
       quick_return_task: {
-        title: '3分钟快速回归',
-        desc: '好久不见！从一次简单的成长观察重新开始吧。',
+        title: '继续成长观察',
+        desc: '从一次成长观察开始。',
         cta: '开始观察',
         targetType: 'assessment',
         targetPath: '/pages/assessment/assessment'
@@ -689,7 +689,7 @@ Page({
       },
       continue_ai_chat: {
         title: '继续育儿问答',
-        desc: '上次和AI聊了育儿话题，还有问题可以接着问。',
+        desc: '上次和小牛聊了育儿话题，还有问题可以接着问。',
         cta: '继续提问',
         targetType: 'ai_chat',
         targetPath: '/pages/chat/chat'
@@ -702,8 +702,8 @@ Page({
         targetPath: '/pages/assessment/assessment'
       },
       login_to_personalize: {
-        title: '登录后开启个性化陪伴',
-        desc: '登录后可获得基于孩子年龄的每日建议、成长观察和AI问答。',
+        title: '登录后查看今日建议',
+        desc: '登录后可根据孩子年龄获得每日建议。',
         cta: '立即登录',
         targetType: 'login',
         targetPath: ''

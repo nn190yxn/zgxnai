@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">营养中心</text>
-    <text class="page-subtitle">帮孩子吃得对，生长发育更有底</text>
+    <text class="page-subtitle">分龄食谱搭配，覆盖日常三餐和加餐。</text>
   </view>
 
   <!-- 搜索入口 -->
@@ -25,7 +25,7 @@
     <view class="nutrition-cover nutrition-cover-placeholder">
       <text class="nutrition-cover-emoji">🥣</text>
       <text class="nutrition-cover-title">应季搭配</text>
-      <text class="nutrition-cover-desc">按季节给你搭配，不用每天纠结做什么</text>
+      <text class="nutrition-cover-desc">按季节推荐应季食谱搭配。</text>
     </view>
   </view>
 
@@ -192,6 +192,6 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">我们会继续上新，把更好做的菜带给你</text>
+    <text class="footer-text">更多食谱持续更新。</text>
   </view>
 </view>

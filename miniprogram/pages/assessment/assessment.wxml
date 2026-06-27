@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">成长观察</text>
-    <text class="page-subtitle">通过一些问题，帮你看看孩子最近的整体状态</text>
+    <text class="page-subtitle">通过观察了解孩子近期的成长状态。</text>
   </view>
 
   <!-- 当前孩子信息 -->
@@ -66,7 +66,7 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">通过科学的问题，帮你了解孩子的成长状态</text>
+    <text class="footer-text">通过成长观察，了解孩子在当前年龄段的发育情况。</text>
     <text class="footer-subtext">结果仅供家庭教育参考，如有明显担忧请咨询专业人士</text>
   </view>
 </view>

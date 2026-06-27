@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">育儿锦囊</text>
-    <text class="page-subtitle">专业育儿知识，陪伴孩子快乐成长</text>
+    <text class="page-subtitle">分龄育儿知识，聚焦常见场景</text>
     <view class="recommendation-pill" wx:if="{{recommendationLabel || recommendationFallback}}">
       <text>{{recommendationLabel || recommendationFallback}}</text>
     </view>
@@ -118,7 +118,7 @@
     <view class="empty-wrap" wx:if="{{!loading && !loadError && latestArticles.length === 0}}">
       <text class="empty-icon">📚</text>
       <text class="empty-text">暂无文章</text>
-      <text class="empty-desc">我们还在准备新的内容，稍后再来看看</text>
+       <text class="empty-desc">暂无内容，请稍后再来。</text>
     </view>
     
     <!-- 文章列表 -->
@@ -163,6 +163,6 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">我们会继续更新，把更多育儿方法带给你</text>
+    <text class="footer-text">更多内容持续更新。</text>
   </view>
 </view>
