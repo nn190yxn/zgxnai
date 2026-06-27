@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const { generateAIAnswer, getAIStatus } = require('../services/ai');
 const chatContextUtil = require('./chat-context');
+const dailyPlanText = require('./daily-plan-text');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -9526,15 +9527,16 @@ async function storeDailyPlanCards(userId, childId, planDate, cards) {
 }
 
 function normalizeDailyPlanRecord(row) {
+  const legacyText = dailyPlanText.normalizeLegacyDailyPlanText(row.plan_type, row.title, row.reason_text, row.summary_text);
   return {
     id: row.id,
     childId: row.child_id,
     planDate: formatStoredDateValue(row.plan_date),
     type: row.plan_type,
-    title: row.title,
-    reason: row.reason_text || '',
+    title: legacyText.title,
+    reason: legacyText.reason,
     actionText: row.action_text || '',
-    summary: row.summary_text || '',
+    summary: legacyText.summary,
     durationMinutes: Number(row.duration_minutes || 0),
     targetType: row.target_type || '',
     targetId: row.target_id || '',
@@ -9569,6 +9571,7 @@ async function dailyPlanHandler(req, res) {
   }
 
   if (!child) {
+    const noChildCards = buildNoChildDailyPlanCards(planDate);
     res.json({
       success: true,
       data: {
@@ -9576,9 +9579,45 @@ async function dailyPlanHandler(req, res) {
         child_id: 0,
         child_name: '',
         age_group: '',
-        cards: buildNoChildDailyPlanCards(planDate).map((item, index) => ({
+        cards: noChildCards.map((item, index) => ({
           id: `guest_${index + 1}`,
           childId: 0,
+          planDate,
+          type: item.planType,
+          title: item.title,
+          reason: item.reasonText,
+          actionText: item.actionText,
+          summary: item.summaryText,
+          durationMinutes: item.durationMinutes,
+          targetType: item.targetType,
+          targetId: item.targetId,
+          targetPath: item.targetPath,
+          sourceKey: item.sourceKey,
+          score: item.score,
+          status: 'pending',
+          completed: false,
+          completedAt: null
+        }))
+      }
+    });
+    return;
+  }
+
+  const ageGroup = inferAgeRangeFromChild(child) || '';
+  if (!ageGroup) {
+    const missingAgeCards = dailyPlanText.buildMissingAgeDailyPlanCards(child, planDate);
+    const streak = await getUserPlanStreak(userId, child.id);
+    res.json({
+      success: true,
+      data: {
+        date: planDate,
+        child_id: child.id,
+        child_name: child.name || '',
+        age_group: '',
+        streak_days: streak.streakDays,
+        cards: missingAgeCards.map((item, index) => ({
+          id: `missing_age_${index + 1}`,
+          childId: child.id,
           planDate,
           type: item.planType,
           title: item.title,
@@ -9613,7 +9652,7 @@ async function dailyPlanHandler(req, res) {
       date: planDate,
       child_id: child.id,
       child_name: child.name || '',
-      age_group: inferAgeRangeFromChild(child) || '',
+      age_group: ageGroup,
       streak_days: streak.streakDays,
       cards
     }
@@ -10209,7 +10248,7 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     nextActionsFull: [
       dimAdvice.action,
       growthList.length < 4 ? '下周优先稳住记录节奏，每天固定一个时间点花30秒记录即可。' : '下周继续保留每天一个固定记录时段，观察动作效果。',
-      `围绕${sceneProfile.articleCategory}再读一篇方法文并尝试其中一条建议，下周记录变化。`
+      `围绕${sceneProfile.articleCategory}再看一篇文章，挑一条建议下周试。`
     ],
     nextActionsPreview: [
       dimAdvice.action
