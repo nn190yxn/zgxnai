@@ -1329,26 +1329,33 @@ function renderDistribution(containerId, items, emptyMessage) {
 function renderContentOpsOverview(data) {
   var tips = data.tips || {};
   var articles = data.articles || {};
+  var readyTips = Number(tips.structured_ready_count || 0);
+  var totalTips = Number(tips.total_active || 0);
+  var pendingTips = Math.max(0, totalTips - readyTips);
   renderMiniStats('contentOpsHealth', [
     {
-      label: '结构化锦囊覆盖',
+      label: '可用锦囊',
       value: formatPercent(tips.structured_ready_rate),
-      meta: `${formatNumber(tips.structured_ready_count)} / ${formatNumber(tips.total_active)} 条已可直接投放`
+      meta: `${formatNumber(readyTips)} 条已整理好，可用于小程序推荐和 AI 回答引用。`
     },
     {
-      label: 'Action / Insight',
-      value: `${formatNumber(tips.action_count)} / ${formatNumber(tips.insight_count)}`,
-      meta: `Raw 仅剩 ${formatNumber(tips.raw_count)} 条`
+      label: '待整理锦囊',
+      value: formatNumber(pendingTips),
+      meta: pendingTips > 0
+        ? '建议优先整理高频年龄段、高频问题和会员常用场景。'
+        : `全部可用，原始未清洗内容 ${formatNumber(tips.raw_count)} 条。`
     },
     {
-      label: '文章分类完成率',
+      label: '文章分类进度',
       value: formatPercent(articles.classified_rate),
-      meta: `未分类 ${formatNumber(articles.unclassified_count)} 篇`
+      meta: `${formatNumber(articles.unclassified_count)} 篇待分类，分类后更容易进入专题推荐和 AI 引用。`
     },
     {
-      label: '高阅读文章',
+      label: '阅读表现',
       value: formatNumber(articles.high_read_count),
-      meta: `最近更新 ${formatDateTime(articles.latest_updated_at)}`
+      meta: Number(articles.high_read_count || 0) > 0
+        ? `已识别高阅读文章，数据更新于 ${formatDateTime(articles.latest_updated_at)}。`
+        : `当前没有识别出高阅读文章，建议检查阅读埋点或高阅读阈值。更新于 ${formatDateTime(articles.latest_updated_at)}。`
     }
   ]);
 }
