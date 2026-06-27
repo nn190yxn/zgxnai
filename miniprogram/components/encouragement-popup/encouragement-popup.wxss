@@ -1,0 +1,129 @@
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-container {
+  width: 86%;
+  max-width: 600rpx;
+  background: #fff;
+  border-radius: 32rpx;
+  overflow: visible;
+  animation: modalIn 0.35s ease;
+  position: relative;
+  padding: 60rpx 40rpx 40rpx;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-glow {
+  position: absolute;
+  top: -1rpx;
+  left: 30rpx;
+  right: 30rpx;
+  height: 8rpx;
+  border-radius: 0 0 8rpx 8rpx;
+  background: linear-gradient(90deg, #A5D6A7, #FFD54F, #FFAB40);
+}
+
+.level-1 .modal-glow {
+  background: linear-gradient(90deg, #A5D6A7, #C8E6C9);
+}
+.level-2 .modal-glow {
+  background: linear-gradient(90deg, #C8E6C9, #FFF59D);
+}
+.level-3 .modal-glow {
+  background: linear-gradient(90deg, #FFF59D, #FFD54F);
+}
+.level-4 .modal-glow {
+  background: linear-gradient(90deg, #FFD54F, #FFAB40);
+}
+.level-5 .modal-glow {
+  background: linear-gradient(90deg, #FFD54F, #FF7043, #FFD54F);
+}
+
+.modal-icon-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.modal-icon {
+  font-size: 80rpx;
+  line-height: 1;
+}
+
+.modal-body {
+  text-align: center;
+  padding: 0 8rpx 32rpx;
+}
+
+.modal-message {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.6;
+  letter-spacing: 1rpx;
+}
+
+.level-4 .modal-message,
+.level-5 .modal-message {
+  font-size: 36rpx;
+  color: #E65100;
+}
+
+.level-5 .modal-message {
+  font-weight: 700;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-btn {
+  width: 320rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: linear-gradient(135deg, #66BB6A, #43A047);
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+  padding: 0;
+  text-align: center;
+}
+
+.confirm-btn::after {
+  border: none;
+}
+
+.level-4 .confirm-btn {
+  background: linear-gradient(135deg, #FF7043, #F4511E);
+}
+
+.level-5 .confirm-btn {
+  background: linear-gradient(135deg, #FFB300, #FF8F00);
+}
+
+.level-5 .modal-container {
+  box-shadow: 0 8rpx 48rpx rgba(255, 152, 0, 0.3);
+}

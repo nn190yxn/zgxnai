@@ -1,5 +1,6 @@
 // 文章详情页面逻辑
 var app = getApp();
+var encouragementUtils = require('../../../utils/encouragement.js');
 
 Page({
   data: {
@@ -25,7 +26,8 @@ Page({
     imageLoaded: false
     ,
     offlineFallback: false,
-    contentBlocks: []
+    contentBlocks: [],
+    showArticleAnnotation: false
   },
 
   getLocalArticleDetail: function(id) {
@@ -263,6 +265,9 @@ Page({
   },
 
   onLoad: function(options) {
+    this._annotationShown = false;
+    this._readTimer = null;
+    this._readCompleted = false;
     var articleId = options && options.id;
     if (!articleId) {
       this.setData({
@@ -285,6 +290,7 @@ Page({
     });
     this.loadArticleDetail();
     this.loadRelatedArticles();
+    this.startReadingDetection();
   },
 
   // 加载文章详情
@@ -473,6 +479,77 @@ Page({
   },
 
   // 分享
+  onUnload: function() {
+    if (this._readTimer) {
+      clearTimeout(this._readTimer);
+      this._readTimer = null;
+    }
+    if (this._autoDismissTimer) {
+      clearTimeout(this._autoDismissTimer);
+      this._autoDismissTimer = null;
+    }
+  },
+
+  onPageScroll: function(e) {
+    if (this._readCompleted || this._annotationShown) {
+      return;
+    }
+    var scrollTop = e.scrollTop;
+    if (!scrollTop || scrollTop < 200) {
+      return;
+    }
+    var systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : { windowHeight: 0 };
+    var viewportHeight = systemInfo.windowHeight || 0;
+    wx.createSelectorQuery().select('.page').boundingClientRect(function(pageRect) {
+      if (!pageRect || !pageRect.height || !viewportHeight) return;
+      if (encouragementUtils.hasReadEnough(scrollTop, viewportHeight, pageRect.height)) {
+        this._readCompleted = true;
+        this.tryShowAnnotation();
+      }
+    }.bind(this)).exec();
+  },
+
+  startReadingDetection: function() {
+    if (this._readTimer) {
+      clearTimeout(this._readTimer);
+    }
+    this._readTimer = setTimeout(function() {
+      if (!this._readCompleted && !this._annotationShown) {
+        this._readCompleted = true;
+        this.tryShowAnnotation();
+      }
+    }.bind(this), 60000);
+  },
+
+  tryShowAnnotation: function() {
+    var todayKey = 'encouragement_annotation_' + new Date().toISOString().slice(0, 10);
+    var todayCount = wx.getStorageSync(todayKey) || 0;
+    if (!encouragementUtils.shouldShowReadingAnnotation({
+      alreadyShown: this._annotationShown,
+      todayCount: todayCount,
+      randomValue: Math.random()
+    })) {
+      return;
+    }
+    this._annotationShown = true;
+    wx.setStorageSync(todayKey, todayCount + 1);
+    this.setData({ showArticleAnnotation: true });
+    if (this._autoDismissTimer) {
+      clearTimeout(this._autoDismissTimer);
+    }
+    this._autoDismissTimer = setTimeout(function() {
+      this.setData({ showArticleAnnotation: false });
+    }.bind(this), 5000);
+  },
+
+  dismissArticleAnnotation: function() {
+    this.setData({ showArticleAnnotation: false });
+    if (this._autoDismissTimer) {
+      clearTimeout(this._autoDismissTimer);
+      this._autoDismissTimer = null;
+    }
+  },
+
   onShareAppMessage: function() {
     if (this.data.offlineFallback) {
       return {

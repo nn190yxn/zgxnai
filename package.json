@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "lint": "node scripts/lint.js"
+    "lint": "node scripts/lint.js",
+    "test": "node scripts/test-encouragement.js"
   },
   "devDependencies": {
     "supertest": "^7.2.2"

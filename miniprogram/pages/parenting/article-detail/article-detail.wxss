@@ -677,3 +677,44 @@
   color: #666;
   line-height: 1.6;
 }
+
+.reading-annotation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32rpx 40rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 24rpx 24rpx 0 0;
+  box-shadow: 0 -4rpx 24rpx rgba(0, 0, 0, 0.08);
+  z-index: 900;
+  display: flex;
+  align-items: flex-start;
+  animation: annotationSlideUp 0.4s ease;
+}
+
+@keyframes annotationSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.annotation-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #555;
+  line-height: 1.6;
+}
+
+.annotation-close {
+  font-size: 36rpx;
+  color: #bbb;
+  padding: 0 8rpx;
+  margin-left: 16rpx;
+  line-height: 1;
+}

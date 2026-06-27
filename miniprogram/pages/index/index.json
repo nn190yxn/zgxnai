@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "小牛育儿AI助理"
+  "navigationBarTitleText": "小牛育儿AI助理",
+  "usingComponents": {
+    "encouragement-popup": "/components/encouragement-popup/encouragement-popup"
+  }
 }

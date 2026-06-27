@@ -226,6 +226,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/health`, healthHandler);
   app.get(`${prefix}/runtime/config`, runtimeConfigHandler);
   app.get(`${prefix}/retention/status`, optionalAuthenticateToken, asyncHandler(retentionStatusHandler));
+  app.post(`${prefix}/encouragement/acknowledge`, authenticateToken, asyncHandler(encouragementAcknowledgeHandler));
   app.post(`${prefix}/auth/login`, asyncHandler(loginHandler));
   app.post(`${prefix}/auth/refresh`, asyncHandler(refreshHandler));
   app.get(`${prefix}/auth/me`, authenticateToken, asyncHandler(meHandler));
@@ -597,6 +598,20 @@ async function retentionStatusHandler(req, res) {
   res.json({ success: true, data: await getUserRetentionState(userId) });
 }
 
+async function encouragementAcknowledgeHandler(req, res) {
+  const userId = getUserId(req);
+  const { level, type } = req.body || {};
+  const eventData = JSON.stringify({
+    level: Number(level) || 0,
+    type: String(type || 'daily_visit')
+  });
+  await pool.execute(
+    `INSERT INTO event_tracks (user_id, event_type, event_data, session_id) VALUES (?, 'encouragement_shown', ?, '')`,
+    [userId, eventData]
+  );
+  res.json({ success: true });
+}
+
 function buildGuestRetentionState() {
   return {
     user_id: 0,
@@ -619,7 +634,11 @@ function buildGuestRetentionState() {
     is_active_unpaid: false,
     is_silent_user: false,
     paid_order_count: 0,
-    recommended_touchpoint: 'login_to_personalize'
+    recommended_touchpoint: 'login_to_personalize',
+    show_encouragement: false,
+    encouragement_level: 0,
+    encouragement_message: '',
+    encouragement_type: ''
   };
 }
 
@@ -4261,6 +4280,36 @@ function buildRetentionTouchpoint(state) {
   return 'start_growth_observation';
 }
 
+const ENCOURAGEMENT_MESSAGES = {
+  1: '每天花几分钟关注孩子，你已经是很有心的家长了',
+  2: '连续记录了几天，你的坚持正在变成孩子成长中最珍贵的东西',
+  3: '能持续关注孩子成长的家长，本身就闪闪发光',
+  4: '哇，连续一周都在记录成长，你是超级棒的家长！',
+  5: '你一直在用心陪伴孩子成长，这是最长情的礼物'
+};
+
+function computeEncouragement(activityRow, loggedIn) {
+  if (!loggedIn) {
+    return { show_encouragement: false, encouragement_level: 0, encouragement_message: '', encouragement_type: '' };
+  }
+  const activeDays14d = Number(activityRow.active_days_14d || 0);
+  const encouragementShownToday = Number(activityRow.encouragement_shown_today || 0) > 0;
+  if (activeDays14d === 0 || encouragementShownToday) {
+    return { show_encouragement: false, encouragement_level: 0, encouragement_message: '', encouragement_type: '' };
+  }
+  let level = 1;
+  if (activeDays14d >= 14) level = 5;
+  else if (activeDays14d >= 7) level = 4;
+  else if (activeDays14d >= 5) level = 3;
+  else if (activeDays14d >= 3) level = 2;
+  return {
+    show_encouragement: true,
+    encouragement_level: level,
+    encouragement_message: ENCOURAGEMENT_MESSAGES[level],
+    encouragement_type: 'daily_visit'
+  };
+}
+
 async function getUserRetentionState(userId) {
   const membership = await getMembership(userId);
   const membershipState = normalizeMembershipRetentionState(membership);
@@ -4269,7 +4318,10 @@ async function getUserRetentionState(userId) {
        MAX(created_at) AS last_active_at,
        SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS active_events_7d,
        SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) THEN 1 ELSE 0 END) AS active_events_14d,
-       SUM(CASE WHEN event_type LIKE 'ai_chat_%' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS ai_events_7d
+       SUM(CASE WHEN event_type LIKE 'ai_chat_%' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS ai_events_7d,
+       COUNT(DISTINCT CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN DATE(created_at) END) AS active_days_7d,
+       COUNT(DISTINCT CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) THEN DATE(created_at) END) AS active_days_14d,
+       SUM(CASE WHEN event_type = 'encouragement_shown' AND DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS encouragement_shown_today
      FROM event_tracks
      WHERE user_id = ?`,
     [userId]
@@ -4314,6 +4366,7 @@ async function getUserRetentionState(userId) {
   const recentRecord = recordRows[0] || null;
   const recentEntries = child ? await getRecentGrowthRecordEntries(userId, child.id, 3) : [];
   const mergedSummary = buildMergedRecentSummary(recentRecord, recentEntries);
+  const encouragement = computeEncouragement(activity, true);
   const state = {
     ...membershipState,
     user_id: userId,
@@ -4335,7 +4388,11 @@ async function getUserRetentionState(userId) {
     active_events_14d: activeEvents14d,
     is_active_unpaid: activeEvents14d >= 3 && paidOrderCount === 0 && !membershipState.is_active,
     is_silent_user: !activity.last_active_at || new Date(activity.last_active_at).getTime() < Date.now() - 7 * 86400000,
-    paid_order_count: paidOrderCount
+    paid_order_count: paidOrderCount,
+    show_encouragement: encouragement.show_encouragement,
+    encouragement_level: encouragement.encouragement_level,
+    encouragement_message: encouragement.encouragement_message,
+    encouragement_type: encouragement.encouragement_type
   };
   return {
     ...state,

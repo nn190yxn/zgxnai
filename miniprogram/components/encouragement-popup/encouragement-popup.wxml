@@ -1,0 +1,14 @@
+<view class="modal-mask" wx:if="{{visible}}" bindtap="onMaskTap">
+  <view class="modal-container {{_levelClass}}" catchtap="preventBubble">
+    <view class="modal-glow"></view>
+    <view class="modal-icon-area">
+      <text class="modal-icon">{{level >= 5 ? '🏆' : level >= 4 ? '🌟' : level >= 3 ? '✨' : level >= 2 ? '💪' : '🌱'}}</text>
+    </view>
+    <view class="modal-body">
+      <text class="modal-message">{{message}}</text>
+    </view>
+    <view class="modal-footer">
+      <button class="confirm-btn" bindtap="onConfirm">知道了</button>
+    </view>
+  </view>
+</view>

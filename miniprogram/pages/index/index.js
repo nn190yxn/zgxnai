@@ -1,5 +1,6 @@
 // 首页逻辑
 const app = getApp();
+const encouragementUtils = require('../../utils/encouragement.js');
 
 Page({
   data: {
@@ -43,6 +44,9 @@ Page({
     },
     retentionSummary: null,
     continueTask: null,
+    showEncouragementPopup: false,
+    encouragementMessage: '',
+    encouragementLevel: 1,
     todayTask: {
       title: '今日建议：开始今天的成长观察',
       duration: '3分钟了解孩子近期状态'
@@ -777,6 +781,14 @@ Page({
         retentionSummary: data.recent_record_summary || null,
         continueTask: ct
       });
+      var encouragementState = encouragementUtils.buildHomeEncouragementState(data);
+      if (encouragementState.visible) {
+        that.setData({
+          showEncouragementPopup: true,
+          encouragementMessage: encouragementState.message,
+          encouragementLevel: encouragementState.level
+        });
+      }
       if (!that._retentionTouchpointExposed) {
         that._retentionTouchpointExposed = true;
         if (app.trackKbEvent) {
@@ -1191,6 +1203,29 @@ Page({
         wx.showToast({ title: '页面跳转失败', icon: 'none' });
       }
     });
+  },
+
+  onEncouragementConfirm: function() {
+    this.setData({ showEncouragementPopup: false });
+    this.acknowledgeEncouragement();
+  },
+
+  onEncouragementCancel: function() {
+    this.setData({ showEncouragementPopup: false });
+    this.acknowledgeEncouragement();
+  },
+
+  acknowledgeEncouragement: function() {
+    var that = this;
+    var level = that.data.encouragementLevel;
+    app.request({
+      url: '/encouragement/acknowledge',
+      method: 'POST',
+      data: {
+        level: level,
+        type: 'daily_visit'
+      }
+    }).catch(function() {});
   },
 
   onShareAppMessage() {

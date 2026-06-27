@@ -192,4 +192,11 @@
     <text class="tips-content">本服务内容仅供家庭教育参考，不能替代专业评估或诊断。如对孩子发育有明显担忧，建议咨询医生或相关专业人员。</text>
   </view>
   </block>
+  <encouragement-popup
+    visible="{{showEncouragementPopup}}"
+    message="{{encouragementMessage}}"
+    level="{{encouragementLevel}}"
+    bind:confirm="onEncouragementConfirm"
+    bind:cancel="onEncouragementCancel"
+  />
 </view>

@@ -200,4 +200,9 @@
     <text class="empty-icon">📄</text>
     <text class="empty-text">文章不存在</text>
   </view>
+
+  <view class="reading-annotation {{showArticleAnnotation ? 'annotation-visible' : ''}}" bindtap="dismissArticleAnnotation" wx:if="{{showArticleAnnotation}}">
+    <text class="annotation-text">读完这篇说明你真的很关心孩子的成长，每多了解一点都是对孩子更好的陪伴</text>
+    <text class="annotation-close">x</text>
+  </view>
 </view>
