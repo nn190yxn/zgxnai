@@ -32,6 +32,17 @@ Page({
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
     membershipTouchpointDesc: '可查看更完整的每周成长总结、趋势提醒和陪伴建议。',
+    operationTouchpoint: {
+      key: '',
+      title: '',
+      desc: '',
+      cta: '',
+      targetPath: '',
+      targetType: '',
+      sourceId: ''
+    },
+    retentionSummary: null,
+    continueTask: null,
     todayTask: {
       title: '今日建议：开始今天的成长观察',
       duration: '3分钟了解孩子近期状态'
@@ -78,6 +89,7 @@ Page({
     this.loadDailyPlan();
     this.loadWeeklyProgress();
     this.loadMembershipTouchpoint();
+    this.loadRetentionState();
     this.captureShareSource();
     this.deferHeroImage();
   },
@@ -92,6 +104,7 @@ Page({
     this.loadDailyPlan();
     this.loadWeeklyProgress();
     this.loadMembershipTouchpoint();
+    this.loadRetentionState();
     this.deferHeroImage();
   },
 
@@ -587,6 +600,178 @@ Page({
       }
     }).catch(function() {
       that.setData({ membershipTouchpointVisible: false });
+    });
+  },
+
+  buildRetentionTouchpoint: function(data) {
+    var key = data.recommended_touchpoint || '';
+    var mapping = {
+      complete_child_profile: {
+        title: '完善孩子档案',
+        desc: '填写孩子的年龄和性别后，AI 会算出更精准的每日建议。',
+        cta: '立即完善',
+        targetType: 'child_profile',
+        targetPath: '/pages/profile/child-edit/child-edit'
+      },
+      continue_daily_plan: function() {
+        var plan = data.unfinished_daily_plan || {};
+        return {
+          title: '继续上次的任务',
+          desc: plan.title || '上次的每日建议还未完成，接着做吧。',
+          cta: '继续完成',
+          targetType: plan.target_path ? 'daily_plan' : 'assessment',
+          targetPath: plan.target_path || '/pages/assessment/assessment',
+          sourceId: plan.id || ''
+        };
+      },
+      membership_expiring: function() {
+        var level = data.membership_expiring_level || 'soon';
+        return {
+          title: level === 'urgent' ? '会员即将到期' : '会员快到期了',
+          desc: level === 'urgent'
+            ? '您的会员将在3天内到期，续费可继续享受1v1成长陪伴服务。'
+            : '您的会员将在7天内到期，提前续费享受连续陪伴。',
+          cta: '查看会员',
+          targetType: 'membership',
+          targetPath: '/pages/membership/index'
+        };
+      },
+      membership_conversion: {
+        title: '解锁完整成长陪伴',
+        desc: '开通会员可获得AI专属陪伴建议、成长曲线分析和周总结报告。',
+        cta: '了解会员',
+        targetType: 'membership',
+        targetPath: '/pages/membership/index'
+      },
+      quick_return_task: {
+        title: '3分钟快速回归',
+        desc: '好久不见！从一次简单的成长观察重新开始吧。',
+        cta: '开始观察',
+        targetType: 'assessment',
+        targetPath: '/pages/assessment/assessment'
+      },
+      review_growth_record: {
+        title: '查看近期成长记录',
+        desc: '最近的成长记录已经整理好了，看看孩子这阶段的变化。',
+        cta: '查看记录',
+        targetType: 'growth_record',
+        targetPath: '/pages/growth-record/index'
+      },
+      continue_ai_chat: {
+        title: '继续育儿问答',
+        desc: '上次和AI聊了育儿话题，还有问题可以接着问。',
+        cta: '继续提问',
+        targetType: 'ai_chat',
+        targetPath: '/pages/chat/chat'
+      },
+      start_growth_observation: {
+        title: '开始今天的成长观察',
+        desc: '从成长观察、每日训练或成长记录中选择一个开始。',
+        cta: '去看看',
+        targetType: 'assessment',
+        targetPath: '/pages/assessment/assessment'
+      },
+      login_to_personalize: {
+        title: '登录后开启个性化陪伴',
+        desc: '登录后可获得基于孩子年龄的每日建议、成长观察和AI问答。',
+        cta: '立即登录',
+        targetType: 'login',
+        targetPath: ''
+      }
+    };
+    var entry = mapping[key] || mapping.start_growth_observation;
+    return typeof entry === 'function' ? entry() : entry;
+  },
+
+  buildRetentionContinueTask: function(data) {
+    var plan = data.unfinished_daily_plan;
+    if (!plan) {
+      return null;
+    }
+    return {
+      id: plan.id || '',
+      title: plan.title || '继续任务',
+      targetPath: plan.target_path || '',
+      planDate: plan.plan_date || ''
+    };
+  },
+
+  loadRetentionState: function() {
+    var that = this;
+    if (app.globalData.enableStartupSafeMode) {
+      return;
+    }
+    if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
+      that.setData({
+        operationTouchpoint: {
+          key: 'quick_return_task',
+          title: '演示模式：3分钟快速回归',
+          desc: '当前为演示内容。真实模式下会根据您的使用状态展示个性化运营入口。',
+          cta: '查看示例',
+          targetType: 'assessment',
+          targetPath: '/pages/assessment/assessment',
+          sourceId: ''
+        },
+        retentionSummary: null,
+        continueTask: null
+      });
+      return;
+    }
+    if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      that.setData({
+        operationTouchpoint: that.buildRetentionTouchpoint({
+          recommended_touchpoint: 'login_to_personalize'
+        }),
+        retentionSummary: null,
+        continueTask: null
+      });
+      return;
+    }
+    app.ensureLogin().then(function() {
+      return app.request({
+        url: '/retention/status',
+        method: 'GET'
+      });
+    }).then(function(res) {
+      var data = (res && res.data) ? res.data : res;
+      if (!data) {
+        that.setData({
+          operationTouchpoint: Object.assign({}, that.data.operationTouchpoint, { key: '' }),
+          retentionSummary: null,
+          continueTask: null
+        });
+        return;
+      }
+      var tp = that.buildRetentionTouchpoint(data);
+      tp.key = data.recommended_touchpoint || '';
+      tp.sourceId = tp.sourceId || '';
+      var ct = that.buildRetentionContinueTask(data);
+      that.setData({
+        operationTouchpoint: tp,
+        retentionSummary: data.recent_record_summary || null,
+        continueTask: ct
+      });
+      if (!that._retentionTouchpointExposed) {
+        that._retentionTouchpointExposed = true;
+        if (app.trackKbEvent) {
+          app.trackKbEvent({
+            event_type: 'retention_touchpoint_exposure',
+            module_key: 'retention_touchpoint',
+            page_key: 'home_index',
+            event_meta: {
+              touchpoint_key: data.recommended_touchpoint || '',
+              title: tp.title,
+              source: 'retention_status_api'
+            }
+          });
+        }
+      }
+    }).catch(function() {
+      that.setData({
+        operationTouchpoint: Object.assign({}, that.data.operationTouchpoint, { key: '' }),
+        retentionSummary: null,
+        continueTask: null
+      });
     });
   },
 
