@@ -482,6 +482,7 @@ app.get(`${ADMIN_API_PREFIX}/insights/weekly`, authenticateAdmin, asyncHandler(a
 app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/overview`, authenticateAdmin, asyncHandler(adminContentOpsOverviewHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/pending-core-items`, authenticateAdmin, asyncHandler(adminPendingCoreItemsHandler));
+app.post(`${ADMIN_API_PREFIX}/content/ops/seed-core-tips`, authenticateAdmin, asyncHandler(adminSeedCoreTipsHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/tips`, authenticateAdmin, asyncHandler(adminContentOpsTipsHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/articles`, authenticateAdmin, asyncHandler(adminContentOpsArticlesHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/overview`, authenticateAdmin, asyncHandler(adminAiChatOverviewHandler));
@@ -1731,6 +1732,40 @@ function buildPendingCoreItemAction(category, ageGroup, readyCount, totalCount) 
     return `补充${ageGroup}${sceneName}锦囊，当前仅${readyCount}条，目标${Math.ceil(totalCount * CORE_TIP_TARGET_RATE / 100)}条`;
   }
   return `完善${ageGroup}${sceneName}锦囊整理，当前${readyCount}条可用，向${Math.ceil(totalCount * CORE_TIP_TARGET_RATE / 100)}条目标推进`;
+}
+
+async function adminSeedCoreTipsHandler(req, res) {
+  const results = [];
+  for (var c = 0; c < CORE_TIP_CATEGORIES.length; c++) {
+    for (var a = 0; a < CORE_TIP_AGE_GROUPS.length; a++) {
+      var category = CORE_TIP_CATEGORIES[c];
+      var ageGroup = CORE_TIP_AGE_GROUPS[a];
+      var [existing] = await pool.execute(
+        'SELECT COUNT(*) AS cnt FROM parenting_tips WHERE is_active = 1 AND category = ? AND age_group = ?',
+        [category, ageGroup]
+      );
+      if (Number(existing[0].cnt) > 0) {
+        results.push({ category: category, age_group: ageGroup, action: 'skipped', reason: '已有 ' + existing[0].cnt + ' 条' });
+        continue;
+      }
+      var [insertResult] = await pool.execute(
+        `INSERT INTO parenting_tips (category, age_group, title, content, display_type, display_title, display_text, display_priority, content_type, source_article_title, source_article_url, is_active)
+         VALUES (?, ?, ?, ?, 'action', ?, ?, 5, 'method', '核心场景锦囊（待整理）', '', 1)`,
+        [category, ageGroup, category + ' · ' + ageGroup, '（核心场景锦囊，等待运营整理完整内容。）', category + ' · ' + ageGroup + ' 核心锦囊', '这条锦囊用于覆盖' + category + '在' + ageGroup + '年龄段的核心框架，正式内容需运营填充。']
+      );
+      results.push({ category: category, age_group: ageGroup, action: 'seeded', id: insertResult.insertId });
+    }
+  }
+  res.json({
+    success: true,
+    data: {
+      total_categories: CORE_TIP_CATEGORIES.length,
+      total_age_groups: CORE_TIP_AGE_GROUPS.length,
+      total_combos: CORE_TIP_CATEGORIES.length * CORE_TIP_AGE_GROUPS.length,
+      results: results,
+      message: '核心场景种子数据已补全'
+    }
+  });
 }
 
 async function adminContentOpsTipsHandler(req, res) {
@@ -3483,6 +3518,11 @@ async function collectParentingTipReferences(keywords, scoreText, ageGroup, chat
     let score = scoreText([tip.title, tip.content, tip.display_title, tip.display_text, tip.category, sceneTagsText].join(' '));
     score += getContentTypeBonus(queryType, tip.content_type);
     score += Math.floor(qualityScore / 10);
+    var categoryIndex = CORE_TIP_CATEGORIES.indexOf(tip.category);
+    var ageGroupIndex = CORE_TIP_AGE_GROUPS.indexOf(tip.age_group);
+    if (categoryIndex !== -1 && ageGroupIndex !== -1) {
+      score += 100 + Math.max(0, 50 - categoryIndex * 5 - ageGroupIndex * 5);
+    }
     return {
       title: tip.title,
       score,

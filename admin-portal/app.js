@@ -1335,6 +1335,8 @@ function renderContentOpsOverview(data) {
   var coreReadyTips = Number(tips.core_ready_count || 0);
   var coreTotalTips = Number(tips.core_total || 0);
   var corePendingTips = Number(tips.core_pending_count || Math.max(0, coreTotalTips - coreReadyTips));
+  var coreTargetRate = Number(tips.core_target_rate || 80);
+  var coreGapToTarget = Number(tips.core_gap_to_target || Math.max(0, Math.ceil(coreTotalTips * coreTargetRate / 100) - coreReadyTips));
   renderMiniStats('contentOpsHealth', [
     {
       label: '核心场景覆盖率',
@@ -1342,6 +1344,13 @@ function renderContentOpsOverview(data) {
       meta: coreTotalTips > 0
         ? `${formatNumber(coreReadyTips)} / ${formatNumber(coreTotalTips)} 条核心锦囊可用于小程序推荐和 AI 回答。`
         : `${formatNumber(readyTips)} 条可用锦囊，建议先补齐核心主题和主要年龄段。`
+    },
+    {
+      label: '距 ' + coreTargetRate + '% 目标还差',
+      value: formatNumber(coreGapToTarget) + ' 条',
+      meta: coreGapToTarget > 0
+        ? '优先覆盖吃饭、睡觉、情绪、阅读、专注、如厕、入园等高频场景的 2-6 岁年龄段。'
+        : '核心场景已达标，可继续推进全量内容治理。'
     },
     {
       label: '高价值待整理',
