@@ -123,9 +123,9 @@
   <!-- 热门食谱 -->
   <view class="section">
     <view class="section-header">
-      <text class="section-title">热门食谱</text>
+      <text class="section-title">今天好做的食谱</text>
       <view class="section-more" bindtap="onMoreHotTap">
-        <text>更多</text>
+        <text>找更多食谱</text>
         <text class="more-arrow">›</text>
       </view>
     </view>
@@ -192,6 +192,6 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">更多食谱持续更新。</text>
+    <text class="footer-text">更多家常食谱持续更新。</text>
   </view>
 </view>

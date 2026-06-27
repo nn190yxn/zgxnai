@@ -16,6 +16,7 @@ function normalizeRuntimeConfig(payload) {
     sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
     paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : (envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true),
+    retentionStatusEnabled: data.retention_status_enabled !== undefined ? !!data.retention_status_enabled : (envConfig.enableRetentionStatus === true),
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
     aiServiceReady: data.ai_service_ready !== undefined ? !!data.ai_service_ready : (envConfig.envName !== 'production'),
     configLoaded: true
@@ -79,6 +80,9 @@ function isFeatureEnabled(app, featureName) {
   }
   if (featureName === 'payment') {
     return !!config.paymentEnabled;
+  }
+  if (featureName === 'retentionStatus') {
+    return !!config.retentionStatusEnabled;
   }
   if (featureName === 'assessments') {
     return !!config.assessmentsEnabled;

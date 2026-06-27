@@ -167,7 +167,7 @@ function getChildAgeYears(child, fallbackAge) {
 function getDefaultAgeGroup(child, fallbackAgeGroup) {
   var age = getChildAgeYears(child, -1);
   if (age < 0) {
-    return fallbackAgeGroup || '3-4岁';
+    return fallbackAgeGroup !== undefined ? fallbackAgeGroup : '3-4岁';
   }
   if (age < 1) return '0-1岁';
   if (age < 2) return '1-2岁';

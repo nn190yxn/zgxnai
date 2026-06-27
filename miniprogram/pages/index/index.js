@@ -22,8 +22,8 @@ Page({
     heroImageReady: false,
     growthStatus: {
       weekCompletion: 68,
-      currentFocus: '围绕成长观察、每日训练和成长记录安排今天的育儿重点',
-      todaySuggestion: '从成长观察、每日训练或成长记录中选择一个开始'
+      currentFocus: '先判断孩子当前状态，再选今天的做法',
+      todaySuggestion: '完成一次观察，拿到今日建议'
     },
     dailyPlanLoading: false,
     dailyPlanCards: [],
@@ -32,7 +32,7 @@ Page({
     dailyPlanEmptyText: '',
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
-    membershipTouchpointDesc: '可查看更完整的每周成长总结、趋势提醒和陪伴建议。',
+    membershipTouchpointDesc: '查看每周成长趋势和下周建议。',
     operationTouchpoint: {
       key: '',
       title: '',
@@ -48,32 +48,32 @@ Page({
     encouragementMessage: '',
     encouragementLevel: 1,
     todayTask: {
-      title: '今日建议：开始今天的成长观察',
-      duration: '3分钟了解孩子近期状态'
+      title: '3分钟了解孩子当前状态',
+      duration: '完成后获得今日建议'
     },
     weeklyProgress: {
-      headline: '记录满3天后，本周将生成成长总结',
-      summary: '记录每天的成长变化，你会看到阶段性的变化趋势。',
+      headline: '连续记录，成长变化更清楚',
+      summary: '记录越完整，周总结越有用。',
       streakDays: 0,
       actionText: '查看完整周报',
       premiumUnlocked: false
     },
     bannerList: [
       {
-        title: '宝贝成长观察',
-        desc: '围绕吃饭、睡眠、表达、情绪和习惯，了解孩子近期成长状态',
+        title: '3分钟成长观察',
+        desc: '快速判断孩子当前状态，获得今日建议',
         cta: '开始观察',
         action: 'assessment'
       },
       {
-        title: '育儿问题解答',
-        desc: '结合孩子的具体情况，获得更清晰的家庭陪伴建议',
+        title: '小牛育儿问答',
+        desc: '输入问题，小牛给出可执行做法',
         cta: '问问小牛',
         action: 'chat'
       },
       {
-        title: '宝贝成长记录',
-        desc: '把观察、练习、饮食和成长变化整理在一起，持续记录成长过程',
+        title: '成长记录',
+        desc: '每天记一点，周总结更准确',
         cta: '查看功能',
         action: 'assessment'
       }
@@ -757,6 +757,17 @@ Page({
       });
       return;
     }
+    var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : (app.globalData.runtimeConfig || {});
+    if (!runtimeConfig.retentionStatusEnabled) {
+      that.setData({
+        operationTouchpoint: that.buildRetentionTouchpoint({
+          recommended_touchpoint: 'start_growth_observation'
+        }),
+        retentionSummary: null,
+        continueTask: null
+      });
+      return;
+    }
     app.ensureLogin().then(function() {
       return app.request({
         url: '/retention/status',
@@ -804,7 +815,18 @@ Page({
           });
         }
       }
-    }).catch(function() {
+    }).catch(function(err) {
+      var statusCode = err && (err.statusCode || err.status || err.code);
+      if (Number(statusCode) === 404) {
+        that.setData({
+          operationTouchpoint: that.buildRetentionTouchpoint({
+            recommended_touchpoint: 'start_growth_observation'
+          }),
+          retentionSummary: null,
+          continueTask: null
+        });
+        return;
+      }
       that.setData({
         operationTouchpoint: Object.assign({}, that.data.operationTouchpoint, { key: '' }),
         retentionSummary: null,

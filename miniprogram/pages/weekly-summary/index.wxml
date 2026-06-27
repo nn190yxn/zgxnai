@@ -74,7 +74,7 @@
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && summary.recommendedContent.length}}">
-    <text class="section-title">继续看这些内容</text>
+    <text class="section-title">下周可以这样做</text>
     <view class="content-card" wx:for="{{summary.recommendedContent}}" wx:key="title" data-target-path="{{item.targetPath}}" bindtap="onOpenContent">
       <text class="content-title">{{item.title}}</text>
       <text class="content-summary">{{item.summary}}</text>
@@ -82,7 +82,7 @@
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && !summary.premiumUnlocked}}">
-    <text class="section-title">更多成长内容</text>
+    <text class="section-title">解锁完整周总结</text>
     <text class="summary-copy">{{summary.premiumTip}}</text>
     <view class="primary-btn" bindtap="goToMembership">查看宝贝成长服务</view>
   </view>

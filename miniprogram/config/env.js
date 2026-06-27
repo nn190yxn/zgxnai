@@ -25,7 +25,8 @@ var ENV_CONFIG = {
     enableVirtualPay: true,
     enableWechatPay: true,
     enableAiChat: true,
-    enableMultimodal: false
+    enableMultimodal: false,
+    enableRetentionStatus: false
   },
   production: {
     apiBaseUrl: 'https://api.woyai.cn/api/v1',
@@ -48,7 +49,8 @@ var ENV_CONFIG = {
     enableVirtualPay: true,
     enableWechatPay: true,
     enableAiChat: true,
-    enableMultimodal: false
+    enableMultimodal: false,
+    enableRetentionStatus: false
   }
 };
 

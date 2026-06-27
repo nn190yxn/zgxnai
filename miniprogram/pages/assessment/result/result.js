@@ -652,6 +652,10 @@ Page({
     if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
       return;
     }
+    var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : (app.globalData.runtimeConfig || {});
+    if (!runtimeConfig.retentionStatusEnabled) {
+      return;
+    }
     app.ensureLogin().then(function() {
       return app.request({
         url: '/retention/status',

@@ -19,8 +19,8 @@
     </view>
     <view class="hero-image hero-image-placeholder">
       <text class="hero-emoji">🌱</text>
-      <text class="hero-image-title">成长观察与育儿支持</text>
-      <text class="hero-image-desc">记录孩子每天的饮食、睡眠、情绪和活动。</text>
+      <text class="hero-image-title">每天三分钟，育儿有方法，成长看得见</text>
+      <text class="hero-image-desc">少一点猜测，多一点办法。</text>
     </view>
   </view>
 
@@ -37,9 +37,9 @@
 
   <view class="section daily-action-section">
     <view class="daily-action-card">
-      <text class="daily-action-eyebrow">今天先找一个真实场景</text>
-      <text class="daily-action-title">先看看和你家最像的问题</text>
-      <text class="daily-action-desc">选一篇内容，看完可让小牛拆为行动步骤。</text>
+      <text class="daily-action-eyebrow">今晚就能用</text>
+      <text class="daily-action-title">把问题变成做法</text>
+      <text class="daily-action-desc">选一个场景，小牛拆成行动步骤。</text>
       <view class="daily-action-buttons">
         <view class="daily-action-primary" bindtap="goToParenting">去育儿知识</view>
         <view class="daily-action-secondary" bindtap="goToTodayTask">做今天第一步</view>

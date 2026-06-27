@@ -60,6 +60,7 @@ App({
       sceneSearchEnabled: true,
       multimodalEnabled: envConfig.enableMultimodal === true,
       paymentEnabled: envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true,
+      retentionStatusEnabled: envConfig.enableRetentionStatus === true,
       aiMockFallback: !!envConfig.allowMockFallback,
       aiServiceReady: envConfig.envName !== 'production',
       configLoaded: !envConfig.enableRuntimeConfigFetch

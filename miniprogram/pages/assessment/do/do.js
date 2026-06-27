@@ -344,11 +344,15 @@ loadQuestionsFromServer: function(code) {
     }
 
     var child = this.data.currentChild || {};
-    return getDefaultAgeGroup(child, '6-9岁');
+    var profileAgeGroup = getDefaultAgeGroup(child, '');
+    if (profileAgeGroup) {
+      return profileAgeGroup;
+    }
+    return '';
   },
 
   getChildAge: function(child) {
-    return getChildAgeYears(child, 6);
+    return getChildAgeYears(child, -1);
   },
 
   buildSubmitAnswers: function() {

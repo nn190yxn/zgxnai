@@ -95,9 +95,9 @@
   <!-- 最新文章列表 -->
   <view class="section">
     <view class="section-header">
-      <text class="section-title">最新文章</text>
+      <text class="section-title">今天能用的方法</text>
       <view class="section-more" bindtap="onMoreArticlesTap">
-        <text>更多</text>
+        <text>找更多方法</text>
         <text class="more-arrow">›</text>
       </view>
     </view>
@@ -157,12 +157,12 @@
     <!-- 加载更多 -->
     <view class="load-more" wx:if="{{latestArticles.length > 0}}">
       <text wx:if="{{loading}}">加载中...</text>
-      <text wx:if="{{!loading && !hasMore}}">已经看完啦，换个分类试试</text>
+      <text wx:if="{{!loading && !hasMore}}">换个场景继续找方法</text>
     </view>
   </view>
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">更多内容持续更新。</text>
+    <text class="footer-text">更多家庭场景持续更新。</text>
   </view>
 </view>

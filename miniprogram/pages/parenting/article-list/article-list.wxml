@@ -134,7 +134,7 @@
     <view class="load-more" wx:if="{{articleList.length > 0}}">
       <view class="loading-spinner-small" wx:if="{{loading}}"></view>
       <text wx:if="{{loading}}">加载中...</text>
-      <text wx:if="{{!loading && !hasMore}}">没有更多了</text>
+      <text wx:if="{{!loading && !hasMore}}">换个年龄或场景继续找</text>
     </view>
   </view>
 </view>
