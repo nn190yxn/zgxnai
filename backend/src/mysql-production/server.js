@@ -476,6 +476,7 @@ app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyn
 app.get(`${ADMIN_API_PREFIX}/insights/weekly`, authenticateAdmin, asyncHandler(adminWeeklyInsightsHandler));
 app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/overview`, authenticateAdmin, asyncHandler(adminContentOpsOverviewHandler));
+app.get(`${ADMIN_API_PREFIX}/content/ops/pending-core-items`, authenticateAdmin, asyncHandler(adminPendingCoreItemsHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/tips`, authenticateAdmin, asyncHandler(adminContentOpsTipsHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/articles`, authenticateAdmin, asyncHandler(adminContentOpsArticlesHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/overview`, authenticateAdmin, asyncHandler(adminAiChatOverviewHandler));
@@ -1658,6 +1659,73 @@ async function adminContentOpsOverviewHandler(req, res) {
       }
     }
   });
+}
+
+async function adminPendingCoreItemsHandler(req, res) {
+  const coreTipParams = [
+    ...CORE_TIP_CATEGORIES,
+    ...CORE_TIP_AGE_GROUPS
+  ];
+  const coreTipFilter = `category IN (${CORE_TIP_CATEGORIES.map(() => '?').join(',')}) AND age_group IN (${CORE_TIP_AGE_GROUPS.map(() => '?').join(',')})`;
+
+  const [rows] = await pool.execute(
+    `SELECT
+       category,
+       age_group,
+       COUNT(*) AS total_count,
+       SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_title, '')), '') IS NOT NULL AND NULLIF(TRIM(COALESCE(display_text, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS ready_count
+     FROM parenting_tips
+     WHERE is_active = 1 AND ${coreTipFilter}
+     GROUP BY category, age_group
+     ORDER BY category ASC, age_group ASC`,
+    coreTipParams
+  );
+
+  const items = rows.map((row) => {
+    const totalCount = Number(row.total_count || 0);
+    const readyCount = Number(row.ready_count || 0);
+    const pendingCount = Math.max(0, totalCount - readyCount);
+    const targetCount = Math.ceil(totalCount * CORE_TIP_TARGET_RATE / 100);
+    return {
+      category: row.category || '',
+      age_group: row.age_group || '',
+      total_count: totalCount,
+      ready_count: readyCount,
+      pending_count: pendingCount,
+      target_count: targetCount,
+      gap_to_target: Math.max(0, targetCount - readyCount),
+      ready_rate: calculateRatio(readyCount, totalCount),
+      suggested_action: buildPendingCoreItemAction(row.category || '', row.age_group || '', readyCount, totalCount)
+    };
+  })
+    .filter((item) => item.pending_count > 0 && item.total_count > 0)
+    .sort((a, b) => b.pending_count - a.pending_count || a.ready_rate - b.ready_rate);
+
+  res.json({
+    success: true,
+    data: {
+      target_rate: CORE_TIP_TARGET_RATE,
+      items
+    }
+  });
+}
+
+function buildPendingCoreItemAction(category, ageGroup, readyCount, totalCount) {
+  const sceneNames = {
+    '情绪管理': '情绪/社交场景',
+    '行为习惯': '行为习惯场景',
+    '认知发展': '认知/专注场景',
+    '社交能力': '社交/沟通场景',
+    '营养健康': '营养/健康场景'
+  };
+  const sceneName = sceneNames[category] || category;
+  if (readyCount === 0) {
+    return `优先补充${ageGroup}${sceneName}的结构化锦囊，当前无可用核心内容`;
+  }
+  if (readyCount < 3) {
+    return `补充${ageGroup}${sceneName}锦囊，当前仅${readyCount}条，目标${Math.ceil(totalCount * CORE_TIP_TARGET_RATE / 100)}条`;
+  }
+  return `完善${ageGroup}${sceneName}锦囊整理，当前${readyCount}条可用，向${Math.ceil(totalCount * CORE_TIP_TARGET_RATE / 100)}条目标推进`;
 }
 
 async function adminContentOpsTipsHandler(req, res) {
