@@ -225,6 +225,7 @@ app.all('/wechat/message-push', asyncHandler(wechatMessagePushHandler));
 for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/health`, healthHandler);
   app.get(`${prefix}/runtime/config`, runtimeConfigHandler);
+  app.get(`${prefix}/retention/status`, optionalAuthenticateToken, asyncHandler(retentionStatusHandler));
   app.post(`${prefix}/auth/login`, asyncHandler(loginHandler));
   app.post(`${prefix}/auth/refresh`, asyncHandler(refreshHandler));
   app.get(`${prefix}/auth/me`, authenticateToken, asyncHandler(meHandler));
@@ -577,6 +578,42 @@ function runtimeConfigHandler(req, res) {
     ai_model: aiStatus.model,
     config_loaded: true
   });
+}
+
+async function retentionStatusHandler(req, res) {
+  const userId = getUserId(req);
+  if (!userId) {
+    res.json({ success: true, data: buildGuestRetentionState() });
+    return;
+  }
+
+  res.json({ success: true, data: await getUserRetentionState(userId) });
+}
+
+function buildGuestRetentionState() {
+  return {
+    user_id: 0,
+    logged_in: false,
+    child_id: 0,
+    child_name: '',
+    has_child_profile: false,
+    is_active: false,
+    membership_type: 'free',
+    membership_days_left: 0,
+    membership_expiring_level: 'none',
+    auto_renew: 0,
+    has_recent_ai_usage: false,
+    has_unfinished_daily_plan: false,
+    unfinished_daily_plan: null,
+    recent_record_summary: null,
+    last_active_at: null,
+    active_events_7d: 0,
+    active_events_14d: 0,
+    is_active_unpaid: false,
+    is_silent_user: false,
+    paid_order_count: 0,
+    recommended_touchpoint: 'login_to_personalize'
+  };
 }
 
 function signToken(payload) {
@@ -4109,6 +4146,7 @@ async function getUserRetentionState(userId) {
   const state = {
     ...membershipState,
     user_id: userId,
+    logged_in: true,
     child_id: child ? child.id : 0,
     child_name: child ? child.name || '' : '',
     has_child_profile: Boolean(child),

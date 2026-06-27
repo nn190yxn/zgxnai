@@ -5,7 +5,7 @@
     - 在 `backend/src/mysql-production/server.js` 中聚合会员剩余天数、未完成计划、近期 AI 使用、测评完成、成长记录和高活跃未付费状态
     - 输出 `recommended_touchpoint`，为首页个性化运营位和召回提醒提供统一判断
     - 覆盖需求 G2.4、G2.5、R5.1-R5.6、R7.1-R7.5
-  - [ ] 1.2 暴露小程序留存状态接口或扩展现有接口
+  - [x] 1.2 暴露小程序留存状态接口或扩展现有接口
     - 返回 `membership_days_left`、`membership_expiring_level`、`is_active_unpaid`、`has_unfinished_daily_plan`、`recent_record_summary`
     - 为未登录和接口异常提供安全兜底响应
     - 覆盖需求 R5.5、R5.6、R7.1、R7.5
