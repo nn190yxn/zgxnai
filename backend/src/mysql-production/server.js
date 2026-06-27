@@ -4011,6 +4011,139 @@ async function getMembership(userId) {
   return rows[0] || { status: 'free', membership_type: 'free', is_trial_used: 0, auto_renew: 1 };
 }
 
+function normalizeMembershipRetentionState(membership) {
+  const endTime = membership && membership.current_end_date ? new Date(membership.current_end_date).getTime() : 0;
+  const isActive = membership && membership.status === 'active' && endTime > Date.now();
+  const daysLeft = isActive ? Math.max(0, Math.ceil((endTime - Date.now()) / 86400000)) : 0;
+  let expiringLevel = 'none';
+  if (isActive && daysLeft <= 3) {
+    expiringLevel = 'urgent';
+  } else if (isActive && daysLeft <= 7) {
+    expiringLevel = 'soon';
+  }
+  return {
+    is_active: isActive,
+    membership_type: isActive ? membership.membership_type || 'member' : 'free',
+    membership_days_left: daysLeft,
+    membership_expiring_level: expiringLevel,
+    auto_renew: Number(membership && membership.auto_renew) ? 1 : 0
+  };
+}
+
+function buildRetentionTouchpoint(state) {
+  if (!state.has_child_profile) {
+    return 'complete_child_profile';
+  }
+  if (state.has_unfinished_daily_plan) {
+    return 'continue_daily_plan';
+  }
+  if (state.membership_expiring_level === 'urgent' || state.membership_expiring_level === 'soon') {
+    return 'membership_expiring';
+  }
+  if (state.is_active_unpaid) {
+    return 'membership_conversion';
+  }
+  if (state.is_silent_user) {
+    return 'quick_return_task';
+  }
+  if (state.recent_record_summary) {
+    return 'review_growth_record';
+  }
+  if (state.has_recent_ai_usage) {
+    return 'continue_ai_chat';
+  }
+  return 'start_growth_observation';
+}
+
+async function getUserRetentionState(userId) {
+  const membership = await getMembership(userId);
+  const membershipState = normalizeMembershipRetentionState(membership);
+  const [activityRows] = await pool.execute(
+    `SELECT
+       MAX(created_at) AS last_active_at,
+       SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS active_events_7d,
+       SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) THEN 1 ELSE 0 END) AS active_events_14d,
+       SUM(CASE WHEN event_type LIKE 'ai_chat_%' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS ai_events_7d
+     FROM event_tracks
+     WHERE user_id = ?`,
+    [userId]
+  );
+  const [paymentRows] = await pool.execute(
+    `SELECT COUNT(*) AS paid_order_count,
+            COALESCE(SUM(amount), 0) AS total_paid_amount
+       FROM payment_orders
+      WHERE user_id = ? AND status = 'paid'`,
+    [userId]
+  );
+  const [childRows] = await pool.execute(
+    `SELECT id, name
+       FROM children
+      WHERE user_id = ?
+      ORDER BY is_default DESC, id ASC
+      LIMIT 1`,
+    [userId]
+  );
+  const child = childRows[0] || null;
+  const [planRows] = child ? await pool.execute(
+    `SELECT id, title, target_path, plan_date
+       FROM daily_plan_records
+      WHERE user_id = ? AND child_id = ? AND status <> 'completed' AND plan_date >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+      ORDER BY plan_date ASC, slot_index ASC, id ASC
+      LIMIT 1`,
+    [userId, child.id]
+  ) : [[]];
+  const [recordRows] = child ? await pool.execute(
+    `SELECT record_date, mood_status, appetite_status, sleep_status, exercise_status, social_status, note_text
+       FROM growth_daily_records
+      WHERE user_id = ? AND child_id = ?
+      ORDER BY record_date DESC
+      LIMIT 1`,
+    [userId, child.id]
+  ) : [[]];
+
+  const activity = activityRows[0] || {};
+  const payments = paymentRows[0] || {};
+  const activeEvents14d = Number(activity.active_events_14d || 0);
+  const paidOrderCount = Number(payments.paid_order_count || 0);
+  const recentRecord = recordRows[0] || null;
+  const state = {
+    ...membershipState,
+    user_id: userId,
+    child_id: child ? child.id : 0,
+    child_name: child ? child.name || '' : '',
+    has_child_profile: Boolean(child),
+    has_recent_ai_usage: Number(activity.ai_events_7d || 0) > 0,
+    has_unfinished_daily_plan: planRows.length > 0,
+    unfinished_daily_plan: planRows.length ? {
+      id: planRows[0].id,
+      title: planRows[0].title || '',
+      target_path: planRows[0].target_path || '',
+      plan_date: formatStoredDateValue(planRows[0].plan_date)
+    } : null,
+    recent_record_summary: recentRecord ? buildRecentGrowthRecordSummary(recentRecord) : null,
+    last_active_at: activity.last_active_at ? new Date(activity.last_active_at).toISOString() : null,
+    active_events_7d: Number(activity.active_events_7d || 0),
+    active_events_14d: activeEvents14d,
+    is_active_unpaid: activeEvents14d >= 3 && paidOrderCount === 0 && !membershipState.is_active,
+    is_silent_user: !activity.last_active_at || new Date(activity.last_active_at).getTime() < Date.now() - 7 * 86400000,
+    paid_order_count: paidOrderCount
+  };
+  return {
+    ...state,
+    recommended_touchpoint: buildRetentionTouchpoint(state)
+  };
+}
+
+function buildRecentGrowthRecordSummary(row) {
+  const statusValues = [row.mood_status, row.appetite_status, row.sleep_status, row.exercise_status, row.social_status].filter(Boolean);
+  const noteText = String(row.note_text || '').trim();
+  const summary = noteText || (statusValues.length ? `最近记录了${statusValues.length}项成长状态` : '最近完成了一次成长记录');
+  return {
+    record_date: formatStoredDateValue(row.record_date),
+    summary: summary.length > 40 ? `${summary.slice(0, 40)}...` : summary
+  };
+}
+
 async function isActiveMember(userId) {
   const membership = await getMembership(userId);
   const endTime = membership.current_end_date ? new Date(membership.current_end_date).getTime() : 0;
