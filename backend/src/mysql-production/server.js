@@ -1620,6 +1620,7 @@ async function adminContentOpsOverviewHandler(req, res) {
   const totalActiveTips = Number(tips.total_active || 0);
   const coreTotalTips = Number(coreTips.core_total || 0);
   const coreReadyTips = Number(coreTips.core_ready_count || 0);
+  const coreTargetCount = Math.ceil(coreTotalTips * CORE_TIP_TARGET_RATE / 100);
   const totalPublishedArticles = Number(articles.total_published || 0);
 
   res.json({
@@ -1637,6 +1638,9 @@ async function adminContentOpsOverviewHandler(req, res) {
         core_total: coreTotalTips,
         core_ready_count: coreReadyTips,
         core_pending_count: Math.max(0, coreTotalTips - coreReadyTips),
+        core_target_rate: CORE_TIP_TARGET_RATE,
+        core_target_count: coreTargetCount,
+        core_gap_to_target: Math.max(0, coreTargetCount - coreReadyTips),
         core_ready_rate: calculateRatio(coreReadyTips, coreTotalTips),
         core_category_labels: CORE_TIP_CATEGORIES,
         core_age_group_labels: CORE_TIP_AGE_GROUPS,

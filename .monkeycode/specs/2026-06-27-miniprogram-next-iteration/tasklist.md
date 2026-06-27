@@ -9,7 +9,7 @@
     - 返回 `membership_days_left`、`membership_expiring_level`、`is_active_unpaid`、`has_unfinished_daily_plan`、`recent_record_summary`
     - 为未登录和接口异常提供安全兜底响应
     - 覆盖需求 R5.5、R5.6、R7.1、R7.5
-  - [ ] 1.3 扩展核心场景覆盖目标字段
+  - [x] 1.3 扩展核心场景覆盖目标字段
     - 在内容运营接口中返回 `core_target_rate`、`core_gap_to_target`、`core_pending_count`
     - 将下一版核心场景锦囊覆盖率目标设为 80%，保留全量整理率作为长期治理指标
     - 覆盖需求 G2.1、R1.1、R1.6、R8.1、R8.4
