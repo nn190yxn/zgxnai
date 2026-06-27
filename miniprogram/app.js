@@ -7,6 +7,7 @@ var authUtil = require('./utils/auth.js');
 var childProfileUtil = require('./utils/child-profile.js');
 var diagnostics = require('./utils/diagnostics.js');
 var requestUtil = require('./utils/request.js');
+var childContextUtil = require('./utils/child-context.js');
 
 App({
   globalData: {
@@ -699,9 +700,21 @@ onError: function(error) {
       timeout: 60000,
       data: {
         message: message.substring(0, 2000), // 前端限制长度
-        child_profile: that.globalData.currentChild || that.globalData.childProfile
+        child_profile: that.buildChildChatContext(that.getCurrentChild())
       }
     });
+  },
+
+  buildChildChatContext: function(child) {
+    return childContextUtil.buildChildChatContext(child || this.getCurrentChild());
+  },
+
+  inferParentingAgeGroup: function(child) {
+    return childContextUtil.inferParentingAgeGroup(child || this.getCurrentChild());
+  },
+
+  buildParentingRecommendation: function(child) {
+    return childContextUtil.buildParentingRecommendation(child || this.getCurrentChild());
   },
 
   promptLogin: function(message) {
@@ -805,37 +818,7 @@ onError: function(error) {
   },
 
   normalizeStringArray: function(value) {
-    if (Array.isArray(value)) {
-      return value.filter(function(item) {
-        return typeof item === 'string' && item.trim();
-      }).map(function(item) {
-        return item.trim();
-      });
-    }
-    if (typeof value === 'string') {
-      var text = value.trim();
-      if (!text) {
-        return [];
-      }
-      try {
-        var parsed = JSON.parse(text);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(function(item) {
-            return typeof item === 'string' && item.trim();
-          }).map(function(item) {
-            return item.trim();
-          });
-        }
-      } catch (err) {
-        // Ignore parse error and fall back to delimiter splitting.
-      }
-      return text.split(/[、,，\s]+/).filter(function(item) {
-        return item && item.trim();
-      }).map(function(item) {
-        return item.trim();
-      });
-    }
-    return [];
+    return childContextUtil.normalizeStringArray(value);
   },
 
   normalizeChildren: function(children) {

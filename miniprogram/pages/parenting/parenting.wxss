@@ -53,6 +53,18 @@
   z-index: 1;
 }
 
+.recommendation-pill {
+  display: inline-flex;
+  margin-top: 20rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 23rpx;
+  position: relative;
+  z-index: 1;
+}
+
 /* 搜索栏 */
 .search-bar {
   padding: 24rpx 32rpx;

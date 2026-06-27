@@ -77,13 +77,13 @@
   - 仓库根目录执行 `npm run lint` 同时跑后端和小程序语法检查
   - 通过标记：`Syntax check passed for XX file(s)` 与 `Miniprogram syntax check passed for XX file(s)`
 
-[根目录鼓励功能测试命令]
+[根目录测试命令]
 - Date: 2026-06-27
-- Context: Agent 在执行鼓励弹窗与文章注解测试补齐时发现
+- Context: Agent 在执行鼓励弹窗、文章注解、孩子档案个性化上下文测试补齐时发现
 - Category: 测试方法
 - Instructions:
-  - 仓库根目录执行 `npm test` 会运行 `scripts/test-encouragement.js`
-  - 当前覆盖鼓励弹窗等级、首页鼓励触发状态、文章阅读注解阈值和每日频率规则
+  - 仓库根目录执行 `npm test` 会依次运行 `scripts/test-encouragement.js`、`scripts/test-child-context.js`、`scripts/test-chat-context.js`
+  - 当前覆盖鼓励弹窗等级、首页鼓励触发状态、文章阅读注解阈值和每日频率规则、孩子档案上下文、育儿年龄推荐、文章列表年龄筛选优先级、后端 Prompt 档案行拼接
 
 [本地后端启动需显式带 NODE_PATH]
 - Date: 2026-06-20

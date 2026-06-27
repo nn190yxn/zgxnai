@@ -1,7 +1,7 @@
 {
   "scripts": {
     "lint": "node scripts/lint.js",
-    "test": "node scripts/test-encouragement.js"
+    "test": "node scripts/test-encouragement.js && node scripts/test-child-context.js && node scripts/test-chat-context.js"
   },
   "devDependencies": {
     "supertest": "^7.2.2"

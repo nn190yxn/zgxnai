@@ -37,12 +37,12 @@
 
   <view class="section daily-action-section">
     <view class="daily-action-card">
-      <text class="daily-action-eyebrow">今天先解决一个真实问题</text>
-      <text class="daily-action-title">把育儿知识变成今晚能做的一步</text>
-      <text class="daily-action-desc">从今日计划开始，完成后记录孩子反应；拿不准时直接问 AI，系统会结合年龄和知识库给出下一步。</text>
+      <text class="daily-action-eyebrow">今天先找一个真实场景</text>
+      <text class="daily-action-title">先看看和你家最像的问题</text>
+      <text class="daily-action-desc">从育儿知识里选一篇贴近场景的内容，看完后再决定要不要请 AI 拆成今晚三步。</text>
       <view class="daily-action-buttons">
-        <view class="daily-action-primary" bindtap="goToTodayTask">做今天第一步</view>
-        <view class="daily-action-secondary" bindtap="askAiForToday">问 AI 怎么落地</view>
+        <view class="daily-action-primary" bindtap="goToParenting">去育儿知识</view>
+        <view class="daily-action-secondary" bindtap="goToTodayTask">做今天第一步</view>
       </view>
     </view>
   </view>

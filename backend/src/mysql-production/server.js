@@ -6,6 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const { generateAIAnswer, getAIStatus } = require('../services/ai');
+const chatContextUtil = require('./chat-context');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -2547,7 +2548,7 @@ async function chatHandler(req, res) {
         intent,
         subIntent,
         chatChildContext,
-        hasStructured: Boolean(structured)
+        hasStructured: false
       });
       res.json({
         success: true,
@@ -2578,7 +2579,7 @@ async function chatHandler(req, res) {
 
     const references = await collectChatReferences(chatAnalysis, message, ageGroup);
     const fallbackAnswer = buildChatAnswer(message, chatAnalysis, references, ageGroup, childName);
-    const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, childName), {
+    const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, chatChildContext), {
       systemPrompt: getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel),
       temperature: 0.6,
       maxTokens: 4000
@@ -2721,20 +2722,15 @@ async function resolveChatChildContext(req) {
   return {
     ageGroup: '',
     childName: '',
+    tags: [],
+    concerns: [],
     source: 'missing_child_profile',
     profileMissing: true
   };
 }
 
 function buildChatChildContext(childProfile, source) {
-  const childName = String((childProfile && (childProfile.name || childProfile.nickname)) || '').trim();
-  const ageGroup = normalizeChatAgeGroup(childProfile);
-  return {
-    ageGroup,
-    childName,
-    source,
-    profileMissing: false
-  };
+  return chatContextUtil.buildChatChildContext(childProfile, source, normalizeChatAgeGroup);
 }
 
 function normalizeChatAgeGroup(childProfile) {
@@ -2997,7 +2993,7 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
   return basePrompts[intent] || basePrompts.general;
 }
 
-function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName) {
+function buildChatPrompt(message, chatAnalysis, references, ageGroup, childContext) {
   const referenceBlock = references.length
     ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 1000)}`).join('\n\n')
     : '当前没有直接匹配的知识库条目。请你基于通用的育儿知识，给出温和、专业、可操作的建议。先共情家长的困扰，再解释可能的原因，接着给家庭能立刻开始的1-2个小动作，最后提醒观察窗口。不要要求用户补充更多信息。';
@@ -3017,8 +3013,9 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childName)
     parts.push(`子场景：${scenarioRule.label}`);
   }
   parts.push(`风险等级：${chatAnalysis.riskLevel}`);
-  if (childName || ageGroup) {
-    parts.push(`孩子信息：${[childName ? `名字${childName}` : '', ageGroup ? `年龄${ageGroup}` : ''].filter(Boolean).join('，')}`);
+  const childProfileLine = chatContextUtil.buildChatChildProfilePromptLine(childContext, ageGroup);
+  if (childProfileLine) {
+    parts.push(childProfileLine);
   }
   parts.push(
     '回答要求：',

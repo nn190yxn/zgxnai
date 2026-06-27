@@ -1,5 +1,6 @@
 // 文章列表页面逻辑
 var app = getApp();
+var childContextUtil = require('../../../utils/child-context.js');
 
 Page({
   data: {
@@ -42,7 +43,10 @@ Page({
     pageSize: 10,
     hasMore: true,
     // 加载状态
-    loading: false
+    loading: false,
+    recommendationLabel: '',
+    recommendationFallback: '',
+    userSelectedAge: false
   },
 
   getLocalArticles: function() {
@@ -125,6 +129,7 @@ Page({
   },
 
   onLoad: function(options) {
+    options = options || {};
     // 处理传入的参数
     if (options.categoryId) {
       this.setData({
@@ -141,7 +146,13 @@ Page({
         keyword: decodeURIComponent(options.keyword)
       });
     }
+    this.applyInitialAgeFilter(options);
     this.loadArticles();
+  },
+
+  applyInitialAgeFilter: function(options) {
+    var recommendation = app.buildParentingRecommendation ? app.buildParentingRecommendation() : { ageGroup: '', label: '', fallback: '' };
+    this.setData(childContextUtil.resolveArticleListInitialAgeFilter(options, this.data.ageList, recommendation));
   },
 
   // 加载文章列表
@@ -302,6 +313,9 @@ Page({
     }
     this.setData({
       currentAge: id,
+      userSelectedAge: true,
+      recommendationLabel: '',
+      recommendationFallback: '',
       articleList: [],
       page: 1,
       hasMore: true

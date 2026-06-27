@@ -1,31 +1,6 @@
 // 育儿锦囊页面逻辑
 var app = getApp();
 
-function inferChildAgeRange(child) {
-  if (!child || !child.birthday) {
-    return '';
-  }
-  var birthDate = new Date(child.birthday + 'T00:00:00');
-  if (Number.isNaN(birthDate.getTime())) {
-    return '';
-  }
-  var ageYears = Math.max(0, Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)));
-  if (ageYears <= 3) {
-    return '3-4岁';
-  }
-  if (ageYears === 4) {
-    return '4-5岁';
-  }
-  if (ageYears === 5) {
-    return '5-6岁';
-  }
-  if (ageYears <= 8) {
-    return '6-9岁';
-  }
-  // 9-12岁 不在 parenting articles 的合法 age_group 范围内，不传过滤
-  return '';
-}
-
 Page({
   data: {
     // 分类列表 - 每个分类配有独特的emoji、颜色和描述
@@ -89,7 +64,9 @@ Page({
     // 加载状态
     loading: true,
     initialized: false,
-    loadError: ''
+    loadError: '',
+    recommendationLabel: '',
+    recommendationFallback: ''
   },
 
   getLocalArticles: function() {
@@ -190,7 +167,8 @@ Page({
     }
 
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
-    var ageGroup = inferChildAgeRange(currentChild);
+    var recommendation = app.buildParentingRecommendation ? app.buildParentingRecommendation(currentChild) : { ageGroup: '', label: '', fallback: '' };
+    var ageGroup = recommendation.ageGroup;
     var requestData = {
       page: 1,
       page_size: that.data.pageSize
@@ -198,6 +176,10 @@ Page({
     if (ageGroup) {
       requestData.age_group = ageGroup;
     }
+    that.setData({
+      recommendationLabel: recommendation.label || '',
+      recommendationFallback: recommendation.fallback || ''
+    });
 
     app.request({
       url: '/parenting/articles',
@@ -416,7 +398,8 @@ Page({
     });
 
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
-    var ageGroup = inferChildAgeRange(currentChild);
+    var recommendation = app.buildParentingRecommendation ? app.buildParentingRecommendation(currentChild) : { ageGroup: '' };
+    var ageGroup = recommendation.ageGroup;
     var requestData = {
       page: that.data.page,
       page_size: that.data.pageSize

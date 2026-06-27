@@ -4,6 +4,9 @@
   <view class="page-header">
     <text class="page-title">育儿锦囊</text>
     <text class="page-subtitle">专业育儿知识，陪伴孩子快乐成长</text>
+    <view class="recommendation-pill" wx:if="{{recommendationLabel || recommendationFallback}}">
+      <text>{{recommendationLabel || recommendationFallback}}</text>
+    </view>
   </view>
 
   <!-- 搜索入口 -->

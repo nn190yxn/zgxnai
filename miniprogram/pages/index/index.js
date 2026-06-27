@@ -978,9 +978,6 @@ Page({
   },
 
   askAiForToday: function() {
-    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
-    var childText = currentChild && currentChild.nickname ? currentChild.nickname : '孩子';
-    wx.setStorageSync('pendingChatQuestion', childText + '今天遇到的育儿问题，能不能帮我拆成今晚可以做的三步？');
     this.goToChat();
   },
 

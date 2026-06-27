@@ -52,6 +52,9 @@
 
   <!-- 年龄段筛选 -->
   <view class="filter-section age-filter">
+    <view class="recommendation-hint" wx:if="{{recommendationLabel || recommendationFallback}}">
+      <text>{{recommendationLabel || recommendationFallback}}</text>
+    </view>
     <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
       <view class="filter-list">
         <view
