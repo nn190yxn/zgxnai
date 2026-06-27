@@ -197,7 +197,7 @@ Page({
 
   // 查看历史
   viewHistory: function() {
-    this.ensureLoginBeforeNavigate('请先完成微信登录，再查看AI问答记录', function() {
+    this.ensureLoginBeforeNavigate('请先完成微信登录，再查看小牛问答记录', function() {
       wx.navigateTo({
         url: '/pages/chat/chat',
         fail: function() {

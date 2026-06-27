@@ -1075,8 +1075,8 @@ Page({
     // 预埋分享卡草稿数据（第4阶段用于生成卡片）
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
-      title: e.currentTarget.dataset.title || '能力成长任务',
-      summary: '我完成了今日能力成长打卡，欢迎一起坚持！',
+      title: e.currentTarget.dataset.title || '每日训练',
+      summary: '我完成了今天的10分钟训练，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,
@@ -1088,7 +1088,7 @@ Page({
       createdAt: Date.now(),
       payload: {
         taskId: taskId,
-        taskTitle: e.currentTarget.dataset.title || '能力成长任务'
+        taskTitle: e.currentTarget.dataset.title || '每日训练'
       }
     });
 
@@ -1121,10 +1121,10 @@ Page({
 
   shareWeeklyReport: function() {
     var report = this.data.readingWeeklyReport || {};
-    var text = '本周能力成长打卡 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
+    var text = '本周每日训练 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
     wx.setStorageSync('readingShareDraft', {
       type: 'weekly_report',
-      title: '本周能力成长成果卡',
+      title: '本周训练成果卡',
       summary: text,
       metrics: {
         completed: report.completed || 0,
@@ -1140,11 +1140,11 @@ Page({
   },
 
   shareReadingTask: function(e) {
-    var title = e.currentTarget.dataset.title || '能力成长任务';
+    var title = e.currentTarget.dataset.title || '每日训练';
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
       title: title,
-      summary: '我正在进行能力成长打卡，欢迎一起坚持！',
+      summary: '我正在坚持每日训练，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,

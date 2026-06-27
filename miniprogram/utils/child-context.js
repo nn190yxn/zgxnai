@@ -119,7 +119,7 @@ function buildParentingRecommendation(child, now) {
   if (ageGroup) {
     return {
       ageGroup: ageGroup,
-      label: '按' + (name || '当前孩子') + ' ' + ageGroup + '推荐',
+      label: name ? '先按' + name + '的年龄挑几篇' : '先按孩子年龄挑几篇',
       fallback: ''
     };
   }
@@ -127,8 +127,8 @@ function buildParentingRecommendation(child, now) {
     ageGroup: '',
     label: '',
     fallback: child && (child.id || child.name || child.nickname)
-      ? '补充生日后，内容按年龄展示。'
-      : '补充孩子信息后，推荐更贴近。'
+      ? '填完生日后，会先看适合这个年龄的。'
+      : '填完孩子信息后，会少一些泛泛的推荐。'
   };
 }
 

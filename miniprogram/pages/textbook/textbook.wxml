@@ -2,14 +2,14 @@
 <view class="page">
   <!-- 页面头部 -->
   <view class="page-header">
-    <text class="page-title">能力成长</text>
-    <text class="page-subtitle">每天10分钟任务，帮助孩子读得懂、坐得住、说得出</text>
+    <text class="page-title">每日训练</text>
+    <text class="page-subtitle">每天10分钟，陪孩子练阅读、专注和表达</text>
   </view>
 
   <!-- 能力成长任务 -->
   <view class="reading-task-section" wx:if="{{readingTasks.length > 0}}">
     <view class="section-header">
-      <text class="section-title">能力成长任务</text>
+      <text class="section-title">今天可以练这些</text>
       <text class="task-count">{{readingTasks.length}}项</text>
     </view>
     <view class="reading-task-list">
@@ -28,7 +28,7 @@
           </view>
           <text class="reading-task-title">{{item.title}}</text>
           <text class="reading-task-material">{{item.material}}</text>
-          <text class="reading-task-objective">目标：{{item.objective}}</text>
+          <text class="reading-task-objective">今天练：{{item.objective}}</text>
           <!-- 步骤配图 -->
           <view class="reading-task-steps">
             <view class="reading-task-step-item" wx:for="{{item.steps}}" wx:for-item="step" wx:for-index="stepIndex" wx:key="*this">
@@ -36,17 +36,17 @@
             </view>
           </view>
           <!-- 家长提问 -->
-          <text class="reading-task-prompt" wx:if="{{item.parentPrompt}}">家长提问：{{item.parentPrompt}}</text>
+          <text class="reading-task-prompt" wx:if="{{item.parentPrompt}}">可以这样问：{{item.parentPrompt}}</text>
           <!-- 示例回答 -->
           <view class="reading-task-example" wx:if="{{item.exampleAnswer}}">
-            <text class="example-title">参考回答</text>
+            <text class="example-title">孩子可能会这样说</text>
             <view class="example-bubble">
               <text>{{item.exampleAnswer}}</text>
             </view>
           </view>
           <!-- 家长提示 -->
           <view class="reading-task-tips" wx:if="{{item.tips}}">
-            <text class="tips-title">提示</text>
+            <text class="tips-title">陪练小提醒</text>
             <text class="tips-content">{{item.tips}}</text>
           </view>
           <text class="reading-task-duration">预计 {{item.duration}} 分钟</text>
@@ -80,7 +80,7 @@
   <!-- 成长周报（最小版） -->
   <view class="reading-report-section">
     <view class="section-header">
-      <text class="section-title">本周能力成长周报</text>
+      <text class="section-title">本周训练记录</text>
       <text class="section-more" bindtap="shareWeeklyReport">分享成果卡</text>
     </view>
     <view class="reading-report-card">
@@ -88,14 +88,14 @@
       <text class="reading-report-line">已完成：{{readingWeeklyReport.completed}} / {{readingWeeklyReport.total}}</text>
       <text class="reading-report-line">连续打卡：{{readingWeeklyReport.streakDays}} 天</text>
       <text class="reading-report-line">复述录音：{{readingWeeklyReport.recordingCount}} 次</text>
-      <text class="reading-report-tip">建议：{{readingWeeklyReport.suggestion}}</text>
+      <text class="reading-report-tip">下周可以：{{readingWeeklyReport.suggestion}}</text>
     </view>
   </view>
 
   <!-- 家长三句话术 -->
   <view class="reading-script-section">
     <view class="section-header">
-      <text class="section-title">家长三句话术</text>
+      <text class="section-title">家长可以这样问</text>
     </view>
     <view class="reading-script-card">
       <text class="reading-script-item">1. 你觉得这段故事里最重要的一句话是什么？</text>
@@ -144,7 +144,7 @@
   <!-- 今日成长任务 -->
   <view class="task-section" wx:if="{{todayTasks.length > 0}}">
     <view class="section-header">
-      <text class="section-title">今日成长任务</text>
+      <text class="section-title">今天再做一件小事</text>
       <text class="task-count">{{todayTasks.length}}项待完成</text>
     </view>
     <view class="task-list">
@@ -173,7 +173,7 @@
   <!-- 能力方向列表 -->
   <view class="subject-section">
     <view class="section-header">
-      <text class="section-title">能力方向</text>
+      <text class="section-title">想重点练哪一块</text>
     </view>
     <view class="subject-list">
       <view class="subject-card" wx:for="{{subjectList}}" wx:key="id" bindtap="onSubjectTap" data-code="{{item.code}}">
@@ -191,7 +191,7 @@
 
   <!-- 底部提示 -->
   <view class="footer-tip">
-    <text class="footer-text">完成任务后可以分享到朋友圈，找其他家长一起坚持</text>
+    <text class="footer-text">完成后可以分享成果卡，给孩子一点仪式感。</text>
   </view>
 </view>
 

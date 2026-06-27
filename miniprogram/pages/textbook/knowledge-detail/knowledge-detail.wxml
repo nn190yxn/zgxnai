@@ -29,10 +29,10 @@
     <!-- 标签栏 -->
     <view class="tab-bar">
       <view class="tab-item {{currentTab === 'explain' ? 'active' : ''}}" bindtap="switchTab" data-tab="explain">
-        <text class="tab-text">讲解</text>
+        <text class="tab-text">怎么做</text>
       </view>
       <view class="tab-item {{currentTab === 'key' ? 'active' : ''}}" bindtap="switchTab" data-tab="key">
-        <text class="tab-text">步骤提醒</text>
+        <text class="tab-text">步骤</text>
       </view>
       <view class="tab-item {{currentTab === 'example' ? 'active' : ''}}" bindtap="switchTab" data-tab="example">
         <text class="tab-text">例题</text>
@@ -58,13 +58,13 @@
         </view>
         <view class="coach-toolkit-card">
           <view class="coach-toolkit-head">
-            <text class="coach-toolkit-title">家长即用卡</text>
+            <text class="coach-toolkit-title">今晚照着做</text>
             <text class="coach-toolkit-duration">约 {{knowledgeDetail.duration}} 分钟</text>
           </view>
           <view class="coach-toolkit-list">
             <view class="coach-toolkit-item">
-              <text class="coach-toolkit-label">今日目标</text>
-              <text class="coach-toolkit-value">{{knowledgeDetail.objective || '带孩子完成一次能力成长互动'}}</text>
+              <text class="coach-toolkit-label">今天练什么</text>
+              <text class="coach-toolkit-value">{{knowledgeDetail.objective || '陪孩子完成一次小练习'}}</text>
             </view>
             <view class="coach-toolkit-item">
               <text class="coach-toolkit-label">{{knowledgeDetail.display_material_label}}</text>
@@ -80,10 +80,10 @@
               <text>复制提问</text>
             </view>
             <view class="coach-toolkit-btn" bindtap="copySessionPlan">
-              <text>复制带练卡</text>
+              <text>复制今晚步骤</text>
             </view>
             <view class="coach-toolkit-btn primary" bindtap="goPracticeTab">
-              <text>开始互动练习</text>
+              <text>开始练习</text>
             </view>
           </view>
         </view>
@@ -96,7 +96,7 @@
         </view>
         <view class="reading-structure-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.questions.length}}">
           <view class="section-head-row">
-            <text class="section-title">家长先问这句</text>
+            <text class="section-title">先问这几句</text>
             <text class="section-badge">跟着提问</text>
           </view>
           <view class="reading-structure-list">
@@ -135,7 +135,7 @@
         </view>
         <view class="reading-structure-card" wx:if="{{knowledgeDetail.has_reading_sections && knowledgeDetail.reading_sections.extension.length}}">
           <view class="section-head-row">
-            <text class="section-title">延伸练习</text>
+            <text class="section-title">读完再玩一下</text>
             <text class="section-badge warn">读完再做</text>
           </view>
           <view class="reading-structure-list">
@@ -223,11 +223,11 @@
               <text class="question-text">{{item.question}}</text>
             </view>
             <view class="example-answer">
-              <text class="answer-label">参考答案</text>
+              <text class="answer-label">可以参考</text>
               <text class="answer-text">{{item.answer}}</text>
             </view>
             <view class="example-analysis">
-              <text class="analysis-label">家长理解提示</text>
+              <text class="analysis-label">家长怎么看</text>
               <text class="analysis-text">{{item.analysis}}</text>
             </view>
           </view>
@@ -334,9 +334,9 @@
         </view>
       </view>
       <view class="result-tips">
-        <text wx:if="{{practiceResult.score >= 80}}">太棒了！继续保持！</text>
-        <text wx:elif="{{practiceResult.score >= 60}}">还不错，再接再厉！</text>
-        <text wx:else>需要多加练习哦！</text>
+        <text wx:if="{{practiceResult.score >= 80}}">这次完成得很稳！</text>
+        <text wx:elif="{{practiceResult.score >= 60}}">已经有进步，再练一轮会更顺。</text>
+        <text wx:else>先别急，换个更短的步骤再试。</text>
       </view>
     </view>
     <view class="modal-footer">
@@ -356,8 +356,8 @@
       <view class="master-icon-wrap">
         <text class="master-icon-big">✓</text>
       </view>
-      <text class="master-desc">确认你已经掌握了这个知识点吗？</text>
-      <text class="master-tip">标记后，系统会为你推荐更合适的学习内容</text>
+      <text class="master-desc">这次孩子已经比较熟了吗？</text>
+      <text class="master-tip">标记后，下次会少推同类练习。</text>
     </view>
     <view class="modal-footer">
       <view class="btn-cancel" bindtap="hideMasterModal">再想想</view>

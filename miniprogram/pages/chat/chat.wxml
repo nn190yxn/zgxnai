@@ -156,7 +156,7 @@
             adjust-position="{{true}}"
             hold-keyboard="{{false}}"
             disabled="{{!featureFlags.aiChatEnabled}}"
-            placeholder="{{featureFlags.aiChatEnabled ? '输入您的问题...' : 'AI问答暂未开放'}}"
+            placeholder="{{featureFlags.aiChatEnabled ? '输入你的问题...' : '小牛问答暂未开放'}}"
             auto-height
             maxlength="2000"
             show-confirm-bar="{{false}}"

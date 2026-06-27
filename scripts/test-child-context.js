@@ -44,18 +44,18 @@ function testChildChatContext() {
 function testRecommendation() {
   assert.deepStrictEqual(childContext.buildParentingRecommendation({ name: '牛牛', birthday: '2022-06-27' }, fixedNow), {
     ageGroup: '4-5岁',
-    label: '按牛牛 4-5岁推荐',
+    label: '先按牛牛的年龄挑几篇',
     fallback: ''
   });
   assert.deepStrictEqual(childContext.buildParentingRecommendation({ id: 1, name: '牛牛' }, fixedNow), {
     ageGroup: '',
     label: '',
-    fallback: '补充生日后，内容按年龄展示。'
+    fallback: '填完生日后，会先看适合这个年龄的。'
   });
   assert.deepStrictEqual(childContext.buildParentingRecommendation(null, fixedNow), {
     ageGroup: '',
     label: '',
-    fallback: '补充孩子信息后，推荐更贴近。'
+    fallback: '填完孩子信息后，会少一些泛泛的推荐。'
   });
 }
 
@@ -70,12 +70,12 @@ function testArticleListInitialAgeFilter() {
   ];
   var recommendation = {
     ageGroup: '4-5岁',
-    label: '按牛牛 4-5岁推荐',
+    label: '先按牛牛的年龄挑几篇',
     fallback: ''
   };
   assert.deepStrictEqual(childContext.resolveArticleListInitialAgeFilter({}, ageList, recommendation), {
     currentAge: 3,
-    recommendationLabel: '按牛牛 4-5岁推荐',
+    recommendationLabel: '先按牛牛的年龄挑几篇',
     recommendationFallback: '',
     userSelectedAge: false
   });
@@ -94,11 +94,11 @@ function testArticleListInitialAgeFilter() {
   assert.deepStrictEqual(childContext.resolveArticleListInitialAgeFilter({}, ageList, {
     ageGroup: '',
     label: '',
-    fallback: '补充孩子生日后，会优先推荐对应年龄内容'
+    fallback: '填完生日后，会先看适合这个年龄的。'
   }), {
     currentAge: 0,
     recommendationLabel: '',
-    recommendationFallback: '补充孩子生日后，会优先推荐对应年龄内容',
+    recommendationFallback: '填完生日后，会先看适合这个年龄的。',
     userSelectedAge: false
   });
 }

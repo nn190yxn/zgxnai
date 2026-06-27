@@ -1021,9 +1021,9 @@ Page({
     var detail = this.data.knowledgeDetail || {};
     var readingSections = detail.reading_sections || {};
     var lines = [
-      '今日能力成长带练卡',
-      `任务：${detail.title || detail.name || '能力成长任务'}`,
-      `目标：${detail.objective || '带孩子完成一次短时互动'}`,
+      '今晚亲子练习卡',
+      `练习：${detail.title || detail.name || '每日训练'}`,
+      `今天练：${detail.objective || '陪孩子完成一次短时互动'}`,
       `${detail.display_material_label || '准备材料'}：${detail.display_material_value || detail.material || '准备当日阅读或生活场景材料'}`,
       `提问：${detail.parent_prompt || '围绕谁、做什么、为什么追问'}`,
       `时长：约${detail.duration || 10}分钟`
@@ -1034,7 +1034,7 @@ Page({
     wx.setClipboardData({
       data: lines.join('\n'),
       success: function() {
-        wx.showToast({ title: '带练卡已复制', icon: 'none' });
+        wx.showToast({ title: '今晚步骤已复制', icon: 'none' });
       }
     });
   },

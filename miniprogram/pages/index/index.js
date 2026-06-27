@@ -67,7 +67,7 @@ Page({
       },
       {
         title: '小牛育儿问答',
-        desc: '输入问题，小牛给出可执行做法',
+        desc: '输入问题，小牛给你具体步骤',
         cta: '问问小牛',
         action: 'chat'
       },
@@ -369,9 +369,9 @@ Page({
         id: 'guest_1',
         planDate: dateText,
         type: 'onboarding',
-        title: '完善孩子档案，获取更准确的成长建议',
-        reason: '年龄和基础情况越完整，首页推荐内容越准确。',
-        summary: '补完档案后，将按年龄生成今日育儿建议。',
+        title: '先填孩子档案，首页会更贴近你家',
+        reason: '年龄和基本情况清楚后，建议会少一些泛泛的话。',
+        summary: '补完档案后，首页会按孩子当前阶段给建议。',
         actionText: '去完善',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -381,9 +381,9 @@ Page({
         id: 'guest_2',
         planDate: dateText,
         type: 'parenting_article',
-        title: '先登录并完善孩子档案，再生成育儿建议',
+        title: '先登录并填写孩子档案',
         reason: '年龄和阶段不同，建议内容也会不同。',
-        summary: '登录并补充孩子生日和基础信息后，将生成年龄匹配的建议。',
+        summary: '补充生日和基础信息后，首页建议会更贴近。',
         actionText: '先登录',
         durationMinutes: 2,
         targetType: 'profile',
@@ -400,9 +400,9 @@ Page({
         id: 'child_setup_1',
         planDate: dateText,
         type: 'onboarding',
-        title: '先完善孩子档案，再生成今日育儿建议',
+        title: '先完善孩子档案，再看今日建议',
         reason: '年龄不同，成长观察、营养建议和陪伴重点都会不一样。',
-        summary: '补充孩子生日和基础情况后，首页才会按当前年龄阶段生成更准确的建议。',
+        summary: '补充生日和基础情况后，首页会按当前阶段给建议。',
         actionText: '去完善',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -419,9 +419,9 @@ Page({
         id: 'mock_1',
         planDate: dateText,
         type: 'onboarding',
-        title: '演示模式：今日建议展示为示例内容',
+        title: '演示模式：这里展示示例内容',
         reason: '以下为演示内容，添加真实档案后这里会展示实际建议。',
-        summary: '添加孩子档案后，将基于年龄生成每日建议。',
+        summary: '添加孩子档案后，会看到更贴近孩子年龄的建议。',
         actionText: '查看示例',
         durationMinutes: 2,
         targetType: 'child_profile',
@@ -659,7 +659,7 @@ Page({
         return {
           title: level === 'urgent' ? '会员即将到期' : '会员快到期了',
           desc: level === 'urgent'
-            ? '您的会员将在3天内到期，续费可继续使用成长总结和AI问答。'
+            ? '您的会员将在3天内到期，续费后可继续使用成长总结和小牛问答。'
             : '您的会员将在7天内到期，提前续费避免服务中断。',
           cta: '查看会员',
           targetType: 'membership',
@@ -688,7 +688,7 @@ Page({
         targetPath: '/pages/growth-record/index'
       },
       continue_ai_chat: {
-        title: '继续育儿问答',
+        title: '继续问小牛',
         desc: '上次和小牛聊了育儿话题，还有问题可以接着问。',
         cta: '继续提问',
         targetType: 'ai_chat',
@@ -720,7 +720,7 @@ Page({
     }
     return {
       id: plan.id || '',
-      title: plan.title || '继续任务',
+      title: plan.title || '接着完成上次那件事',
       targetPath: plan.target_path || '',
       planDate: plan.plan_date || ''
     };
@@ -986,9 +986,9 @@ Page({
     });
   },
 
-  // 跳转到AI问答
+  // 跳转到小牛问答
   goToChat() {
-    if (!this.ensureFeatureEnabled('aiChat', 'AI问答暂未开放')) {
+    if (!this.ensureFeatureEnabled('aiChat', '小牛问答暂未开放')) {
       return;
     }
     wx.switchTab({

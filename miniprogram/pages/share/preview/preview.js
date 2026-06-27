@@ -122,7 +122,7 @@ Page({
           { value: recordingCount + '次', label: '复述练习' }
         ],
         cta: '现在就试试10分钟训练',
-        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '个能力成长任务。每天10分钟就能练，家长更容易看见孩子一点点进步。'
+        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '次每日训练。每天10分钟就能练，家长更容易看见孩子一点点进步。'
       };
     }
 
@@ -131,14 +131,14 @@ Page({
       headline: '每天10分钟，孩子进步更容易看见',
       subline: '把阅读、表达和专注训练放进日常，家长更知道怎么陪',
       heroMetric: '+1',
-      heroLabel: data.title || '能力成长任务',
+      heroLabel: data.title || '每日训练',
       chips: [
         { value: completed + '/' + total, label: '累计完成' },
         { value: streakDays + '天', label: '连续坚持' },
         { value: recordingCount + '次', label: '复述录音' }
       ],
       cta: '现在就开始10分钟训练',
-      copyText: '今天完成一个能力成长任务。每天10分钟就能练，家长更容易看见孩子慢慢进步。'
+      copyText: '今天完成一次每日训练。每天10分钟就能练，家长更容易看见孩子慢慢进步。'
     };
   },
 

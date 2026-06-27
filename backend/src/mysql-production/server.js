@@ -9233,26 +9233,26 @@ async function getRecentModuleUsage(userId, childId) {
 }
 
 async function getRecommendedReadingTask(childId, ageGroup, subjectCode) {
-  const likeAge = `%${ageGroup || '3-4岁'}%`;
-  let [rows] = await pool.execute(
-    `SELECT t.*, tp.status, tp.progress
+  const hasAgeGroup = !!ageGroup;
+  const likeAge = `%${ageGroup || ''}%`;
+  let query = `SELECT t.*, tp.status, tp.progress
      FROM reading_tasks t
      LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
-     WHERE t.age_range LIKE ?
+     WHERE (? = 0 OR t.age_range LIKE ?)
        AND (? = '' OR t.subject_code = ?)
      ORDER BY CASE WHEN tp.status = 'completed' THEN 1 ELSE 0 END ASC, t.difficulty ASC, t.id ASC
-     LIMIT 1`,
-    [childId, likeAge, subjectCode || '', subjectCode || '']
-  );
+     LIMIT 1`;
+  let params = [childId, hasAgeGroup ? 1 : 0, likeAge, subjectCode || '', subjectCode || ''];
+  let [rows] = await pool.execute(query, params);
   if (!rows.length) {
     [rows] = await pool.execute(
       `SELECT t.*, tp.status, tp.progress
        FROM reading_tasks t
        LEFT JOIN task_progress tp ON t.id = tp.task_id AND tp.child_id = ?
-       WHERE t.age_range LIKE ?
-       ORDER BY CASE WHEN tp.status = 'completed' THEN 1 ELSE 0 END ASC, t.difficulty ASC, t.id ASC
-       LIMIT 1`,
-      [childId, likeAge]
+        WHERE (? = 0 OR t.age_range LIKE ?)
+        ORDER BY CASE WHEN tp.status = 'completed' THEN 1 ELSE 0 END ASC, t.difficulty ASC, t.id ASC
+        LIMIT 1`,
+      [childId, hasAgeGroup ? 1 : 0, likeAge]
     );
   }
   if (!rows.length) {
@@ -9262,8 +9262,12 @@ async function getRecommendedReadingTask(childId, ageGroup, subjectCode) {
 }
 
 async function getRecommendedParentingArticle(ageGroup, articleCategory, articleKeyword, userId) {
-  const params = [ageGroup || '3-4岁'];
-  let whereClause = 'WHERE is_published = 1 AND age_group = ?';
+  const params = [];
+  let whereClause = 'WHERE is_published = 1';
+  if (ageGroup) {
+    whereClause += ' AND age_group = ?';
+    params.push(ageGroup);
+  }
   if (articleCategory) {
     whereClause += ' AND category = ?';
     params.push(articleCategory);
@@ -9278,9 +9282,15 @@ async function getRecommendedParentingArticle(ageGroup, articleCategory, article
     params
   );
   if (!rows.length) {
+    const fallbackParams = [];
+    let fallbackWhere = 'WHERE is_published = 1';
+    if (ageGroup) {
+      fallbackWhere += ' AND age_group = ?';
+      fallbackParams.push(ageGroup);
+    }
     [rows] = await pool.execute(
-      'SELECT * FROM articles WHERE is_published = 1 AND age_group = ? ORDER BY read_count DESC, created_at DESC LIMIT 1',
-      [ageGroup || '3-4岁']
+      `SELECT * FROM articles ${fallbackWhere} ORDER BY read_count DESC, created_at DESC LIMIT 1`,
+      fallbackParams
     );
   }
   if (!rows.length) {
@@ -9366,10 +9376,10 @@ function buildNoChildDailyPlanCards(planDate) {
     {
       slotIndex: 2,
       planType: 'parenting_article',
-      title: '先看看育儿知识首页，找到和你家最像的问题',
-      reasonText: '先用高频问题入口缩小范围，会比盲目翻内容更省心。',
+      title: '去育儿锦囊，先找一个像你家的场景',
+      reasonText: '从熟悉的场景切入，更容易找到今晚能用的一步。',
       actionText: '去看看',
-      summaryText: '从情绪、习惯、认知、社交、营养五类问题快速进入。',
+      summaryText: '情绪、习惯、认知、社交、营养，都可以从这里找。',
       durationMinutes: 5,
       targetType: 'parenting_home',
       targetId: 'parenting_home',
@@ -9385,7 +9395,7 @@ async function buildDailyPlanCards(userId, child, planDate) {
   if (!child) {
     return buildNoChildDailyPlanCards(planDate);
   }
-  const ageGroup = inferAgeRangeFromChild(child) || '3-4岁';
+  const ageGroup = inferAgeRangeFromChild(child);
   const weakDimension = await getLatestWeakDimension(child.id);
   const planProfile = getDailyPlanProfileByDimension(weakDimension && weakDimension.dimension_name);
   const recentUsage = await getRecentModuleUsage(userId, child.id);
@@ -9400,8 +9410,8 @@ async function buildDailyPlanCards(userId, child, planDate) {
       planType: 'ability_task',
       title: `今天先做 1 次：${readingTask.title}`,
       reasonText: weakDimension
-        ? `${planProfile.reasonText} 最近测评里“${weakDimension.dimension_name}”更值得优先补一补。`
-        : '先做一个短任务，最容易把今天的陪伴真正开始起来。',
+        ? `${planProfile.reasonText} 最近测评里“${weakDimension.dimension_name}”可以多陪孩子练一练。`
+        : '先做一个短练习，把今天的陪伴开始起来。',
       actionText: '现在去练',
       summaryText: readingTask.objective || readingTask.parent_prompt || readingTask.title,
       durationMinutes: Number(readingTask.duration || 10),
@@ -9419,10 +9429,10 @@ async function buildDailyPlanCards(userId, child, planDate) {
     cards.push({
       slotIndex: cards.length,
       planType: 'parenting_article',
-      title: `再读一篇：${article.title}`,
+      title: `这篇也许用得上：${article.title}`,
       reasonText: recentUsage.knowledge > recentUsage.reading_tasks
-        ? '你最近已经在看内容，这一篇更适合直接转成家庭做法。'
-        : `${planProfile.articleCategory}相关问题更适合今天顺手补一篇方法文。`,
+        ? '你最近常看这类，今天可以照着试一小步。'
+        : `${planProfile.articleCategory}这类情况，今天可以先看一篇。`,
       actionText: '去看方法',
       summaryText: article.summary || article.title,
       durationMinutes: 6,
@@ -9441,7 +9451,7 @@ async function buildDailyPlanCards(userId, child, planDate) {
       slotIndex: cards.length,
       planType: 'nutrition_recipe',
       title: `饮食上先关注：${recipe.title || recipe.name}`,
-      reasonText: '日常饮食最适合做成小动作，今天先从一顿更容易落实的搭配开始。',
+      reasonText: '今天先把一顿饭搭稳一点。',
       actionText: '看搭配',
       summaryText: (recipe.nutrition && recipe.nutrition.highlight) || recipe.description || '',
       durationMinutes: 5,
@@ -9459,10 +9469,10 @@ async function buildDailyPlanCards(userId, child, planDate) {
     cards.push({
       slotIndex: cards.length,
       planType: 'habit_reminder',
-      title: '今天留 3 分钟，先复盘孩子最卡的一步',
-      reasonText: '每天只复盘一件小事，比一次解决很多问题更容易坚持。',
+      title: '今天留 3 分钟，看看孩子哪一步最费劲',
+      reasonText: '每天只盯一件小事，更容易坚持。',
       actionText: '去观察',
-      summaryText: '先判断今天最想继续保持什么、最想调整什么。',
+      summaryText: '先想清楚今天要保留什么、要调整什么。',
       durationMinutes: 3,
       targetType: 'assessment',
       targetId: 'assessment_entry',

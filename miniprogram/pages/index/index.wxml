@@ -38,8 +38,8 @@
   <view class="section daily-action-section">
     <view class="daily-action-card">
       <text class="daily-action-eyebrow">今晚就能用</text>
-      <text class="daily-action-title">把问题变成做法</text>
-      <text class="daily-action-desc">选一个场景，小牛拆成行动步骤。</text>
+      <text class="daily-action-title">孩子有状况，马上问小牛</text>
+      <text class="daily-action-desc">选一个场景，小牛给你具体步骤。</text>
       <view class="daily-action-buttons">
         <view class="daily-action-primary" bindtap="goToParenting">去育儿知识</view>
         <view class="daily-action-secondary" bindtap="goToTodayTask">做今天第一步</view>
@@ -50,7 +50,7 @@
   <view class="section touchpoint-section" wx:if="{{operationTouchpoint.key}}">
     <view class="touchpoint-card" bindtap="onOperationTouchpointTap">
       <view class="touchpoint-top">
-        <text class="touchpoint-eyebrow">为你推荐</text>
+        <text class="touchpoint-eyebrow">给你留了一个入口</text>
         <text class="touchpoint-arrow">></text>
       </view>
       <text class="touchpoint-title">{{operationTouchpoint.title}}</text>
@@ -100,11 +100,11 @@
       </view>
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
-        <text class="module-name">AI育儿问答</text>
+        <text class="module-name">小牛育儿问答</text>
         <text class="module-desc">有问题直接问</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
-        <text class="module-name">AI育儿问答</text>
+        <text class="module-name">小牛育儿问答</text>
         <text class="module-desc">暂未开放</text>
       </view>
 
@@ -117,13 +117,13 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">今日育儿计划</text>
+      <text class="section-title">今天先做这几步</text>
       <text class="section-subtitle">已完成 {{dailyPlanCompletedCount}}/3</text>
     </view>
 
     <view wx:if="{{dailyPlanLoading}}" class="plan-loading-card">
-      <text class="plan-loading-title">正在生成今日建议</text>
-      <text class="plan-loading-desc">正在按孩子年龄匹配内容。</text>
+      <text class="plan-loading-title">正在找今天适合做的事</text>
+      <text class="plan-loading-desc">会优先看孩子的年龄和档案。</text>
     </view>
 
     <block wx:elif="{{dailyPlanCards.length}}">

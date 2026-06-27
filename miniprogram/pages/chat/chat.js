@@ -363,14 +363,14 @@ Page({
 
     if (!this.data.featureFlags.aiChatEnabled) {
       wx.showToast({
-        title: 'AI问答暂未开放',
+        title: '小牛问答暂未开放',
         icon: 'none'
       });
       return;
     }
 
     if (!wx.getStorageSync('token')) {
-      app.promptLogin('请先登录后再使用AI问答功能');
+      app.promptLogin('请先登录后再使用小牛问答');
       return;
     }
 
