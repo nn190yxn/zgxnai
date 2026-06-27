@@ -700,14 +700,58 @@ td {
   gap: 12px;
 }
 
+.segment-user-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+}
+
 .segment-user-table {
+  min-width: 980px;
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 13px;
   line-height: 1.5;
   background: rgba(255, 255, 255, 0.48);
   border-radius: 16px;
-  overflow: hidden;
+}
+
+.segment-user-table th:nth-child(1),
+.segment-user-table td:nth-child(1) {
+  width: 120px;
+}
+
+.segment-user-table th:nth-child(2),
+.segment-user-table td:nth-child(2) {
+  width: 120px;
+}
+
+.segment-user-table th:nth-child(3),
+.segment-user-table td:nth-child(3) {
+  width: 130px;
+}
+
+.segment-user-table th:nth-child(4),
+.segment-user-table td:nth-child(4) {
+  width: 110px;
+}
+
+.segment-user-table th:nth-child(5),
+.segment-user-table td:nth-child(5),
+.segment-user-table th:nth-child(7),
+.segment-user-table td:nth-child(7) {
+  width: 86px;
+}
+
+.segment-user-table th:nth-child(6),
+.segment-user-table td:nth-child(6) {
+  width: 92px;
+}
+
+.segment-user-table th:nth-child(8),
+.segment-user-table td:nth-child(8) {
+  width: 64px;
 }
 
 .segment-user-table thead {
@@ -771,13 +815,11 @@ td {
 }
 
 .segment-user-table .cell-action {
-  max-width: 110px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 11px;
+  white-space: normal;
+  line-height: 1.55;
+  font-size: 12px;
   color: var(--muted);
-  cursor: default;
+  word-break: break-word;
 }
 
 .segment-load-more {

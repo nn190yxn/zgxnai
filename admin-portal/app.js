@@ -1089,7 +1089,8 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
     return;
   }
 
-  // 紧凑表格
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'segment-user-table-wrap';
   const table = document.createElement('table');
   table.className = 'segment-user-table';
   table.innerHTML = `
@@ -1120,11 +1121,12 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
       <td class="cell-amount">¥${escapeHtml(formatNumber(item.total_paid_amount || 0))}</td>
       <td class="cell-date">${item.last_active_at ? formatShortDate(item.last_active_at) : '-'}</td>
       <td class="cell-priority ${item.action_priority === 'high' ? 'priority-high-tag' : ''}">${escapeHtml(formatActionPriority(item.action_priority))}</td>
-      <td class="cell-action" title="${escapeHtml(item.suggested_action || '')}">${escapeHtml(truncateText(item.suggested_action, 12) || '-')}</td>
+      <td class="cell-action">${escapeHtml(item.suggested_action || '-')}</td>
     `;
     tbody.appendChild(row);
   });
-  container.appendChild(table);
+  tableWrap.appendChild(table);
+  container.appendChild(tableWrap);
 
   // 加载更多按钮
   if (totalCount >= 20) {
