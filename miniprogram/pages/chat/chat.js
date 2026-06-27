@@ -270,6 +270,64 @@ Page({
     this.sendMessage();
   },
 
+  generateSevenDayPlan: function() {
+    var that = this;
+    if (that.data.loading) {
+      return;
+    }
+    var messages = that.data.messages || [];
+    var lastAnswer = '';
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role !== 'user' && !messages[i].isError && messages[i].content) {
+        lastAnswer = String(messages[i].content).trim();
+        break;
+      }
+    }
+    if (!lastAnswer) {
+      wx.showToast({ title: '暂无可生成计划的内容', icon: 'none' });
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      wx.showToast({ title: '请先在首页完善孩子档案', icon: 'none' });
+      return;
+    }
+    app.requireLoginForAction().then(function(canOperate) {
+      if (!canOperate) {
+        return;
+      }
+      wx.showLoading({ title: '生成计划中...' });
+      return app.request({
+        url: '/daily-plan/generate',
+        method: 'POST',
+        data: {
+          childId: currentChild.id,
+          source_type: 'ai_answer',
+          source_title: lastAnswer.substring(0, 60).replace(/\n/g, ' ') + '...',
+          source_summary: lastAnswer.substring(0, 500)
+        }
+      });
+    }).then(function() {
+      wx.hideLoading();
+      wx.showToast({ title: '7天计划已生成', icon: 'success' });
+      if (app.trackKbEvent) {
+        app.trackKbEvent({
+          event_type: 'daily_plan_generate',
+          module_key: 'daily_plan',
+          page_key: 'chat',
+          event_meta: { source_type: 'ai_answer' }
+        });
+      }
+    }).catch(function(err) {
+      wx.hideLoading();
+      if (err && err.code === 'TOKEN_EXPIRED') {
+        wx.showToast({ title: '登录已过期，请重新登录', icon: 'none' });
+        return;
+      }
+      wx.showToast({ title: '计划生成失败，请重试', icon: 'none' });
+    });
+  },
+
   onEditVoiceResult: function() {
     this.setData({
       inputValue: this.data.voiceResultText,
@@ -356,7 +414,10 @@ Page({
         content: answer,
         markdownNodes: self.parseMarkdownToNodes(answer),
         sources: sources,
-        structured: (result && result.structured) || null
+        structured: (result && result.structured) || null,
+        followUpQuestions: (result && result.follow_up_questions) || [],
+        saveAvailable: result && result.save_available !== false,
+        planAvailable: !!(result && result.plan_available)
       };
 
       var updatedMessages = self.data.messages.concat([botMessage]);

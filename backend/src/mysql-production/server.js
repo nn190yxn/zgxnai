@@ -2489,6 +2489,12 @@ async function chatHandler(req, res) {
         references: [],
         durationMs: Date.now() - startedAt
       });
+      const actionFields = buildChatActionFields({
+        intent,
+        subIntent,
+        chatChildContext,
+        hasStructured: Boolean(structured)
+      });
       res.json({
         success: true,
         data: {
@@ -2505,7 +2511,12 @@ async function chatHandler(req, res) {
           fallback_reason: 'AGE_REQUIRED',
           needs_child_age: true,
           child_context_source: chatChildContext.source,
-          child_profile_missing: chatChildContext.profileMissing
+          child_profile_missing: chatChildContext.profileMissing,
+          follow_up_questions: [],
+          save_available: false,
+          plan_available: false,
+          profile_required: true,
+          membership_prompt: null
         }
       });
       return;
@@ -2525,6 +2536,12 @@ async function chatHandler(req, res) {
     const matchedTypes = getChatMatchedTypes(references);
 
     const structured = buildStructuredResponse(answer, references, chatAnalysis);
+    const actionFields = buildChatActionFields({
+      intent,
+      subIntent,
+      chatChildContext,
+      hasStructured: Boolean(structured)
+    });
 
     await recordChatAnalyticsEvent({
       userId: getUserId(req),
@@ -2562,6 +2579,11 @@ async function chatHandler(req, res) {
         needs_child_age: false,
         child_context_source: chatChildContext.source,
         child_profile_missing: false,
+        follow_up_questions: actionFields.follow_up_questions || [],
+        save_available: actionFields.save_available !== false,
+        plan_available: actionFields.plan_available || false,
+        profile_required: actionFields.profile_required || false,
+        membership_prompt: actionFields.membership_prompt || null,
         structured
       }
     });
@@ -2574,6 +2596,36 @@ async function chatHandler(req, res) {
       answerSource: loggedAnswerSource || '(unknown)'
     });
   }
+}
+
+function buildChatActionFields(context) {
+  const { intent, subIntent, chatChildContext, hasStructured } = context || {};
+  var followUpQuestions = [];
+  var saveAvailable = true;
+  var planAvailable = false;
+  var profileRequired = chatChildContext && chatChildContext.profileMissing;
+  var membershipPrompt = null;
+
+  if (hasStructured) {
+    followUpQuestions = [
+      '能给我一个具体的例子吗？',
+      '这种情况一般多久能改善？',
+      '有没有更简单的方法可以先试试？'
+    ].slice(0, 3);
+  }
+
+  var actionableIntents = ['parenting_advice', 'behavior_guidance', 'sleep_advice', 'nutrition_advice', 'development_progress'];
+  if (actionableIntents.indexOf(intent) !== -1 || (subIntent && actionableIntents.indexOf(subIntent) !== -1)) {
+    planAvailable = true;
+  }
+
+  return {
+    follow_up_questions: followUpQuestions,
+    save_available: saveAvailable,
+    plan_available: planAvailable,
+    profile_required: profileRequired,
+    membership_prompt: membershipPrompt
+  };
 }
 
 function buildChatAgeClarificationAnswer(chatChildContext) {

@@ -70,6 +70,15 @@
                 bindtap="onFollowupTap"
               >{{item}}</button>
             </view>
+            <view class="followup-buttons" wx:elif="{{item.followUpQuestions && item.followUpQuestions.length > 0}}">
+              <button
+                wx:for="{{item.followUpQuestions}}"
+                wx:key="*this"
+                class="followup-btn"
+                data-question="{{item}}"
+                bindtap="onFollowupTap"
+              >{{item}}</button>
+            </view>
           </view>
           <!-- 显示来源 -->
           <view wx:if="{{item.sources && item.sources.length > 0}}" class="sources">
@@ -86,6 +95,9 @@
             <view class="answer-next-row">
               <button class="answer-next-btn" bindtap="goToParentingSearch">找相关锦囊</button>
               <button class="answer-next-btn" bindtap="goToAssessment">做成长观察</button>
+            </view>
+            <view class="answer-next-row" wx:if="{{item.planAvailable}}">
+              <button class="answer-next-btn primary" bindtap="generateSevenDayPlan">生成7天计划</button>
             </view>
           </view>
         </view>
