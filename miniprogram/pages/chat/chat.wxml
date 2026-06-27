@@ -81,6 +81,7 @@
             <view class="answer-next-row">
               <button class="answer-next-btn primary" bindtap="askForTodaySteps">生成今晚三步</button>
               <button class="answer-next-btn" bindtap="goToGrowthRecord">记录孩子反应</button>
+              <button class="answer-next-btn" bindtap="saveAiAnswerToGrowthRecord">保存到成长记录</button>
             </view>
             <view class="answer-next-row">
               <button class="answer-next-btn" bindtap="goToParentingSearch">找相关锦囊</button>

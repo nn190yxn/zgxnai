@@ -442,6 +442,57 @@ Page({
     });
   },
 
+  saveAiAnswerToGrowthRecord: function() {
+    var that = this;
+    var messages = that.data.messages || [];
+    var lastBot = null;
+    for (var i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'bot' && !messages[i].isError) {
+        lastBot = messages[i];
+        break;
+      }
+    }
+    if (!lastBot || !lastBot.content) {
+      wx.showToast({ title: '暂无可保存的回答', icon: 'none' });
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      wx.showToast({ title: '请先在首页完善孩子档案', icon: 'none' });
+      return;
+    }
+    var title = (lastBot.content || '').substring(0, 40).replace(/\n/g, ' ') + '...';
+    var summary = (lastBot.content || '').substring(0, 500);
+    app.requireLoginForAction().then(function(canOperate) {
+      if (!canOperate) {
+        return;
+      }
+      return app.request({
+        url: '/growth-records/entry',
+        method: 'POST',
+        data: {
+          childId: currentChild.id,
+          entry_type: 'ai_answer',
+          title: title,
+          summary: summary,
+          source_id: 'chat_' + Date.now()
+        }
+      });
+    }).then(function() {
+      wx.showToast({ title: '已保存到成长记录', icon: 'success' });
+      if (app.trackKbEvent) {
+        app.trackKbEvent({
+          event_type: 'growth_record_save',
+          module_key: 'growth_record',
+          page_key: 'chat',
+          event_meta: { entry_type: 'ai_answer' }
+        });
+      }
+    }).catch(function() {
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    });
+  },
+
   // 分享
   onShareAppMessage: function() {
     return {

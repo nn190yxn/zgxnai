@@ -647,6 +647,50 @@ Page({
     });
   },
 
+  saveAssessmentToGrowthRecord: function() {
+    var that = this;
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      wx.showToast({ title: '请先在首页完善孩子档案', icon: 'none' });
+      return;
+    }
+    var title = that.data.assessmentName + ' - ' + that.data.level;
+    var summary = [
+      that.data.assessmentName,
+      '得分：' + that.data.percentage + '分（' + that.data.level + '）',
+      that.data.interpretation || '',
+      that.data.interpretation ? '' : '孩子：' + that.data.childName
+    ].filter(Boolean).join('；');
+    app.requireLoginForAction().then(function(canOperate) {
+      if (!canOperate) {
+        return;
+      }
+      return app.request({
+        url: '/growth-records/entry',
+        method: 'POST',
+        data: {
+          childId: currentChild.id,
+          entry_type: 'assessment_result',
+          title: title,
+          summary: summary,
+          source_id: 'assessment_' + (that.data.recordId || that.data.assessmentCode)
+        }
+      });
+    }).then(function() {
+      wx.showToast({ title: '已保存到成长记录', icon: 'success' });
+      if (app.trackKbEvent) {
+        app.trackKbEvent({
+          event_type: 'growth_record_save',
+          module_key: 'growth_record',
+          page_key: 'assessment_result',
+          event_meta: { entry_type: 'assessment_result', assessmentCode: that.data.assessmentCode }
+        });
+      }
+    }).catch(function() {
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    });
+  },
+
   // 返回成长观察页
   goBack: function() {
     wx.navigateBack();
