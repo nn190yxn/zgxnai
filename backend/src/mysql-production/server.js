@@ -252,6 +252,9 @@ for (const prefix of API_PREFIXES) {
   app.delete(`${prefix}/children/:id`, authenticateToken, asyncHandler(childrenDeleteHandler));
   app.get(`${prefix}/daily-plan`, authenticateToken, asyncHandler(dailyPlanHandler));
   app.post(`${prefix}/daily-plan/complete`, authenticateToken, asyncHandler(dailyPlanCompleteHandler));
+  app.get(`${prefix}/daily-plan/streak`, authenticateToken, asyncHandler(dailyPlanStreakHandler));
+  app.post(`${prefix}/daily-plan/generate`, authenticateToken, asyncHandler(dailyPlanGenerateHandler));
+  app.get(`${prefix}/daily-plan/next`, authenticateToken, asyncHandler(dailyPlanNextHandler));
   app.get(`${prefix}/growth-records/daily`, authenticateToken, asyncHandler(growthRecordDailyHandler));
   app.post(`${prefix}/growth-records`, authenticateToken, asyncHandler(growthRecordUpsertHandler));
   app.get(`${prefix}/growth-records/history`, authenticateToken, asyncHandler(growthRecordHistoryHandler));
@@ -9404,6 +9407,7 @@ async function dailyPlanHandler(req, res) {
     await storeDailyPlanCards(userId, child.id, planDate, generated);
     cards = await loadDailyPlanRecords(userId, child.id, planDate);
   }
+  const streak = await getUserPlanStreak(userId, child.id);
   res.json({
     success: true,
     data: {
@@ -9411,6 +9415,7 @@ async function dailyPlanHandler(req, res) {
       child_id: child.id,
       child_name: child.name || '',
       age_group: inferAgeRangeFromChild(child) || '',
+      streak_days: streak.streakDays,
       cards
     }
   });
@@ -9450,6 +9455,190 @@ async function dailyPlanCompleteHandler(req, res) {
   await deleteWeeklySummaryCache(userId, record.child_id, formatStoredDateValue(record.plan_date));
   const [updatedRows] = await pool.execute('SELECT * FROM daily_plan_records WHERE id = ? LIMIT 1', [record.id]);
   res.json({ success: true, data: normalizeDailyPlanRecord(updatedRows[0]) });
+}
+
+async function getUserPlanStreak(userId, childId) {
+  const [rows] = await pool.execute(
+    `SELECT DISTINCT DATE(completed_at) AS completed_date
+       FROM daily_plan_completions
+      WHERE user_id = ? AND child_id = ?
+      ORDER BY completed_date DESC`,
+    [userId, childId]
+  );
+  if (!rows.length) {
+    return { streakDays: 0, lastCompletedDate: null };
+  }
+  let streakDays = 1;
+  const today = getPlanDateValue();
+  const firstCompletedDate = getPlanDateValue(rows[0].completed_date);
+  if (firstCompletedDate < today) {
+    const diffMs = new Date(today) - new Date(firstCompletedDate);
+    if (Math.floor(diffMs / 86400000) > 1) {
+      return { streakDays: 0, lastCompletedDate: rows[0].completed_date };
+    }
+  }
+  for (let i = 1; i < rows.length; i++) {
+    const prev = getPlanDateValue(rows[i - 1].completed_date);
+    const curr = getPlanDateValue(rows[i].completed_date);
+    const diffMs = new Date(prev) - new Date(curr);
+    if (Math.floor(diffMs / 86400000) === 1) {
+      streakDays++;
+    } else {
+      break;
+    }
+  }
+  return { streakDays, lastCompletedDate: rows[0].completed_date };
+}
+
+async function dailyPlanStreakHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const child = await resolveDailyPlanChild(userId, childId);
+  if (!child) {
+    res.status(403).json({ success: false, message: '请先完善孩子档案' });
+    return;
+  }
+  const streak = await getUserPlanStreak(userId, child.id);
+  res.json({
+    success: true,
+    data: {
+      child_id: child.id,
+      child_name: child.name || '',
+      streak_days: streak.streakDays,
+      last_completed_date: streak.lastCompletedDate
+        ? formatStoredDateValue(streak.lastCompletedDate)
+        : null
+    }
+  });
+}
+
+async function dailyPlanGenerateHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number((req.body && req.body.childId) || 0);
+  const sourceType = String((req.body && req.body.source_type) || '');
+  const sourceTitle = String((req.body && req.body.source_title) || '');
+  const sourceSummary = String((req.body && req.body.source_summary) || '');
+  if (!sourceType || !childId) {
+    res.status(400).json({ success: false, message: 'source_type和childId不能为空' });
+    return;
+  }
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) {
+    return;
+  }
+  const startDate = getPlanDateValue();
+  const cards = buildMultiDayPlanCards(child, startDate, sourceType, sourceTitle, sourceSummary);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    for (const card of cards) {
+      const normalizedDate = getPlanDateValue(card.planDate);
+      await connection.execute(
+        `INSERT INTO daily_plan_records
+         (user_id, child_id, plan_date, slot_index, plan_type, title, reason_text, action_text, summary_text, duration_minutes, target_type, target_id, target_path, source_key, score, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+         ON DUPLICATE KEY UPDATE title = VALUES(title), reason_text = VALUES(reason_text), summary_text = VALUES(summary_text)`,
+        [
+          userId,
+          childId,
+          normalizedDate,
+          Number(card.slotIndex || 0),
+          card.planType,
+          card.title,
+          card.reasonText,
+          card.actionText,
+          card.summaryText,
+          Number(card.durationMinutes || 3),
+          card.targetType || 'daily_plan',
+          card.targetId || '',
+          card.targetPath || '',
+          card.sourceKey || sourceType,
+          Number(card.score || 50)
+        ]
+      );
+    }
+    await connection.commit();
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+  const todayCards = await loadDailyPlanRecords(userId, childId, startDate);
+  const streak = await getUserPlanStreak(userId, childId);
+  res.json({
+    success: true,
+    data: {
+      date: startDate,
+      child_id: childId,
+      child_name: child.name || '',
+      total_days: cards.length,
+      streak_days: streak.streakDays,
+      cards: todayCards
+    }
+  });
+}
+
+function buildMultiDayPlanCards(child, startDate, sourceType, sourceTitle, sourceSummary) {
+  const dayNames = ['第一天', '第二天', '第三天', '第四天', '第五天', '第六天', '第七天'];
+  const ageGroup = inferAgeRangeFromChild(child) || '';
+  const ageText = ageGroup ? `针对${ageGroup}孩子` : '';
+  const baseTitle = sourceTitle || '每日成长任务';
+  const baseSummary = sourceSummary || '每天完成一个小目标，坚持 7 天看见变化。';
+  const cards = [];
+  for (let i = 0; i < 7; i++) {
+    const planDate = new Date(new Date(startDate).getTime() + i * 86400000);
+    cards.push({
+      slotIndex: i,
+      planType: sourceType || 'daily_plan',
+      title: `${dayNames[i]}: ${baseTitle}`,
+      reasonText: i === 0
+        ? '基于' + (sourceType === 'ai_answer' ? 'AI问答' : sourceType === 'assessment' ? '成长观察' : '每日训练') + '生成' + ageText + '的 7 天执行计划'
+        : dayNames[i] + '继续推进，' + (ageText ? ageText + '的' : '') + '小目标更容易坚持下去。',
+      actionText: i <= 2 ? '开始今天的第一步' : '继续推进',
+      summaryText: i === 0 ? baseSummary : baseSummary + '（第' + (i + 1) + '步，每天3-5分钟）',
+      durationMinutes: 3 + Math.min(i, 2),
+      targetType: sourceType === 'assessment' ? 'assessment' : 'daily_plan',
+      targetId: '',
+      targetPath: sourceType === 'assessment' ? '/pages/assessment/assessment' : '/pages/textbook/textbook',
+      sourceKey: sourceType,
+      score: 60 + Math.min(i * 5, 20),
+      planDate: planDate.toISOString().split('T')[0],
+      childId: child.id
+    });
+  }
+  return cards;
+}
+
+async function dailyPlanNextHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || 0);
+  const child = await resolveDailyPlanChild(userId, childId);
+  if (!child) {
+    res.json({ success: true, data: null, message: '请先完善孩子档案' });
+    return;
+  }
+  const tomorrow = getPlanDateValue(new Date(Date.now() + 86400000));
+  const [rows] = await pool.execute(
+    `SELECT *
+       FROM daily_plan_records
+      WHERE user_id = ? AND child_id = ? AND plan_date = ? AND status <> 'completed'
+      ORDER BY slot_index ASC, id ASC
+      LIMIT 1`,
+    [userId, childId, tomorrow]
+  );
+  if (!rows.length) {
+    res.json({ success: true, data: null, message: '明天暂无计划' });
+    return;
+  }
+  const streak = await getUserPlanStreak(userId, childId);
+  res.json({
+    success: true,
+    data: {
+      card: normalizeDailyPlanRecord(rows[0]),
+      streak_days: streak.streakDays
+    }
+  });
 }
 
 async function deleteWeeklySummaryCache(userId, childId, dateValue) {

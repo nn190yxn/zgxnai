@@ -438,7 +438,7 @@ Page({
     ];
   },
 
-  applyDailyPlan: function(cards, payload) {
+  applyDailyPlan: function(cards, payload, streakDays) {
     var list = (cards || []).map(this.normalizeDailyPlanCard.bind(this));
     var completedCount = list.filter(function(item) { return item.completed; }).length;
     var firstCard = list[0] || null;
@@ -449,13 +449,22 @@ Page({
       title: firstCard.title,
       duration: (firstCard.durationMinutes || 3) + '分钟可完成'
     } : {});
+    var weeklyProgress = Object.assign({}, this.data.weeklyProgress);
+    if (typeof streakDays === 'number' && streakDays > 0) {
+      weeklyProgress.streakDays = streakDays;
+      weeklyProgress.headline = '已连续记录 ' + streakDays + ' 天';
+      if (streakDays >= 7) {
+        weeklyProgress.headline = '连续 ' + streakDays + ' 天！这周的成长总结会更完整';
+      }
+    }
     this.setData({
       dailyPlanCards: list,
       dailyPlanDate: (payload && payload.date) || '',
       dailyPlanCompletedCount: completedCount,
       dailyPlanEmptyText: list.length ? '' : '今天先从一个明确的育儿主题开始。',
       growthStatus: growthStatus,
-      todayTask: todayTask
+      todayTask: todayTask,
+      weeklyProgress: weeklyProgress
     });
   },
 
@@ -550,12 +559,29 @@ Page({
       });
     }).then(function(res) {
       var cards = (res && res.cards) || [];
-      that.applyDailyPlan(cards, res || {});
+      var streakDaysVal = (res && typeof res.streak_days === 'number') ? res.streak_days : 0;
+      that.applyDailyPlan(cards, res || {}, streakDaysVal);
       that.trackDailyPlanView(that.data.dailyPlanCards, res || {});
     }).catch(function() {
       that.applyDailyPlanLoadError('今日建议加载失败，请稍后重试。');
     }).finally(function() {
       that.setData({ dailyPlanLoading: false });
+    });
+  },
+
+  fetchNextDayPlan: function() {
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild || !currentChild.id) {
+      return Promise.resolve(null);
+    }
+    return app.request({
+      url: '/daily-plan/next',
+      method: 'GET',
+      data: { childId: currentChild.id }
+    }).then(function(res) {
+      return (res && res.data) || null;
+    }).catch(function() {
+      return null;
     });
   },
 
@@ -907,6 +933,17 @@ Page({
           action: 'mark_completed'
         });
         wx.showToast({ title: '已记录完成', icon: 'success' });
+        return that.fetchNextDayPlan();
+      }).then(function(nextData) {
+        if (nextData && nextData.card) {
+          var next = nextData.card;
+          wx.showModal({
+            title: '明天继续',
+            content: next.title || '明天还有新的任务等你完成',
+            confirmText: '知道了',
+            showCancel: false
+          });
+        }
       });
     }).catch(function() {
       wx.showToast({ title: '记录失败', icon: 'none' });
