@@ -13,6 +13,9 @@ Page({
       is_trial_used: false,
       plans: []
     },
+
+    showExpiryRecall: false,
+    expiryRecallLevel: 'soon',
     
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
@@ -150,11 +153,17 @@ Page({
       url: '/membership/info',
       method: 'GET'
     }).then(data => {
+      var daysLeft = (data && data.days_left) || 0;
+      var isActive = !!(data && data.is_active);
+      var showExpiryRecall = isActive && daysLeft > 0 && daysLeft <= 7;
+      var expiryRecallLevel = daysLeft <= 3 ? 'urgent' : 'soon';
       this.setData({
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
         promoBenefitText: data.promo_benefit_text || '兑换码兑换区',
-        displayFeatures: this.buildDisplayFeatures(data)
+        displayFeatures: this.buildDisplayFeatures(data),
+        showExpiryRecall: showExpiryRecall,
+        expiryRecallLevel: expiryRecallLevel
       });
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);

@@ -322,3 +322,42 @@
   font-size: 32rpx;
   font-weight: bold;
 }
+
+.recall-card {
+  background: linear-gradient(135deg, #FF7A45 0%, #FF6B35 100%);
+}
+
+.recall-badge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.recall-urgent {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.recall-soon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.badge-text {
+  font-size: 22rpx;
+  color: #fff;
+}
+
+.recall-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8rpx;
+}
+
+.recall-desc {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+}

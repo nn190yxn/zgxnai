@@ -17,6 +17,16 @@
     </view>
   </view>
 
+  <view class="membership-card recall-card" wx:if="{{showExpiryRecall}}">
+    <view class="membership-body">
+      <view class="recall-badge {{expiryRecallLevel === 'urgent' ? 'recall-urgent' : 'recall-soon'}}">
+        <text class="badge-text">{{expiryRecallLevel === 'urgent' ? '即将到期' : '快到期了'}}</text>
+      </view>
+      <text class="recall-title">{{expiryRecallLevel === 'urgent' ? '您的成长服务将在3天内到期' : '您的成长服务将在7天内到期'}}</text>
+      <text class="recall-desc">{{expiryRecallLevel === 'urgent' ? '续费可继续享受1v1育儿陪伴、AI问答和每周成长总结。到期后基础功能不受影响，但专属内容将暂停。' : '提前续费可避免服务中断，连续记录不丢失，AI陪伴不暂停。'}}</text>
+    </view>
+  </view>
+
   <!-- 支付状态提示 -->
     <view class="audit-notice" wx:if="{{!showPayment}}">
       <view class="notice-icon">VIP</view>

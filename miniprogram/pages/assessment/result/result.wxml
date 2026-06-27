@@ -162,6 +162,15 @@
     </view>
 
     <!-- 底部提示 -->
+    <view class="section membership-cta-section" wx:if="{{showMembershipPrompt}}">
+      <view class="membership-cta-card">
+        <text class="cta-title">开通成长服务，解锁更多内容</text>
+        <text class="cta-desc">保存测评报告、查看完整成长建议、获得每周总结和个性化陪伴计划。</text>
+        <view class="cta-btn" bindtap="goToMembershipFromResult">了解成长服务</view>
+      </view>
+    </view>
+
+    <!-- 底部提示 -->
     <view class="footer-tip">
       <text class="tip-text">结果仅供参考，不能替代专业评估或诊断</text>
       <text class="tip-text">如有疑问请咨询专业人士</text>

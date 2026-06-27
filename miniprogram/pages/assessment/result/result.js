@@ -42,7 +42,8 @@ Page({
     timeText: '',
     
     // 加载状态
-    loading: true
+    loading: true,
+    showMembershipPrompt: false
   },
 
   onUnload: function() {
@@ -100,12 +101,11 @@ Page({
     var that = this;
     
     if (isLocal) {
-      // 从本地存储加载
       that.loadLocalResult(recordId);
     } else {
-      // 从服务器加载
       that.loadServerResult(recordId);
     }
+    that.checkMembershipStatus();
   },
 
   // 从本地加载结果
@@ -647,6 +647,24 @@ Page({
     });
   },
 
+  checkMembershipStatus: function() {
+    var that = this;
+    if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
+      return;
+    }
+    app.ensureLogin().then(function() {
+      return app.request({
+        url: '/retention/status',
+        method: 'GET'
+      });
+    }).then(function(res) {
+      var data = (res && res.data) ? res.data : res;
+      if (data && !data.is_active && data.is_active_unpaid) {
+        that.setData({ showMembershipPrompt: true });
+      }
+    }).catch(function() {});
+  },
+
   saveAssessmentToGrowthRecord: function() {
     var that = this;
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -688,6 +706,15 @@ Page({
       }
     }).catch(function() {
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    });
+  },
+
+  goToMembershipFromResult: function() {
+    wx.navigateTo({
+      url: '/pages/membership/index?source=assessment_result',
+      fail: function() {
+        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+      }
     });
   },
 
