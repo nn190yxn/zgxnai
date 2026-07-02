@@ -10,6 +10,7 @@ function testAgeGroupMapping() {
   assert.strictEqual(childContext.normalizeChatAgeGroup({ birthday: '2022-06-27' }, fixedNow), '4-5岁');
   assert.strictEqual(childContext.normalizeChatAgeGroup({ birthday: '2019-06-27' }, fixedNow), '6-9岁');
   assert.strictEqual(childContext.normalizeChatAgeGroup({ birthday: '2016-06-27' }, fixedNow), '9-12岁');
+  assert.strictEqual(childContext.normalizeChatAgeGroup({ birthday: '2022-06-27', age_group: '6-9岁' }, fixedNow), '4-5岁');
   assert.strictEqual(childContext.normalizeChatAgeGroup({ age_group: '6-9岁' }, fixedNow), '6-9岁');
   assert.strictEqual(childContext.normalizeChatAgeGroup({ ageGroup: '4岁' }, fixedNow), '4-5岁');
 }
@@ -28,6 +29,7 @@ function testChildChatContext() {
     id: 9,
     name: '牛牛',
     birthday: '2022-06-27',
+    age_group: '6-9岁',
     tags: '敏感、慢热',
     concerns: '["睡前拖延","情绪表达"]'
   }, fixedNow), {

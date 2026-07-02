@@ -2703,6 +2703,13 @@ function buildChatAgeClarificationAnswer(chatChildContext) {
 async function resolveChatChildContext(req) {
   const bodyProfile = req.body && req.body.child_profile ? req.body.child_profile : null;
   if (bodyProfile) {
+    const profileChildId = Number(bodyProfile.id || bodyProfile.child_id || 0);
+    if (profileChildId > 0) {
+      const child = await getOwnedChild(getUserId(req), profileChildId);
+      if (child) {
+        return buildChatChildContext(child, 'request_child_profile_id');
+      }
+    }
     return buildChatChildContext(bodyProfile, 'request_child_profile');
   }
 
@@ -2735,22 +2742,19 @@ function buildChatChildContext(childProfile, source) {
 }
 
 function normalizeChatAgeGroup(childProfile) {
+  const birthday = String((childProfile && (childProfile.birthday || childProfile.birth_date)) || '').trim();
+  if (birthday) {
+    const birthdayDate = new Date(`${birthday}T00:00:00Z`);
+    if (!Number.isNaN(birthdayDate.getTime())) {
+      return mapBirthdayToAgeGroup(birthdayDate, new Date());
+    }
+  }
+
   const directAgeGroup = String((childProfile && (childProfile.ageGroup || childProfile.age_group || childProfile.age_range)) || '').trim();
   if (directAgeGroup) {
     return normalizeExplicitAgeGroup(directAgeGroup);
   }
-
-  const birthday = String((childProfile && (childProfile.birthday || childProfile.birth_date)) || '').trim();
-  if (!birthday) {
-    return '';
-  }
-
-  const birthdayDate = new Date(`${birthday}T00:00:00Z`);
-  if (Number.isNaN(birthdayDate.getTime())) {
-    return '';
-  }
-
-  return mapBirthdayToAgeGroup(birthdayDate, new Date());
+  return '';
 }
 
 function normalizeExplicitAgeGroup(rawAgeGroup) {

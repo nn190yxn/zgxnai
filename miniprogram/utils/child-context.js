@@ -71,23 +71,24 @@ function normalizeExplicitAgeGroup(value) {
 
 function normalizeChatAgeGroup(child, now) {
   child = child || {};
+  var birthday = String(child.birthday || child.birth_date || '').trim();
+  var ageYears = calculateAgeYears(birthday, now);
+  if (ageYears !== null) {
+    if (ageYears < 1) return '0-1岁';
+    if (ageYears < 2) return '1-2岁';
+    if (ageYears < 3) return '2-3岁';
+    if (ageYears < 4) return '3-4岁';
+    if (ageYears < 5) return '4-5岁';
+    if (ageYears < 6) return '5-6岁';
+    if (ageYears < 9) return '6-9岁';
+    return '9-12岁';
+  }
+
   var directAgeGroup = String(child.ageGroup || child.age_group || child.age_range || '').trim();
   if (directAgeGroup) {
     return normalizeExplicitAgeGroup(directAgeGroup);
   }
-  var birthday = String(child.birthday || child.birth_date || '').trim();
-  var ageYears = calculateAgeYears(birthday, now);
-  if (ageYears === null) {
-    return '';
-  }
-  if (ageYears < 1) return '0-1岁';
-  if (ageYears < 2) return '1-2岁';
-  if (ageYears < 3) return '2-3岁';
-  if (ageYears < 4) return '3-4岁';
-  if (ageYears < 5) return '4-5岁';
-  if (ageYears < 6) return '5-6岁';
-  if (ageYears < 9) return '6-9岁';
-  return '9-12岁';
+  return '';
 }
 
 function inferParentingAgeGroup(child, now) {
