@@ -33,7 +33,7 @@
   - 小程序 AppID `wxb22908624ec860fe`，miniprogramRoot 指向 `miniprogram/`
 
 [小牛育儿生产服务器完整配置]
-- Date: 2026-06-24 (更新)
+- Date: 2026-07-01 (更新)
 - Category: 运维部署
 - Instructions:
   - 服务器 `ubuntu@124.223.3.175`，SSH 密钥 `/workspace/WOYING.pem`（与 `.monkeycode-tmp-files/33e5da7c-WOYING-1.pem` 相同）
@@ -42,6 +42,7 @@
   - 业务环境变量从 `/home/ubuntu/niuniu-parenting/.env` 加载
   - 生产目录不是 Git 工作树，热修复采用 SCP 单文件同步 → pm2 restart
   - 每次同步前先备份到 `/home/ubuntu/niuniu-parenting/backups/`
+  - 后台运营统计由 ubuntu 用户 crontab 定时跑 `/home/ubuntu/niuniu-parenting/backend/src/scripts/build-admin-daily-stats.js`：每天 01:15 汇总昨天，每小时 20 分汇总当天，日志在 `/home/ubuntu/niuniu-parenting/logs/admin-daily-stats.log`
   - 修改 RUNTIME_* 环境变量后需 `pm2 restart niuniu-backend --update-env`
   - 运行时配置验收信号：`GET /api/v1/runtime/config` 返回 `config_loaded: true` 及 `ai_provider`、`ai_model`
   - 部署时不影响 `woying-backend` 进程和我赢AI任何配置
