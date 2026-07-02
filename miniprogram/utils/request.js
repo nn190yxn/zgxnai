@@ -45,7 +45,7 @@ function shouldUseMockFallback(app) {
 }
 
 function getApiErrorMessage(err, fallback) {
-  var defaultMessage = fallback || '接口请求失败，请稍后重试';
+  var defaultMessage = fallback || '网络有点慢，请稍后再试';
   if (!err) {
     return defaultMessage;
   }
@@ -55,22 +55,22 @@ function getApiErrorMessage(err, fallback) {
   }
 
   if (err.detail && err.detail.error_type === 'AI_SERVICE_UNAVAILABLE') {
-    return 'AI服务正在配置或维护中，请稍后再试';
+    return '小牛问答正在维护，请稍后再试';
   }
 
   if (err.error_type === 'AI_SERVICE_UNAVAILABLE') {
-    return 'AI服务正在配置或维护中，请稍后再试';
+    return '小牛问答正在维护，请稍后再试';
   }
 
   if (err.detail && err.detail.message) {
     if (err.detail.error_type === 'NOT_FOUND_ERROR' && err.detail.message.indexOf('用户') !== -1) {
-      return '账号不存在或已注销，请重新登录';
+      return '账号状态已变化，请重新登录';
     }
     return err.detail.message;
   }
 
   if (err.error_type === 'NOT_FOUND_ERROR' && err.message && err.message.indexOf('用户') !== -1) {
-    return '账号不存在或已注销，请重新登录';
+    return '账号状态已变化，请重新登录';
   }
 
   if (err.message) {
@@ -78,7 +78,7 @@ function getApiErrorMessage(err, fallback) {
       return '当前无网络，请连接后重试';
     }
     if (err.message.indexOf('timeout') !== -1 || err.message.indexOf('超时') !== -1) {
-      return '网络请求超时，请稍后重试';
+      return '网络有点慢，请稍后再试';
     }
     if (err.message.indexOf('网络请求失败') !== -1 || err.message.indexOf('request:fail') !== -1) {
       return '网络请求失败，请检查网络后重试';
@@ -88,7 +88,7 @@ function getApiErrorMessage(err, fallback) {
 
   if (err.errMsg) {
     if (err.errMsg.indexOf('timeout') !== -1) {
-      return '网络请求超时，请稍后重试';
+      return '网络有点慢，请稍后再试';
     }
     if (err.errMsg.indexOf('request:fail') !== -1) {
       return '网络请求失败，请检查网络后重试';
@@ -103,7 +103,7 @@ function getApiErrorMessage(err, fallback) {
     return '登录状态已过期，请重新进入页面';
   }
   if (err.statusCode === 403) {
-    return '当前账号暂无权限访问该内容';
+    return '当前账号还不能查看这个内容';
   }
   if (err.statusCode === 404) {
     return '内容暂未找到，请返回后重试';

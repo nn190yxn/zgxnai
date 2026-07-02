@@ -1,17 +1,17 @@
 <view class="page">
   <view class="summary-card" wx:if="{{!currentChild}}">
     <text class="summary-title">先完善孩子档案，再查看成长总结</text>
-    <text class="summary-copy">添加孩子档案后，系统会将每日记录整理为每周成长总结。</text>
+    <text class="summary-copy">填好孩子信息后，每天记一点，一周后就能看到变化。</text>
     <view class="primary-btn" bindtap="goToChildSetup">去完善档案</view>
   </view>
 
   <view class="summary-card" wx:elif="{{loading}}">
-    <text class="summary-copy">正在整理本周成长总结...</text>
+    <text class="summary-copy">正在把这周的记录整理成好懂的总结...</text>
   </view>
 
   <view class="summary-card" wx:elif="{{!summary}}">
     <text class="summary-title">本周成长总结还没生成</text>
-    <text class="summary-copy">再记录几天，即可查看本周的成长总结。</text>
+    <text class="summary-copy">再记几天，变化会更清楚。</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">
@@ -28,7 +28,7 @@
   <view class="summary-card" wx:if="{{currentChild && summary}}">
     <text class="section-title">记录概况</text>
     <text class="summary-copy">本周记录 {{summary.recordDays}} 天，完成今日计划 {{summary.completedPlanCount}} / {{summary.totalPlanCount}} 次。</text>
-    <text class="summary-copy">能力训练完成 {{summary.completedTaskCount}} 次。</text>
+    <text class="summary-copy">能力练习完成 {{summary.completedTaskCount}} 次。</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && summary.dimensionScoreList.length}}">
@@ -65,7 +65,7 @@
   <view class="summary-card" wx:if="{{currentChild && summary && !summary.premiumUnlocked}}">
     <text class="section-title">重点观察</text>
     <text class="summary-copy" wx:for="{{summary.concerns}}" wx:key="*this">{{item}}</text>
-    <text class="summary-copy">开通后可以看到更详细的趋势分析和下周陪娃建议。</text>
+    <text class="summary-copy">开通后可以看到更细的变化趋势和下周陪娃建议。</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">

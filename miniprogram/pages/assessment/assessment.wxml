@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="page-header">
     <text class="page-title">成长观察</text>
-    <text class="page-subtitle">通过观察了解孩子近期的成长状态。</text>
+    <text class="page-subtitle">不用答得很准，按最近一个月真实情况选就行。</text>
   </view>
 
   <!-- 当前孩子信息 -->
@@ -35,7 +35,7 @@
   <!-- 观察工具列表 -->
   <view class="assessment-list">
     <view class="empty-assessment" wx:if="{{loadError}}">
-      <text class="empty-title">加载失败</text>
+      <text class="empty-title">内容没加载出来</text>
       <text class="empty-desc">{{loadError}}</text>
       <button class="empty-action" size="mini" bindtap="retryLoadAssessmentList">重试</button>
     </view>
@@ -79,13 +79,13 @@
       <text class="modal-title">{{currentAssessment.name}}</text>
       <view class="modal-close" bindtap="closeModal">×</view>
     </view>
-    
+
     <view class="modal-body">
       <view class="intro-section">
         <text class="intro-label">怎么用</text>
         <text class="intro-text">{{currentAssessment.desc}}</text>
       </view>
-      
+
       <view class="intro-info">
         <view class="info-item">
           <text class="info-icon">📝</text>
@@ -103,7 +103,7 @@
           <text class="info-value">{{selectedAgeGroup}}</text>
         </view>
       </view>
-      
+
       <view class="intro-tips">
         <text class="tips-title">温馨提示</text>
         <view class="tips-list">
@@ -114,7 +114,7 @@
         </view>
       </view>
     </view>
-    
+
     <view class="modal-footer">
       <view class="btn-cancel" bindtap="closeModal">取消</view>
       <view class="btn-confirm" bindtap="startAssessment">开始作答</view>

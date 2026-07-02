@@ -4,9 +4,9 @@
   <view class="search-bar">
     <view class="search-input-wrap">
       <text class="search-icon">🔍</text>
-      <input 
-        class="search-input" 
-        placeholder="搜索食谱、食材..." 
+      <input
+        class="search-input"
+        placeholder="搜索食谱、食材..."
         value="{{keyword}}"
         bindinput="onSearchInput"
         bindconfirm="onSearchConfirm"
@@ -20,9 +20,9 @@
   <view class="filter-section">
     <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
       <view class="filter-list">
-        <view 
-          class="filter-item {{currentCategory === item.id ? 'active' : ''}}" 
-          wx:for="{{categoryList}}" 
+        <view
+          class="filter-item {{currentCategory === item.id ? 'active' : ''}}"
+          wx:for="{{categoryList}}"
           wx:key="id"
           bindtap="onCategoryChange"
           data-id="{{item.id}}"
@@ -37,9 +37,9 @@
   <view class="filter-section age-filter">
     <scroll-view class="filter-scroll scroll-view-optimized" scroll-x>
       <view class="filter-list">
-        <view 
-          class="filter-item age-item {{currentAge === item.id ? 'active' : ''}}" 
-          wx:for="{{ageList}}" 
+        <view
+          class="filter-item age-item {{currentAge === item.id ? 'active' : ''}}"
+          wx:for="{{ageList}}"
           wx:key="id"
           bindtap="onAgeChange"
           data-id="{{item.id}}"
@@ -69,27 +69,27 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 空状态 -->
     <view class="empty-wrap" wx:if="{{!loading && recipeList.length === 0}}">
       <text class="empty-icon">🍽️</text>
-      <text class="empty-text">暂无食谱</text>
-      <text class="empty-desc">换个条件试试吧</text>
+      <text class="empty-text">这组条件下还没找到食谱</text>
+      <text class="empty-desc">换个年龄、餐次或食材试试。</text>
     </view>
-    
+
     <!-- 列表 -->
     <view class="recipe-list" wx:if="{{!loading && recipeList.length > 0}}">
-      <view 
-        class="recipe-card list-item-enter" 
-        wx:for="{{recipeList}}" 
+      <view
+        class="recipe-card list-item-enter"
+        wx:for="{{recipeList}}"
         wx:key="id"
         style="animation-delay: {{index * 50}}ms"
       >
         <view class="recipe-main" bindtap="onRecipeTap" data-id="{{item.id}}" data-index="{{index}}">
-          <image 
+          <image
             wx:if="{{item.hasImage}}"
-            class="recipe-image image-fade-in {{item.imageLoaded ? 'loaded' : ''}}" 
-            src="{{item.image}}" 
+            class="recipe-image image-fade-in {{item.imageLoaded ? 'loaded' : ''}}"
+            src="{{item.image}}"
             mode="aspectFill"
             lazy-load="{{true}}"
             bindload="onImageLoad"
@@ -112,10 +112,10 @@
             </view>
           </view>
         </view>
-        <view 
-          class="favorite-btn {{item.isFavorite ? 'active' : ''}}" 
-          catchtap="onFavoriteTap" 
-          data-id="{{item.id}}" 
+        <view
+          class="favorite-btn {{item.isFavorite ? 'active' : ''}}"
+          catchtap="onFavoriteTap"
+          data-id="{{item.id}}"
           data-index="{{index}}"
         >
           <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>

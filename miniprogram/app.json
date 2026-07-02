@@ -32,7 +32,7 @@
     "pages/membership/index"
   ],
   "window": {
-    "navigationBarTitleText": "小牛育儿AI助理",
+    "navigationBarTitleText": "小牛育儿",
     "navigationBarBackgroundColor": "#FF6B35",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#F5F5F5",
@@ -52,7 +52,7 @@
       },
       {
         "pagePath": "pages/chat/chat",
-        "text": "AI问答",
+        "text": "小牛问答",
         "iconPath": "images/tab-chat.png",
         "selectedIconPath": "images/tab-chat-active.png"
       },

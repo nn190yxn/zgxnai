@@ -1,7 +1,7 @@
 <view class="page">
   <view class="header">
-    <text class="title">生成分享介绍卡</text>
-    <text class="subtitle">一句话讲清小牛育儿AI助理，适合发给宝妈朋友</text>
+    <text class="title">生成分享卡</text>
+    <text class="subtitle">把小牛育儿讲清楚，适合发给宝妈朋友</text>
   </view>
 
   <view class="card">
@@ -24,19 +24,19 @@
     </view>
 
     <view class="card-footer">
-      <text class="brand">小牛育儿AI助理</text>
+      <text class="brand">小牛育儿</text>
       <text class="cta">{{shareCard.cta}}</text>
     </view>
   </view>
 
   <view class="copy-card">
-    <text class="copy-title">配文</text>
+    <text class="copy-title">可直接复制的配文</text>
     <text class="copy-text">{{previewText}}</text>
   </view>
 
   <view class="actions">
     <view class="btn btn-secondary" bindtap="goToHome">回到首页</view>
-    <view class="btn btn-primary" bindtap="copyShareText">复制分享文案</view>
+    <view class="btn btn-primary" bindtap="copyShareText">复制这段话</view>
   </view>
 
   <view class="tip">截图发朋友圈或复制文案转发给宝妈群都可以。</view>

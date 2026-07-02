@@ -55,7 +55,7 @@ Page({
 
   onLoad: function(options) {
     var that = this;
-    
+
     // 获取页面参数
     if (options.pointId) {
       that.setData({
@@ -90,7 +90,7 @@ Page({
 
     // 设置页面标题
     wx.setNavigationBarTitle({
-      title: that.data.pointName || '知识点详情'
+      title: that.data.pointName || '练习详情'
     });
 
     if (!that.data.pointId) {
@@ -99,7 +99,7 @@ Page({
         knowledgeDetail: null
       });
       wx.showToast({
-        title: '知识点参数缺失',
+        title: '练习内容没找到',
         icon: 'none'
       });
       if (getCurrentPages().length > 1) {
@@ -146,7 +146,7 @@ Page({
         that.applyKnowledgeDetail(that.getMockDetail());
         return;
       }
-      app.showApiError('知识点详情加载失败');
+      app.showApiError('练习内容没加载出来，请再试一次');
       that.setData({
         knowledgeDetail: null
       });
@@ -166,7 +166,7 @@ Page({
     var noteContent = this.loadSavedNote(stablePointId);
     var stepChecklist = this.buildStepChecklist(normalizedDetail, stablePointId);
     var explainBlocks = this.buildExplainBlocks(normalizedDetail.explain && normalizedDetail.explain.content);
-    var displayTitle = normalizedDetail.name || normalizedDetail.title || this.data.pointName || '知识点详情';
+    var displayTitle = normalizedDetail.name || normalizedDetail.title || this.data.pointName || '练习详情';
     this.setData({
       pointId: stablePointId,
       pointName: displayTitle,
@@ -457,7 +457,7 @@ Page({
         practice_material: '春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。',
         explain: {
           title: '理解提问任务',
-          content: '这节任务训练孩子读完后抓住关键信息。\n\n【阅读材料】\n春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。\n\n【训练目标】\n- 找出时间、地点、人物和动作\n- 能回答一个“为什么”问题\n- 用一句话复述这段内容\n\n【操作步骤】\n1. 家长读一遍，孩子听\n2. 让孩子说出看到了什么\n3. 问：小朋友为什么轻轻走过去\n4. 请孩子用一句话讲给家长听'
+          content: '这节任务训练孩子读完后抓住关键信息。\n\n【阅读材料】\n春天来了，小草从泥土里钻出来。小朋友在公园里看见了蝴蝶，也看见了刚开的花。他们轻轻地走过去，怕碰坏小花。\n\n【今天先练】\n- 找出时间、地点、人物和动作\n- 能回答一个“为什么”问题\n- 用一句话复述这段内容\n\n【照着做】\n1. 家长读一遍，孩子听\n2. 让孩子说出看到了什么\n3. 问：小朋友为什么轻轻走过去\n4. 请孩子用一句话讲给家长听'
         },
         keyPoints: [
           { id: 1, content: '先问事实问题，再问原因问题' },
@@ -508,7 +508,7 @@ Page({
         },
         explain: {
           title: '口头复述任务',
-          content: '这节任务训练孩子把读到的内容变成自己的表达。\n\n【表达公式】\n谁 + 做了什么 + 结果怎么样。\n\n【示范】\n小种子落进土里，慢慢发芽，最后长成了花。\n\n【操作步骤】\n1. 家长先给一个示范句\n2. 孩子照着公式说一遍\n3. 如果孩子只说关键词，家长补成完整句\n4. 最后录音回放，让孩子听见自己的表达'
+          content: '这节任务训练孩子把读到的内容变成自己的表达。\n\n【表达公式】\n谁 + 做了什么 + 结果怎么样。\n\n【示范】\n小种子落进土里，慢慢发芽，最后长成了花。\n\n【照着做】\n1. 家长先给一个示范句\n2. 孩子照着公式说一遍\n3. 如果孩子只说关键词，家长补成完整句\n4. 最后录音回放，让孩子听见自己的表达'
         },
         keyPoints: [
           { id: 1, content: '一句话复述不追求长，先追求完整' },
@@ -550,7 +550,7 @@ Page({
         },
         explain: {
           title: '阅读迁移任务',
-          content: '这节任务帮助孩子把书里的内容和自己的生活联系起来。\n\n【任务目标】\n- 说出自己喜欢的画面或情节\n- 说出一个简单理由\n- 练习“我喜欢……因为……”的表达\n\n【操作步骤】\n1. 读完后让孩子选一页最喜欢的画面\n2. 家长问：你喜欢哪里\n3. 再问：为什么喜欢\n4. 帮孩子整理成一句完整表达'
+          content: '这节任务帮助孩子把书里的内容和自己的生活联系起来。\n\n【今天先练】\n- 说出自己喜欢的画面或情节\n- 说出一个简单理由\n- 练习“我喜欢……因为……”的表达\n\n【照着做】\n1. 读完后让孩子选一页最喜欢的画面\n2. 家长问：你喜欢哪里\n3. 再问：为什么喜欢\n4. 帮孩子整理成一句完整表达'
         },
         keyPoints: [
           { id: 1, content: '让孩子先选，能提高参与感' },
@@ -582,7 +582,7 @@ Page({
         ]
       }
     };
-    
+
     // 五大主题模拟数据
     var topicMockDetails = {
       'logical_thinking': {
@@ -781,11 +781,11 @@ Page({
         ]
       }
     };
-    
+
     if (topicMockDetails[subjectCode]) {
       return this.ensureMockDetailStructure(topicMockDetails[subjectCode]);
     }
-    
+
     // 兼容旧版学科数据
     if (subjectCode === 'chinese') {
       return this.ensureMockDetailStructure({
@@ -794,7 +794,7 @@ Page({
         status: 'learning',
         difficulty: 1,
         explain: {
-          title: '知识点讲解',
+          title: '练习讲解',
           content: '春、夏、秋、冬是一年四季的名称，每个字都代表着不同的季节特点。\n\n【春】chūn\n- 笔画：9画\n- 部首：日\n- 组词：春天、春风、春色\n- 造句：春天来了，小草发芽了。\n\n【夏】xià\n- 笔画：10画\n- 部首：夂\n- 组词：夏天、夏季、盛夏\n- 造句：夏天的太阳很热。\n\n【秋】qiū\n- 笔画：9画\n- 部首：禾\n- 组词：秋天、秋叶、金秋\n- 造句：秋天的树叶变黄了。\n\n【冬】dōng\n- 笔画：5画\n- 部首：夂\n- 组词：冬天、冬季、寒冬\n- 造句：冬天下雪了，好漂亮！'
         },
         keyPoints: [
@@ -872,7 +872,7 @@ Page({
         status: 'mastered',
         difficulty: 2,
         explain: {
-          title: '知识点讲解',
+          title: '练习讲解',
           content: '10以内加减法是数学学习的基础，需要熟练掌握。\n\n【加法】\n把两个数合在一起，求一共有多少，用加法计算。\n例如：3 + 2 = 5\n读作：三加二等于五\n\n【减法】\n从一个数里去掉一部分，求还剩多少，用减法计算。\n例如：5 - 2 = 3\n读作：五减二等于三\n\n【计算技巧】\n1. 数手指法：用手指帮助计算\n2. 凑十法：先凑成10再计算\n3. 破十法：用于减法计算'
         },
         keyPoints: [
@@ -944,12 +944,12 @@ Page({
     } else {
       return this.ensureMockDetailStructure({
         id: pointId,
-        name: pointName || '知识点',
+        name: pointName || '练习内容',
         status: 'learning',
         difficulty: 2,
         explain: {
-          title: '知识点讲解',
-          content: '这是知识点的详细讲解内容。'
+          title: '练习讲解',
+          content: '这里会展示练习内容的讲解。'
         },
         keyPoints: [
           { id: 1, content: '重点内容1' },
@@ -1022,7 +1022,7 @@ Page({
     var readingSections = detail.reading_sections || {};
     var lines = [
       '今晚亲子练习卡',
-      `练习：${detail.title || detail.name || '每日训练'}`,
+      `练习：${detail.title || detail.name || '每日练习'}`,
       `今天练：${detail.objective || '陪孩子完成一次短时互动'}`,
       `${detail.display_material_label || '准备材料'}：${detail.display_material_value || detail.material || '准备当日阅读或生活场景材料'}`,
       `提问：${detail.parent_prompt || '围绕谁、做什么、为什么追问'}`,
@@ -1066,10 +1066,10 @@ Page({
   saveNote: function() {
     var that = this;
     var noteContent = that.data.noteContent;
-    
+
     if (!noteContent.trim()) {
       wx.showToast({
-        title: '请输入笔记内容',
+        title: '先写一点记录',
         icon: 'none'
       });
       return;
@@ -1095,9 +1095,9 @@ Page({
     var practiceIndex = that.data.currentPracticeIndex;
     var optionIndex = e.currentTarget.dataset.index;
     var practiceAnswers = that.data.practiceAnswers;
-    
+
     practiceAnswers[practiceIndex] = optionIndex;
-    
+
     that.setData({
       practiceAnswers: practiceAnswers
     });
@@ -1109,9 +1109,9 @@ Page({
     var practiceIndex = that.data.currentPracticeIndex;
     var value = e.detail.value;
     var practiceAnswers = that.data.practiceAnswers;
-    
+
     practiceAnswers[practiceIndex] = value;
-    
+
     that.setData({
       practiceAnswers: practiceAnswers
     });
@@ -1121,7 +1121,7 @@ Page({
   prevPractice: function() {
     var that = this;
     var currentIndex = that.data.currentPracticeIndex;
-    
+
     if (currentIndex > 0) {
       that.setData({
         currentPracticeIndex: currentIndex - 1
@@ -1134,7 +1134,7 @@ Page({
     var that = this;
     var currentIndex = that.data.currentPracticeIndex;
     var practices = that.data.knowledgeDetail.practices;
-    
+
     if (currentIndex < practices.length - 1) {
       that.setData({
         currentPracticeIndex: currentIndex + 1
@@ -1147,14 +1147,14 @@ Page({
     var that = this;
     var practices = that.data.knowledgeDetail.practices;
     var answers = that.data.practiceAnswers;
-    
+
     var correctCount = 0;
     var results = [];
-    
+
     practices.forEach(function(practice, index) {
       var userAnswer = answers[index];
       var isCorrect = false;
-      
+
       if (practice.type === 'choice') {
         isCorrect = userAnswer === practice.answer;
       } else if (practice.type === 'fill') {
@@ -1162,20 +1162,20 @@ Page({
         var actualAnswer = String(userAnswer || '').trim();
         isCorrect = expectedAnswer ? actualAnswer === expectedAnswer : !!actualAnswer;
       }
-      
+
       if (isCorrect) {
         correctCount++;
       }
-      
+
       results.push({
         questionIndex: index,
         isCorrect: isCorrect,
         userAnswer: userAnswer
       });
     });
-    
+
     var score = Math.round((correctCount / practices.length) * 100);
-    
+
     // 上报输出事件
     app.trackKbEvent(that.buildKnowledgeTrackPayload({
       event_type: 'output_submit',
@@ -1241,7 +1241,7 @@ Page({
       return;
     }
     that._confirmMasterPending = true;
-    
+
     app.requireLoginForAction().then(function(canOperate) {
       if (!canOperate) {
         that.setData({
@@ -1261,10 +1261,10 @@ Page({
       }
     }).then(function(res) {
       wx.showToast({
-        title: '已标记为掌握',
+        title: '已标记为会了',
         icon: 'success'
       });
-      
+
       // 更新状态
       var knowledgeDetail = that.data.knowledgeDetail;
       knowledgeDetail.status = 'mastered';
@@ -1274,7 +1274,7 @@ Page({
       });
     }).catch(function(err) {
       wx.showToast({
-        title: '保存失败，请重试',
+        title: '没保存成功，请再试一次',
         icon: 'none'
       });
       that.setData({

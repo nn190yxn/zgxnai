@@ -1,7 +1,7 @@
 <view class="page-container">
   <view class="header">
-    <text class="title">评估历史</text>
-    <text class="subtitle">查看孩子的成长轨迹</text>
+    <text class="title">观察历史</text>
+    <text class="subtitle">看看孩子每次有哪些变化</text>
   </view>
 
   <view class="history-list" wx:if="{{history.length > 0}}">
@@ -25,11 +25,11 @@
 
   <view class="empty-state" wx:if="{{history.length === 0}}">
     <text class="empty-icon">📋</text>
-    <text class="empty-text">暂无评估记录</text>
-    <text class="empty-hint">完成一次评估后，这里会显示历史记录</text>
+    <text class="empty-text">还没有观察记录</text>
+    <text class="empty-hint">做完一次里程碑观察，这里会留好记录</text>
   </view>
 
   <view class="action-bar">
-    <button class="btn-primary" bindtap="startNewAssessment">开始新评估</button>
+    <button class="btn-primary" bindtap="startNewAssessment">再观察一次</button>
   </view>
 </view>

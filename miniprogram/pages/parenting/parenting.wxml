@@ -23,11 +23,11 @@
       <text class="section-title">按场景找</text>
     </view>
     <view class="category-grid">
-      <view 
-        class="category-card" 
-        wx:for="{{categoryList}}" 
-        wx:key="id" 
-        bindtap="onCategoryTap" 
+      <view
+        class="category-card"
+        wx:for="{{categoryList}}"
+        wx:key="id"
+        bindtap="onCategoryTap"
         data-id="{{item.id}}"
         data-name="{{item.name}}"
         style="background: {{item.bgColor}}; border: 2rpx solid {{item.color}}20;"
@@ -55,7 +55,7 @@
       <view class="milestone-content">
         <text class="milestone-icon">🎯</text>
         <view class="milestone-text">
-          <text class="milestone-title">发展里程碑评估</text>
+          <text class="milestone-title">发展里程碑观察</text>
           <text class="milestone-desc">看看孩子在同龄人里的发展进度</text>
         </view>
       </view>
@@ -69,11 +69,11 @@
       <text class="section-title">家长最近常看</text>
       <text class="section-tag">精选</text>
     </view>
-    <swiper 
-      class="article-swiper" 
-      indicator-dots="{{hotArticles.length > 1}}" 
-      autoplay="{{true}}" 
-      interval="5000" 
+    <swiper
+      class="article-swiper"
+      indicator-dots="{{hotArticles.length > 1}}"
+      autoplay="{{true}}"
+      interval="5000"
       duration="500"
       circular="{{true}}"
       bindchange="onSwiperChange"
@@ -101,7 +101,7 @@
         <text class="more-arrow">›</text>
       </view>
     </view>
-    
+
     <!-- 加载中 -->
     <view class="loading-wrap" wx:if="{{loading && latestArticles.length === 0}}">
       <text class="loading-text">加载中...</text>
@@ -109,23 +109,23 @@
 
     <view class="empty-wrap" wx:if="{{!loading && loadError}}">
       <text class="empty-icon">!</text>
-      <text class="empty-text">加载失败</text>
+      <text class="empty-text">锦囊没加载出来</text>
       <text class="empty-desc">{{loadError}}</text>
       <button class="empty-action" size="mini" bindtap="retryLoadData">重试</button>
     </view>
-    
+
     <!-- 空状态 -->
     <view class="empty-wrap" wx:if="{{!loading && !loadError && latestArticles.length === 0}}">
       <text class="empty-icon">📚</text>
-      <text class="empty-text">暂无文章</text>
-       <text class="empty-desc">暂无内容，请稍后再来。</text>
+      <text class="empty-text">暂时还没有锦囊</text>
+       <text class="empty-desc">晚点再来看看。</text>
     </view>
-    
+
     <!-- 文章列表 -->
     <view class="article-list" wx:if="{{!loading && !loadError && latestArticles.length > 0}}">
-      <view 
-        class="article-card" 
-        wx:for="{{latestArticles}}" 
+      <view
+        class="article-card"
+        wx:for="{{latestArticles}}"
         wx:key="id"
       >
         <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}" data-index="{{index}}">
@@ -143,10 +143,10 @@
             </view>
           </view>
         </view>
-        <view 
-          class="favorite-btn {{item.isFavorite ? 'active' : ''}}" 
-          catchtap="onFavoriteTap" 
-          data-id="{{item.id}}" 
+        <view
+          class="favorite-btn {{item.isFavorite ? 'active' : ''}}"
+          catchtap="onFavoriteTap"
+          data-id="{{item.id}}"
           data-index="{{index}}"
         >
           <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>

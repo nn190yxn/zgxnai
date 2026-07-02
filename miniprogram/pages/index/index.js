@@ -74,7 +74,7 @@ Page({
       {
         title: '成长记录',
         desc: '每天记一点，周总结更准确',
-        cta: '查看功能',
+        cta: '看看入口',
         action: 'assessment'
       }
     ]
@@ -203,12 +203,12 @@ Page({
 
     var streakDays = allowDraftMetrics ? (metrics.streakDays || this.data.weeklyProgress.streakDays) : this.data.weeklyProgress.streakDays;
 
-    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项每日训练任务') : '从成长观察、每日训练或成长记录中选择一个开始';
+    var suggestion = total > 0 ? ('已完成 ' + completed + '/' + total + ' 项每日练习') : '从成长观察、每日练习或成长记录中选一个开始';
 
     this.setData({
         growthStatus: {
           weekCompletion: completionRate || this.data.growthStatus.weekCompletion,
-          currentFocus: '围绕成长观察、每日训练和成长记录安排今天的育儿重点',
+          currentFocus: '围绕成长观察、每日练习和成长记录安排今天的育儿重点',
           todaySuggestion: suggestion
         },
       weeklyProgress: {
@@ -277,7 +277,7 @@ Page({
       var weeklySummary = result[0];
       var trendSummary = result[1];
       if (!weeklySummary && !trendSummary) {
-        that.applyWeeklyProgressLoadError('周总结暂时无法加载，请稍后重试。');
+        that.applyWeeklyProgressLoadError('周总结没加载出来，请稍后再试。');
         return;
       }
       var recordDays = Number((weeklySummary && weeklySummary.recordDays) || (trendSummary && trendSummary.completedDays) || 0);
@@ -303,16 +303,16 @@ Page({
         });
       }
     }).catch(function() {
-      that.applyWeeklyProgressLoadError('周总结暂时无法加载，请稍后重试。');
+      that.applyWeeklyProgressLoadError('周总结没加载出来，请稍后再试。');
     });
   },
 
   applyWeeklyProgressLoadError: function(message) {
-    var text = message || '周总结暂时无法加载，请稍后重试。';
+    var text = message || '周总结没加载出来，请稍后再试。';
     this.setData({
       weeklyProgress: {
         headline: text,
-        summary: '请稍后刷新重试，或先继续记录今天的成长变化。',
+        summary: '可以稍后刷新，先继续记录今天的成长变化。',
         streakDays: 0,
         actionText: '稍后再试',
         premiumUnlocked: false
@@ -330,7 +330,7 @@ Page({
 
   getPlanTypeLabel: function(type) {
     var map = {
-      ability_task: '每日训练',
+      ability_task: '每日练习',
       parenting_article: '育儿锦囊',
       nutrition_recipe: '饮食支持',
       habit_reminder: '家庭提醒',
@@ -447,7 +447,7 @@ Page({
     var completedCount = list.filter(function(item) { return item.completed; }).length;
     var firstCard = list[0] || null;
     var growthStatus = Object.assign({}, this.data.growthStatus, {
-      todaySuggestion: firstCard ? firstCard.title : '从成长观察、每日训练或成长记录中选择一个开始'
+      todaySuggestion: firstCard ? firstCard.title : '从成长观察、每日练习或成长记录中选一个开始'
     });
     var todayTask = Object.assign({}, this.data.todayTask, firstCard ? {
       title: firstCard.title,
@@ -473,7 +473,7 @@ Page({
   },
 
   applyDailyPlanLoadError: function(message) {
-    var text = message || '今日建议加载失败，请稍后重试。';
+    var text = message || '今日建议没加载出来，请稍后再试。';
     this.setData({
       dailyPlanCards: [],
       dailyPlanDate: '',
@@ -484,7 +484,7 @@ Page({
       }),
       todayTask: {
         title: '今日建议暂时无法加载',
-        duration: '请稍后刷新重试'
+        duration: '可以稍后刷新'
       }
     });
   },
@@ -567,7 +567,7 @@ Page({
       that.applyDailyPlan(cards, res || {}, streakDaysVal);
       that.trackDailyPlanView(that.data.dailyPlanCards, res || {});
     }).catch(function() {
-      that.applyDailyPlanLoadError('今日建议加载失败，请稍后重试。');
+      that.applyDailyPlanLoadError('今日建议没加载出来，请稍后再试。');
     }).finally(function() {
       that.setData({ dailyPlanLoading: false });
     });
@@ -646,7 +646,7 @@ Page({
       continue_daily_plan: function() {
         var plan = data.unfinished_daily_plan || {};
         return {
-          title: '继续上次的任务',
+          title: '继续上次的小练习',
           desc: plan.title || '上次的每日建议还未完成，接着做吧。',
           cta: '继续完成',
           targetType: plan.target_path ? 'daily_plan' : 'assessment',
@@ -696,7 +696,7 @@ Page({
       },
       start_growth_observation: {
         title: '开始今天的成长观察',
-        desc: '从成长观察、每日训练或成长记录中选择一个开始。',
+        desc: '从成长观察、每日练习或成长记录中选一个开始。',
         cta: '去看看',
         targetType: 'assessment',
         targetPath: '/pages/assessment/assessment'
@@ -871,7 +871,7 @@ Page({
       wx.switchTab({
         url: tp.targetPath,
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
       return;
@@ -879,7 +879,7 @@ Page({
     wx.navigateTo({
       url: tp.targetPath,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -897,7 +897,7 @@ Page({
         wx.navigateTo({
           url: plan.targetPath,
           fail: function() {
-            wx.showToast({ title: '页面跳转失败', icon: 'none' });
+            wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
           }
         });
       });
@@ -906,7 +906,7 @@ Page({
     wx.navigateTo({
       url: plan.targetPath,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -980,7 +980,7 @@ Page({
         }
       });
     }).catch(function() {
-      wx.showToast({ title: '记录失败', icon: 'none' });
+      wx.showToast({ title: '没记录成功，请再试一次', icon: 'none' });
     }).finally(function() {
       that._dailyPlanCompletePending = false;
     });
@@ -988,13 +988,13 @@ Page({
 
   // 跳转到小牛问答
   goToChat() {
-    if (!this.ensureFeatureEnabled('aiChat', '小牛问答暂未开放')) {
+    if (!this.ensureFeatureEnabled('aiChat', '小牛问答还在准备中')) {
       return;
     }
     wx.switchTab({
       url: '/pages/chat/chat',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1005,7 +1005,7 @@ Page({
 
   // 跳转到成长观察
   goToAssessment() {
-    if (!this.ensureFeatureEnabled('assessments', '成长观察暂未开放')) {
+    if (!this.ensureFeatureEnabled('assessments', '成长观察还在准备中')) {
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -1017,7 +1017,7 @@ Page({
     wx.navigateTo({
       url: '/pages/assessment/assessment',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1027,33 +1027,33 @@ Page({
     wx.navigateTo({
       url: '/pages/nutrition/nutrition',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
 
   // 跳转到育儿
   goToParenting() {
-    if (!this.ensureFeatureEnabled('parenting', '育儿锦囊暂未开放')) {
+    if (!this.ensureFeatureEnabled('parenting', '育儿锦囊还在准备中')) {
       return;
     }
     wx.navigateTo({
       url: '/pages/parenting/parenting',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
 
-  // 跳转到每日训练
+  // 跳转到每日练习
   goToTextbook() {
-    if (!this.ensureFeatureEnabled('education', '每日训练暂未开放')) {
+    if (!this.ensureFeatureEnabled('education', '每日练习还在准备中')) {
       return;
     }
     wx.navigateTo({
       url: '/pages/textbook/textbook',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1068,20 +1068,20 @@ Page({
       this.navigateByDailyPlan(firstCard);
       return;
     }
-    if (!this.ensureFeatureEnabled('education', '今日任务暂未开放')) {
+    if (!this.ensureFeatureEnabled('education', '今天的小练习还在准备中')) {
       return;
     }
     wx.navigateTo({
       url: '/pages/textbook/textbook',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
 
   // 查看进步报告
   goToGrowthRecord() {
-    if (!this.ensureFeatureEnabled('growthRecord', '成长记录暂未开放')) {
+    if (!this.ensureFeatureEnabled('growthRecord', '成长记录还在准备中')) {
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -1093,7 +1093,7 @@ Page({
     wx.navigateTo({
       url: '/pages/growth-record/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1103,13 +1103,13 @@ Page({
     wx.navigateTo({
       url: '/pages/membership/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
 
   goToWeeklyReport() {
-    if (!this.ensureFeatureEnabled('weeklySummary', '周总结暂未开放')) {
+    if (!this.ensureFeatureEnabled('weeklySummary', '周总结还在准备中')) {
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -1120,7 +1120,7 @@ Page({
     wx.navigateTo({
       url: '/pages/weekly-summary/index' + (currentChild && currentChild.id ? ('?childId=' + currentChild.id) : ''),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1161,7 +1161,7 @@ Page({
       type: 'app_intro',
       mode: isMockMode ? 'mock' : 'live',
       title: isMockMode ? '演示模式：首页建议卡示例' : (firstPlan.title || this.data.todayTask.title || '成长观察建议'),
-      summary: isMockMode ? '当前为演示内容分享，用于展示首页建议卡样式。' : '我正在用小牛育儿AI助理观察孩子的成长状态。',
+      summary: isMockMode ? '当前为演示内容分享，用于展示首页建议卡样式。' : '我正在用小牛育儿观察孩子的成长状态。',
       metrics: {
         completed: stats.completed || 0,
         total: stats.total || 0,
@@ -1184,7 +1184,7 @@ Page({
     wx.navigateTo({
       url: '/pages/share/preview/preview',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1219,7 +1219,7 @@ Page({
     wx.navigateTo({
       url: '/pages/share/preview/preview',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

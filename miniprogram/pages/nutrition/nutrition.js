@@ -24,31 +24,31 @@ Page({
         id: 1,
         icon: '\uD83C\uDF05',
         name: '早餐',
-        desc: '营养早餐'
+        desc: '早上好入口'
       },
       {
         id: 2,
         icon: '\u2600\uFE0F',
         name: '午餐',
-        desc: '均衡午餐'
+        desc: '中午吃得稳'
       },
       {
         id: 3,
         icon: '\uD83C\uDF19',
         name: '晚餐',
-        desc: '清淡晚餐'
+        desc: '晚上少负担'
       },
       {
         id: 4,
         icon: '\uD83C\uDF6B',
         name: '加餐',
-        desc: '健康零食'
+        desc: '两餐中间垫一口'
       },
       {
         id: 5,
         icon: '\uD83E\uDD5B',
         name: '汤品',
-        desc: '营养汤品'
+        desc: '想喝点热乎的'
       }
     ],
     // 今日推荐食谱
@@ -391,7 +391,7 @@ Page({
       });
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        var message = app.getApiErrorMessage(err, '营养推荐加载失败');
+        var message = app.getApiErrorMessage(err, '食谱没加载出来，请再试一次');
         that.setData({
           todayRecommend: null,
           hotRecipes: [],
@@ -449,7 +449,7 @@ Page({
       wx.navigateTo({
         url: '/pages/nutrition/recipe-list/recipe-list?keyword=' + encodeURIComponent(keyword) + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     }
@@ -460,7 +460,7 @@ Page({
     wx.navigateTo({
       url: '/pages/nutrition/recipe-list/recipe-list' + this.buildAgeQueryString(),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -472,7 +472,7 @@ Page({
     wx.navigateTo({
       url: '/pages/nutrition/recipe-list/recipe-list?categoryId=' + id + '&categoryName=' + encodeURIComponent(name) + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -491,7 +491,7 @@ Page({
       wx.navigateTo({
         url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     }
@@ -512,7 +512,7 @@ Page({
     wx.navigateTo({
       url: '/pages/nutrition/recipe-detail/recipe-detail?id=' + id + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -544,12 +544,12 @@ Page({
         hotRecipes: hotRecipes
       });
       wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
+        title: isFavorite ? '已取消收藏' : '已收藏',
         icon: 'success'
       });
     }).catch(function() {
       wx.showToast({
-        title: '操作失败',
+        title: '没处理成功，请再试一次',
         icon: 'none'
       });
     });
@@ -563,7 +563,7 @@ Page({
     wx.navigateTo({
       url: '/pages/nutrition/recipe-list/recipe-list?type=hot' + (this.data.currentAgeGroup ? '&age_group=' + encodeURIComponent(this.data.currentAgeGroup) : ''),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

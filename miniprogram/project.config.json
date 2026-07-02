@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "./",
   "projectname": "niuniu-parenting",
-  "description": "小牛育儿AI助理",
+  "description": "小牛育儿",
   "appid": "wxb22908624ec860fe",
   "setting": {
     "urlCheck": true,

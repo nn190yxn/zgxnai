@@ -7,5 +7,5 @@
     <text class="history-line">睡眠：{{item.sleepStatus}}  活动：{{item.exerciseStatus}}  社交：{{item.socialStatus}}</text>
     <text class="history-note" wx:if="{{item.noteText}}">{{item.noteText}}</text>
   </view>
-  <view class="empty-card" wx:if="{{!loading && !list.length}}">还没有成长记录</view>
+  <view class="empty-card" wx:if="{{!loading && !list.length}}">还没有记录，今晚先记一次就好</view>
 </view>

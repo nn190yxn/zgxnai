@@ -39,7 +39,7 @@
       </view>
 
       <view class="solution-list" wx:if="{{sceneSolutions.length}}">
-        <view class="result-count">先给你 {{sceneSolutions.length}} 条可直接执行的承接方案</view>
+        <view class="result-count">先给你 {{sceneSolutions.length}} 条能照着做的办法</view>
         <view
           class="solution-card"
           wx:for="{{sceneSolutions}}"
@@ -54,7 +54,7 @@
       </view>
 
       <view class="article-list" wx:if="{{searchResults.length}}">
-        <view class="result-count">相关文章 {{searchResults.length}} 篇</view>
+        <view class="result-count">相关锦囊 {{searchResults.length}} 篇</view>
         <view class="article-card" wx:for="{{searchResults}}" wx:key="id">
           <view class="article-main" bindtap="onArticleTap" data-id="{{item.id}}" data-index="{{index}}">
             <view class="article-content no-image">
@@ -95,7 +95,7 @@
 
     <view class="suggest-section" wx:if="{{searchHistory.length > 0}}">
       <view class="section-header">
-        <text class="section-title">搜索历史</text>
+        <text class="section-title">刚才搜过</text>
         <text class="clear-history" bindtap="onClearHistory">清空</text>
       </view>
       <view class="keyword-list">
@@ -107,7 +107,7 @@
 
     <view class="suggest-section">
       <view class="section-header">
-        <text class="section-title">热门搜索</text>
+        <text class="section-title">大家常搜</text>
       </view>
       <view class="keyword-list hot-list">
         <view class="keyword-item hot-item" wx:for="{{hotKeywords}}" wx:key="*this" bindtap="onHotKeywordTap" data-keyword="{{item}}">

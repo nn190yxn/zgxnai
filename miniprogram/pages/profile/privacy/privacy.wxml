@@ -7,7 +7,7 @@
   <view class="content">
     <text class="section-title">一、指引说明</text>
     <text class="section-text">
-      小牛育儿AI助理非常重视个人信息和未成年人信息保护。本指引用于说明我们在微信小程序内处理个人信息的类型、用途、触发场景、保存方式和您的权利。
+      小牛育儿非常重视个人信息和未成年人信息保护。本指引用于说明我们在微信小程序内处理个人信息的类型、用途、触发场景、保存方式和您的权利。
     </text>
 
     <text class="section-title">二、我们处理的信息类型</text>
@@ -25,7 +25,7 @@
     <text class="list-item">• 手机号：用于绑定账号、快速联系您处理服务问题</text>
     <text class="list-item">• 儿童档案信息：用于生成成长建议、保存成长记录、展示孩子资料</text>
     <text class="list-item">• 选中的照片或视频信息：用于上传孩子头像或补充成长资料</text>
-    <text class="list-item">• 麦克风录音信息：用于 AI 问答语音转文字、口语跟读录音与回放</text>
+    <text class="list-item">• 麦克风录音信息：用于小牛问答语音转文字、口语跟读录音与回放</text>
     <text class="list-item">• 设备与日志信息：用于排查故障、优化稳定性和兼容性</text>
 
     <text class="section-title">四、权限触发与使用说明</text>

@@ -16,7 +16,7 @@
     </view>
     <view class="info-item">
       <text class="info-icon">📊</text>
-      <text class="info-text">成长观察历史和报告</text>
+      <text class="info-text">成长观察历史和结果</text>
     </view>
     <view class="info-item">
       <text class="info-icon">💬</text>
@@ -28,7 +28,7 @@
     </view>
     <view class="info-item">
       <text class="info-icon">🏆</text>
-      <text class="info-text">服务权益和邀请记录</text>
+      <text class="info-text">成长服务权益和邀请记录</text>
     </view>
   </view>
 
@@ -38,10 +38,10 @@
       • 根据相关法律法规，部分信息需要在法定保存期限后才会被删除
     </text>
     <text class="notice-text">
-      • 如有未完成的服务事项或纠纷，账号注销可能需要等待处理完毕
+      • 如有正在处理的服务事项，账号注销可能需要等待处理完毕
     </text>
     <text class="notice-text">
-      • 账号注销后，您使用相同微信重新注册将创建全新账号
+      • 注销后再用同一个微信登录，会创建一个全新账号
     </text>
   </view>
 
@@ -49,13 +49,13 @@
     <checkbox-group bindchange="onCheckboxChange">
       <label class="checkbox-label">
         <checkbox value="confirmed" color="#07C160"/>
-        <text class="checkbox-text">我已阅读并理解上述内容，确认注销账号</text>
+        <text class="checkbox-text">我已看完上述内容，确认注销账号</text>
       </label>
     </checkbox-group>
   </view>
 
-  <button 
-    class="delete-btn {{canDelete ? '' : 'disabled'}}" 
+  <button
+    class="delete-btn {{canDelete ? '' : 'disabled'}}"
     bindtap="onDeleteAccount"
     disabled="{{!canDelete}}">
     永久注销账号

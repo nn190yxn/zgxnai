@@ -13,32 +13,32 @@ Page({
   data: {
     // 记录列表
     records: [],
-    
+
     // 筛选条件
     filterType: 'all', // all, sensory, focus, adhd, multi_intelligence, emotion, learning
     filterChild: 'all',
-    
+
     // 孩子列表
     childrenList: [],
-    
+
     // 类型列表
     assessmentTypes: [{ code: 'all', name: '全部类型' }].concat(getAssessmentMetaList().map(function(item) {
       return { code: item.code, name: item.shortName || item.name };
     })),
-    
+
     // 显示筛选弹窗
     showFilterModal: false,
-    
+
     // 成长趋势数据
     trendData: [],
     showTrend: false,
-    
+
     // 加载状态
     loading: true,
-    
+
     // 是否有更多数据
     hasMore: true,
-    
+
     // 分页
     page: 1,
     pageSize: 20
@@ -60,7 +60,7 @@ Page({
   loadChildrenList: function() {
     var that = this;
     var childrenList = app.globalData.childrenList || [];
-    
+
     that.setData({
       childrenList: childrenList
     });
@@ -69,19 +69,19 @@ Page({
   // 加载记录
   loadRecords: function(fromPullDown) {
     var that = this;
-    
+
     // 先从本地加载
     var localRecords = getAssessmentRecordsStorage();
-    
+
     // 应用筛选
     var filteredRecords = that.applyFilters(localRecords);
-    
+
     that.setData({
       records: filteredRecords,
       loading: false,
       hasMore: false
     });
-    
+
     // 尝试从服务器加载
     return that.loadRecordsFromServer(fromPullDown);
   },
@@ -93,7 +93,7 @@ Page({
     if (app.shouldUseMockFallback()) {
       return Promise.resolve();
     }
-    
+
     return app.request({
       url: '/assessments/history',
       method: 'GET',
@@ -105,18 +105,18 @@ Page({
         // 合并本地和服务器数据
         var localRecords = getAssessmentRecordsStorage();
         var serverRecords = that.normalizeServerRecords(res);
-        
+
         // 合并并去重
         var allRecords = that.mergeRecords(localRecords, serverRecords);
-        
+
         // 应用筛选
         var filteredRecords = that.applyFilters(allRecords);
-        
+
         that.setData({
           records: filteredRecords,
           hasMore: false
         });
-        
+
         // 更新本地存储
         wx.setStorageSync('assessmentRecords', allRecords.slice(0, 50));
         wx.setStorageSync('assessmentHistory', allRecords.slice(0, 50));
@@ -177,18 +177,18 @@ Page({
   // 合并记录
   mergeRecords: function(localRecords, serverRecords) {
     var merged = localRecords.slice();
-    
+
     for (var i = 0; i < serverRecords.length; i++) {
       var serverRecord = serverRecords[i];
       var exists = merged.find(function(r) {
         return r.recordId === serverRecord.recordId;
       });
-      
+
       if (!exists) {
         merged.push(serverRecord);
       }
     }
-    
+
     // 按时间排序
     merged.sort(function(a, b) {
       var timeA = a && a.completedAt ? new Date(a.completedAt).getTime() : 0;
@@ -197,7 +197,7 @@ Page({
       if (isNaN(timeB)) timeB = 0;
       return timeB - timeA;
     });
-    
+
     return merged;
   },
 
@@ -206,13 +206,13 @@ Page({
     var that = this;
     var filterType = that.data.filterType;
     var filterChild = that.data.filterChild;
-    
+
     var filtered = records.filter(function(record) {
       var typeMatch = filterType === 'all' || record.assessmentCode === filterType;
       var childMatch = filterChild === 'all' || record.childId === filterChild;
       return typeMatch && childMatch;
     });
-    
+
     return filtered;
   },
 
@@ -237,11 +237,11 @@ Page({
   selectType: function(e) {
     var that = this;
     var code = e.currentTarget.dataset.code;
-    
+
     that.setData({
       filterType: code
     });
-    
+
     that.applyAndRefresh();
   },
 
@@ -249,11 +249,11 @@ Page({
   selectChild: function(e) {
     var that = this;
     var childId = e.currentTarget.dataset.id;
-    
+
     that.setData({
       filterChild: childId
     });
-    
+
     that.applyAndRefresh();
   },
 
@@ -262,34 +262,34 @@ Page({
     var that = this;
     var localRecords = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
     var filteredRecords = that.applyFilters(localRecords);
-    
+
     that.setData({
       records: filteredRecords
     });
-    
+
     that.hideFilter();
   },
 
   // 重置筛选
   resetFilter: function() {
     var that = this;
-    
+
     that.setData({
       filterType: 'all',
       filterChild: 'all'
     });
-    
+
     that.applyAndRefresh();
   },
 
   // 查看记录详情
   viewRecord: function(e) {
     var recordId = e.currentTarget.dataset.id;
-    
+
     wx.navigateTo({
       url: '/pages/assessment/result/result?recordId=' + recordId,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -298,7 +298,7 @@ Page({
   deleteRecord: function(e) {
     var that = this;
     var recordId = e.currentTarget.dataset.id;
-    
+
     wx.showModal({
       title: '删除记录',
       content: '确定要删除这条记录吗？',
@@ -318,15 +318,15 @@ Page({
     var records = that.data.records.filter(function(r) {
       return r.recordId !== recordId;
     });
-    
+
     that.setData({
       records: records
     });
-    
+
     // 更新本地存储
     wx.setStorageSync('assessmentRecords', records);
     wx.setStorageSync('assessmentHistory', records);
-    
+
     // 尝试从服务器删除
     app.request({
       url: '/assessments/records/' + recordId,
@@ -336,7 +336,7 @@ Page({
     }).catch(function(err) {
       // 服务器删除失败，已保存到本地
     });
-    
+
     wx.showToast({
       title: '已删除',
       icon: 'success'
@@ -347,7 +347,7 @@ Page({
   showTrendChart: function() {
     var that = this;
     var records = that.data.records;
-    
+
     if (records.length < 2) {
       wx.showToast({
         title: '至少需要2条记录',
@@ -355,7 +355,7 @@ Page({
       });
       return;
     }
-    
+
     // 按类型分组
     var groupedRecords = {};
     for (var i = 0; i < records.length; i++) {
@@ -366,7 +366,7 @@ Page({
       }
       groupedRecords[code].push(record);
     }
-    
+
     // 找出记录最多的类型
     var maxCode = '';
     var maxCount = 0;
@@ -376,13 +376,13 @@ Page({
         maxCode = code;
       }
     }
-    
+
     // 生成趋势数据
     var trendRecords = groupedRecords[maxCode] || [];
     trendRecords.sort(function(a, b) {
       return (a.completedAt || 0) - (b.completedAt || 0);
     });
-    
+
     that.setData({
       trendData: trendRecords.slice(-5), // 最近5次
       showTrend: true
@@ -427,7 +427,7 @@ Page({
     var year = date.getFullYear();
     var month = date.getMonth() + 1;
     var day = date.getDate();
-    
+
     return year + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day;
   },
 

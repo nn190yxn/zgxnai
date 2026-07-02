@@ -11,7 +11,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: '小牛育儿',
       path: '/pages/index/index'
     };
   }

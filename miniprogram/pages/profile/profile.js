@@ -95,7 +95,7 @@ Page({
   login: function() {
     var that = this;
     wx.showLoading({ title: '登录中...' });
-    
+
     app.login().then(function() {
       return app.loadUserData();
     }).then(function() {
@@ -105,7 +105,7 @@ Page({
       wx.showToast({ title: '登录成功', icon: 'success' });
     }).catch(function(error) {
       wx.hideLoading();
-      wx.showToast({ title: '登录失败', icon: 'none' });
+      wx.showToast({ title: '登录没成功，请再试一次', icon: 'none' });
     });
   },
 
@@ -115,7 +115,7 @@ Page({
     if (!detail.code) {
       var message = detail.errMsg && detail.errMsg.indexOf('deny') !== -1
         ? '您还没有授权手机号'
-        : '手机号授权失败';
+        : '手机号没授权成功';
       wx.showToast({ title: message, icon: 'none' });
       return;
     }
@@ -134,7 +134,7 @@ Page({
     }).catch(function(err) {
       wx.hideLoading();
       wx.showToast({
-        title: app.getApiErrorMessage(err, '手机号绑定失败'),
+        title: app.getApiErrorMessage(err, '手机号没绑上，请再试一次'),
         icon: 'none'
       });
     });
@@ -178,18 +178,18 @@ Page({
     wx.navigateTo({
       url: '/pages/membership/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
 
   // 进入孩子档案列表
   goToChildren: function() {
-    this.ensureLoginBeforeNavigate('请先完成微信登录，再管理孩子档案', function() {
+    this.ensureLoginBeforeNavigate('先登录，再管理孩子档案', function() {
       wx.navigateTo({
         url: '/pages/profile/children/children',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -197,11 +197,11 @@ Page({
 
   // 查看历史
   viewHistory: function() {
-    this.ensureLoginBeforeNavigate('请先完成微信登录，再查看小牛问答记录', function() {
+    this.ensureLoginBeforeNavigate('先登录，再查看小牛问答记录', function() {
       wx.navigateTo({
         url: '/pages/chat/chat',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -209,11 +209,11 @@ Page({
 
   // 查看成长记录
   viewAssessments: function() {
-    this.ensureLoginBeforeNavigate('请先完成微信登录，再查看成长记录', function() {
+    this.ensureLoginBeforeNavigate('先登录，再查看成长记录', function() {
       wx.navigateTo({
         url: '/pages/growth-record/index',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -221,11 +221,11 @@ Page({
 
   viewWeeklySummary: function() {
     var childId = (this.data.currentChild && this.data.currentChild.id) || 0;
-    this.ensureLoginBeforeNavigate('请先完成微信登录，再查看每周成长总结', function() {
+    this.ensureLoginBeforeNavigate('先登录，再查看每周成长总结', function() {
       wx.navigateTo({
         url: '/pages/weekly-summary/index' + (childId ? ('?childId=' + childId) : ''),
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -236,7 +236,7 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/feedback/feedback',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -245,7 +245,7 @@ Page({
   aboutUs: function() {
     wx.showModal({
       title: '关于小牛育儿',
-      content: '小牛育儿\n聚焦儿童成长观察、能力发展与家庭养育支持\n\nAI助手版本：v4.0\n能力：成长观察、能力成长、育儿知识、营养建议',
+      content: '小牛育儿\n帮家长看懂孩子近况，把育儿问题拆成能做的小步骤。\n\n版本：v4.0\n包含：成长观察、每日练习、育儿锦囊、营养食谱、小牛问答',
       showCancel: false
     });
   },
@@ -255,7 +255,7 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/privacy/privacy',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -265,7 +265,7 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/agreement/agreement',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -282,7 +282,7 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/account-deletion/account-deletion',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   }
@@ -290,7 +290,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: '小牛育儿',
       path: '/pages/index/index'
     };
   }

@@ -140,7 +140,7 @@ Page({
         });
       }
     }).catch(function(err) {
-      wx.showToast({ title: app.getApiErrorMessage(err, '加载失败'), icon: 'none' });
+      wx.showToast({ title: app.getApiErrorMessage(err, '每周总结没加载出来'), icon: 'none' });
     }).finally(function() {
       that.setData({ loading: false });
     });

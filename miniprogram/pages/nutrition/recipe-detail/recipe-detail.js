@@ -192,7 +192,7 @@ Page({
         recipe: null
       });
       wx.showToast({
-        title: '食谱参数缺失',
+        title: '这道食谱没找到',
         icon: 'none'
       });
       if (getCurrentPages().length > 1) {
@@ -296,7 +296,7 @@ Page({
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
         if (!silent) {
-          app.showApiError('食谱详情加载失败');
+          app.showApiError('这道食谱没加载出来，请再试一次');
           that.setData({
             recipe: null,
             isFavorite: false,
@@ -332,7 +332,7 @@ Page({
     }
     if (that.data.offlineFallback) {
       wx.showToast({
-        title: '离线示例不可收藏',
+        title: '示例内容先不用收藏',
         icon: 'none'
       });
       return;
@@ -360,12 +360,12 @@ Page({
         }
       }));
       wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
+        title: isFavorite ? '已取消收藏' : '已收藏',
         icon: 'success'
       });
     }).catch(function() {
       wx.showToast({
-        title: '操作失败',
+        title: '没处理成功，请再试一次',
         icon: 'none'
       });
     });
@@ -466,18 +466,18 @@ Page({
     if (!recipe || !recipe.ingredients) {
       return;
     }
-    
+
     var text = '【' + recipe.name + '】食材清单：\n';
     for (var i = 0; i < recipe.ingredients.length; i++) {
       var item = recipe.ingredients[i];
       text += (i + 1) + '. ' + item.name + '：' + item.amount + '\n';
     }
-    
+
     wx.setClipboardData({
       data: text,
       success: function() {
         wx.showToast({
-          title: '已复制到剪贴板',
+          title: '食材清单已复制',
           icon: 'success'
         });
       }

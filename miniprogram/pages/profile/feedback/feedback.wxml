@@ -1,8 +1,8 @@
 <!-- 意见反馈 -->
 <view class="page">
   <view class="form-card">
-    <view class="form-title">告诉我们你的问题或建议</view>
-    <view class="form-desc">你的反馈将帮助我们持续改进</view>
+    <view class="form-title">哪里不好用，告诉我们</view>
+    <view class="form-desc">说清楚你在哪一步卡住，我们会更快定位。</view>
 
     <view class="field">
       <view class="field-label">反馈类型</view>
@@ -12,11 +12,11 @@
     </view>
 
     <view class="field">
-      <view class="field-label">详细描述</view>
+      <view class="field-label">具体情况</view>
       <textarea
         class="content-input"
         value="{{content}}"
-        placeholder="请描述你遇到的问题或建议，包括操作步骤、页面位置等，越详细我们越能快速定位…"
+        placeholder="比如：在哪个页面、点了什么、看到什么提示。写得越具体，越容易处理。"
         maxlength="1000"
         bindinput="onContentInput"
         auto-height
@@ -29,11 +29,11 @@
       <input class="contact-input" value="{{contact}}" placeholder="手机号或微信号，方便我们联系你" bindinput="onContactInput" />
     </view>
 
-    <button class="submit-btn" bindtap="submitFeedback" loading="{{submitting}}" disabled="{{!canSubmit}}">提交反馈</button>
+    <button class="submit-btn" bindtap="submitFeedback" loading="{{submitting}}" disabled="{{!canSubmit}}">发给我们</button>
   </view>
 
   <view class="history-section" wx:if="{{history.length > 0}}">
-    <view class="history-title">我的反馈记录</view>
+    <view class="history-title">我发过的反馈</view>
     <view class="history-item" wx:for="{{history}}" wx:key="id">
       <view class="history-type">{{item.type_text || '问题反馈'}}</view>
       <view class="history-content">{{item.content}}</view>

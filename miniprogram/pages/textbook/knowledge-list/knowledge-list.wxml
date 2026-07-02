@@ -38,13 +38,13 @@
             <text class="point-name">{{point.name}}</text>
             <view class="point-meta">
               <text class="point-difficulty difficulty-{{point.difficulty}}">{{point.difficulty === 1 ? '简单' : point.difficulty === 2 ? '中等' : '困难'}}</text>
-              <text class="point-status-text status-{{point.status}}">{{point.status === 'mastered' ? '已掌握' : point.status === 'learning' ? '学习中' : '待学习'}}</text>
+              <text class="point-status-text status-{{point.status}}">{{point.status === 'mastered' ? '会了' : point.status === 'learning' ? '正在练' : '待练'}}</text>
             </view>
           </view>
           <view class="point-actions">
             <view class="action-btn test-btn" catchtap="onQuickTest" data-point="{{point}}">
               <text class="action-icon">📝</text>
-              <text class="action-text">测试</text>
+              <text class="action-text">练一下</text>
             </view>
           </view>
         </view>
@@ -55,7 +55,7 @@
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && chapterList.length === 0}}">
     <text class="empty-icon">📚</text>
-    <text class="empty-text">暂无知识点数据</text>
+    <text class="empty-text">这里暂时还没有练习内容</text>
   </view>
 </view>
 
@@ -63,7 +63,7 @@
 <view class="modal-mask" wx:if="{{showTestModal}}" bindtap="hideTestModal">
   <view class="test-modal" catchtap="preventBubble">
     <view class="modal-header">
-      <text class="modal-title">快速测试</text>
+      <text class="modal-title">快速练一下</text>
       <view class="modal-close" bindtap="hideTestModal">×</view>
     </view>
     <view class="modal-body">
@@ -72,17 +72,17 @@
         <text class="test-name">{{currentPoint.name}}</text>
       </view>
       <view class="test-desc">
-        <text>将对本知识点进行快速测试，检验学习成果。</text>
+        <text>用几道小题看看孩子有没有理解。</text>
       </view>
       <view class="test-tips">
-        <text class="tips-item">• 测试包含5道题目</text>
+        <text class="tips-item">• 一共5道小题</text>
         <text class="tips-item">• 预计用时5分钟</text>
-        <text class="tips-item">• 测试后可查看详细解析</text>
+        <text class="tips-item">• 做完后可以看解析</text>
       </view>
     </view>
     <view class="modal-footer">
       <view class="btn-cancel" bindtap="hideTestModal">取消</view>
-      <view class="btn-confirm" bindtap="startTest">开始测试</view>
+      <view class="btn-confirm" bindtap="startTest">开始练习</view>
     </view>
   </view>
 </view>

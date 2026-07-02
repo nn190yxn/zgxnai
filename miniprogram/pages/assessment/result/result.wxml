@@ -54,7 +54,7 @@
     <!-- 维度得分 -->
     <view class="section" wx:if="{{dimensions.length > 0}}">
       <view class="section-header">
-        <text class="section-title">各维度得分</text>
+        <text class="section-title">孩子现在的表现</text>
       </view>
       <view class="dimensions-list">
         <view class="dimension-item" wx:for="{{dimensions}}" wx:key="name">
@@ -72,7 +72,7 @@
     <!-- 详细解读 -->
     <view class="section">
       <view class="section-header">
-        <text class="section-title">详细解读</text>
+        <text class="section-title">结果怎么看</text>
       </view>
       <view class="interpretation-card">
         <text class="interpretation-text">{{interpretation}}</text>
@@ -82,7 +82,7 @@
     <!-- 年龄段专属解读 -->
     <view class="section" wx:if="{{ageNote}}">
       <view class="section-header">
-        <text class="section-title">本年龄段说明</text>
+        <text class="section-title">这个年龄怎么看</text>
       </view>
       <view class="age-context-card">
         <view class="age-context-row">
@@ -90,11 +90,11 @@
           <text class="age-context-text">{{ageNote}}</text>
         </view>
         <view class="age-context-row" wx:if="{{expectedByAge}}">
-          <text class="age-context-label">年龄预期</text>
+          <text class="age-context-label">同龄参考</text>
           <text class="age-context-text">{{expectedByAge}}</text>
         </view>
         <view class="age-context-row" wx:if="{{priorityFocus}}">
-          <text class="age-context-label">优先方向</text>
+          <text class="age-context-label">先关注</text>
           <text class="age-context-text">{{priorityFocus}}</text>
         </view>
       </view>
@@ -103,7 +103,7 @@
     <!-- 个性化建议 -->
     <view class="section" wx:if="{{suggestions.length > 0}}">
       <view class="section-header">
-        <text class="section-title">个性化建议</text>
+        <text class="section-title">接下来可以怎么做</text>
       </view>
       <view class="suggestions-list">
         <view class="suggestion-item" wx:for="{{suggestions}}" wx:key="title">
@@ -123,7 +123,7 @@
     <!-- 家庭支持建议 -->
     <view class="section" wx:if="{{trainingPlans.length > 0}}">
       <view class="section-header">
-        <text class="section-title">家庭支持建议</text>
+        <text class="section-title">家里可以这样陪</text>
       </view>
       <view class="plans-list">
         <view class="plan-item" wx:for="{{trainingPlans}}" wx:key="name">
@@ -140,14 +140,14 @@
     <view class="bottom-actions">
       <view class="action-btn share-btn" bindtap="shareReport">
         <text class="btn-icon">📤</text>
-        <text class="btn-text">分享报告</text>
+        <text class="btn-text">分享结果</text>
       </view>
       <view class="action-btn save-btn" bindtap="saveToAlbum">
         <text class="btn-icon">📷</text>
         <text class="btn-text">保存图片</text>
       </view>
       <view class="action-btn save-btn" bindtap="saveAssessmentToGrowthRecord">
-        <text class="btn-text">保存到成长记录</text>
+        <text class="btn-text">记到成长记录</text>
       </view>
       <view class="action-btn history-btn" bindtap="goToHistory">
         <text class="btn-icon">📋</text>
@@ -164,8 +164,8 @@
     <!-- 底部提示 -->
     <view class="section membership-cta-section" wx:if="{{showMembershipPrompt}}">
       <view class="membership-cta-card">
-        <text class="cta-title">开通成长服务，可查看完整报告。</text>
-        <text class="cta-desc">保存评估报告、查看完整建议、获得每周成长总结。</text>
+        <text class="cta-title">开通成长服务，看更完整的结果。</text>
+        <text class="cta-desc">保存观察结果、查看具体建议、获得每周成长总结。</text>
         <view class="cta-btn" bindtap="goToMembershipFromResult">了解成长服务</view>
       </view>
     </view>

@@ -1,4 +1,4 @@
-// 小牛育儿AI助理 v4.0
+// 小牛育儿 v4.0
 // 小程序入口
 var envConfig = require('./config/env.js');
 var appConfig = require('./utils/app-config.js');

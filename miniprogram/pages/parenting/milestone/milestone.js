@@ -64,7 +64,7 @@ Page({
       });
       this.updateQuestion();
     } else {
-      wx.showToast({ title: '该年龄段暂无评估指标', icon: 'none' });
+      wx.showToast({ title: '这个年龄段暂时没有观察项', icon: 'none' });
     }
     
     wx.hideLoading();
@@ -178,7 +178,7 @@ Page({
     const record = history.find(item => String(item.id) === String(historyId));
 
     if (!record) {
-      wx.showToast({ title: '未找到评估记录', icon: 'none' });
+      wx.showToast({ title: '这次观察记录没找到', icon: 'none' });
       return;
     }
 
@@ -208,7 +208,7 @@ Page({
       if (dim.percentage < 60) {
         suggestions.push({
           icon: '⚠️',
-          text: `${dim.name}方面需要加强，建议多进行相关训练。`
+          text: `${dim.name}方面可以多练一练，先从日常小场景开始。`
         });
       } else if (dim.percentage < 80) {
         suggestions.push({

@@ -1,6 +1,6 @@
 <view class="page">
   <view wx:if="{{!currentChild}}" class="empty-card">
-    <text class="empty-title">先完善孩子档案，再开始成长记录</text>
+    <text class="empty-title">先填孩子信息，再开始记录变化</text>
     <view class="primary-btn" bindtap="goToChildSetup">去完善档案</view>
   </view>
 
@@ -41,7 +41,7 @@
 
     <view class="section-card">
       <text class="section-title">记录建议</text>
-      <text class="helper-copy">每天睡前花 30 秒记录，一周后查看孩子的变化趋势。</text>
+      <text class="helper-copy">睡前花 30 秒记一下，一周后更容易看出孩子哪里变好了。</text>
     </view>
 
     <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存成长记录'}}</view>

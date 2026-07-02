@@ -62,7 +62,7 @@ Page({
     }).catch(function (err) {
       that.setData({ submitting: false });
       wx.showToast({
-        title: app.getApiErrorMessage(err, '提交失败，请稍后重试'),
+        title: app.getApiErrorMessage(err, '反馈没提交成功，请稍后再试'),
         icon: 'none'
       });
     });

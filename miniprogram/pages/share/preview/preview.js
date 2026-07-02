@@ -4,8 +4,8 @@ Page({
   data: {
       draft: {
         type: 'app_intro',
-        title: '小牛育儿AI助理',
-        summary: '3分钟看懂孩子近况，专注、表达、阅读、吃饭睡眠都有对应建议。',
+        title: '小牛育儿',
+        summary: '3分钟看懂孩子最近卡在哪里，专注、表达、阅读、吃饭睡眠都有办法。',
       metrics: {
         completed: 0,
         total: 0,
@@ -17,7 +17,7 @@ Page({
       shareCard: {
         badge: '宝妈育儿工具箱',
         headline: '3分钟看懂孩子哪一项需要先抓',
-        subline: '专注、表达、阅读、吃饭睡眠都有对应建议，家长更快知道先做什么',
+        subline: '专注、表达、阅读、吃饭睡眠都有办法，家长更快知道先做什么',
       heroMetric: '3分钟',
       heroLabel: '快速了解孩子近期表现',
       chips: [],
@@ -96,16 +96,16 @@ Page({
       return {
         badge: '宝妈育儿工具箱',
         headline: '看懂孩子当前成长短板',
-        subline: '少走弯路，带娃更省心，专注表达阅读吃饭睡眠都有对应建议',
+        subline: '少走弯路，带娃更省心，专注表达阅读吃饭睡眠都有办法',
         heroMetric: '4合1',
-        heroLabel: '成长观察 + AI答疑 + 育儿知识 + 营养食谱',
+        heroLabel: '成长观察 + 小牛问答 + 育儿锦囊 + 营养食谱',
         chips: [
           { value: '3分钟', label: '快速观察' },
-          { value: '随时问', label: 'AI答疑' },
+          { value: '随时问', label: '小牛问答' },
           { value: '分龄看', label: '育儿营养' }
         ],
         cta: '现在就看孩子近况',
-        copyText: '我在用小牛育儿AI助理，看懂孩子当前成长短板，少走弯路，带娃更省心，专注、表达、阅读、吃饭睡眠都有对应建议。'
+        copyText: '我在用小牛育儿，看懂孩子最近卡在哪里，少走弯路，带娃更省心。专注、表达、阅读、吃饭睡眠都有办法。'
       };
     }
 
@@ -115,30 +115,30 @@ Page({
         headline: streakDays > 0 ? ('坚持 ' + streakDays + ' 天，进步看得见') : '开始积累成长力',
         subline: '每天10分钟就能练，家长更容易看见变化',
         heroMetric: completionRate + '%',
-        heroLabel: '任务完成率',
+        heroLabel: '本周完成情况',
         chips: [
-          { value: completed + '/' + total, label: '完成任务' },
+          { value: completed + '/' + total, label: '练过几次' },
           { value: streakDays + '天', label: '连续打卡' },
           { value: recordingCount + '次', label: '复述练习' }
         ],
-        cta: '现在就试试10分钟训练',
-        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '次每日训练。每天10分钟就能练，家长更容易看见孩子一点点进步。'
+        cta: '今天先练一个小任务',
+        copyText: '这周坚持' + streakDays + '天，完成' + completed + '/' + total + '次每日练习。每天先练一个小任务，家长更容易看见孩子一点点进步。'
       };
     }
 
     return {
       badge: '今日打卡',
-      headline: '每天10分钟，孩子进步更容易看见',
+      headline: '每天练一个小任务，孩子进步更容易看见',
       subline: '把阅读、表达和专注训练放进日常，家长更知道怎么陪',
       heroMetric: '+1',
-      heroLabel: data.title || '每日训练',
+      heroLabel: data.title || '每日练习',
       chips: [
         { value: completed + '/' + total, label: '累计完成' },
         { value: streakDays + '天', label: '连续坚持' },
         { value: recordingCount + '次', label: '复述录音' }
       ],
-      cta: '现在就开始10分钟训练',
-      copyText: '今天完成一次每日训练。每天10分钟就能练，家长更容易看见孩子慢慢进步。'
+      cta: '今天先练一个小任务',
+      copyText: '今天完成一次每日练习。每天10分钟就能练，家长更容易看见孩子慢慢进步。'
     };
   },
 
@@ -178,7 +178,7 @@ Page({
         previewCount: previewCount,
         copyCount: copyCount,
         sourceTop: sourceTop,
-        latestEntry: latestEntry || '暂无'
+        latestEntry: latestEntry || '还没有记录'
       }
     });
   },
@@ -201,7 +201,7 @@ Page({
     var that = this;
     var text = this.data.previewText || '';
     if (!text) {
-      wx.showToast({ title: '暂无可复制内容', icon: 'none' });
+      wx.showToast({ title: '现在还没有可复制内容', icon: 'none' });
       return;
     }
     wx.setClipboardData({
@@ -253,7 +253,7 @@ Page({
     wx.switchTab({
       url: '/pages/index/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

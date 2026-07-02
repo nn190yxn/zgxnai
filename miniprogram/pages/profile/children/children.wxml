@@ -2,7 +2,7 @@
 <view class="page">
   <!-- 顶部提示 -->
   <view class="header-tip" wx:if="{{children.length > 0}}">
-    <text class="tip-text">点星星设为默认孩子，点卡片修改信息</text>
+    <text class="tip-text">点星星设为默认孩子，点卡片可以修改信息</text>
   </view>
 
   <!-- 孩子列表 -->
@@ -13,13 +13,13 @@
         <view class="star-btn {{item.isDefault ? 'active' : ''}}" catchtap="setDefault" data-id="{{item.id}}">
           <text class="star-icon">{{item.isDefault ? '★' : '☆'}}</text>
         </view>
-        
+
         <!-- 头像 -->
         <view class="child-avatar">
           <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="avatar-img" binderror="onAvatarError" data-id="{{item.id}}"></image>
           <text wx:else class="avatar-text">{{item.gender === 'male' ? '👦' : item.gender === 'female' ? '👧' : '👶'}}</text>
         </view>
-        
+
         <!-- 信息 -->
         <view class="child-info">
           <view class="child-name-row">
@@ -37,7 +37,7 @@
             <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
           </view>
         </view>
-        
+
         <!-- 箭头 -->
         <view class="arrow">
           <text class="arrow-icon">›</text>
@@ -50,7 +50,7 @@
   <view class="empty-state" wx:if="{{!loading && children.length === 0}}">
     <text class="empty-icon">👶</text>
     <text class="empty-title">还没有添加孩子档案</text>
-    <text class="empty-desc">添加孩子信息，获取更精准的育儿建议</text>
+    <text class="empty-desc">填好年龄和基本情况，建议会更贴合你家孩子</text>
     <button class="add-btn-primary" bindtap="addChild">添加孩子</button>
   </view>
 

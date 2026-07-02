@@ -38,7 +38,7 @@ Page({
     premiumFeatures: [
       { key: 'weekly_summary', title: '宝贝每周成长总结', desc: '持续查看记录趋势、计划完成度和下周重点' },
       { key: 'scene_search', title: '育儿场景内容', desc: '把“发脾气、挑食、睡前拖延”直接变成可参考的方法' },
-      { key: 'daily_guidance', title: '每日成长陪伴', desc: '把观察、训练、营养和方法连成持续陪伴内容' }
+      { key: 'daily_guidance', title: '每日成长陪伴', desc: '把观察、练习、营养和方法连成每天能用的内容' }
     ],
     displayFeatures: [],
     
@@ -222,7 +222,7 @@ Page({
       if (app.globalData.isDebug) {
         console.error('激活试用失败', err);
       }
-      wx.showToast({ title: '激活失败', icon: 'none' });
+      wx.showToast({ title: '体验服务没开通，请再试一次', icon: 'none' });
     });
   },
 
@@ -304,7 +304,7 @@ Page({
       wx.hideLoading();
       const message = err && err.errMsg && err.errMsg.indexOf('cancel') !== -1
         ? '已取消支付'
-        : app.getApiErrorMessage(err, '支付失败，请稍后重试');
+        : app.getApiErrorMessage(err, '支付没完成，请稍后再试');
       wx.showToast({ title: message, icon: 'none' });
       if (app.globalData.isDebug) {
         console.error('支付失败', err);
@@ -367,12 +367,12 @@ Page({
       return;
     }
     if (!this.data.promoEnabled) {
-      wx.showToast({ title: '兑换码功能暂未开放', icon: 'none' });
+      wx.showToast({ title: '兑换入口还在准备中', icon: 'none' });
       return;
     }
     const code = String(this.data.promoCode || '').trim().toUpperCase();
     if (!code) {
-      wx.showToast({ title: '请输入兑换码', icon: 'none' });
+      wx.showToast({ title: '先填写兑换码', icon: 'none' });
       return;
     }
 
@@ -400,7 +400,7 @@ Page({
       if (app.globalData.isDebug) {
         console.error('兑换失败', err);
       }
-      wx.showToast({ title: app.getApiErrorMessage(err, '兑换失败'), icon: 'none' });
+      wx.showToast({ title: app.getApiErrorMessage(err, '兑换没成功，请再试一次'), icon: 'none' });
     });
   },
 

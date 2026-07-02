@@ -93,7 +93,7 @@
     <!-- 空状态 -->
     <view class="empty-wrap" wx:if="{{!loading && articleList.length === 0}}">
       <text class="empty-icon">📚</text>
-      <text class="empty-text">暂无文章</text>
+      <text class="empty-text">暂时还没有锦囊</text>
       <text class="empty-desc">换个条件试试吧</text>
     </view>
 

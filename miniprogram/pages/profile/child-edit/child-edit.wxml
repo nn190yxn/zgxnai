@@ -28,14 +28,14 @@
       <!-- 姓名 -->
       <view class="form-item {{errors.name ? 'error' : ''}}">
         <text class="form-label required">姓名</text>
-        <input class="form-input" placeholder="请输入孩子姓名" value="{{formData.name}}" data-field="name" bindinput="onInputChange" maxlength="20" />
+        <input class="form-input" placeholder="填写孩子姓名" value="{{formData.name}}" data-field="name" bindinput="onInputChange" maxlength="20" />
       </view>
       <view class="error-tip" wx:if="{{errors.name}}">{{errors.name}}</view>
 
       <!-- 昵称 -->
       <view class="form-item">
         <text class="form-label">昵称</text>
-        <input class="form-input" placeholder="请输入昵称（选填）" value="{{formData.nickname}}" data-field="nickname" bindinput="onInputChange" maxlength="20" />
+        <input class="form-input" placeholder="填写平时怎么叫孩子（选填）" value="{{formData.nickname}}" data-field="nickname" bindinput="onInputChange" maxlength="20" />
       </view>
 
       <!-- 性别 -->
@@ -54,7 +54,7 @@
         <text class="form-label required">出生日期</text>
         <picker mode="date" value="{{formData.birthday}}" start="2010-01-01" end="{{today}}" bindchange="onDateChange" class="form-picker">
           <view class="picker-value {{formData.birthday ? '' : 'placeholder'}}">
-            {{formData.birthday || '请选择出生日期'}}
+            {{formData.birthday || '选择出生日期'}}
           </view>
         </picker>
       </view>
@@ -69,7 +69,7 @@
       <view class="form-item">
         <text class="form-label">身高</text>
         <view class="input-with-unit">
-          <input class="form-input" type="digit" placeholder="请输入身高" value="{{formData.height}}" data-field="height" bindinput="onInputChange" />
+          <input class="form-input" type="digit" placeholder="填写身高" value="{{formData.height}}" data-field="height" bindinput="onInputChange" />
           <text class="unit">cm</text>
         </view>
       </view>
@@ -78,7 +78,7 @@
       <view class="form-item">
         <text class="form-label">体重</text>
         <view class="input-with-unit">
-          <input class="form-input" type="digit" placeholder="请输入体重" value="{{formData.weight}}" data-field="weight" bindinput="onInputChange" />
+          <input class="form-input" type="digit" placeholder="填写体重" value="{{formData.weight}}" data-field="weight" bindinput="onInputChange" />
           <text class="unit">kg</text>
         </view>
       </view>
@@ -112,13 +112,13 @@
       <!-- 过敏信息 -->
       <view class="form-item form-item-textarea">
         <text class="form-label">过敏信息</text>
-        <textarea class="form-textarea" placeholder="请输入过敏信息（选填）" value="{{formData.allergies}}" data-field="allergies" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
+        <textarea class="form-textarea" placeholder="比如牛奶、鸡蛋、花生等，选填" value="{{formData.allergies}}" data-field="allergies" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
       </view>
 
       <!-- 特殊情况 -->
       <view class="form-item form-item-textarea">
         <text class="form-label">特殊情况</text>
-        <textarea class="form-textarea" placeholder="请输入特殊情况说明（选填）" value="{{formData.specialConditions}}" data-field="specialConditions" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
+        <textarea class="form-textarea" placeholder="比如睡眠、饮食、情绪或发育上的特别情况，选填" value="{{formData.specialConditions}}" data-field="specialConditions" bindinput="onInputChange" maxlength="200" cursor-spacing="120" />
       </view>
     </view>
 

@@ -8,39 +8,39 @@ Page({
     // 结果数据
     recordId: '',
     isLocal: false,
-    
+
     // 结果信息
     assessmentCode: '',
     assessmentName: '',
     childName: '',
     completedAt: '',
-    
+
     // 评分
     totalScore: 0,
     maxScore: 0,
     percentage: 0,
     level: '',
     levelColor: '#FF6B35',
-    
+
     // 维度得分
     dimensions: [],
-    
+
     // 详细解读
     interpretation: '',
-    
+
     // 建议
     suggestions: [],
-    
+
     // 家庭支持建议
     trainingPlans: [],
 
     // 免责声明
     disclaimerText: '本结果仅用于家庭观察和教育参考，不作为医学诊断、心理诊断或治疗依据。如孩子出现持续异常表现，请及时咨询专业医生或发育行为相关专业人士。',
-    
+
     // 用时
     elapsedTime: 0,
     timeText: '',
-    
+
     // 加载状态
     loading: true,
     showMembershipPrompt: false
@@ -77,21 +77,21 @@ Page({
     that.clearPendingTimers();
     var recordId = options.recordId;
     var isLocal = options.local === '1';
-    
+
     if (!recordId) {
       wx.showToast({
-        title: '参数错误',
+        title: '观察结果没找到',
         icon: 'none'
       });
       that.scheduleNavigateBack(1500);
       return;
     }
-    
+
     that.setData({
       recordId: recordId,
       isLocal: isLocal
     });
-    
+
     // 加载结果数据
     that.loadResult(recordId, isLocal);
   },
@@ -99,7 +99,7 @@ Page({
   // 加载结果数据
   loadResult: function(recordId, isLocal) {
     var that = this;
-    
+
     if (isLocal) {
       that.loadLocalResult(recordId);
     } else {
@@ -115,7 +115,7 @@ Page({
     var record = records.find(function(r) {
       return r.recordId === recordId;
     });
-    
+
     if (record) {
       that.processResult(record);
     } else {
@@ -135,7 +135,7 @@ Page({
       that.loadLocalResult(recordId);
       return;
     }
-    
+
     app.request({
       url: '/assessments/results/' + recordId,
       method: 'GET'
@@ -275,23 +275,23 @@ Page({
   // 处理结果数据
   processResult: function(record) {
     var that = this;
-    
+
     // 格式化时间
     var timeText = that.formatTime(record.elapsedTime);
     var completedAt = that.formatDate(record.completedAt);
-    
+
     // 获取评级颜色
     var levelColor = that.getLevelColor(record.level);
-    
+
     // 生成解读文字
     var interpretation = that.generateInterpretation(record);
-    
+
     // 生成建议
     var suggestions = that.generateSuggestions(record);
-    
+
     // 生成训练方案
     var trainingPlans = that.generateTrainingPlans(record);
-    
+
     var reportData = record.reportData || {};
     that.setData({
       assessmentCode: normalizeAssessmentCode(record.assessmentCode),
@@ -354,8 +354,8 @@ Page({
     var day = date.getDate();
     var hour = date.getHours();
     var minute = date.getMinutes();
-    
-    return year + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day + ' ' + 
+
+    return year + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day + ' ' +
            (hour < 10 ? '0' : '') + hour + ':' + (minute < 10 ? '0' : '') + minute;
   },
 
@@ -382,7 +382,7 @@ Page({
     if (record.reportData && record.reportData.summary) {
       return record.reportData.summary;
     }
-    
+
     var interpretations = {
       sensory: {
         excellent: '孩子的感觉统合能力发展优秀，各项感官功能协调良好，能够很好地适应各种环境和活动。建议继续保持，可以尝试更具挑战性的感统活动。',
@@ -429,7 +429,7 @@ Page({
       gross_motor: {
         excellent: '孩子的大运动发展表现扎实，头颈、躯干与下肢协同较好，当前里程碑达成度较高。建议继续通过爬行、跑跳和障碍游戏丰富身体经验。',
         good: '孩子的大运动发展整体良好，大多数里程碑已经建立。建议继续增加户外活动、上下坡和球类游戏，巩固平衡与协调。',
-        medium: '孩子的大运动发展基本在可观察范围内，个别动作还需要更多练习。建议结合日常游戏强化翻身、坐爬、走跑或双脚跳等关键动作。',
+        medium: '孩子的大运动发展基本在可观察范围内，个别动作还需要更多练习。建议结合日常游戏强化翻身、坐爬、走跑或双脚跳等里程碑动作。',
         attention: '孩子的大运动发展有若干表现值得持续关注。建议记录未稳定出现的动作场景和频率，并在家庭活动中针对性练习。',
         intervention: '孩子的大运动发展提示较高关注度。建议尽快整理里程碑记录，咨询儿童保健、康复或发育行为相关专业人员。'
       },
@@ -455,14 +455,14 @@ Page({
         intervention: '孩子的社交情绪发展提示较高关注度。建议整理家庭观察记录，尽快咨询儿童心理、发育行为或相关专业人员。'
       }
     };
-    
+
     var levelKey = 'medium';
     if (percentage >= 85) levelKey = 'excellent';
     else if (percentage >= 70) levelKey = 'good';
     else if (percentage >= 55) levelKey = 'medium';
     else if (percentage >= 40) levelKey = 'attention';
     else levelKey = 'intervention';
-    
+
     var codeInterpretations = interpretations[code] || interpretations.sensory;
     return codeInterpretations[levelKey] || codeInterpretations.medium;
   },
@@ -474,7 +474,7 @@ Page({
     if (record.reportData && Array.isArray(record.reportData.suggestionCards) && record.reportData.suggestionCards.length > 0) {
       return record.reportData.suggestionCards;
     }
-    
+
     var allSuggestions = {
       sensory: [
         { title: '增加户外活动', desc: '每天保证1-2小时户外活动时间，接触自然环境' },
@@ -516,7 +516,7 @@ Page({
         { title: '增加地面活动', desc: '每天安排趴玩、爬行、跨越和上下台阶等活动，帮助核心力量和协调建立。' },
         { title: '做里程碑记录', desc: '记录翻身、坐、爬、站、走、跳等动作出现频率，便于观察变化。' },
         { title: '多做平衡游戏', desc: '通过球类、追逐、障碍物和踮脚游戏增加全身协调经验。' },
-        { title: '必要时做专业评估', desc: '如关键动作长期未出现或姿势明显异常，尽快咨询专业人员。' }
+        { title: '必要时做专业评估', desc: '如里程碑动作长期未出现或姿势明显异常，尽快咨询专业人员。' }
       ],
       fine_motor: [
         { title: '强化抓握练习', desc: '用积木、贴纸、夹子和小勺等活动练习抓握和捏取。' },
@@ -537,9 +537,9 @@ Page({
         { title: '记录互动线索', desc: '持续记录对视、回应呼唤、依恋和分离反应，便于判断变化。' }
       ]
     };
-    
+
     var suggestions = allSuggestions[code] || allSuggestions.sensory;
-    
+
     // 根据得分返回不同数量的建议
     if (percentage >= 70) {
       return suggestions.slice(0, 2);
@@ -553,12 +553,12 @@ Page({
   generateTrainingPlans: function(record) {
     var code = record.assessmentCode;
     var percentage = record.percentage;
-    
+
     // 只有得分较低时才推荐进一步支持建议
     if (percentage >= 70) {
       return [];
     }
-    
+
     var plans = {
       sensory: [
         { name: '日常感统游戏支持', duration: '持续观察', desc: '通过平衡、触觉、户外活动增加身体经验' },
@@ -582,7 +582,7 @@ Page({
       ],
       gross_motor: [
         { name: '大运动里程碑支持', duration: '持续观察', desc: '围绕翻身、坐爬、行走和跳跃设计低门槛家庭练习。' },
-        { name: '线下发育咨询准备', duration: '按需进行', desc: '整理未出现的关键动作和视频记录，便于专业人员判断。' }
+        { name: '线下发育咨询准备', duration: '按需进行', desc: '整理未出现的里程碑动作和视频记录，便于专业人员判断。' }
       ],
       fine_motor: [
         { name: '手部操作支持', duration: '持续观察', desc: '把抓握、捏取、双手配合训练融入进食和游戏。' }
@@ -595,7 +595,7 @@ Page({
         { name: '亲子互动支持', duration: '持续观察', desc: '通过模仿、轮流和情绪回应建立稳定互动经验。' }
       ]
     };
-    
+
     return plans[code] || [];
   },
 
@@ -608,12 +608,12 @@ Page({
   // 保存到相册
   saveToAlbum: function() {
     var that = this;
-    
+
     wx.showLoading({
       title: '生成中...',
       mask: true
     });
-    
+
     // 创建canvas绘制报告
     that.createReportImage();
   },
@@ -621,7 +621,7 @@ Page({
   // 创建报告图片
   createReportImage: function() {
     var that = this;
-    
+
     // 实际项目中需要使用canvas绘制
     // 这里简化处理
     if (that._saveReportTimer) {
@@ -642,7 +642,7 @@ Page({
     wx.navigateTo({
       url: '/pages/assessment/history/history',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -709,7 +709,7 @@ Page({
         });
       }
     }).catch(function() {
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+      wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
     });
   },
 
@@ -717,7 +717,7 @@ Page({
     wx.navigateTo({
       url: '/pages/membership/index?source=assessment_result',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -730,7 +730,7 @@ Page({
   // 重新作答
   redoAssessment: function() {
     var that = this;
-    
+
     wx.showModal({
       title: '重新开始',
       content: '确定要重新进行' + that.data.assessmentName + '吗？',
@@ -741,7 +741,7 @@ Page({
           wx.redirectTo({
             url: '/pages/assessment/do/do?code=' + that.data.assessmentCode,
             fail: function() {
-              wx.showToast({ title: '页面跳转失败', icon: 'none' });
+              wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
             }
           });
         }

@@ -167,7 +167,7 @@ Page({
         isRecognizing: false,
         voiceHint: '语音识别失败，请换安静环境再试'
       });
-      wx.showToast({ title: '语音识别失败', icon: 'none' });
+      wx.showToast({ title: '没听清，请换个安静地方再说一次', icon: 'none' });
     };
 
     this.setData({
@@ -284,7 +284,7 @@ Page({
       }
     }
     if (!lastAnswer) {
-      wx.showToast({ title: '暂无可生成计划的内容', icon: 'none' });
+      wx.showToast({ title: '先问一个具体问题，再生成计划', icon: 'none' });
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -324,7 +324,7 @@ Page({
         wx.showToast({ title: '登录已过期，请重新登录', icon: 'none' });
         return;
       }
-      wx.showToast({ title: '计划生成失败，请重试', icon: 'none' });
+      wx.showToast({ title: '计划没生成，请再试一次', icon: 'none' });
     });
   },
 
@@ -363,7 +363,7 @@ Page({
 
     if (!this.data.featureFlags.aiChatEnabled) {
       wx.showToast({
-        title: '小牛问答暂未开放',
+        title: '小牛问答还在准备中',
         icon: 'none'
       });
       return;
@@ -471,7 +471,7 @@ Page({
     wx.navigateTo({
       url: '/pages/assessment/assessment',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -480,7 +480,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/parenting',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -489,7 +489,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/search/search',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -498,7 +498,7 @@ Page({
     wx.navigateTo({
       url: '/pages/growth-record/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -514,7 +514,7 @@ Page({
       }
     }
     if (!lastBot || !lastBot.content) {
-      wx.showToast({ title: '暂无可保存的回答', icon: 'none' });
+      wx.showToast({ title: '现在还没有可保存的回答', icon: 'none' });
       return;
     }
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
@@ -550,7 +550,7 @@ Page({
         });
       }
     }).catch(function() {
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+      wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
     });
   },
 

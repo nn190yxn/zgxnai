@@ -9,7 +9,7 @@ Page({
         id: 1,
         icon: '🧘',
         name: '情绪管理',
-        desc: '帮助孩子认识和管理情绪',
+        desc: '哭闹、发脾气、输不起时看这里',
         color: '#4A90D9',
         bgColor: '#E8F0FE',
         emoji: '😊'
@@ -18,7 +18,7 @@ Page({
         id: 2,
         icon: '🌱',
         name: '行为习惯',
-        desc: '培养良好生活习惯和行为规范',
+        desc: '吃饭、睡觉、刷牙、出门守规则',
         color: '#5DBA8B',
         bgColor: '#E8F5EE',
         emoji: '✨'
@@ -27,7 +27,7 @@ Page({
         id: 3,
         icon: '🧠',
         name: '认知发展',
-        desc: '促进孩子思维与认知能力提升',
+        desc: '听不懂、记不住、不会表达时看这里',
         color: '#9B7ED9',
         bgColor: '#F0EBFA',
         emoji: '💡'
@@ -36,7 +36,7 @@ Page({
         id: 4,
         icon: '🤝',
         name: '社交能力',
-        desc: '提升孩子人际交往与沟通能力',
+        desc: '不敢加入、抢玩具、被拒绝时用得上',
         color: '#E89A4C',
         bgColor: '#FDF2E3',
         emoji: '💬'
@@ -45,7 +45,7 @@ Page({
         id: 5,
         icon: '🍎',
         name: '营养健康',
-        desc: '科学喂养和健康护理知识',
+        desc: '挑食、零食、家常饭搭配看这里',
         color: '#E8737A',
         bgColor: '#FDECEC',
         emoji: '🥗'
@@ -204,7 +204,7 @@ Page({
       });
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        var message = app.getApiErrorMessage(err, '育儿文章加载失败');
+        var message = app.getApiErrorMessage(err, '育儿文章没加载出来');
         that.setData({
           hotArticles: [],
           latestArticles: [],
@@ -260,7 +260,7 @@ Page({
       wx.navigateTo({
         url: '/pages/parenting/article-detail/article-detail?id=' + article.id,
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     }
@@ -271,7 +271,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/search/search',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -283,7 +283,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/article-list/article-list?categoryId=' + id + '&categoryName=' + encodeURIComponent(name),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -293,7 +293,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/milestone/milestone',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -312,7 +312,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -344,12 +344,12 @@ Page({
         latestArticles: latestArticles
       });
       wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
+        title: isFavorite ? '已取消收藏' : '已收藏',
         icon: 'success'
       });
     }).catch(function() {
       wx.showToast({
-        title: '操作失败',
+        title: '没处理成功，请再试一次',
         icon: 'none'
       });
     });
@@ -363,7 +363,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/article-list/article-list',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -392,7 +392,7 @@ Page({
     if (that.data.loading || !that.data.hasMore) {
       return;
     }
-    
+
     that.setData({
       loading: true
     });

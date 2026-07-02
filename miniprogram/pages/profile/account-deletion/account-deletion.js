@@ -23,7 +23,7 @@ Page({
   // 注销账号
   onDeleteAccount: function() {
     var that = this;
-    
+
     if (!that.data.canDelete) {
       wx.showToast({
         title: '请先勾选确认',
@@ -48,7 +48,7 @@ Page({
   // 请求注销
   requestAccountDeletion: function() {
     var that = this;
-    
+
     wx.showLoading({
       title: '正在处理...',
       mask: true
@@ -64,7 +64,7 @@ Page({
       if (success) {
         // 清除本地数据
         app.logout();
-        
+
         wx.showModal({
           title: '注销成功',
           content: '您的账号已成功注销，感谢您的使用。',
@@ -73,7 +73,7 @@ Page({
             wx.reLaunch({
               url: '/pages/index/index',
               fail: function() {
-                wx.showToast({ title: '页面跳转失败', icon: 'none' });
+                wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
               }
             });
           }
@@ -87,7 +87,7 @@ Page({
     }).catch(function(err) {
       wx.hideLoading();
       wx.showToast({
-        title: '网络错误，请稍后重试',
+        title: '网络有点慢，请稍后再试',
         icon: 'none'
       });
     });
@@ -96,7 +96,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: '小牛育儿',
       path: '/pages/index/index'
     };
   }

@@ -42,9 +42,9 @@ Page({
       formData: Object.assign({}, that.data.formData)
     });
     if (options.id) {
-      that.setData({ 
-        isEdit: true, 
-        childId: options.id 
+      that.setData({
+        isEdit: true,
+        childId: options.id
       });
       that.loadChildData(options.id);
     }
@@ -106,7 +106,7 @@ Page({
       that.setData({ loading: false });
       if (!cachedChild) {
         wx.showToast({
-          title: '暂无本地档案',
+          title: '本地还没有孩子档案',
           icon: 'none'
         });
       }
@@ -142,7 +142,7 @@ Page({
       that.setData({ loading: false });
       if (!cachedChild) {
         wx.showToast({
-          title: '加载失败',
+          title: '档案没加载出来',
           icon: 'none'
         });
       }
@@ -354,10 +354,10 @@ Page({
     var errors = {};
 
     if (!formData.name || formData.name.trim() === '') {
-      errors.name = '请输入孩子姓名';
+      errors.name = '先填写孩子姓名';
     }
     if (!formData.birthday) {
-      errors.birthday = '请选择出生日期';
+      errors.birthday = '先选择出生日期';
     }
 
     that.setData({ errors: errors });
@@ -446,7 +446,7 @@ Page({
   // 保存
   save: function() {
     var that = this;
-    
+
     if (!that.validateForm()) {
       return;
     }
@@ -531,7 +531,7 @@ Page({
       that.setData({ submitting: false });
       if (app.globalData.isDebug) console.error('保存孩子档案失败', err);
       wx.showToast({
-        title: that.getErrorMessage(err, '保存失败'),
+        title: that.getErrorMessage(err, '没保存上，请再试一次'),
         icon: 'none'
       });
     });
@@ -545,7 +545,7 @@ Page({
   // 删除
   deleteChild: function() {
     var that = this;
-    
+
     if (!that.data.isEdit) {
       return;
     }
@@ -625,7 +625,7 @@ Page({
     }).catch(function(err) {
       wx.hideLoading();
       wx.showToast({
-        title: '删除失败',
+        title: '没删掉，请再试一次',
         icon: 'none'
       });
     });
@@ -634,7 +634,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: '小牛育儿',
       path: '/pages/index/index'
     };
   }

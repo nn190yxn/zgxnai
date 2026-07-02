@@ -178,34 +178,34 @@ Page({
     assessmentCode: '',
     assessmentName: '',
     selectedAgeGroup: '',
-    
+
     // 题目数据
     questions: [],
     currentIndex: 0,
     totalQuestions: 0,
-    
+
     // 答案记录
     answers: [],
-    
+
     // 计时相关
     startTime: 0,
     elapsedTime: 0,
     timerInterval: null,
     timeText: '00:00',
-    
+
     // 进度条
     progress: 0,
-    
+
     // 当前题目
     currentQuestion: null,
     selectedOption: -1,
-    
+
     // 当前孩子
     currentChild: null,
-    
+
     // 加载状态
     loading: false,
-    
+
     // 是否继续答题
     isContinue: false,
     pendingNavigateTimer: null
@@ -216,29 +216,29 @@ Page({
     var code = options.code;
     var isContinue = options.continue === '1';
     var selectedAgeGroup = options.ageGroup ? decodeURIComponent(options.ageGroup) : '';
-    
+
     if (!code) {
       wx.showToast({
-        title: '参数错误',
+        title: '观察入口没找到',
         icon: 'none'
       });
       that.scheduleNavigateBack();
       return;
     }
-    
+
     // 设置当前孩子
     var currentChild = app.getCurrentChild();
-    
+
     that.setData({
       assessmentCode: code,
       selectedAgeGroup: selectedAgeGroup,
       isContinue: isContinue,
       currentChild: currentChild
     });
-    
+
     // 加载题目
     that.loadQuestions(code, isContinue);
-    
+
   },
 
   onUnload: function() {
@@ -250,7 +250,7 @@ Page({
     if (that.data.pendingNavigateTimer) {
       clearTimeout(that.data.pendingNavigateTimer);
     }
-    
+
   },
 
   scheduleNavigateBack: function() {
@@ -264,11 +264,11 @@ Page({
     }, 1500);
     that.setData({ pendingNavigateTimer: timer });
   },
-  
+
   /*
    * 保留下面业务方法，页面错误时统一走 scheduleNavigateBack，防止卸载后延迟导航。
    */
-  
+
   // 加载题目
   loadQuestions: function(code, isContinue) {
     var that = this;
@@ -290,7 +290,7 @@ Page({
       that.initQuestions(localData.questions, isContinue, localData.name);
       return;
     }
-    
+
     // 先尝试从服务器获取
     that.loadQuestionsFromServer(code).then(function(questions) {
       that.initQuestions(questions, isContinue);
@@ -299,7 +299,7 @@ Page({
         that.initQuestions(localData.questions, isContinue, localData.name);
         return;
       }
-      app.showApiError('观察题目加载失败');
+      app.showApiError('观察题目没加载出来，请再试一次');
       that.scheduleNavigateBack();
     });
   },
@@ -382,13 +382,13 @@ loadQuestionsFromServer: function(code) {
     var assessmentName = name || localAssessment.name || '观察工具';
     questions = normalizeAssessmentQuestions(questions);
     var totalQuestions = questions.length;
-    
+
     that.setData({
       questions: questions,
       totalQuestions: totalQuestions,
       assessmentName: assessmentName
     });
-    
+
     // 检查是否有保存的进度
     if (isContinue) {
       that.loadSavedProgress();
@@ -401,7 +401,7 @@ loadQuestionsFromServer: function(code) {
   startNewAssessment: function() {
     var that = this;
     var questions = that.data.questions;
-    
+
     // 初始化答案数组
     var answers = [];
     for (var i = 0; i < questions.length; i++) {
@@ -410,7 +410,7 @@ loadQuestionsFromServer: function(code) {
         answer: -1
       });
     }
-    
+
     that.setData({
       answers: answers,
       currentIndex: 0,
@@ -419,7 +419,7 @@ loadQuestionsFromServer: function(code) {
       startTime: Date.now(),
       progress: 0
     });
-    
+
     // 开始计时
     that.startTimer();
   },
@@ -428,14 +428,14 @@ loadQuestionsFromServer: function(code) {
   loadSavedProgress: function() {
     var that = this;
     var progress = wx.getStorageSync('assessmentProgress');
-    
+
     if (progress && progress.assessmentCode === that.data.assessmentCode) {
       var questions = that.data.questions;
       var answers = progress.answers || [];
       var currentIndex = progress.currentIndex || 0;
       var elapsedTime = progress.elapsedTime || 0;
       var selectedAgeGroup = progress.ageGroup || that.data.selectedAgeGroup;
-      
+
       // 确保答案数组完整
       if (answers.length < questions.length) {
         for (var i = answers.length; i < questions.length; i++) {
@@ -445,7 +445,7 @@ loadQuestionsFromServer: function(code) {
           });
         }
       }
-      
+
       that.setData({
         answers: answers,
         currentIndex: currentIndex,
@@ -456,7 +456,7 @@ loadQuestionsFromServer: function(code) {
         elapsedTime: elapsedTime,
         progress: Math.round((currentIndex / questions.length) * 100)
       });
-      
+
       // 开始计时
       that.startTimer();
     } else {
@@ -467,19 +467,19 @@ loadQuestionsFromServer: function(code) {
   // 开始计时
   startTimer: function() {
     var that = this;
-    
+
     var timerInterval = setInterval(function() {
       var elapsed = Math.floor((Date.now() - that.data.startTime) / 1000);
       var minutes = Math.floor(elapsed / 60);
       var seconds = elapsed % 60;
       var timeText = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-      
+
       that.setData({
         elapsedTime: elapsed,
         timeText: timeText
       });
     }, 1000);
-    
+
     that.setData({
       timerInterval: timerInterval
     });
@@ -491,14 +491,14 @@ loadQuestionsFromServer: function(code) {
     var index = e.currentTarget.dataset.index;
     var answers = that.data.answers.slice();
     var currentIndex = that.data.currentIndex;
-    
+
     answers[currentIndex].answer = index;
-    
+
     that.setData({
       selectedOption: index,
       answers: answers
     });
-    
+
     // 自动保存进度
     that.saveProgress();
   },
@@ -507,15 +507,15 @@ loadQuestionsFromServer: function(code) {
   prevQuestion: function() {
     var that = this;
     var currentIndex = that.data.currentIndex;
-    
+
     if (currentIndex <= 0) {
       return;
     }
-    
+
     var newIndex = currentIndex - 1;
     var questions = that.data.questions;
     var answers = that.data.answers;
-    
+
     that.setData({
       currentIndex: newIndex,
       currentQuestion: questions[newIndex],
@@ -529,35 +529,35 @@ loadQuestionsFromServer: function(code) {
     var that = this;
     var currentIndex = that.data.currentIndex;
     var selectedOption = that.data.selectedOption;
-    
+
     // 检查是否已选择
     if (selectedOption < 0) {
       wx.showToast({
-        title: '请选择一个选项',
+        title: '先选一个最接近的情况',
         icon: 'none'
       });
       return;
     }
-    
+
     var questions = that.data.questions;
     var newIndex = currentIndex + 1;
-    
+
     // 检查是否是最后一题
     if (newIndex >= questions.length) {
       // 显示提交确认
       that.showSubmitConfirm();
       return;
     }
-    
+
     var answers = that.data.answers;
-    
+
     that.setData({
       currentIndex: newIndex,
       currentQuestion: questions[newIndex],
       selectedOption: answers[newIndex].answer,
       progress: Math.round((newIndex / questions.length) * 100)
     });
-    
+
     // 自动保存进度
     that.saveProgress();
   },
@@ -567,22 +567,22 @@ loadQuestionsFromServer: function(code) {
     var that = this;
     var answers = that.data.answers;
     var unanswered = 0;
-    
+
     for (var i = 0; i < answers.length; i++) {
       if (answers[i].answer < 0) {
         unanswered++;
       }
     }
-    
-    var content = unanswered > 0 
-      ? '还有' + unanswered + '题未作答，确定要提交吗？'
-      : '确定要提交结果吗？';
-    
+
+    var content = unanswered > 0
+      ? '还有' + unanswered + '题没选，先补完结果会更准。'
+      : '都选好了，现在看结果吗？';
+
     wx.showModal({
-      title: '提交确认',
+      title: '看结果前确认一下',
       content: content,
-      confirmText: '提交',
-      cancelText: '继续答题',
+      confirmText: '看结果',
+      cancelText: '再检查',
       success: function(res) {
         if (res.confirm) {
           that.submitAssessment();
@@ -602,7 +602,7 @@ loadQuestionsFromServer: function(code) {
       elapsedTime: that.data.elapsedTime,
       savedAt: Date.now()
     };
-    
+
     wx.setStorageSync('assessmentProgress', progress);
   },
 
@@ -614,23 +614,23 @@ loadQuestionsFromServer: function(code) {
     }
     that._submittingAssessment = true;
 
-    app.requireLoginForAction('请先登录后再提交').then(function(canSubmit) {
+    app.requireLoginForAction('先登录，结果才能保存').then(function(canSubmit) {
       if (!canSubmit) {
         that._submittingAssessment = false;
         return;
       }
-    
+
     wx.showLoading({
-      title: '提交中...',
+      title: '正在整理结果...',
       mask: true
     });
-    
+
     var submitData = {
       child_id: that.data.currentChild ? that.data.currentChild.id : null,
       age_group: that.getAssessmentAgeGroup(),
       answers: that.buildSubmitAnswers()
     };
-    
+
     // 尝试提交到服务器
     app.request({
       url: '/assessments/' + normalizeAssessmentCode(that.data.assessmentCode) + '/submit',
@@ -648,7 +648,7 @@ loadQuestionsFromServer: function(code) {
       }
       wx.hideLoading();
       that._submittingAssessment = false;
-      
+
       app.trackKbEvent({
         event_type: 'output_submit',
         task_id: 'assessment_' + that.data.assessmentCode,
@@ -658,28 +658,28 @@ loadQuestionsFromServer: function(code) {
 
       // 清除保存的进度
       wx.removeStorageSync('assessmentProgress');
-      
+
       // 保存结果到本地
       var serverResult = that.normalizeServerResult(res);
       that.saveResultLocally(serverResult);
-      
+
       // 跳转到结果页面
       wx.redirectTo({
         url: '/pages/assessment/result/result?recordId=' + serverResult.recordId,
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '结果页没打开，请再试一次', icon: 'none' });
         }
       });
     }).catch(function(err) {
       wx.hideLoading();
       that._submittingAssessment = false;
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('结果提交失败，请检查接口');
+        app.showApiError('结果没整理出来，请再试一次');
         return;
       }
       // 离线模式：本地计算结果
       var localResult = that.calculateLocalResult();
-      
+
       app.trackKbEvent({
         event_type: 'output_submit',
         task_id: 'assessment_' + that.data.assessmentCode,
@@ -689,15 +689,15 @@ loadQuestionsFromServer: function(code) {
 
       // 保存结果到本地
       that.saveResultLocally(localResult);
-      
+
       // 清除保存的进度
       wx.removeStorageSync('assessmentProgress');
-      
+
       // 跳转到结果页面
       wx.redirectTo({
         url: '/pages/assessment/result/result?recordId=' + localResult.recordId + '&local=1',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '结果页没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -756,14 +756,14 @@ loadQuestionsFromServer: function(code) {
     var answers = that.data.answers;
     var totalScore = 0;
     var maxScore = answers.length * 3;
-    
+
     for (var i = 0; i < answers.length; i++) {
       totalScore += answers[i].answer; // 0-3分
     }
-    
+
     var percentage = Math.round((totalScore / maxScore) * 100);
     var recordId = 'local_' + Date.now();
-    
+
     return {
       recordId: recordId,
       assessmentCode: assessmentCode,
@@ -844,12 +844,12 @@ loadQuestionsFromServer: function(code) {
   saveResultLocally: function(result) {
     var records = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
     records.unshift(result);
-    
+
     // 只保留最近50条记录
     if (records.length > 50) {
       records = records.slice(0, 50);
     }
-    
+
     wx.setStorageSync('assessmentRecords', records);
     wx.setStorageSync('assessmentHistory', records);
   },
@@ -857,12 +857,12 @@ loadQuestionsFromServer: function(code) {
   // 中途退出
   exitAssessment: function() {
     var that = this;
-    
+
     wx.showModal({
-      title: '退出作答',
-      content: '确定要退出吗？当前进度将会保存。',
+      title: '先退出吗？',
+      content: '现在退出也可以，已答的内容会先帮你留着。',
       confirmText: '退出',
-      cancelText: '继续答题',
+      cancelText: '继续观察',
       success: function(res) {
         if (res.confirm) {
           that.saveProgress();
@@ -884,7 +884,7 @@ loadQuestionsFromServer: function(code) {
     var index = e.currentTarget.dataset.index;
     var questions = that.data.questions;
     var answers = that.data.answers;
-    
+
     that.setData({
       currentIndex: index,
       currentQuestion: questions[index],

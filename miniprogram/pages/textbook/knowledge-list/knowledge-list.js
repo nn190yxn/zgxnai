@@ -25,7 +25,7 @@ Page({
 
   handleInvalidEntry: function(message) {
     wx.showToast({
-      title: message || '页面参数缺失',
+      title: message || '练习入口没找到',
       icon: 'none'
     });
     setTimeout(function() {
@@ -47,7 +47,7 @@ Page({
       that.handleInvalidEntry('缺少学科参数');
       return;
     }
-    
+
     // 获取页面参数
     that.setData({
       subjectCode: options.subjectCode
@@ -70,7 +70,7 @@ Page({
 
     // 设置页面标题
     wx.setNavigationBarTitle({
-      title: that.data.subjectName || '知识点列表'
+      title: that.data.subjectName || '练习列表'
     });
 
     // 加载章节数据
@@ -86,7 +86,7 @@ Page({
       }
       return;
     }
-    
+
     that.setData({
       loading: true
     });
@@ -118,7 +118,7 @@ Page({
       }
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('章节列表加载失败');
+        app.showApiError('练习列表没加载出来，请再试一次');
         that.setData({
           chapterList: []
         });
@@ -141,7 +141,7 @@ Page({
   // 获取模拟章节数据（支持五大主题）
   getMockChapterList: function() {
     var subjectCode = this.data.subjectCode;
-    
+
     // 五大主题模拟数据
     var topicMockData = {
       'logical_thinking': [
@@ -248,11 +248,11 @@ Page({
         }
       ]
     };
-    
+
     if (topicMockData[subjectCode]) {
       return topicMockData[subjectCode];
     }
-    
+
     // 兼容旧版学科数据
     if (subjectCode === 'chinese') {
       return [
@@ -351,9 +351,9 @@ Page({
           name: '第一章 基础知识',
           progress: 40,
           points: [
-            { id: 101, name: '知识点1', status: 'mastered', difficulty: 1 },
-            { id: 102, name: '知识点2', status: 'learning', difficulty: 2 },
-            { id: 103, name: '知识点3', status: 'pending', difficulty: 1 }
+            { id: 101, name: '练习内容1', status: 'mastered', difficulty: 1 },
+            { id: 102, name: '练习内容2', status: 'learning', difficulty: 2 },
+            { id: 103, name: '练习内容3', status: 'pending', difficulty: 1 }
           ]
         }
       ];
@@ -364,7 +364,7 @@ Page({
   toggleChapter: function(e) {
     var that = this;
     var chapterId = e.currentTarget.dataset.id;
-    
+
     if (that.data.expandedChapterId === chapterId) {
       // 收起当前章节
       that.setData({
@@ -382,7 +382,7 @@ Page({
   onPointTap: function(e) {
     var that = this;
     var point = e.currentTarget.dataset.point;
-    
+
     if (!point) {
       return;
     }
@@ -391,7 +391,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&pointName=' + encodeURIComponent(point.name) + '&childId=' + (that.data.childId || 0),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -400,7 +400,7 @@ Page({
   onQuickTest: function(e) {
     var that = this;
     var point = e.currentTarget.dataset.point;
-    
+
     if (!point) {
       return;
     }
@@ -415,7 +415,7 @@ Page({
   startTest: function() {
     var that = this;
     var point = that.data.currentPoint;
-    
+
     if (!point) {
       return;
     }
@@ -426,7 +426,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + point.id + '&subjectCode=' + that.data.subjectCode + '&mode=test&childId=' + (that.data.childId || 0),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -447,9 +447,9 @@ Page({
   // 获取状态文字
   getStatusText: function(status) {
     var statusMap = {
-      'mastered': '已掌握',
-      'learning': '学习中',
-      'pending': '待学习'
+      'mastered': '会了',
+      'learning': '正在练',
+      'pending': '待练'
     };
     return statusMap[status] || '未知';
   },

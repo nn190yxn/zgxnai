@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "AI智能问答",
+  "navigationBarTitleText": "小牛问答",
   "navigationBarBackgroundColor": "#FF6B35",
   "usingComponents": {
     "tip-card": "/components/tip-card/tip-card"

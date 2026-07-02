@@ -19,9 +19,9 @@
 
   <!-- 记录列表 -->
   <view class="record-list" wx:if="{{records.length > 0}}">
-    <view 
-      class="record-item" 
-      wx:for="{{records}}" 
+    <view
+      class="record-item"
+      wx:for="{{records}}"
       wx:key="recordId"
       bindtap="viewRecord"
       data-id="{{item.recordId}}"
@@ -44,7 +44,7 @@
       <view class="record-right">
         <text class="record-arrow">›</text>
       </view>
-      
+
       <!-- 删除按钮 -->
       <view class="delete-btn" catchtap="deleteRecord" data-id="{{item.recordId}}">
         <text class="delete-icon">×</text>
@@ -55,9 +55,9 @@
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
     <text class="empty-icon">📋</text>
-    <text class="empty-text">暂无记录</text>
-    <text class="empty-hint">完成一次观察后，记录会显示在这里</text>
-    <navigator url="/pages/assessment/assessment" class="empty-btn">去观察</navigator>
+    <text class="empty-text">还没有观察记录</text>
+    <text class="empty-hint">做完一次成长观察，这里会帮你留好记录</text>
+    <navigator url="/pages/assessment/assessment" class="empty-btn">开始一次观察</navigator>
   </view>
 
   <!-- 骨架屏加载状态 -->
@@ -76,16 +76,16 @@
 <view class="modal-mask" wx:if="{{showFilterModal}}" bindtap="hideFilter">
   <view class="filter-modal" catchtap="preventBubble">
     <view class="modal-header">
-      <text class="modal-title">筛选记录</text>
+      <text class="modal-title">找一找记录</text>
       <view class="modal-close" bindtap="hideFilter">×</view>
     </view>
-    
+
     <view class="filter-section">
       <text class="filter-label">类型</text>
       <view class="filter-options">
-        <view 
-          class="filter-option {{filterType === item.code ? 'active' : ''}}" 
-          wx:for="{{assessmentTypes}}" 
+        <view
+          class="filter-option {{filterType === item.code ? 'active' : ''}}"
+          wx:for="{{assessmentTypes}}"
           wx:key="code"
           bindtap="selectType"
           data-code="{{item.code}}"
@@ -94,20 +94,20 @@
         </view>
       </view>
     </view>
-    
+
     <view class="filter-section" wx:if="{{childrenList.length > 1}}">
       <text class="filter-label">孩子</text>
       <view class="filter-options">
-        <view 
-          class="filter-option {{filterChild === 'all' ? 'active' : ''}}" 
+        <view
+          class="filter-option {{filterChild === 'all' ? 'active' : ''}}"
           bindtap="selectChild"
           data-id="all"
         >
           全部孩子
         </view>
-        <view 
-          class="filter-option {{filterChild === item.id ? 'active' : ''}}" 
-          wx:for="{{childrenList}}" 
+        <view
+          class="filter-option {{filterChild === item.id ? 'active' : ''}}"
+          wx:for="{{childrenList}}"
           wx:key="id"
           bindtap="selectChild"
           data-id="{{item.id}}"
@@ -116,7 +116,7 @@
         </view>
       </view>
     </view>
-    
+
     <view class="filter-footer">
       <view class="reset-btn" bindtap="resetFilter">重置</view>
       <view class="confirm-btn" bindtap="hideFilter">确定</view>
@@ -128,10 +128,10 @@
 <view class="modal-mask" wx:if="{{showTrend}}" bindtap="hideTrend">
   <view class="trend-modal" catchtap="preventBubble">
     <view class="modal-header">
-      <text class="modal-title">成长趋势</text>
+      <text class="modal-title">最近变化</text>
       <view class="modal-close" bindtap="hideTrend">×</view>
     </view>
-    
+
     <view class="trend-chart">
       <view class="chart-bars">
         <view class="chart-bar-item" wx:for="{{trendData}}" wx:key="recordId">
@@ -143,9 +143,9 @@
         </view>
       </view>
     </view>
-    
+
     <view class="trend-legend">
-      <text class="legend-text">分数变化趋势（最近{{trendData.length}}次记录）</text>
+      <text class="legend-text">最近 {{trendData.length}} 次观察的变化</text>
     </view>
   </view>
 </view>

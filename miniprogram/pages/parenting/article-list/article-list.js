@@ -253,7 +253,7 @@ Page({
         return;
       }
       wx.showToast({
-        title: currentPage > 1 ? '文章加载失败，请重试' : '文章加载失败',
+        title: currentPage > 1 ? '没加载出来，请再试一次' : '文章没加载出来',
         icon: 'none'
       });
     }).finally(function() {
@@ -366,7 +366,7 @@ Page({
     wx.navigateTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -398,12 +398,12 @@ Page({
         articleList: articleList
       });
       wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
+        title: isFavorite ? '已取消收藏' : '已收藏',
         icon: 'success'
       });
     }).catch(function() {
       wx.showToast({
-        title: '操作失败',
+        title: '没处理成功，请再试一次',
         icon: 'none'
       });
     });

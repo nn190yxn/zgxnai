@@ -10,7 +10,7 @@ Page({
         code: 'logical_thinking',
         icon: '🧠',
         name: '逻辑思维',
-        desc: '培养推理、分析与问题解决能力',
+        desc: '遇到题不会想时，先练怎么一步步想',
         color: '#2F80ED'
       },
       {
@@ -18,7 +18,7 @@ Page({
         code: 'reading_comprehension',
         icon: '📖',
         name: '阅读理解',
-        desc: '提升阅读速度与理解深度',
+        desc: '读完说不清、答不准时看这里',
         color: '#E65100'
       },
       {
@@ -26,7 +26,7 @@ Page({
         code: 'expression_communication',
         icon: '💬',
         name: '表达沟通',
-        desc: '训练口头表达与社交沟通能力',
+        desc: '说不清、讲不完整时先练这一块',
         color: '#FF6B35'
       },
       {
@@ -34,7 +34,7 @@ Page({
         code: 'learning_metacognition',
         icon: '🎯',
         name: '学习元认知',
-        desc: '培养学习策略与自我监控能力',
+        desc: '写作业拖、容易乱时练方法',
         color: '#6A1B9A'
       },
       {
@@ -42,7 +42,7 @@ Page({
         code: 'inquiry_creativity',
         icon: '🔬',
         name: '探究创造',
-        desc: '激发好奇心与创造性思维',
+        desc: '爱问为什么，就顺着好奇心练',
         color: '#C62828'
       }
     ],
@@ -91,7 +91,7 @@ Page({
       completed: 0,
       total: 0,
       streakDays: 0,
-      suggestion: '坚持每天10分钟阅读任务',
+      suggestion: '每天先练一个小任务',
       recordingCount: 0
     },
 
@@ -186,11 +186,11 @@ Page({
 
     this.ttsAudioContext.onError(function() {
       that.setData({ isPlayingTts: false });
-      wx.showToast({ title: '音频播放失败', icon: 'none' });
+      wx.showToast({ title: '音频没播出来，请再试一次', icon: 'none' });
     });
 
     this.recordAudioContext.onError(function() {
-      wx.showToast({ title: '录音回放失败', icon: 'none' });
+      wx.showToast({ title: '录音没播出来，请再试一次', icon: 'none' });
     });
   },
 
@@ -506,7 +506,7 @@ Page({
   playTtsSample: function(e) {
     var url = e.currentTarget.dataset.url || this.data.ttsSampleUrl;
     if (!url) {
-      wx.showToast({ title: '当前任务暂无朗读音频', icon: 'none' });
+      wx.showToast({ title: '这次练习还没有朗读音频', icon: 'none' });
       return;
     }
     this.ensureAudioManagers();
@@ -519,7 +519,7 @@ Page({
       this.ttsAudioContext.play();
       this.setData({ isPlayingTts: true });
     } catch (err) {
-      wx.showToast({ title: '播放失败', icon: 'none' });
+      wx.showToast({ title: '音频没播出来，请再试一次', icon: 'none' });
     }
   },
 
@@ -556,7 +556,7 @@ Page({
   playRecording: function() {
     var path = this.data.recordFilePath;
     if (!path) {
-      wx.showToast({ title: '暂无录音', icon: 'none' });
+      wx.showToast({ title: '还没有录音', icon: 'none' });
       return;
     }
     this.ensureAudioManagers();
@@ -568,7 +568,7 @@ Page({
       this.recordAudioContext.src = path;
       this.recordAudioContext.play();
     } catch (err) {
-      wx.showToast({ title: '回放失败', icon: 'none' });
+      wx.showToast({ title: '录音没播出来，请再试一次', icon: 'none' });
     }
   },
 
@@ -757,7 +757,7 @@ Page({
       }
       that._progressOverviewRetried = false;
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('成长进度加载失败');
+        app.showApiError('成长进度没加载出来，请再试一次');
         that.setData({
           progressOverview: {
             totalPoints: 0,
@@ -858,7 +858,7 @@ Page({
       }
       that._todayTasksRetried = false;
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('今日任务加载失败');
+        app.showApiError('今天的小练习没加载出来，请再试一次');
         that.setData({
           todayTasks: []
         });
@@ -951,7 +951,7 @@ Page({
 
     if (!subject) {
       wx.showToast({
-        title: '学科不存在',
+        title: '这个练习入口没找到',
         icon: 'none'
       });
       return;
@@ -960,15 +960,15 @@ Page({
     // 检查是否有当前孩子
     if (!that.data.currentChild) {
       wx.showModal({
-        title: '提示',
-        content: '请先添加孩子档案',
+        title: '先补孩子档案',
+        content: '补好年龄和基本情况，练习内容会更贴合孩子。',
         confirmText: '去添加',
         success: function(res) {
           if (res.confirm) {
             wx.navigateTo({
               url: '/pages/profile/child-edit/child-edit',
               fail: function() {
-                wx.showToast({ title: '页面跳转失败', icon: 'none' });
+                wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
               }
             });
           }
@@ -981,7 +981,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-list/knowledge-list?subjectCode=' + code + '&subjectName=' + encodeURIComponent(subject.name) + '&grade=' + that.data.currentGrade + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1009,7 +1009,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(detailId) + '&subjectCode=' + encodeURIComponent(subjectCode) + '&pointName=' + encodeURIComponent(task.title || '') + '&childId=' + (that.data.currentChild ? that.data.currentChild.id : 0),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1032,7 +1032,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-detail/knowledge-detail?pointId=' + encodeURIComponent(taskId) + '&subjectCode=' + encodeURIComponent(subjectCode) + '&pointName=' + encodeURIComponent(taskTitle) + '&childId=' + (this.data.currentChild ? this.data.currentChild.id : 0),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1075,8 +1075,8 @@ Page({
     // 预埋分享卡草稿数据（第4阶段用于生成卡片）
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
-      title: e.currentTarget.dataset.title || '每日训练',
-      summary: '我完成了今天的10分钟训练，欢迎一起坚持！',
+      title: e.currentTarget.dataset.title || '每日练习',
+      summary: '我完成了今天的10分钟练习，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,
@@ -1088,7 +1088,7 @@ Page({
       createdAt: Date.now(),
       payload: {
         taskId: taskId,
-        taskTitle: e.currentTarget.dataset.title || '每日训练'
+        taskTitle: e.currentTarget.dataset.title || '每日练习'
       }
     });
 
@@ -1121,10 +1121,10 @@ Page({
 
   shareWeeklyReport: function() {
     var report = this.data.readingWeeklyReport || {};
-    var text = '本周每日训练 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
+    var text = '本周每日练习 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
     wx.setStorageSync('readingShareDraft', {
       type: 'weekly_report',
-      title: '本周训练成果卡',
+      title: '本周练习成果卡',
       summary: text,
       metrics: {
         completed: report.completed || 0,
@@ -1140,11 +1140,11 @@ Page({
   },
 
   shareReadingTask: function(e) {
-    var title = e.currentTarget.dataset.title || '每日训练';
+    var title = e.currentTarget.dataset.title || '每日练习';
     wx.setStorageSync('readingShareDraft', {
       type: 'task_checkin',
       title: title,
-      summary: '我正在坚持每日训练，欢迎一起坚持！',
+      summary: '我正在坚持每日练习，欢迎一起坚持！',
       metrics: {
         completed: this.data.readingWeeklyReport.completed || 0,
         total: this.data.readingWeeklyReport.total || 0,
@@ -1193,7 +1193,7 @@ Page({
     wx.navigateTo({
       url: '/pages/share/preview/preview',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -1205,7 +1205,7 @@ Page({
     wx.navigateTo({
       url: '/pages/textbook/knowledge-list/knowledge-list?subjectCode=' + (firstSubject.code || 'logical_thinking') + '&subjectName=' + encodeURIComponent(firstSubject.name || '逻辑思维') + '&grade=' + this.data.currentGrade + '&childId=' + (currentChild ? currentChild.id : ''),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

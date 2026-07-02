@@ -17,7 +17,7 @@
   </view>
 
   <block wx:elif="{{recipe}}">
-    <view class="offline-tip" wx:if="{{offlineFallback}}">当前为离线示例内容，可能与真实数据不一致</view>
+    <view class="offline-tip" wx:if="{{offlineFallback}}">当前展示的是示例食谱，实际推荐以联网后为准</view>
     <!-- 食谱图片 -->
     <view class="recipe-header">
       <image
@@ -57,7 +57,7 @@
         <text class="summary-pill">{{recipe.ageRange || '儿童适用'}}</text>
         <text class="summary-pill">{{recipe.calories || '200卡'}}</text>
       </view>
-      
+
       <!-- 营养标签 -->
       <view class="nutrition-tags" wx:if="{{recipe.tags && recipe.tags.length > 0}}">
         <text class="tag" wx:for="{{recipe.tags}}" wx:key="*this">{{item}}</text>
@@ -67,12 +67,12 @@
       <view class="basic-info">
         <view class="info-item">
           <text class="info-icon">⏱️</text>
-          <text class="info-label">烹饪时间</text>
+        <text class="info-label">大约用时</text>
           <text class="info-value">{{recipe.cookTime || '30分钟'}}</text>
         </view>
         <view class="info-item">
           <text class="info-icon">🔥</text>
-          <text class="info-label">热量</text>
+        <text class="info-label">能量参考</text>
           <text class="info-value">{{recipe.calories || '200卡'}}</text>
         </view>
         <view class="info-item">
@@ -91,15 +91,15 @@
     <!-- 营养建议 -->
     <view class="section" wx:if="{{recipe.nutrition}}">
       <view class="section-header">
-        <text class="section-title">营养建议</text>
+        <text class="section-title">这道菜能补什么</text>
       </view>
-      
+
       <!-- 营养亮点 -->
       <view class="nutrition-highlight" wx:if="{{recipe.nutrition.highlight}}">
         <text class="highlight-icon">💡</text>
         <text class="highlight-text">{{recipe.nutrition.highlight}}</text>
       </view>
-      
+
       <!-- 主要营养成分 -->
       <view class="nutrition-card">
         <view class="nutrition-item" wx:if="{{recipe.nutrition.protein}}">
@@ -131,7 +131,7 @@
           <text class="nutrition-value">{{recipe.nutrition.fiber}}</text>
         </view>
       </view>
-      
+
       <!-- 维生素和矿物质 -->
       <view class="nutrition-micronutrients" wx:if="{{recipe.nutrition.calcium || recipe.nutrition.iron || recipe.nutrition.zinc || recipe.nutrition.vitaminC || recipe.nutrition.vitaminA}}">
         <view class="micronutrient-title">维生素与矿物质</view>
@@ -158,10 +158,10 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 营养搭配建议 -->
       <view class="nutrition-combination" wx:if="{{recipe.nutrientCombination}}">
-        <view class="combination-title">营养搭配建议</view>
+        <view class="combination-title">怎么搭配更合适</view>
         <text class="combination-text">{{recipe.nutrientCombination}}</text>
       </view>
 
@@ -176,18 +176,18 @@
       </view>
 
       <view class="nutrition-combination" wx:if="{{recipe.ageFocus}}">
-        <view class="combination-title">当前阶段重点</view>
+        <view class="combination-title">这个阶段先顾好什么</view>
         <text class="combination-text">{{recipe.ageFocus}}</text>
       </view>
 
       <!-- 每日营养占比 -->
       <view class="daily-nutrition" wx:if="{{recipe.dailyNutritionPercent}}">
-        <view class="daily-title">每日营养占比</view>
+        <view class="daily-title">一天里大概占多少</view>
         <text class="daily-text">{{recipe.dailyNutritionPercent}}</text>
       </view>
 
       <view class="nutrition-tips" wx:if="{{recipe.tips}}">
-        <view class="combination-title">喂养建议</view>
+        <view class="combination-title">给孩子吃的时候注意</view>
         <text class="combination-text">{{recipe.tips}}</text>
       </view>
 
@@ -202,7 +202,7 @@
       </view>
 
       <view class="nutrition-combination" wx:if="{{recipe.pairingAdvice && recipe.pairingAdvice.length > 0}}">
-        <view class="combination-title">同餐搭配建议</view>
+        <view class="combination-title">这一餐可以配什么</view>
         <view class="advice-points">
           <view class="advice-point" wx:for="{{recipe.pairingAdvice}}" wx:key="*this">
             <text class="advice-point-index">搭</text>
@@ -230,8 +230,8 @@
     <!-- 食材清单 -->
     <view class="section" wx:if="{{recipe.ingredients && recipe.ingredients.length > 0}}">
       <view class="section-header">
-        <text class="section-title">食材清单</text>
-        <text class="section-action" bindtap="copyIngredients">复制</text>
+        <text class="section-title">要准备什么</text>
+        <text class="section-action" bindtap="copyIngredients">复制清单</text>
       </view>
       <view class="ingredient-list">
         <view class="ingredient-item" wx:for="{{recipe.ingredients}}" wx:key="name">
@@ -260,6 +260,6 @@
   <!-- 空状态 -->
   <view class="empty-wrap" wx:else>
     <text class="empty-icon">🍽️</text>
-    <text class="empty-text">食谱不存在</text>
+    <text class="empty-text">这道食谱暂时看不了</text>
   </view>
 </view>

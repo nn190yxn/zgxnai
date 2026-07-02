@@ -2,14 +2,14 @@
 <view class="page">
   <!-- 页面头部 -->
   <view class="page-header">
-    <text class="page-title">每日训练</text>
-    <text class="page-subtitle">每天10分钟，陪孩子练阅读、专注和表达</text>
+    <text class="page-title">每日练习</text>
+    <text class="page-subtitle">每天先练一个小任务，轻一点也能坚持。</text>
   </view>
 
   <!-- 能力成长任务 -->
   <view class="reading-task-section" wx:if="{{readingTasks.length > 0}}">
     <view class="section-header">
-      <text class="section-title">今天可以练这些</text>
+      <text class="section-title">今天先练一个</text>
       <text class="task-count">{{readingTasks.length}}项</text>
     </view>
     <view class="reading-task-list">
@@ -64,7 +64,7 @@
   <view class="recording-section">
     <view class="section-header">
       <text class="section-title">口头复述录音</text>
-      <text class="task-count">用于表达训练</text>
+      <text class="task-count">练表达用</text>
     </view>
     <view class="recording-card">
       <text class="recording-tip">读完后让孩子用自己的话说一遍，录下来听听看。</text>
@@ -80,7 +80,7 @@
   <!-- 成长周报（最小版） -->
   <view class="reading-report-section">
     <view class="section-header">
-      <text class="section-title">本周训练记录</text>
+      <text class="section-title">本周练习记录</text>
       <text class="section-more" bindtap="shareWeeklyReport">分享成果卡</text>
     </view>
     <view class="reading-report-card">
@@ -122,7 +122,7 @@
     <view class="progress-cards">
       <view class="progress-card mastered">
         <text class="progress-num">{{progressOverview.masteredPoints}}</text>
-        <text class="progress-label">已掌握</text>
+        <text class="progress-label">会了</text>
       </view>
       <view class="progress-card learning">
         <text class="progress-num">{{progressOverview.learningPoints}}</text>
@@ -130,14 +130,14 @@
       </view>
       <view class="progress-card total">
         <text class="progress-num">{{progressOverview.totalPoints}}</text>
-        <text class="progress-label">能力点总数</text>
+        <text class="progress-label">练习点总数</text>
       </view>
     </view>
     <view class="progress-bar-wrap">
       <view class="progress-bar">
         <view class="progress-fill" style="width: {{progressOverview.masteryRate}}%;"></view>
       </view>
-      <text class="progress-rate">掌握率 {{progressOverview.masteryRate}}%</text>
+      <text class="progress-rate">会了 {{progressOverview.masteryRate}}%</text>
     </view>
   </view>
 

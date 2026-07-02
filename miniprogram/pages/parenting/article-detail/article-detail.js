@@ -36,7 +36,7 @@ Page({
         id: 'local_parenting_001',
         title: '4-5岁孩子情绪表达的4个引导技巧',
         summary: '通过命名情绪、接纳感受和行为边界，帮助孩子稳定表达情绪。',
-        content: '## 核心结论\n\n先接住情绪，再引导行为，孩子更容易从哭闹转回可表达状态。\n\n## 家庭操作步骤\n\n1. 先说出你看到的情绪，不急着追问原因。\n2. 用一句短话替孩子命名感受，例如“你现在有点生气”。\n3. 再补清楚边界，例如“可以生气，手不能打人”。\n4. 最后给一个可执行选择，例如“你想先抱一下，还是先喝口水”。\n\n## 家长观察重点\n\n- 孩子能否在提醒下说出一个情绪词\n- 情绪最强时能否接受你靠近\n- 说出感受后升级速度有没有变慢\n\n【家长提示】先共情，再立边界，短句最有用。',
+        content: '## 核心结论\n\n先接住情绪，再引导行为，孩子更容易从哭闹转回可表达状态。\n\n## 在家这样做\n\n1. 先说出你看到的情绪，不急着追问原因。\n2. 用一句短话替孩子命名感受，例如“你现在有点生气”。\n3. 再补清楚边界，例如“可以生气，手不能打人”。\n4. 最后给一个可执行选择，例如“你想先抱一下，还是先喝口水”。\n\n## 家长观察重点\n\n- 孩子能否在提醒下说出一个情绪词\n- 情绪最强时能否接受你靠近\n- 说出感受后升级速度有没有变慢\n\n【家长提示】先共情，再立边界，短句最有用。',
         keyPoints: ['先共情后引导', '允许表达但设边界', '重复练习情绪词汇'],
         category: '情绪管理',
         age_group: '4-5岁',
@@ -46,7 +46,7 @@ Page({
         id: 'local_parenting_002',
         title: '建立睡前流程：让孩子更快入睡',
         summary: '固定节奏和低刺激环境可以显著降低入睡阻力。',
-        content: '## 核心结论\n\n睡前流程越固定，孩子越容易从兴奋切回安静。\n\n## 家庭操作步骤\n\n1. 固定洗漱、阅读、关灯三个顺序。\n2. 尽量每天在相近时间开始，不临时大幅推迟。\n3. 睡前半小时把屏幕、追逐和大声提醒一起降下来。\n4. 入睡前只保留一个收尾动作，例如拥抱、晚安句或轻拍。\n\n## 家长观察重点\n\n- 哪一步最容易拖拉\n- 流程固定后入睡时间有没有缩短\n- 睡前情绪是不是比以前更平稳\n\n【家长提示】睡前先求节奏稳定，再求一步做到完美。',
+        content: '## 核心结论\n\n睡前流程越固定，孩子越容易从兴奋切回安静。\n\n## 在家这样做\n\n1. 固定洗漱、阅读、关灯三个顺序。\n2. 尽量每天在相近时间开始，不临时大幅推迟。\n3. 睡前半小时把屏幕、追逐和大声提醒一起降下来。\n4. 入睡前只保留一个收尾动作，例如拥抱、晚安句或轻拍。\n\n## 家长观察重点\n\n- 哪一步最容易拖拉\n- 流程固定后入睡时间有没有缩短\n- 睡前情绪是不是比以前更平稳\n\n【家长提示】睡前先求节奏稳定，再求一步做到完美。',
         keyPoints: ['流程固定', '减少睡前刺激', '保持卧室光线柔和'],
         category: '行为习惯',
         age_group: '5-6岁',
@@ -56,7 +56,7 @@ Page({
         id: 'local_parenting_003',
         title: '同伴冲突时，家长如何做“翻译官”',
         summary: '把争抢背后的需求说出来，帮助孩子学习社交协商。',
-        content: '## 核心结论\n\n冲突刚发生时先翻译需求，孩子更容易从争抢回到协商。\n\n## 家庭操作步骤\n\n1. 先把动作停下来，减少推搡和抢夺继续升级。\n2. 分别说出两个孩子现在想要什么。\n3. 用一句短话示范表达需求，例如“我还想再玩两分钟”。\n4. 再给一个可执行方案，例如轮流、等待或交换。\n\n## 家长观察重点\n\n- 冲突是否总在同类玩具或固定时段发生\n- 孩子能不能从拉扯转成开口说需求\n- 给出方案后能否接受短暂等待\n\n【家长提示】先翻译需求，再谈规则，协商会顺很多。',
+        content: '## 核心结论\n\n冲突刚发生时先翻译需求，孩子更容易从争抢回到协商。\n\n## 在家这样做\n\n1. 先把动作停下来，减少推搡和抢夺继续升级。\n2. 分别说出两个孩子现在想要什么。\n3. 用一句短话示范表达需求，例如“我还想再玩两分钟”。\n4. 再给一个可执行方案，例如轮流、等待或交换。\n\n## 家长观察重点\n\n- 冲突是否总在同类玩具或固定时段发生\n- 孩子能不能从拉扯转成开口说需求\n- 给出方案后能否接受短暂等待\n\n【家长提示】先翻译需求，再谈规则，协商会顺很多。',
         keyPoints: ['先分开情绪', '表达需求', '给出协商方案'],
         category: '社交能力',
         age_group: '4-5岁',
@@ -66,7 +66,7 @@ Page({
         id: 'local_parenting_004',
         title: '早餐营养搭配：让早晨吃进去，也吃得稳',
         summary: '主食、蛋白和蔬果搭配得当，更有利于上午精力稳定。',
-        content: '## 核心结论\n\n早餐先稳住主食和蛋白，孩子上午更容易保持精力和平稳状态。\n\n## 家庭操作步骤\n\n1. 先保证孩子早晨愿意吃进去的一种主食。\n2. 每天至少配一种蛋白来源，例如鸡蛋、奶、豆制品或肉类。\n3. 再按接受度补一小份水果或蔬菜。\n4. 高糖饮料和纯甜口食物尽量少占早餐主位。\n\n## 家长观察重点\n\n- 哪类早餐最容易真正吃进去\n- 加上蛋白后上午饿得是否更慢\n- 甜饮和零食有没有挤掉正餐位置\n\n【家长提示】早餐先求稳，再慢慢加花样。',
+        content: '## 核心结论\n\n早餐先稳住主食和蛋白，孩子上午更容易保持精力和平稳状态。\n\n## 在家这样做\n\n1. 先保证孩子早晨愿意吃进去的一种主食。\n2. 每天至少配一种蛋白来源，例如鸡蛋、奶、豆制品或肉类。\n3. 再按接受度补一小份水果或蔬菜。\n4. 高糖饮料和纯甜口食物尽量少占早餐主位。\n\n## 家长观察重点\n\n- 哪类早餐最容易真正吃进去\n- 加上蛋白后上午饿得是否更慢\n- 甜饮和零食有没有挤掉正餐位置\n\n【家长提示】早餐先求稳，再慢慢加花样。',
         keyPoints: ['先保证吃进去', '每餐补一种蛋白', '高糖饮料少介入'],
         category: '营养健康',
         age_group: '5-6岁',
@@ -76,7 +76,7 @@ Page({
         id: 'local_parenting_005',
         title: '专注力环境搭建：先减干扰，再谈坚持',
         summary: '把材料和任务长度一起收窄，孩子更容易进入专注状态。',
-        content: '## 核心结论\n\n先把环境和任务收窄，孩子更容易真正进入专注。\n\n## 家庭操作步骤\n\n1. 桌面只保留当前这项任务要用到的材料。\n2. 任务时间先短后长，例如先从5分钟开始。\n3. 完成一小段就立刻给具体反馈，例如“你刚才一直在看这页内容”。\n4. 每次只改一个变量，例如先减噪音，再调整任务长度。\n\n## 家长观察重点\n\n- 哪种干扰最容易让孩子分心\n- 多久是当前最合适的任务时长\n- 具体反馈后孩子愿不愿意继续下一轮\n\n【家长提示】专注力先靠环境托住，再慢慢练持续时间。',
+        content: '## 核心结论\n\n先把环境和任务收窄，孩子更容易真正进入专注。\n\n## 在家这样做\n\n1. 桌面只保留当前这项任务要用到的材料。\n2. 任务时间先短后长，例如先从5分钟开始。\n3. 完成一小段就立刻给具体反馈，例如“你刚才一直在看这页内容”。\n4. 每次只改一个变量，例如先减噪音，再调整任务长度。\n\n## 家长观察重点\n\n- 哪种干扰最容易让孩子分心\n- 多久是当前最合适的任务时长\n- 具体反馈后孩子愿不愿意继续下一轮\n\n【家长提示】专注力先靠环境托住，再慢慢练持续时间。',
         keyPoints: ['单任务环境', '任务拆短', '完成后即时反馈'],
         category: '认知发展',
         age_group: '5-6岁',
@@ -276,7 +276,7 @@ Page({
         relatedArticles: []
       });
       wx.showToast({
-        title: '文章参数缺失',
+        title: '这篇锦囊没找到',
         icon: 'none'
       });
       if (getCurrentPages().length > 1) {
@@ -355,7 +355,7 @@ Page({
       }));
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('文章详情加载失败');
+        app.showApiError('这篇锦囊没加载出来，请再试一次');
         that.setData({
           article: null,
           isFavorite: false,
@@ -389,7 +389,7 @@ Page({
     if (that._relatedArticlesLoading) {
       return;
     }
-    
+
     // 本地文章不请求相关文章
     if (String(that.data.articleId || '').indexOf('local_parenting_') === 0) {
       that.setData({
@@ -405,7 +405,7 @@ Page({
       return;
     }
     that._relatedArticlesLoading = true;
-    
+
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/related',
       method: 'GET'
@@ -464,12 +464,12 @@ Page({
         }
       }));
       wx.showToast({
-        title: isFavorite ? '已取消收藏' : '收藏成功',
+        title: isFavorite ? '已取消收藏' : '已收藏',
         icon: 'success'
       });
     }).catch(function() {
       wx.showToast({
-        title: '操作失败',
+        title: '没处理成功，请再试一次',
         icon: 'none'
       });
     });
@@ -619,7 +619,7 @@ Page({
     wx.redirectTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -644,12 +644,12 @@ Page({
     if (!article || !article.keyPoints || article.keyPoints.length === 0) {
       return;
     }
-    
+
     var text = '【' + article.title + '】关键要点：\n';
     for (var i = 0; i < article.keyPoints.length; i++) {
       text += (i + 1) + '. ' + article.keyPoints[i] + '\n';
     }
-    
+
     wx.setClipboardData({
       data: text,
       success: function() {
@@ -672,7 +672,7 @@ Page({
     wx.switchTab({
       url: '/pages/chat/chat',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -687,7 +687,7 @@ Page({
     wx.navigateTo({
       url: '/pages/growth-record/index',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -714,7 +714,7 @@ Page({
       return;
     }
     that._commentsLoading = true;
-    
+
     app.request({
       url: '/parenting/articles/' + that.data.articleId + '/comments',
       method: 'GET'
@@ -764,7 +764,7 @@ Page({
         });
       }
     }).catch(function() {
-      wx.showToast({ title: '点赞失败', icon: 'none' });
+      wx.showToast({ title: '点赞没成功，请再试一次', icon: 'none' });
     }).finally(function() {
       that._likePending = false;
     });
@@ -783,10 +783,10 @@ Page({
     }
     var content = that.data.commentText;
     if (!content || !content.trim()) {
-      wx.showToast({ title: '请输入评论内容', icon: 'none' });
+      wx.showToast({ title: '先写一点评论内容', icon: 'none' });
       return;
     }
-    
+
     if (that.data.offlineFallback) {
       wx.showToast({ title: '离线示例不可评论', icon: 'none' });
       return;
@@ -804,11 +804,11 @@ Page({
           action: 'comment'
         }
       }));
-      wx.showToast({ title: '评论成功', icon: 'success' });
+      wx.showToast({ title: '评论已发出', icon: 'success' });
       that.setData({ commentText: '' });
       that.loadComments();
     }).catch(function() {
-      wx.showToast({ title: '评论失败', icon: 'none' });
+      wx.showToast({ title: '评论没发出去，请再试一次', icon: 'none' });
     }).finally(function() {
       that._commentPending = false;
     });

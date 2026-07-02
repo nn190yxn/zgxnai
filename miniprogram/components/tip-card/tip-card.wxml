@@ -3,13 +3,13 @@
   <view class="tip-card-title">{{title}}</view>
   <view class="tip-card-text">{{text}}</view>
   <view class="tip-card-why" wx:if="{{rationale}}" bindtap="onToggleWhy">
-    <text class="tip-card-why-label">{{whyExpanded ? '▲ 为什么这样有效？' : '▼ 为什么这样有效？'}}</text>
+    <text class="tip-card-why-label">{{whyExpanded ? '▲ 为什么这样做' : '▼ 为什么这样做'}}</text>
   </view>
   <view class="tip-card-rationale" wx:if="{{whyExpanded && rationale}}">
     <text>{{rationale}}</text>
   </view>
   <view class="tip-card-source" wx:if="{{sourceTitle}}" bindtap="onTapSource">
-    <text>查看全文：{{sourceTitle}}</text>
+    <text>看完整锦囊：{{sourceTitle}}</text>
   </view>
 </view>
 
@@ -18,6 +18,6 @@
   <view class="tip-card-title">{{title}}</view>
   <view class="tip-card-text">{{text}}</view>
   <view class="tip-card-source" wx:if="{{sourceTitle}}" bindtap="onTapSource">
-    <text>阅读全文：{{sourceTitle}}</text>
+    <text>看完整锦囊：{{sourceTitle}}</text>
   </view>
 </view>

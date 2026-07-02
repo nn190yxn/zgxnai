@@ -1,9 +1,9 @@
 <!-- AI聊天页面 -->
 <view class="page page-transition">
   <!-- 聊天区域 -->
-  <scroll-view 
-    class="chat-area {{voiceResultVisible && voiceResultText ? 'chat-area-with-voice-result' : ''}}" 
-    scroll-y 
+  <scroll-view
+    class="chat-area {{voiceResultVisible && voiceResultText ? 'chat-area-with-voice-result' : ''}}"
+    scroll-y
     enable-flex="true"
     style="padding-bottom:{{voiceResultVisible && voiceResultText ? '740rpx' : '420rpx'}}"
     scroll-into-view="{{scrollToView}}"
@@ -12,7 +12,7 @@
   >
     <view class="service-closed" wx:if="{{!featureFlags.aiChatEnabled}}">
       <text class="service-closed-title">小牛问答</text>
-      <text class="service-closed-desc">小牛问答功能升级中。</text>
+      <text class="service-closed-desc">小牛问答正在升级。</text>
       <view class="service-actions">
         <button class="service-action" size="mini" bindtap="goToAssessment">成长观察</button>
         <button class="service-action secondary" size="mini" bindtap="goToParenting">育儿知识</button>
@@ -25,15 +25,15 @@
 
     <!-- AI 介绍（未开始对话时展示） -->
     <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}" style="margin:24rpx 24rpx 32rpx;padding:28rpx 28rpx 32rpx;background:#FFFFFF;border:1rpx solid #E9D7CF;border-radius:24rpx;display:flex;gap:20rpx;box-sizing:border-box;">
-      <view class="ai-intro-avatar" style="width:84rpx;height:84rpx;border-radius:42rpx;background:#FFF3ED;color:#FF6B35;font-size:28rpx;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">AI</view>
+      <view class="ai-intro-avatar" style="width:84rpx;height:84rpx;border-radius:42rpx;background:#FFF3ED;color:#FF6B35;font-size:28rpx;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">小牛</view>
       <view class="ai-intro-content" style="flex:1;min-width:0;padding-right:12rpx;box-sizing:border-box;overflow:hidden;">
         <text class="ai-intro-title" style="display:block;font-size:34rpx;font-weight:700;line-height:1.4;color:#1B2A1B;margin-bottom:12rpx;">小牛问答</text>
-        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">输入问题，小牛为您回答。</text>
+        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">把孩子的情况说出来，小牛帮你拆成能做的几步。</text>
         <view class="ai-intro-hint" style="display:flex;flex-wrap:wrap;gap:12rpx 12rpx;margin-top:20rpx;padding-right:12rpx;box-sizing:border-box;">
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">成长观察与训练问题</text>
+          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">孩子状态怎么看</text>
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">儿童营养与饮食</text>
           <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">亲子沟通与育儿方法</text>
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">能力成长与表达训练</text>
+          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">表达和开口练习</text>
         </view>
       </view>
     </view>
@@ -42,7 +42,7 @@
     <view wx:for="{{messages}}" wx:key="id" id="msg-{{index}}">
       <view class="message {{item.role}} {{item.isError ? 'error' : ''}}">
         <view wx:if="{{item.role === 'user'}}" class="avatar">家</view>
-        <view wx:else class="avatar avatar-image avatar-ai">AI</view>
+        <view wx:else class="avatar avatar-image avatar-ai">牛</view>
         <view class="bubble">
           <text class="ai-label" wx:if="{{item.role !== 'user'}}">小牛回答</text>
           <rich-text wx:if="{{item.markdownNodes && item.markdownNodes.length > 0}}" nodes="{{item.markdownNodes}}"></rich-text>
@@ -156,7 +156,7 @@
             adjust-position="{{true}}"
             hold-keyboard="{{false}}"
             disabled="{{!featureFlags.aiChatEnabled}}"
-            placeholder="{{featureFlags.aiChatEnabled ? '输入你的问题...' : '小牛问答暂未开放'}}"
+            placeholder="{{featureFlags.aiChatEnabled ? '输入你的问题...' : '小牛问答还在准备中'}}"
             auto-height
             maxlength="2000"
             show-confirm-bar="{{false}}"

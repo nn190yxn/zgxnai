@@ -1,6 +1,6 @@
 <view class="page">
   <view wx:if="{{startupSafeMode}}" class="safe-mode">
-    <text class="safe-title">小牛育儿AI助理</text>
+    <text class="safe-title">小牛育儿</text>
     <text class="safe-desc">安全启动模式已开启</text>
     <text class="safe-note">如果这一页能显示，说明项目编译和首页渲染正常，剩余 timeout 来自某个后续原生能力或页面逻辑。</text>
   </view>
@@ -8,7 +8,7 @@
   <block wx:if="{{!startupSafeMode}}">
   <view class="hero">
     <view class="hero-content">
-      <text class="hero-badge">小牛育儿AI助理</text>
+      <text class="hero-badge">小牛育儿</text>
       <text class="hero-title">{{bannerList[0].title}}</text>
       <text class="hero-desc">{{bannerList[0].desc}}</text>
       <view class="hero-actions">
@@ -68,21 +68,21 @@
 
     <view class="module-grid">
       <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card" bindtap="goToAssessment">
-        <text class="module-name">成长观察评估</text>
+        <text class="module-name">成长观察</text>
         <text class="module-desc">看看孩子最近的整体状态</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToAssessment">
-        <text class="module-name">成长观察评估</text>
-        <text class="module-desc">暂未开放</text>
+        <text class="module-name">成长观察</text>
+        <text class="module-desc">还在准备中</text>
       </view>
 
       <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
-        <text class="module-name">每日训练</text>
+        <text class="module-name">每日练习</text>
         <text class="module-desc">今天带娃练什么</text>
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
-        <text class="module-name">每日训练</text>
-        <text class="module-desc">暂未开放</text>
+        <text class="module-name">每日练习</text>
+        <text class="module-desc">还在准备中</text>
       </view>
 
       <view class="module-card" bindtap="goToNutrition">
@@ -96,7 +96,7 @@
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToParenting">
         <text class="module-name">育儿锦囊</text>
-        <text class="module-desc">暂未开放</text>
+        <text class="module-desc">还在准备中</text>
       </view>
 
       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
@@ -105,7 +105,7 @@
       </view>
       <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
         <text class="module-name">小牛育儿问答</text>
-        <text class="module-desc">暂未开放</text>
+        <text class="module-desc">还在准备中</text>
       </view>
 
       <view class="module-card" bindtap="goToGrowthRecord">

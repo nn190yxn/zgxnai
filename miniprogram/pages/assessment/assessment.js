@@ -24,17 +24,17 @@ Page({
       { label: '9-12岁', value: '9-12岁' }
     ],
     selectedAgeGroup: '0-1岁',
-    
+
     // 当前孩子信息
     currentChild: null,
-    
+
     // 弹窗相关
     showIntroModal: false,
     currentAssessment: null,
-    
+
     // 历史记录数量
     historyCount: 0,
-    
+
     // 加载状态
     loading: false,
     loadError: ''
@@ -179,7 +179,7 @@ Page({
   loadHistoryCount: function() {
     var that = this;
     var records = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
-    
+
     // 筛选当前孩子的记录
     var currentChild = that.data.currentChild;
     if (currentChild) {
@@ -187,11 +187,11 @@ Page({
         return r.childId === currentChild.id;
       });
     }
-    
+
     that.setData({
       historyCount: records.length
     });
-    
+
     return Promise.resolve(records.length);
   },
 
@@ -199,12 +199,12 @@ Page({
   checkPendingProgress: function() {
     var that = this;
     var progress = wx.getStorageSync('assessmentProgress');
-    
+
     if (progress && progress.answers && progress.answers.length > 0) {
       var assessment = that.data.assessmentList.find(function(item) {
           return item.code === normalizeAssessmentCode(progress.assessmentCode);
       });
-      
+
       if (assessment) {
         wx.showModal({
           title: '继续答题',
@@ -217,7 +217,7 @@ Page({
               wx.navigateTo({
                 url: '/pages/assessment/do/do?code=' + progress.assessmentCode + '&continue=1',
                 fail: function() {
-                  wx.showToast({ title: '页面跳转失败', icon: 'none' });
+                  wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
                 }
               });
             } else {
@@ -237,15 +237,15 @@ Page({
     var assessment = that.data.assessmentList.find(function(item) {
       return item.code === code;
     });
-    
+
     if (!assessment) {
       wx.showToast({
-        title: '项目不存在',
+        title: '这个观察项没找到',
         icon: 'none'
       });
       return;
     }
-    
+
     // 检查是否有当前孩子
     if (!that.data.currentChild) {
       wx.showModal({
@@ -261,7 +261,7 @@ Page({
               wx.navigateTo({
                 url: '/pages/profile/child-edit/child-edit',
                 fail: function() {
-                  wx.showToast({ title: '页面跳转失败', icon: 'none' });
+                  wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
                 }
               });
             });
@@ -270,7 +270,7 @@ Page({
       });
       return;
     }
-    
+
     // 显示说明弹窗
     that.setData({
       currentAssessment: assessment,
@@ -295,19 +295,19 @@ Page({
   startAssessment: function() {
     var that = this;
     var assessment = that.data.currentAssessment;
-    
+
     if (!assessment) {
       return;
     }
-    
+
     that.closeModal();
-    
+
     // 跳转到答题页面
     var requestAgeGroup = that.getAssessmentRequestAgeGroup(assessment);
     wx.navigateTo({
       url: '/pages/assessment/do/do?code=' + assessment.code + '&ageGroup=' + encodeURIComponent(requestAgeGroup),
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -317,7 +317,7 @@ Page({
     wx.navigateTo({
       url: '/pages/assessment/history/history',
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

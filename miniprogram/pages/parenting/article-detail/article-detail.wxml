@@ -14,10 +14,10 @@
   </view>
 
   <block wx:elif="{{article}}">
-    <view class="offline-tip" wx:if="{{offlineFallback}}">当前为离线示例内容，可能与真实数据不一致</view>
+    <view class="offline-tip" wx:if="{{offlineFallback}}">当前展示的是示例内容，实际推荐以联网后为准</view>
     <!-- 文章头部 -->
     <view class="article-header">
-      
+
       <!-- 标题 -->
       <view class="article-title-wrap">
         <text class="article-title">{{article.title}}</text>
@@ -28,7 +28,7 @@
           <text class="tag tag-evidence" wx:if="{{article.evidenceLevelText}}">{{article.evidenceLevelText}}</text>
         </view>
       </view>
-      
+
       <!-- 作者信息 -->
       <view class="article-meta">
         <view class="author-info">
@@ -88,7 +88,7 @@
       <text class="practice-title">今晚试一个方法</text>
       <text class="practice-desc">选一个方法，今晚试，明天看效果。</text>
       <view class="practice-actions">
-        <view class="practice-btn primary" bindtap="askAiAboutArticle">小牛拆为步骤</view>
+        <view class="practice-btn primary" bindtap="askAiAboutArticle">帮我拆成今晚三步</view>
         <view class="practice-btn secondary" bindtap="recordArticlePractice">记录一次实践</view>
       </view>
     </view>
@@ -113,9 +113,9 @@
         <text class="section-title">📖 相关推荐</text>
       </view>
       <view class="related-list">
-        <view 
-          class="related-item" 
-          wx:for="{{relatedArticles}}" 
+        <view
+          class="related-item"
+          wx:for="{{relatedArticles}}"
           wx:key="id"
           bindtap="onRelatedArticleTap"
           data-id="{{item.id}}"
@@ -154,9 +154,9 @@
 
       <!-- 评论输入框 -->
       <view class="comment-input-section">
-        <input 
-          class="comment-input" 
-          placeholder="写下你的想法..." 
+        <input
+          class="comment-input"
+          placeholder="写下你的想法..."
           value="{{commentText}}"
           bindinput="onCommentInput"
           confirm-type="send"
@@ -198,7 +198,7 @@
   <!-- 空状态 -->
   <view class="empty-wrap" wx:else>
     <text class="empty-icon">📄</text>
-    <text class="empty-text">文章不存在</text>
+    <text class="empty-text">这篇锦囊没找到</text>
   </view>
 
   <view class="reading-annotation {{showArticleAnnotation ? 'annotation-visible' : ''}}" bindtap="dismissArticleAnnotation" wx:if="{{showArticleAnnotation}}">

@@ -151,7 +151,7 @@ Page({
         form.noteText = pendingNote;
         that.setData({ form: form });
       }
-      wx.showToast({ title: '加载失败', icon: 'none' });
+      wx.showToast({ title: '记录没加载出来', icon: 'none' });
     }).finally(function() {
       that.setData({ loading: false });
     });

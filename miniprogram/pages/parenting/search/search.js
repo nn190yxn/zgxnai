@@ -241,7 +241,7 @@ Page({
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      wx.showToast({ title: '搜索失败', icon: 'none' });
+      wx.showToast({ title: '没搜出来，请再试一次', icon: 'none' });
     }).finally(function() {
       if (requestSeq !== that.data.requestSeq) {
         return;
@@ -318,7 +318,7 @@ Page({
     wx.navigateTo({
       url: targetPath,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },

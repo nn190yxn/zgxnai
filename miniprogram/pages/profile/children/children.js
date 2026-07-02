@@ -103,7 +103,7 @@ Page({
     if (today.getDate() < birth.getDate() && months > 0) {
       months--;
     }
-    
+
     if (years < 1) {
       return months + '个月';
     } else if (years < 3) {
@@ -220,7 +220,7 @@ Page({
       wx.navigateTo({
         url: '/pages/profile/child-edit/child-edit',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
       return;
@@ -233,7 +233,7 @@ Page({
       wx.navigateTo({
         url: '/pages/profile/child-edit/child-edit',
         fail: function() {
-          wx.showToast({ title: '页面跳转失败', icon: 'none' });
+          wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
         }
       });
     });
@@ -245,7 +245,7 @@ Page({
     wx.navigateTo({
       url: '/pages/profile/child-edit/child-edit?id=' + childId,
       fail: function() {
-        wx.showToast({ title: '页面跳转失败', icon: 'none' });
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
   },
@@ -266,7 +266,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: '小牛育儿AI助理',
+      title: '小牛育儿',
       path: '/pages/index/index'
     };
   }
