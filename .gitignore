@@ -24,6 +24,9 @@ backups/
 .env
 .env.local
 
+# Local keys
+*.pem
+
 # IDE
 .vscode/
 .idea/
