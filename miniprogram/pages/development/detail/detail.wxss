@@ -1,0 +1,339 @@
+.page {
+  min-height: 100vh;
+  background: #FAF6F3;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  padding: 56rpx 32rpx 28rpx;
+  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+}
+
+.title,
+.subtitle,
+.action-text,
+.section-title,
+.section-desc,
+.age-tab,
+.profile-tip,
+.scenario-title,
+.scenario-text,
+.scenario-check,
+.empty-action,
+.practice-badge,
+.practice-title,
+.practice-action,
+.practice-note-label,
+.practice-note-text,
+.detail-link,
+.plan-day,
+.plan-name,
+.related-btn,
+.placeholder-title,
+.placeholder-desc {
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+
+.title {
+  display: block;
+  font-size: 42rpx;
+  line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 800;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.action-text {
+  display: inline-block;
+  margin-top: 24rpx;
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 24rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.section-card {
+  margin: 28rpx 32rpx 0;
+  padding: 30rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.section-head {
+  margin-bottom: 22rpx;
+}
+
+.section-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 30rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.section-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #7A6660;
+}
+
+.age-tabs {
+  display: flex;
+  gap: 14rpx;
+}
+
+.age-tab {
+  flex: 1;
+  padding: 18rpx 10rpx;
+  border-radius: 16rpx;
+  text-align: center;
+  background: #FFF7F0;
+  color: #8F756C;
+  font-size: 24rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.age-tab-active {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.profile-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  margin-top: 18rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  background: #FFF7F0;
+  color: #7A6660;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.profile-tip-link {
+  flex-shrink: 0;
+  color: #D85C26;
+  font-weight: 800;
+}
+
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.scenario-card {
+  padding: 22rpx;
+  border-radius: 18rpx;
+  background: #FFFDF9;
+  border: 2rpx solid rgba(255, 107, 53, 0.1);
+}
+
+.scenario-card-active {
+  background: #FFF4EC;
+  border-color: #FF6B35;
+}
+
+.scenario-title {
+  display: block;
+  font-size: 27rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.scenario-text,
+.scenario-check {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  line-height: 1.65;
+  color: #7A6660;
+}
+
+.scenario-check {
+  color: #A16207;
+}
+
+.empty-card {
+  background: #FFFDF9;
+}
+
+.empty-action {
+  margin-top: 20rpx;
+  padding: 20rpx 12rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.practice-badge {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #FFF0E8;
+  color: #D85C26;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.practice-title {
+  display: block;
+  font-size: 32rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.practice-action {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.75;
+  color: #5B463E;
+}
+
+.practice-note {
+  margin-top: 18rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FAF6F3;
+}
+
+.practice-note-label {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: #D85C26;
+  font-weight: 800;
+}
+
+.practice-note-text {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #5B463E;
+}
+
+.detail-link {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.plan-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 14rpx;
+  background: #FFFDF9;
+}
+
+.plan-day {
+  width: 96rpx;
+  color: #D85C26;
+  font-size: 22rpx;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.plan-name {
+  flex: 1;
+  color: #2F241F;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.related-card {
+  margin-bottom: 24rpx;
+}
+
+.related-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
+.related-btn {
+  flex: 1;
+  padding: 20rpx 12rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  background: #FFF0E8;
+  color: #D85C26;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.related-btn-primary {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.placeholder-card {
+  margin: 32rpx;
+  padding: 32rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.placeholder-title {
+  display: block;
+  font-size: 30rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.placeholder-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #7A6660;
+}

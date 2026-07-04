@@ -66,6 +66,12 @@ Page({
       concerns: Array.isArray(summary.concerns) ? summary.concerns : [],
       nextActions: Array.isArray(summary.nextActions) ? summary.nextActions : [],
       recommendedContent: Array.isArray(summary.recommendedContent) ? summary.recommendedContent : [],
+      developmentZoneSummary: summary.developmentZoneSummary || {
+        totalCount: 0,
+        primaryZoneTitle: '',
+        zones: [],
+        recentPractices: []
+      },
       ageGroup: summary.ageGroup || '',
       weakestDimensionLabel: summary.weakestDimensionLabel || (dimensionScoreList[0] ? dimensionScoreList[0].label : ''),
       dimensionScoreList: dimensionScoreList

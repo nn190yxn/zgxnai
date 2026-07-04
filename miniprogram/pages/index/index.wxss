@@ -18,7 +18,7 @@
   font-size: 44rpx;
   font-weight: 800;
   color: #1B2A1B;
-  line-height: 1.3;
+  line-height: 1.45;
 }
 
 .safe-desc {
@@ -91,8 +91,10 @@
 
 .hero-image-title {
   font-size: 34rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #8A3412;
+  text-align: center;
 }
 
 .hero-image-desc {
@@ -120,6 +122,7 @@
   font-weight: 900;
   color: #fff;
   margin-bottom: 12rpx;
+  line-height: 1.42;
 }
 
 .hero-desc {
@@ -140,6 +143,7 @@
   border-radius: 16rpx;
   padding: 18rpx 16rpx;
   font-size: 26rpx;
+  line-height: 1.45;
   font-weight: 600;
 }
 
@@ -182,6 +186,7 @@
   font-size: 30rpx;
   color: #1B2A1B;
   font-weight: 600;
+  line-height: 1.45;
 }
 
 .status-rate {
@@ -430,12 +435,69 @@
   font-weight: 600;
   color: #1B2A1B;
   display: block;
-  margin-bottom: 4rpx;
+  margin-bottom: 8rpx;
+  line-height: 1.45;
 }
 
 .module-desc {
   font-size: 20rpx;
   color: #A08C86;
+  line-height: 1.6;
+}
+
+.development-zone-section {
+  padding-top: 24rpx;
+}
+
+.development-zone-subtitle {
+  max-width: 620rpx;
+  line-height: 1.6;
+}
+
+.development-zone-grid {
+  gap: 18rpx;
+}
+
+.development-zone-card {
+  width: calc((100% - 18rpx) / 2);
+  min-height: 228rpx;
+  padding: 24rpx 22rpx;
+  text-align: left;
+  border-radius: 20rpx;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF9F3 100%);
+  border: 2rpx solid rgba(255, 107, 53, 0.1);
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.development-zone-card .module-name {
+  margin-bottom: 10rpx;
+  font-size: 28rpx;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+
+.development-zone-card .module-desc {
+  display: block;
+  min-height: 78rpx;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: #7A6660;
+  letter-spacing: 0;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.development-zone-action {
+  display: block;
+  margin-top: 18rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: #D85C26;
+  font-weight: 700;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
 }
 
 /* 快速入口 */

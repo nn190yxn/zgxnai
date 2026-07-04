@@ -692,7 +692,7 @@ onError: function(error) {
     return requestUtil.request(this, options);
   },
 
-  // AI问答
+  // 小牛问答
   chat: function(message) {
     var that = this;
     return that.request({

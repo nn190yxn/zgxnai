@@ -18,12 +18,14 @@
   font-weight: bold;
   color: #333333;
   margin-bottom: 20rpx;
+  line-height: 1.35;
 }
 
 .date {
   display: block;
   font-size: 24rpx;
   color: #999999;
+  line-height: 1.45;
 }
 
 .content {
@@ -39,6 +41,7 @@
   color: #333333;
   margin-top: 30rpx;
   margin-bottom: 20rpx;
+  line-height: 1.45;
 }
 
 .section-title:first-child {

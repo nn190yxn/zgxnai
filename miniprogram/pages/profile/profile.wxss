@@ -38,20 +38,23 @@
 .user-name {
   display: block;
   font-size: 36rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .user-id {
   font-size: 24rpx;
+  line-height: 1.45;
   color: rgba(255,255,255,0.7);
 }
 
 .user-phone {
   display: block;
-  margin-top: 10rpx;
+  margin-top: 12rpx;
   font-size: 24rpx;
+  line-height: 1.45;
   color: rgba(255,255,255,0.88);
 }
 
@@ -90,12 +93,13 @@
 .auth-primary-btn,
 .auth-secondary-btn {
   width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
+  min-height: 88rpx;
+  line-height: 1.45;
   border-radius: 44rpx;
   font-size: 28rpx;
   font-weight: 600;
   border: none;
+  padding: 24rpx 28rpx;
 }
 
 .auth-primary-btn {
@@ -117,6 +121,7 @@
 .auth-success-title {
   display: block;
   font-size: 28rpx;
+  line-height: 1.45;
   font-weight: 600;
   color: #E85A29;
 }
@@ -168,13 +173,15 @@
 
 .child-entry-title {
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 600;
   color: #333333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .child-entry-desc {
   font-size: 24rpx;
+  line-height: 1.55;
   color: #999999;
 }
 

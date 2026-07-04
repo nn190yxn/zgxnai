@@ -61,6 +61,29 @@
     </view>
   </view>
 
+  <view class="section development-zone-section">
+    <view class="section-header">
+      <view>
+        <text class="section-title">3-6 岁发展专区</text>
+        <text class="section-subtitle development-zone-subtitle">语言、感统、专注力、大运动、情绪社交，每天一个小动作。</text>
+      </view>
+    </view>
+
+    <view class="module-grid development-zone-grid">
+      <view
+        class="module-card development-zone-card"
+        wx:for="{{developmentZones}}"
+        wx:key="code"
+        data-zone="{{item.code}}"
+        bindtap="goToDevelopmentZone"
+      >
+        <text class="module-name">{{item.title}}</text>
+        <text class="module-desc">{{item.subtitle}}</text>
+        <text class="development-zone-action">{{item.actionText}}</text>
+      </view>
+    </view>
+  </view>
+
   <view class="section">
     <view class="section-header">
       <text class="section-title">从这里开始</text>

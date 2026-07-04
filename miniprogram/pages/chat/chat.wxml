@@ -1,4 +1,4 @@
-<!-- AI聊天页面 -->
+<!-- 小牛聊天页面 -->
 <view class="page page-transition">
   <!-- 聊天区域 -->
   <scroll-view

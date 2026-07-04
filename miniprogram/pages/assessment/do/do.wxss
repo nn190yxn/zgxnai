@@ -96,10 +96,10 @@
 
 .question-desc {
   display: block;
-  margin-top: 12rpx;
+  margin-top: 16rpx;
   font-size: 26rpx;
   color: #8A8A8A;
-  line-height: 1.5;
+  line-height: 1.65;
 }
 
 /* 选项列表 */
@@ -111,8 +111,8 @@
 
 .option-item {
   display: flex;
-  align-items: center;
-  padding: 24rpx;
+  align-items: flex-start;
+  padding: 26rpx 24rpx;
   background: #FAFAFA;
   border-radius: 16rpx;
   border: 2rpx solid transparent;
@@ -155,7 +155,7 @@
 .option-text {
   font-size: 30rpx;
   color: #333;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .option-content {
@@ -165,10 +165,10 @@
 
 .option-desc {
   display: block;
-  margin-top: 6rpx;
+  margin-top: 10rpx;
   font-size: 24rpx;
   color: #8A8A8A;
-  line-height: 1.45;
+  line-height: 1.6;
 }
 
 .option-item.selected .option-text {

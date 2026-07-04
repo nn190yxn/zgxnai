@@ -16,15 +16,17 @@
 .section-title,
 .content-title {
   font-size: 32rpx;
+  line-height: 1.45;
   color: #2c2623;
   font-weight: 700;
 }
 
 .summary-range {
   display: block;
-  margin-top: 12rpx;
+  margin-top: 14rpx;
   color: #9a8f87;
   font-size: 24rpx;
+  line-height: 1.5;
 }
 
 .summary-badge {
@@ -35,6 +37,7 @@
   background: #fff1ea;
   color: #d65a1f;
   font-size: 22rpx;
+  line-height: 1.45;
 }
 
 .summary-badge-row {
@@ -75,6 +78,7 @@
   background: #ff7a45;
   color: #fff;
   font-size: 28rpx;
+  line-height: 1.45;
 }
 
 .dimension-item {
@@ -91,6 +95,7 @@
 .dimension-label,
 .dimension-score {
   font-size: 24rpx;
+  line-height: 1.45;
   color: #4f453f;
 }
 
@@ -136,6 +141,34 @@
 
 .trend-stable {
   color: #7c6858;
+}
+
+.zone-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.zone-chip {
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  background: #fff1ea;
+  color: #d65a1f;
+  font-size: 22rpx;
+  line-height: 1.45;
+}
+
+.practice-list {
+  margin-top: 12rpx;
+}
+
+.practice-item {
+  display: block;
+  margin-top: 12rpx;
+  color: #7c6858;
+  font-size: 24rpx;
+  line-height: 1.65;
 }
 
 .overview-begin {

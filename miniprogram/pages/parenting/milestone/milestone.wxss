@@ -36,12 +36,14 @@
 .header-cover-title {
   font-size: 34rpx;
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .header-cover-desc {
   margin-top: 10rpx;
   font-size: 24rpx;
   opacity: 0.92;
+  line-height: 1.6;
 }
 
 .title {
@@ -49,12 +51,14 @@
   font-size: 44rpx;
   font-weight: 700;
   margin-bottom: 12rpx;
+  line-height: 1.35;
 }
 
 .subtitle {
   display: block;
   font-size: 26rpx;
   opacity: 0.9;
+  line-height: 1.6;
 }
 
 .section {
@@ -67,6 +71,7 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 30rpx;
+  line-height: 1.45;
 }
 
 /* 年龄段选择 */
@@ -98,12 +103,14 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 8rpx;
+  line-height: 1.45;
 }
 
 .age-months {
   display: block;
   font-size: 24rpx;
   color: #999;
+  line-height: 1.5;
 }
 
 /* 进度条 */
@@ -129,6 +136,7 @@
   font-size: 24rpx;
   color: #999;
   margin-bottom: 30rpx;
+  line-height: 1.5;
 }
 
 /* 问题卡片 */
@@ -162,6 +170,7 @@
   font-size: 26rpx;
   color: #999;
   margin-bottom: 40rpx;
+  line-height: 1.6;
 }
 
 .answer-options {
@@ -176,6 +185,7 @@
   text-align: center;
   border: 2rpx solid #E8E8E8;
   transition: all 0.3s;
+  box-sizing: border-box;
 }
 
 .answer-btn.selected-yes {
@@ -198,6 +208,7 @@
   display: block;
   font-size: 28rpx;
   color: #333;
+  line-height: 1.45;
 }
 
 /* 导航按钮 */
@@ -226,6 +237,7 @@
   font-size: 36rpx;
   font-weight: 700;
   margin-bottom: 20rpx;
+  line-height: 1.35;
 }
 
 .overall-score {
@@ -250,6 +262,7 @@
   display: block;
   font-size: 26rpx;
   opacity: 0.9;
+  line-height: 1.5;
 }
 
 .level-badge {
@@ -261,6 +274,7 @@
   font-weight: 700;
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
+  line-height: 1.45;
 }
 
 .report-card {
@@ -277,13 +291,14 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 14rpx;
+  line-height: 1.45;
 }
 
 .report-desc {
   display: block;
   font-size: 26rpx;
   color: #666;
-  line-height: 1.6;
+  line-height: 1.75;
 }
 
 .summary-grid {
@@ -310,13 +325,15 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 18rpx;
+  line-height: 1.45;
 }
 
 .summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12rpx;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
 }
 
 .summary-item:last-child {
@@ -326,11 +343,13 @@
 .summary-name {
   font-size: 25rpx;
   font-weight: 600;
+  line-height: 1.45;
 }
 
 .summary-score {
   font-size: 24rpx;
   color: #666;
+  line-height: 1.45;
 }
 
 /* 维度结果 */
@@ -353,7 +372,7 @@
 .dimension-info {
   display: flex;
   align-items: center;
-  margin-bottom: 12rpx;
+  margin-bottom: 14rpx;
 }
 
 .dimension-icon {
@@ -370,13 +389,15 @@
   font-size: 30rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 4rpx;
+  margin-bottom: 6rpx;
+  line-height: 1.45;
 }
 
 .dimension-desc {
   display: block;
   font-size: 22rpx;
   color: #999;
+  line-height: 1.55;
 }
 
 .dimension-bar {
@@ -417,12 +438,13 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 20rpx;
+  line-height: 1.45;
 }
 
 .suggestion-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 18rpx;
 }
 
 .suggestion-item {
@@ -442,7 +464,7 @@
   flex: 1;
   font-size: 26rpx;
   color: #333;
-  line-height: 1.5;
+  line-height: 1.75;
 }
 
 .practice-section,
@@ -470,13 +492,14 @@
   font-size: 28rpx;
   font-weight: 700;
   margin-bottom: 16rpx;
+  line-height: 1.45;
 }
 
 .practice-item,
 .notice-item {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 12rpx;
+  margin-bottom: 14rpx;
 }
 
 .practice-item:last-child,
@@ -503,7 +526,7 @@
   flex: 1;
   font-size: 25rpx;
   color: #555;
-  line-height: 1.6;
+  line-height: 1.75;
 }
 
 .notice-title {
@@ -512,6 +535,7 @@
   font-weight: 700;
   color: #333;
   margin-bottom: 18rpx;
+  line-height: 1.45;
 }
 
 /* 结果操作 */
@@ -535,6 +559,7 @@
   font-size: 30rpx;
   font-weight: 600;
   transition: all 0.3s;
+  line-height: 1.45;
 }
 
 .btn-primary::after {
@@ -554,6 +579,7 @@
   font-size: 30rpx;
   font-weight: 600;
   transition: all 0.3s;
+  line-height: 1.45;
 }
 
 .btn-secondary::after {

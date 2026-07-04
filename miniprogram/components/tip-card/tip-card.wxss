@@ -11,18 +11,20 @@
   font-size: 32rpx;
   font-weight: 600;
   color: var(--text);
-  line-height: 1.4;
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .tip-card-text {
-  margin-top: 12rpx;
+  margin-top: 14rpx;
   font-size: 28rpx;
   font-weight: 400;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -35,11 +37,12 @@
 
 .tip-card-why-label {
   font-size: 24rpx;
+  line-height: 1.45;
   color: var(--primary);
 }
 
 .tip-card-rationale {
-  margin-top: 8rpx;
+  margin-top: 12rpx;
   padding: 16rpx 16rpx 16rpx 20rpx;
   background: var(--primary-bg);
   border-left: 4rpx solid var(--primary);
@@ -49,7 +52,7 @@
 .tip-card-rationale text {
   font-size: 28rpx;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 .tip-card-source {
@@ -60,5 +63,6 @@
 
 .tip-card-source text {
   font-size: 24rpx;
+  line-height: 1.45;
   color: var(--primary);
 }

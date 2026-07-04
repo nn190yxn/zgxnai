@@ -22,6 +22,8 @@
     "pages/parenting/search/search",
     "pages/parenting/milestone/milestone",
     "pages/parenting/milestone-result/milestone-result",
+    "pages/development/detail/detail",
+    "pages/development/scene/scene",
     "pages/textbook/textbook",
     "pages/textbook/knowledge-list/knowledge-list",
     "pages/textbook/knowledge-detail/knowledge-detail",

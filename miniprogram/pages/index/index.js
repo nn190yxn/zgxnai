@@ -1,6 +1,7 @@
 // 首页逻辑
 const app = getApp();
 const encouragementUtils = require('../../utils/encouragement.js');
+const developmentZones = require('../../utils/development-zones.js');
 
 Page({
   data: {
@@ -30,6 +31,7 @@ Page({
     dailyPlanDate: '',
     dailyPlanCompletedCount: 0,
     dailyPlanEmptyText: '',
+    developmentZones: developmentZones.getDevelopmentZones(),
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
     membershipTouchpointDesc: '查看每周成长趋势和下周建议。',
@@ -332,6 +334,7 @@ Page({
     var map = {
       ability_task: '每日练习',
       parenting_article: '育儿锦囊',
+      development_zone: '发展专区',
       nutrition_recipe: '饮食支持',
       habit_reminder: '家庭提醒',
       onboarding: '开始设置'
@@ -1052,6 +1055,21 @@ Page({
     }
     wx.navigateTo({
       url: '/pages/textbook/textbook',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  goToDevelopmentZone(e) {
+    var zoneCode = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.zone : '';
+    var zone = developmentZones.getDevelopmentZoneByCode(zoneCode);
+    if (!zone) {
+      wx.showToast({ title: '这个专区还在准备中', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/development/detail/detail?zone=' + encodeURIComponent(zone.code),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }

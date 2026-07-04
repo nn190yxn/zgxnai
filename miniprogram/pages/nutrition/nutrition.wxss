@@ -42,12 +42,14 @@
   font-weight: 900;
   color: #fff;
   margin-bottom: 12rpx;
+  line-height: 1.45;
   position: relative;
   z-index: 1;
 }
 
 .page-subtitle {
   font-size: 26rpx;
+  line-height: 1.65;
   color: rgba(255, 255, 255, 0.85);
   position: relative;
   z-index: 1;
@@ -114,13 +116,15 @@
 
 .nutrition-cover-title {
   font-size: 36rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #6B3417;
 }
 
 .nutrition-cover-desc {
-  margin-top: 10rpx;
+  margin-top: 12rpx;
   font-size: 24rpx;
+  line-height: 1.6;
   color: #8A5A44;
 }
 
@@ -135,6 +139,7 @@
 
 .section-subtext {
   font-size: 22rpx;
+  line-height: 1.55;
   color: #999;
 }
 
@@ -155,6 +160,7 @@
   background: #FFF3ED;
   color: #A04B20;
   font-size: 24rpx;
+  line-height: 1.45;
   font-weight: 600;
 }
 
@@ -178,6 +184,7 @@
 
 .section-title {
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #333;
 }
@@ -188,6 +195,7 @@
   background: #FFF8E1;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
+  line-height: 1.45;
 }
 
 .section-more {
@@ -222,6 +230,7 @@
   background: #FFF3ED;
   color: #D65A28;
   font-size: 20rpx;
+  line-height: 1.45;
   margin-bottom: 12rpx;
 }
 
@@ -230,14 +239,15 @@
   font-size: 28rpx;
   font-weight: 700;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .advice-content {
   display: block;
   font-size: 24rpx;
   color: #666;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 /* 分类滚动 */
@@ -288,12 +298,14 @@
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 4rpx;
+  margin-bottom: 8rpx;
+  line-height: 1.45;
 }
 
 .category-desc {
   display: block;
   font-size: 20rpx;
+  line-height: 1.45;
   color: #999;
 }
 
@@ -368,6 +380,7 @@
 .recipe-visual-title {
   margin-top: 12rpx;
   font-size: 24rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #7A4B2E;
   position: relative;
@@ -375,8 +388,9 @@
 }
 
 .recipe-visual-subtitle {
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   font-size: 22rpx;
+  line-height: 1.45;
   color: #A06A3A;
   position: relative;
   z-index: 1;
@@ -391,14 +405,15 @@
   font-size: 32rpx;
   font-weight: 700;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .recommend-desc {
   display: block;
   font-size: 26rpx;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.65;
   margin-bottom: 16rpx;
 }
 
@@ -416,6 +431,7 @@
 
 .info-item {
   font-size: 24rpx;
+  line-height: 1.45;
   color: #666;
 }
 
@@ -425,6 +441,7 @@
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
   font-size: 22rpx;
+  line-height: 1.45;
 }
 
 .tag-primary {
@@ -459,27 +476,29 @@
 
 .empty-text {
   font-size: 28rpx;
+  line-height: 1.6;
   color: #999;
 }
 
 .empty-desc {
-  margin-top: 8rpx;
+  margin-top: 12rpx;
   font-size: 24rpx;
   color: #999;
   text-align: center;
   max-width: 560rpx;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .empty-action {
   margin-top: 22rpx;
   min-width: 144rpx;
-  height: 56rpx;
-  line-height: 56rpx;
+  min-height: 60rpx;
+  line-height: 1.45;
   border-radius: 8rpx;
   background: #2f7cf6;
   color: #fff;
   font-size: 24rpx;
+  padding: 13rpx 20rpx;
 }
 
 /* 食谱列表 */
@@ -520,9 +539,10 @@
   font-size: 30rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -530,7 +550,7 @@
 .recipe-desc {
   font-size: 24rpx;
   color: #666;
-  line-height: 1.4;
+  line-height: 1.65;
   margin-bottom: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -541,7 +561,7 @@
 .recipe-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8rpx;
+  gap: 10rpx;
   margin-bottom: 12rpx;
 }
 
@@ -553,6 +573,7 @@
 
 .meta-item {
   font-size: 22rpx;
+  line-height: 1.45;
   color: #999;
 }
 

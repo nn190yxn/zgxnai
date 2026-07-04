@@ -9,7 +9,7 @@ Page({
         id: 1,
         icon: '🧘',
         name: '情绪管理',
-        desc: '哭闹、发脾气、输不起时看这里',
+        desc: '哭闹、发脾气、遇到挫折时看这里',
         color: '#4A90D9',
         bgColor: '#E8F0FE',
         emoji: '😊'

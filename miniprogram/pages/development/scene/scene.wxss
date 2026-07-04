@@ -1,0 +1,231 @@
+.page {
+  min-height: 100vh;
+  background: #FAF6F3;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  padding: 56rpx 32rpx 28rpx;
+  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+}
+
+.zone-label,
+.title,
+.subtitle,
+.card-eyebrow,
+.card-title,
+.card-desc,
+.duration-badge,
+.script-text,
+.game-title,
+.depth-label,
+.depth-text,
+.depth-line,
+.action-btn,
+.placeholder-title,
+.placeholder-desc,
+.placeholder-action {
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+
+.zone-label {
+  display: inline-block;
+  margin-bottom: 18rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.title {
+  display: block;
+  font-size: 42rpx;
+  line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 800;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.content-card {
+  margin: 28rpx 32rpx 0;
+  padding: 30rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.practice-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF7F0 100%);
+  border: 2rpx solid rgba(255, 107, 53, 0.12);
+}
+
+.card-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.card-eyebrow {
+  display: block;
+  margin-bottom: 10rpx;
+  color: #D85C26;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.card-title {
+  display: block;
+  font-size: 30rpx;
+  line-height: 1.5;
+  color: #2F241F;
+  font-weight: 850;
+}
+
+.card-desc {
+  display: block;
+  font-size: 25rpx;
+  line-height: 1.75;
+  color: #5B463E;
+}
+
+.duration-badge {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.script-text {
+  display: block;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FAF6F3;
+  color: #5B463E;
+  font-size: 26rpx;
+  line-height: 1.75;
+}
+
+.depth-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-top: 12rpx;
+}
+
+.game-title {
+  display: block;
+  margin-top: 8rpx;
+  color: #2D1810;
+  font-size: 30rpx;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.depth-item {
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #FAF6F3;
+}
+
+.depth-label {
+  display: block;
+  margin-bottom: 6rpx;
+  color: #D85C26;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.depth-text,
+.depth-line {
+  display: block;
+  color: #5B463E;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.depth-line {
+  padding: 16rpx 18rpx;
+  border-radius: 16rpx;
+  background: #FAF6F3;
+}
+
+.action-card {
+  margin-bottom: 24rpx;
+}
+
+.action-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 20rpx 12rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  background: #FFF0E8;
+  color: #D85C26;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.action-btn-primary {
+  background: #FF6B35;
+  color: #FFFFFF;
+}
+
+.placeholder-card {
+  margin: 32rpx;
+  padding: 32rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.placeholder-title {
+  display: block;
+  font-size: 30rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.placeholder-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #7A6660;
+}
+
+.placeholder-action {
+  margin-top: 22rpx;
+  padding: 20rpx 12rpx;
+  border-radius: 18rpx;
+  text-align: center;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}

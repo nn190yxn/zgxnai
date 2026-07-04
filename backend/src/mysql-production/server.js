@@ -8,6 +8,7 @@ const mysql = require('mysql2/promise');
 const { generateAIAnswer, getAIStatus } = require('../services/ai');
 const chatContextUtil = require('./chat-context');
 const dailyPlanText = require('./daily-plan-text');
+const developmentZones = require('./development-zones');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -270,6 +271,8 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/parenting/articles`, optionalAuthenticateToken, asyncHandler(parentingArticlesHandler));
   app.get(`${prefix}/parenting/articles/:id`, optionalAuthenticateToken, asyncHandler(parentingArticleDetailHandler));
   app.get(`${prefix}/parenting/articles/:id/related`, optionalAuthenticateToken, asyncHandler(parentingRelatedArticlesHandler));
+  app.get(`${prefix}/development-zones`, optionalAuthenticateToken, asyncHandler(developmentZonesHandler));
+  app.get(`${prefix}/development-zones/:code`, optionalAuthenticateToken, asyncHandler(developmentZoneDetailHandler));
   app.post(`${prefix}/parenting/articles/:id/favorite`, authenticateToken, asyncHandler(parentingFavoriteHandler));
   app.get(`${prefix}/parenting/articles/:id/comments`, asyncHandler(parentingCommentsHandler));
   app.post(`${prefix}/parenting/articles/:id/comments`, authenticateToken, asyncHandler(parentingCreateCommentHandler));
@@ -336,7 +339,7 @@ async function marketingGenerateHandler(req, res) {
       res.json({
         success: true,
         data: {
-          content: `【${platformName === 'xhs' ? '小红书' : platformName === 'douyin' ? '抖音' : platformName === 'gzh' ? '公众号' : platformName === 'wechat' ? '私聊话术' : platformName === 'cover' ? '封面标题' : '选题标题'}文案】\n\nAI 服务当前不可用（${aiResult.message}），以下是基础模板：\n\n标题：${topic}\n\n请参考右侧话术库和内容中心中的现有素材，或稍后重试。`,
+          content: `【${platformName === 'xhs' ? '小红书' : platformName === 'douyin' ? '抖音' : platformName === 'gzh' ? '公众号' : platformName === 'wechat' ? '私聊话术' : platformName === 'cover' ? '封面标题' : '选题标题'}文案】\n\n小牛服务当前不可用（${aiResult.message}），以下是基础模板：\n\n标题：${topic}\n\n请参考右侧话术库和内容中心中的现有素材，或稍后重试。`,
           source: 'fallback',
           provider: null,
           model: null
@@ -1122,7 +1125,7 @@ function formatAgeFeatureRows(rows) {
   };
   const featureLabelMap = {
     assessment: '成长测评',
-    ai_chat: 'AI 问答',
+    ai_chat: '小牛问答',
     membership: '会员中心',
     nutrition_recipe: '营养食谱',
     nutrition: '营养模块',
@@ -1252,7 +1255,7 @@ function buildFeatureKeySql(alias) {
 function getFeatureLabel(featureKey) {
   const map = {
     assessment: '成长测评',
-    ai_chat: 'AI 问答',
+    ai_chat: '小牛问答',
     membership: '会员中心',
     nutrition_recipe: '营养食谱',
     nutrition: '营养模块',
@@ -1476,7 +1479,7 @@ function buildWeeklyInsightCards(featureRows, contentRows, contentSummary, lifec
   const cards = [];
   const featureLabels = {
     assessment: '成长测评',
-    ai_chat: 'AI 问答',
+    ai_chat: '小牛问答',
     membership: '会员中心',
     nutrition_recipe: '营养食谱',
     nutrition: '营养模块',
@@ -2988,12 +2991,12 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
   };
 
   const basePrompts = {
-    nutrition: `你是小牛育儿AI助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.nutrition}\n\n只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
-    reading: `你是小牛育儿AI助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.reading}\n\n只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
-    emotion: `你是小牛育儿AI助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.emotion}\n\n只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
-    focus: `你是小牛育儿AI助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.focus}\n\n只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
-    assessment: `你是小牛育儿AI助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.assessment}\n\n只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
-    general: `你是小牛育儿AI助理。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.general}\n\n只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
+    nutrition: `你是小牛育儿助理中的儿童营养与喂养顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.nutrition}\n\n只能基于提供的知识片段作答，回答要结合家庭执行成本和连续观察方法。`,
+    reading: `你是小牛育儿助理中的能力成长顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.reading}\n\n只能基于提供的知识片段作答，回答要围绕阅读理解、表达沟通、逻辑思维和家庭共练。`,
+    emotion: `你是小牛育儿助理中的儿童情绪支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.emotion}\n\n只能基于提供的知识片段作答，回答要先稳定家庭回应，再给可执行的情绪引导步骤。`,
+    focus: `你是小牛育儿助理中的专注力支持顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.focus}\n\n只能基于提供的知识片段作答，回答要关注场景拆解、家长提示语和任务节奏控制。`,
+    assessment: `你是小牛育儿助理中的成长观察解读顾问。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.assessment}\n\n只能基于提供的知识片段作答，回答要帮助家长先厘清表现，再建议合适的观察方向和训练重点。`,
+    general: `你是小牛育儿助理。${ageContext}${scenarioContext}${riskContext}${styleContext}${reasoningFramework}\n\n${baseFrameworks.general}\n\n只能基于提供的知识片段作答，回答要专业、温和、可执行，优先给家长能在家庭场景里立刻开始的下一步。`
   };
   return basePrompts[intent] || basePrompts.general;
 }
@@ -8003,12 +8006,24 @@ async function ensureProductionTables() {
       title VARCHAR(255) NOT NULL,
       summary TEXT,
       source_id VARCHAR(128) DEFAULT '',
+      source_type VARCHAR(32) DEFAULT '',
+      zone_code VARCHAR(64) DEFAULT '',
+      scenario_code VARCHAR(64) DEFAULT '',
+      practice_title VARCHAR(255) DEFAULT '',
+      user_note TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_growth_entries_user (user_id),
       INDEX idx_growth_entries_child (child_id),
-      INDEX idx_growth_entries_type (entry_type)
+      INDEX idx_growth_entries_type (entry_type),
+      INDEX idx_growth_entries_source_type (source_type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await ensureColumnExists('growth_record_entries', 'source_type', "VARCHAR(32) DEFAULT ''");
+  await ensureColumnExists('growth_record_entries', 'zone_code', "VARCHAR(64) DEFAULT ''");
+  await ensureColumnExists('growth_record_entries', 'scenario_code', "VARCHAR(64) DEFAULT ''");
+  await ensureColumnExists('growth_record_entries', 'practice_title', "VARCHAR(255) DEFAULT ''");
+  await ensureColumnExists('growth_record_entries', 'user_note', 'TEXT');
+  await ensureIndexExists('growth_record_entries', 'idx_growth_entries_source_type', 'INDEX idx_growth_entries_source_type (source_type)');
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS weekly_growth_summaries (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -9396,6 +9411,23 @@ function buildNoChildDailyPlanCards(planDate) {
   ];
 }
 
+function getRecommendedDevelopmentZonePractice(ageGroup, childId, planDate) {
+  if (!developmentZones.isDevelopmentAgeGroup(ageGroup)) {
+    return null;
+  }
+  const candidates = [];
+  developmentZones.getDevelopmentZones().forEach(function(zone) {
+    developmentZones.getDevelopmentScenarios(zone.code, ageGroup).forEach(function(scenario) {
+      candidates.push({ zone, scenario });
+    });
+  });
+  if (!candidates.length) {
+    return null;
+  }
+  const seed = Number(String(planDate || '').replace(/\D/g, '')) + Number(childId || 0);
+  return candidates[seed % candidates.length];
+}
+
 async function buildDailyPlanCards(userId, child, planDate) {
   if (!child) {
     return buildNoChildDailyPlanCards(planDate);
@@ -9407,6 +9439,7 @@ async function buildDailyPlanCards(userId, child, planDate) {
   const readingTask = await getRecommendedReadingTask(child.id, ageGroup, planProfile.subjectCode);
   const article = await getRecommendedParentingArticle(ageGroup, planProfile.articleCategory, planProfile.articleKeyword, userId);
   const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const developmentPractice = getRecommendedDevelopmentZonePractice(ageGroup, child.id, planDate);
   const cards = [];
 
   if (readingTask) {
@@ -9425,6 +9458,27 @@ async function buildDailyPlanCards(userId, child, planDate) {
       targetPath: `/pages/textbook/knowledge-detail/knowledge-detail?pointId=${encodeURIComponent(readingTask.task_code || String(readingTask.id))}&subjectCode=${encodeURIComponent(readingTask.subject_code || '')}&pointName=${encodeURIComponent(readingTask.title || '')}&childId=${child.id}`,
       sourceKey: weakDimension ? String(weakDimension.dimension_name) : 'default_task',
       score: 90 + Math.max(0, 10 - Number(recentUsage.reading_tasks || 0)),
+      planDate,
+      childId: child.id
+    });
+  }
+
+  if (developmentPractice) {
+    const zone = developmentPractice.zone;
+    const scenario = developmentPractice.scenario;
+    cards.push({
+      slotIndex: cards.length,
+      planType: 'development_zone',
+      title: `今天练一下：${scenario.title}`,
+      reasonText: `${zone.title}这个方向，今天先做一个家里能完成的小练习。`,
+      actionText: '去练习',
+      summaryText: scenario.todayAction || scenario.symptomText || zone.subtitle,
+      durationMinutes: Number(scenario.durationMinutes || 5),
+      targetType: 'development_zone',
+      targetId: `${zone.code}:${scenario.code}`,
+      targetPath: `/pages/development/scene/scene?zone=${encodeURIComponent(zone.code)}&scenario=${encodeURIComponent(scenario.code)}`,
+      sourceKey: `${zone.code}:${scenario.code}`,
+      score: 88,
       planDate,
       childId: child.id
     });
@@ -9835,7 +9889,7 @@ function buildMultiDayPlanCards(child, startDate, sourceType, sourceTitle, sourc
       planType: sourceType || 'daily_plan',
       title: `${dayNames[i]}: ${baseTitle}`,
       reasonText: i === 0
-        ? '基于' + (sourceType === 'ai_answer' ? 'AI问答' : sourceType === 'assessment' ? '成长观察' : '每日训练') + '生成' + ageText + '的 7 天执行计划'
+        ? '基于' + (sourceType === 'ai_answer' ? '小牛问答' : sourceType === 'assessment' ? '成长观察' : '每日训练') + '生成' + ageText + '的 7 天执行计划'
         : dayNames[i] + '继续推进，' + (ageText ? ageText + '的' : '') + '小目标更容易坚持下去。',
       actionText: i <= 2 ? '开始今天的第一步' : '继续推进',
       summaryText: i === 0 ? baseSummary : baseSummary + '（第' + (i + 1) + '步，每天3-5分钟）',
@@ -10031,27 +10085,44 @@ async function growthRecordSummaryHandler(req, res) {
 async function growthRecordEntrySaveHandler(req, res) {
   const userId = getUserId(req);
   const childId = Number((req.body && req.body.childId) || 0);
-  const entryType = String((req.body && req.body.entry_type) || '').substring(0, 32);
+  const sourceType = String((req.body && req.body.source_type) || '').trim().substring(0, 32);
+  const entryType = String((req.body && (req.body.entry_type || req.body.source_type)) || '').trim().substring(0, 32);
   const title = String((req.body && req.body.title) || '').substring(0, 255);
   const summary = String((req.body && req.body.summary) || '').substring(0, 2000);
   const sourceId = String((req.body && req.body.source_id) || '').substring(0, 128);
+  const zoneCode = String((req.body && req.body.zone_code) || '').trim().substring(0, 64);
+  const scenarioCode = String((req.body && req.body.scenario_code) || '').trim().substring(0, 64);
+  const practiceTitle = String((req.body && req.body.practice_title) || title || '').trim().substring(0, 255);
+  const userNote = String((req.body && req.body.user_note) || summary || '').trim().substring(0, 2000);
   if (!entryType || !title || !childId) {
     res.status(400).json({ success: false, message: 'entry_type、title和childId不能为空' });
     return;
   }
-  const validTypes = ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note'];
+  const validTypes = ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note', 'development_zone'];
   if (validTypes.indexOf(entryType) === -1) {
-    res.status(400).json({ success: false, message: 'entry_type必须是 ai_answer/assessment_result/daily_plan_complete/user_note 之一' });
+    res.status(400).json({ success: false, message: 'entry_type参数无效' });
     return;
+  }
+  if (sourceType && sourceType !== entryType) {
+    res.status(400).json({ success: false, message: 'source_type和entry_type需保持一致' });
+    return;
+  }
+  if (entryType === 'development_zone') {
+    const zone = developmentZones.getDevelopmentZoneByCode(zoneCode);
+    const scenario = developmentZones.getDevelopmentScenario(zoneCode, scenarioCode);
+    if (!zone || !scenario) {
+      res.status(400).json({ success: false, message: '专区或场景参数无效' });
+      return;
+    }
   }
   const child = await requireOwnedChildForRead(req, res, childId);
   if (!child) {
     return;
   }
   const [result] = await pool.execute(
-    `INSERT INTO growth_record_entries (user_id, child_id, entry_type, title, summary, source_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [userId, childId, entryType, title, summary, sourceId]
+    `INSERT INTO growth_record_entries (user_id, child_id, entry_type, title, summary, source_id, source_type, zone_code, scenario_code, practice_title, user_note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [userId, childId, entryType, title, summary, sourceId, sourceType || entryType, zoneCode, scenarioCode, practiceTitle, userNote]
   );
   const [rows] = await pool.execute(
     'SELECT * FROM growth_record_entries WHERE id = ? LIMIT 1',
@@ -10068,6 +10139,11 @@ function normalizeGrowthRecordEntry(row) {
     title: row.title,
     summary: row.summary || '',
     sourceId: row.source_id || '',
+    sourceType: row.source_type || row.entry_type || '',
+    zoneCode: row.zone_code || '',
+    scenarioCode: row.scenario_code || '',
+    practiceTitle: row.practice_title || '',
+    userNote: row.user_note || '',
     createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
   };
 }
@@ -10089,7 +10165,7 @@ async function growthRecordEntriesListHandler(req, res) {
     whereClause += ' AND child_id = ?';
     params.push(childId);
   }
-  if (entryType && ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note'].indexOf(entryType) !== -1) {
+  if (entryType && ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note', 'development_zone'].indexOf(entryType) !== -1) {
     whereClause += ' AND entry_type = ?';
     params.push(entryType);
   }
@@ -10123,7 +10199,7 @@ async function getRecentGrowthRecordEntries(userId, childId, limit) {
     [userId, childId]
   );
   const [greRows] = await pool.execute(
-    `SELECT id, entry_type, title, summary, source_id, created_at
+    `SELECT id, entry_type, title, summary, source_id, source_type, zone_code, scenario_code, practice_title, user_note, created_at
        FROM growth_record_entries
       WHERE user_id = ? AND child_id = ?
       ORDER BY created_at DESC
@@ -10145,7 +10221,7 @@ async function getRecentGrowthRecordEntries(userId, childId, limit) {
   greRows.forEach((row) => {
     items.push({
       type: 'growth_entry',
-      label: row.entry_type === 'ai_answer' ? 'AI问答保存' : row.entry_type === 'assessment_result' ? '测评结果' : row.entry_type === 'daily_plan_complete' ? '任务完成' : '用户笔记',
+      label: row.entry_type === 'ai_answer' ? '小牛回答保存' : row.entry_type === 'assessment_result' ? '测评结果' : row.entry_type === 'daily_plan_complete' ? '任务完成' : row.entry_type === 'development_zone' ? '专区练习' : '用户笔记',
       title: row.title,
       summary: (row.summary || '').substring(0, 200),
       createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
@@ -10169,11 +10245,33 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
      ORDER BY record_date ASC`,
     [userId, child.id, weekStart, weekEnd]
   );
-  const [planRows] = await pool.execute(
+  const [planAggregateRows] = await pool.execute(
     `SELECT COUNT(*) AS total,
             SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_total
      FROM daily_plan_records
      WHERE user_id = ? AND child_id = ? AND plan_date BETWEEN ? AND ?`,
+    [userId, child.id, weekStart, weekEnd]
+  );
+  const [developmentPlanRows] = await pool.execute(
+    `SELECT title, source_key, target_id, completed_at, plan_date
+     FROM daily_plan_records
+     WHERE user_id = ?
+       AND child_id = ?
+       AND plan_type = 'development_zone'
+       AND status = 'completed'
+       AND plan_date BETWEEN ? AND ?
+     ORDER BY plan_date DESC, id DESC`,
+    [userId, child.id, weekStart, weekEnd]
+  );
+  const [developmentEntryRows] = await pool.execute(
+    `SELECT title, source_id, zone_code, scenario_code, practice_title, created_at
+     FROM growth_record_entries
+     WHERE user_id = ?
+       AND child_id = ?
+       AND (source_type = 'development_zone' OR entry_type = 'development_zone')
+       AND created_at >= ?
+       AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+     ORDER BY created_at DESC, id DESC`,
     [userId, child.id, weekStart, weekEnd]
   );
   const [taskRows] = await pool.execute(
@@ -10205,6 +10303,7 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
   const overviewData = buildWeeklyAgeOverview(growthList.length, avgScore, ageStage);
   const article = await getRecommendedParentingArticle(ageGroup, sceneProfile.articleCategory, sceneProfile.articleKeyword, userId);
   const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const developmentZoneSummary = buildWeeklyDevelopmentZoneSummary(developmentPlanRows, developmentEntryRows);
   const recommendedContent = [
     article ? {
       type: 'parenting_article',
@@ -10226,18 +10325,22 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     weekStart,
     weekEnd,
     recordDays: growthList.length,
-    completedPlanCount: normalizeAggregateNumber(planRows[0] && planRows[0].completed_total),
-    totalPlanCount: normalizeAggregateNumber(planRows[0] && planRows[0].total),
+    completedPlanCount: normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].completed_total),
+    totalPlanCount: normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].total),
     completedTaskCount: normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total),
+    developmentZoneSummary,
     dimensionScores: summaryBase,
     weakestDimension: weakestDimension[0],
     weakestDimensionLabel,
     overview: overviewData.text,
     overviewMood: overviewData.mood,
     highlights: [
-      normalizeAggregateNumber(planRows[0] && planRows[0].completed_total) > 0
-        ? `本周完成了${normalizeAggregateNumber(planRows[0] && planRows[0].completed_total)}次今日育儿计划，固定动作在形成节奏。`
+      normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].completed_total) > 0
+        ? `本周完成了${normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].completed_total)}次今日育儿计划，固定动作在形成节奏。`
         : '本周的计划完成次数还可以继续提高，试试把1-2个固定动作放进每天的同一个时段。',
+      developmentZoneSummary.totalCount > 0
+        ? `本周做过${developmentZoneSummary.totalCount}次发展专区练习，主要集中在${developmentZoneSummary.primaryZoneTitle}。`
+        : '本周还没有形成发展专区练习记录，下周可以先选一个方向做3分钟。',
       normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total) > 0
         ? `能力训练完成${normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total)}次，执行节奏正在形成。`
         : '本周能力训练触达较少，下周可以试试固定一个时段开始，先从每周2次起。'
@@ -10261,6 +10364,53 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     recommendedContentPreview: recommendedContent.slice(0, 1),
     premiumTip: '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。',
     trendItems
+  };
+}
+
+function buildWeeklyDevelopmentZoneSummary(planRows, entryRows) {
+  const zoneMap = new Map();
+  const recentPractices = [];
+
+  function addPractice(zoneCode, scenarioCode, title, occurredAt) {
+    const cleanZoneCode = String(zoneCode || '').trim();
+    const cleanScenarioCode = String(scenarioCode || '').trim();
+    const zone = developmentZones.getDevelopmentZoneByCode(cleanZoneCode);
+    if (!zone) {
+      return;
+    }
+    const current = zoneMap.get(cleanZoneCode) || {
+      code: cleanZoneCode,
+      title: zone.title,
+      count: 0
+    };
+    current.count += 1;
+    zoneMap.set(cleanZoneCode, current);
+    recentPractices.push({
+      zoneCode: cleanZoneCode,
+      zoneTitle: zone.title,
+      scenarioCode: cleanScenarioCode,
+      title: String(title || zone.title || '专区练习').trim(),
+      occurredAt: occurredAt || null
+    });
+  }
+
+  (planRows || []).forEach(function(row) {
+    const source = String(row.target_id || row.source_key || '').split(':');
+    addPractice(source[0], source[1], row.title, row.completed_at || row.plan_date);
+  });
+  (entryRows || []).forEach(function(row) {
+    addPractice(row.zone_code, row.scenario_code, row.practice_title || row.title, row.created_at);
+  });
+
+  const zones = Array.from(zoneMap.values()).sort(function(left, right) {
+    return right.count - left.count || left.title.localeCompare(right.title);
+  });
+  return {
+    totalCount: recentPractices.length,
+    primaryZoneCode: zones[0] ? zones[0].code : '',
+    primaryZoneTitle: zones[0] ? zones[0].title : '',
+    zones,
+    recentPractices: recentPractices.slice(0, 3)
   };
 }
 
@@ -10301,7 +10451,7 @@ async function weeklySummaryHandler(req, res) {
   if (rows.length && rows[0].summary_payload) {
     payload = safeParseJson(rows[0].summary_payload, null);
   }
-  if (payload && (!Array.isArray(payload.concernsFull) || !Array.isArray(payload.nextActionsFull))) {
+  if (payload && (!Array.isArray(payload.concernsFull) || !Array.isArray(payload.nextActionsFull) || !payload.developmentZoneSummary)) {
     payload = null;
   }
   if (!payload) {
@@ -10784,6 +10934,44 @@ async function parentingRelatedArticlesHandler(req, res) {
     data.push(await normalizeArticle(row, getUserId(req)));
   }
   res.json({ success: true, data });
+}
+
+async function developmentZonesHandler(req, res) {
+  const ageGroup = String(req.query.age_group || '').trim();
+  if (ageGroup && !developmentZones.isDevelopmentAgeGroup(ageGroup)) {
+    res.status(400).json({ success: false, message: 'age_group参数无效' });
+    return;
+  }
+  const list = developmentZones.getDevelopmentZones().map((zone) => {
+    if (!ageGroup) {
+      return zone;
+    }
+    return Object.assign({}, zone, {
+      scenarios: developmentZones.getDevelopmentScenarios(zone.code, ageGroup),
+      selectedAgeGroup: ageGroup
+    });
+  });
+  res.json({
+    success: true,
+    data: {
+      ageGroups: developmentZones.getDevelopmentAgeGroups(),
+      list
+    }
+  });
+}
+
+async function developmentZoneDetailHandler(req, res) {
+  const ageGroup = String(req.query.age_group || '').trim();
+  if (ageGroup && !developmentZones.isDevelopmentAgeGroup(ageGroup)) {
+    res.status(400).json({ success: false, message: 'age_group参数无效' });
+    return;
+  }
+  const detail = developmentZones.getDevelopmentZoneDetail(req.params.code, ageGroup);
+  if (!detail) {
+    res.status(404).json({ success: false, message: '专区不存在' });
+    return;
+  }
+  res.json({ success: true, data: detail });
 }
 
 async function parentingFavoriteHandler(req, res) {

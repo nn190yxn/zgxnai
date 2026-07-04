@@ -212,6 +212,7 @@
   font-size: 26rpx;
   color: #999999;
   margin-left: 8rpx;
+  line-height: 1.45;
 }
 
 /* 错误提示 */
@@ -219,6 +220,7 @@
   font-size: 24rpx;
   color: #E53935;
   padding: 8rpx 0 16rpx;
+  line-height: 1.6;
 }
 
 /* 标签选择 */
@@ -239,14 +241,15 @@
   justify-content: center;
   width: auto;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.45;
   font-size: 26rpx;
   color: #666666;
+  box-sizing: border-box;
 }
 
 .tag-text {
   font-size: 26rpx;
-  line-height: 1.2;
+  line-height: 1.45;
 }
 
 .tag-item.selected {
@@ -268,13 +271,16 @@
 
 .btn {
   flex: 1;
-  height: 88rpx;
+  min-height: 88rpx;
   border-radius: 44rpx;
   font-size: 30rpx;
+  line-height: 1.45;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
+  padding: 20rpx 16rpx;
+  box-sizing: border-box;
 }
 
 .btn-cancel {
@@ -290,12 +296,15 @@
 
 .btn-delete {
   width: 100%;
-  height: 88rpx;
+  min-height: 88rpx;
   background: #FFFFFF;
   color: #E53935;
   border: 2rpx solid #E53935;
   border-radius: 44rpx;
   font-size: 30rpx;
+  line-height: 1.45;
+  padding: 20rpx 16rpx;
+  box-sizing: border-box;
 }
 
 /* 删除区域 */

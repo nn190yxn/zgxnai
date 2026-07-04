@@ -39,8 +39,8 @@
   font-size: 42rpx;
   font-weight: 700;
   color: #24312A;
-  line-height: 1.36;
-  margin-bottom: 16rpx;
+  line-height: 1.45;
+  margin-bottom: 20rpx;
   letter-spacing: 0;
 }
 
@@ -130,7 +130,7 @@
 }
 
 .content-block {
-  margin-bottom: 24rpx;
+  margin-bottom: 28rpx;
 }
 
 .content-block:last-child {
@@ -186,14 +186,14 @@
 
 .content-heading {
   font-size: 36rpx;
-  line-height: 1.35;
+  line-height: 1.45;
   font-weight: 700;
   color: #1F2D25;
 }
 
 .subheading-block {
-  margin-top: 30rpx;
-  margin-bottom: 16rpx;
+  margin-top: 34rpx;
+  margin-bottom: 18rpx;
 }
 
 .content-subheading {
@@ -207,10 +207,10 @@
 .list-block {
   display: flex;
   align-items: flex-start;
-  padding: 18rpx 20rpx;
+  padding: 20rpx 22rpx;
   background: #FAFBF7;
   border-radius: 8rpx;
-  margin-bottom: 14rpx;
+  margin-bottom: 18rpx;
 }
 
 .list-block.ordered {
@@ -252,10 +252,10 @@
 .tip-title {
   display: block;
   font-size: 29rpx;
-  line-height: 1.4;
+  line-height: 1.55;
   font-weight: 700;
   color: #9A6B19;
-  margin-bottom: 10rpx;
+  margin-bottom: 12rpx;
 }
 
 .tip-body {
@@ -292,7 +292,7 @@
 }
 
 .rich-content-section p {
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .rich-content-section h1,
@@ -330,12 +330,14 @@
 
 .section-title {
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #333;
 }
 
 .copy-btn {
   font-size: 26rpx;
+  line-height: 1.45;
   color: #FF6B35;
   padding: 8rpx 20rpx;
   border: 1rpx solid #FF6B35;
@@ -351,7 +353,7 @@
 .key-point-item {
   display: flex;
   align-items: flex-start;
-  padding: 16rpx 0;
+  padding: 18rpx 0;
   border-bottom: 1rpx solid #FFF3ED;
 }
 
@@ -424,7 +426,7 @@
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
-  line-height: 1.4;
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -435,10 +437,13 @@
 .related-summary {
   font-size: 24rpx;
   color: #999;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
+  line-height: 1.65;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .practice-section {
@@ -455,12 +460,13 @@
   color: #D85C26;
   font-weight: 800;
   margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .practice-title {
   display: block;
   font-size: 34rpx;
-  line-height: 1.4;
+  line-height: 1.45;
   color: #24312A;
   font-weight: 800;
 }
@@ -486,6 +492,7 @@
   text-align: center;
   font-size: 25rpx;
   font-weight: 800;
+  line-height: 1.45;
 }
 
 .practice-btn.primary {
@@ -598,11 +605,13 @@
 .action-item .action-count {
   font-size: 24rpx;
   color: #666;
+  line-height: 1.45;
 }
 
 .action-item .action-text {
   font-size: 24rpx;
   color: #666;
+  line-height: 1.45;
 }
 
 .action-item.active .action-text,
@@ -620,11 +629,13 @@
 
 .comment-input {
   flex: 1;
-  height: 80rpx;
+  min-height: 80rpx;
   background: #f5f5f5;
   border-radius: 40rpx;
-  padding: 0 32rpx;
+  padding: 18rpx 32rpx;
   font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
 }
 
 .comment-submit {
@@ -634,6 +645,7 @@
   color: #fff;
   border-radius: 32rpx;
   font-size: 28rpx;
+  line-height: 1.45;
 }
 
 /* 评论列表 */
@@ -665,11 +677,13 @@
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
+  line-height: 1.45;
 }
 
 .comment-time {
   font-size: 24rpx;
   color: #999;
+  line-height: 1.45;
 }
 
 .comment-content {

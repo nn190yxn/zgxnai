@@ -42,6 +42,7 @@
   font-weight: 900;
   color: #fff;
   margin-bottom: 12rpx;
+  line-height: 1.35;
   position: relative;
   z-index: 1;
 }
@@ -49,6 +50,7 @@
 .page-subtitle {
   font-size: 26rpx;
   color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
   position: relative;
   z-index: 1;
 }
@@ -90,20 +92,24 @@
   font-weight: 600;
   color: #333;
   margin-bottom: 4rpx;
+  line-height: 1.45;
 }
 
 .child-age {
   font-size: 24rpx;
   color: #888;
+  line-height: 1.5;
 }
 
 .history-entry {
   display: flex;
   align-items: center;
   background: #FFF3ED;
-  padding: 16rpx 24rpx;
+  min-height: 56rpx;
+  padding: 12rpx 24rpx;
   border-radius: 32rpx;
   position: relative;
+  box-sizing: border-box;
 }
 
 .history-icon {
@@ -115,6 +121,7 @@
   font-size: 24rpx;
   color: #FF6B35;
   font-weight: 500;
+  line-height: 1.45;
 }
 
 .history-badge {
@@ -154,13 +161,14 @@
   font-weight: 700;
   color: #333;
   flex-shrink: 0;
+  line-height: 1.45;
 }
 
 .age-filter-subtitle {
   font-size: 22rpx;
   color: #888;
   text-align: right;
-  line-height: 1.35;
+  line-height: 1.55;
 }
 
 .age-scroll {
@@ -173,14 +181,15 @@
   align-items: center;
   justify-content: center;
   min-width: 116rpx;
-  height: 56rpx;
+  min-height: 60rpx;
   margin-right: 14rpx;
-  padding: 0 20rpx;
+  padding: 8rpx 20rpx;
   border-radius: 28rpx;
   background: #F5F5F5;
   color: #666;
   font-size: 24rpx;
   font-weight: 600;
+  line-height: 1.45;
   box-sizing: border-box;
 }
 
@@ -239,15 +248,16 @@
   font-size: 32rpx;
   font-weight: 700;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .card-desc {
   display: block;
   font-size: 24rpx;
   color: #888;
-  margin-bottom: 12rpx;
-  line-height: 1.4;
+  margin-bottom: 14rpx;
+  line-height: 1.65;
 }
 
 .card-meta {
@@ -258,6 +268,7 @@
 
 .meta-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
 }
 
@@ -266,6 +277,7 @@
   padding: 4rpx 16rpx;
   border-radius: 16rpx;
   font-weight: 500;
+  line-height: 1.45;
 }
 
 .count-tag {
@@ -302,24 +314,27 @@
   font-weight: 700;
   color: #444;
   margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .empty-desc {
   display: block;
   font-size: 24rpx;
   color: #888;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .empty-action {
   margin-top: 22rpx;
   min-width: 144rpx;
-  height: 56rpx;
-  line-height: 56rpx;
+  min-height: 60rpx;
+  line-height: 1.45;
   border-radius: 8rpx;
   background: #2f7cf6;
   color: #fff;
   font-size: 24rpx;
+  padding: 12rpx 20rpx;
+  box-sizing: border-box;
 }
 
 /* 底部提示 */
@@ -333,11 +348,13 @@
   font-size: 24rpx;
   color: #aaa;
   margin-bottom: 8rpx;
+  line-height: 1.55;
 }
 
 .footer-subtext {
   font-size: 22rpx;
   color: #bbb;
+  line-height: 1.55;
 }
 
 /* 弹窗遮罩 */
@@ -392,6 +409,7 @@
   font-size: 36rpx;
   font-weight: 700;
   color: #E85A29;
+  line-height: 1.35;
 }
 
 .modal-close {
@@ -419,6 +437,7 @@
   font-size: 26rpx;
   color: #888;
   margin-bottom: 8rpx;
+  line-height: 1.45;
 }
 
 .intro-text {
@@ -453,12 +472,14 @@
   font-size: 22rpx;
   color: #888;
   margin-bottom: 4rpx;
+  line-height: 1.45;
 }
 
 .info-value {
   font-size: 28rpx;
   font-weight: 600;
   color: #333;
+  line-height: 1.45;
 }
 
 .intro-tips {
@@ -473,18 +494,19 @@
   font-weight: 600;
   color: #FF8F00;
   margin-bottom: 12rpx;
+  line-height: 1.45;
 }
 
 .tips-list {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 12rpx;
 }
 
 .tips-item {
   font-size: 24rpx;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .modal-footer {
@@ -495,23 +517,27 @@
 
 .btn-cancel {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  min-height: 88rpx;
+  line-height: 1.45;
   text-align: center;
   font-size: 30rpx;
   color: #666;
   background: #F5F5F5;
   border-radius: 44rpx;
+  padding: 20rpx 16rpx;
+  box-sizing: border-box;
 }
 
 .btn-confirm {
   flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
+  min-height: 88rpx;
+  line-height: 1.45;
   text-align: center;
   font-size: 30rpx;
   font-weight: 600;
   color: #fff;
   background: linear-gradient(135deg, #FF6B35, #FF7E4B);
   border-radius: 44rpx;
+  padding: 20rpx 16rpx;
+  box-sizing: border-box;
 }

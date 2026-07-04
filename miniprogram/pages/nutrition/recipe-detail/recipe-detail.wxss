@@ -34,6 +34,7 @@
 .empty-text {
   font-size: 32rpx;
   color: #666;
+  line-height: 1.6;
 }
 
 /* 食谱头部 */
@@ -93,6 +94,7 @@
 .recipe-visual-title {
   margin-top: 22rpx;
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 800;
   color: #7A4B2E;
   position: relative;
@@ -101,11 +103,11 @@
 
 .recipe-visual-subtitle {
   max-width: 560rpx;
-  margin-top: 10rpx;
+  margin-top: 12rpx;
   font-size: 24rpx;
   color: #A06A3A;
   text-align: center;
-  line-height: 1.45;
+  line-height: 1.65;
   position: relative;
   z-index: 1;
 }
@@ -134,18 +136,19 @@
 
 .action-icon {
   font-size: 36rpx;
-  margin-bottom: 4rpx;
+  margin-bottom: 8rpx;
 }
 
 .action-text {
   font-size: 20rpx;
+  line-height: 1.45;
   color: #333;
 }
 
 .share-btn {
   padding: 0;
   margin: 0;
-  line-height: normal;
+  line-height: 1;
   background: rgba(255, 255, 255, 0.95);
 }
 
@@ -167,14 +170,15 @@
   font-size: 40rpx;
   font-weight: 700;
   color: #333;
-  margin-bottom: 12rpx;
+  margin-bottom: 14rpx;
+  line-height: 1.45;
 }
 
 .recipe-desc {
   display: block;
   font-size: 28rpx;
   color: #666;
-  line-height: 1.6;
+  line-height: 1.7;
   margin-bottom: 20rpx;
 }
 
@@ -193,6 +197,7 @@
   background: #FFF1EA;
   color: #C85C23;
   font-size: 24rpx;
+  line-height: 1.45;
   font-weight: 600;
 }
 
@@ -209,6 +214,7 @@
   padding: 8rpx 20rpx;
   border-radius: 20rpx;
   font-size: 24rpx;
+  line-height: 1.45;
   background: #FFF3ED;
   color: #FF6B35;
 }
@@ -239,11 +245,13 @@
 .info-label {
   font-size: 22rpx;
   color: #999;
-  margin-bottom: 4rpx;
+  margin-bottom: 8rpx;
+  line-height: 1.45;
 }
 
 .info-value {
   font-size: 26rpx;
+  line-height: 1.45;
   font-weight: 600;
   color: #333;
 }
@@ -266,17 +274,20 @@
 
 .section-title {
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #333;
 }
 
 .section-count {
   font-size: 24rpx;
+  line-height: 1.45;
   color: #999;
 }
 
 .section-action {
   font-size: 26rpx;
+  line-height: 1.45;
   color: #FF6B35;
 }
 
@@ -370,6 +381,7 @@
 .combination-title,
 .daily-title {
   font-size: 28rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: #333;
   margin-bottom: 18rpx;
@@ -392,7 +404,8 @@
   display: block;
   font-size: 24rpx;
   color: #8A8F98;
-  margin-bottom: 6rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.45;
 }
 
 .micronutrient-value {
@@ -470,11 +483,14 @@
 .ingredient-name {
   font-size: 28rpx;
   color: #333;
+  line-height: 1.6;
 }
 
 .ingredient-amount {
   font-size: 28rpx;
   color: #666;
+  line-height: 1.6;
+  text-align: right;
 }
 
 /* 底部操作栏 */
@@ -511,12 +527,13 @@
 .bar-text {
   font-size: 22rpx;
   color: #666;
+  line-height: 1.45;
 }
 
 .share-btn {
   padding: 0;
   margin: 0;
-  line-height: normal;
+  line-height: 1;
   background: transparent;
 }
 

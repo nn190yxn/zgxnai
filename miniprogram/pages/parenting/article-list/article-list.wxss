@@ -55,6 +55,7 @@
   background: #FFF4EA;
   color: #9A3412;
   font-size: 24rpx;
+  line-height: 1.6;
 }
 
 .filter-section.form-filter {
@@ -83,6 +84,7 @@
   padding: 12rpx 28rpx;
   margin-right: 16rpx;
   font-size: 26rpx;
+  line-height: 1.45;
   color: #666;
   background: #F5F5F5;
   border-radius: 32rpx;
@@ -137,11 +139,13 @@
 .empty-text {
   font-size: 28rpx;
   color: #666;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
+  line-height: 1.6;
 }
 
 .empty-desc {
   font-size: 24rpx;
+  line-height: 1.7;
   color: #999;
 }
 
@@ -190,7 +194,7 @@
   font-size: 31rpx;
   font-weight: 700;
   color: #24312A;
-  line-height: 1.36;
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -201,8 +205,8 @@
 .article-summary {
   font-size: 25rpx;
   color: #667168;
-  line-height: 1.58;
-  margin-top: 10rpx;
+  line-height: 1.7;
+  margin-top: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -221,6 +225,7 @@
   padding: 6rpx 16rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
+  line-height: 1.45;
   margin-right: 12rpx;
   background: #F5F8EF;
   color: #55753E;
@@ -239,6 +244,7 @@
 
 .meta-item {
   font-size: 22rpx;
+  line-height: 1.45;
   color: #8A948C;
   margin-right: 16rpx;
 }

@@ -271,7 +271,7 @@
   font-size: 30rpx;
   font-weight: 700;
   color: #333;
-  line-height: 1.4;
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -282,8 +282,8 @@
 .article-summary {
   font-size: 24rpx;
   color: #999;
-  line-height: 1.5;
-  margin-top: 8rpx;
+  line-height: 1.7;
+  margin-top: 10rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -302,6 +302,7 @@
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
   font-size: 20rpx;
+  line-height: 1.45;
   margin-right: 12rpx;
   background: #FFF3ED;
   color: #FF6B35;
@@ -322,6 +323,7 @@
   font-size: 22rpx;
   color: #999;
   margin-right: 16rpx;
+  line-height: 1.45;
 }
 
 /* 收藏按钮 */
@@ -353,4 +355,5 @@
   padding: 30rpx 0;
   font-size: 26rpx;
   color: #999;
+  line-height: 1.6;
 }

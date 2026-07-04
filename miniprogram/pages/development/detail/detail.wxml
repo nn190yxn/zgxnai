@@ -1,0 +1,103 @@
+<view class="page">
+  <view class="header" wx:if="{{zone}}" style="background: linear-gradient(135deg, {{zone.theme.color}}, #FF8C5A);">
+    <text class="title">{{zone.title}}</text>
+    <text class="subtitle">{{zone.subtitle}}</text>
+    <text class="action-text">{{zone.actionText}}</text>
+  </view>
+
+  <block wx:if="{{zone}}">
+    <view class="section-card age-card">
+      <view class="section-head">
+        <text class="section-title">先选年龄段</text>
+        <text class="section-desc">{{ageStatusText}}</text>
+      </view>
+      <view class="age-tabs">
+        <view
+          class="age-tab {{selectedAgeGroup === item ? 'age-tab-active' : ''}}"
+          wx:for="{{ageGroups}}"
+          wx:key="*this"
+          data-age="{{item}}"
+          bindtap="selectAgeGroup"
+        >{{item}}</view>
+      </view>
+      <view class="profile-tip" wx:if="{{!selectedAgeGroup}}" bindtap="goToChildProfile">
+        <text>先选孩子年龄；补充孩子生日后，下次会自动选</text>
+        <text class="profile-tip-link">去补档案</text>
+      </view>
+    </view>
+
+    <view class="section-card" wx:if="{{selectedAgeGroup && scenarios.length}}">
+      <view class="section-head">
+        <text class="section-title">你家孩子像哪种情况</text>
+        <text class="section-desc">先选一个最接近的表现，今晚就做一个小动作。</text>
+      </view>
+      <view class="scenario-list">
+        <view
+          class="scenario-card {{selectedScenarioCode === item.code ? 'scenario-card-active' : ''}}"
+          wx:for="{{scenarios}}"
+          wx:key="code"
+          data-scenario="{{item.code}}"
+          bindtap="selectScenario"
+        >
+          <text class="scenario-title">{{item.title}}</text>
+          <text class="scenario-text">{{item.symptomText}}</text>
+          <text class="scenario-check">先判断：{{item.parentCheck}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card empty-card" wx:if="{{selectedAgeGroup && !scenarios.length}}">
+      <text class="section-title">这个方向正在补充</text>
+      <text class="section-desc">先问小牛，描述孩子今天的具体表现。</text>
+      <view class="empty-action" bindtap="askFallback">问小牛</view>
+    </view>
+
+    <view class="section-card" wx:if="{{activePractice}}">
+      <view class="section-head section-head-row">
+        <view>
+          <text class="section-title">今日练习</text>
+          <text class="section-desc">{{activePractice.durationMinutes}} 分钟，做完就停。</text>
+        </view>
+        <text class="practice-badge">{{selectedAgeGroup}}</text>
+      </view>
+      <text class="practice-title">{{activePractice.title}}</text>
+      <text class="practice-action">{{activePractice.action}}</text>
+      <view class="practice-note" wx:if="{{activePractice.parentScript}}">
+        <text class="practice-note-label">可以这样说</text>
+        <text class="practice-note-text">{{activePractice.parentScript}}</text>
+      </view>
+      <view class="practice-note" wx:if="{{activePractice.observeSignal}}">
+        <text class="practice-note-label">看什么变化</text>
+        <text class="practice-note-text">{{activePractice.observeSignal}}</text>
+      </view>
+      <view class="detail-link" bindtap="openScenarioDetail">查看完整练习</view>
+    </view>
+
+    <view class="section-card" wx:if="{{zone.sevenDayPlan.length}}">
+      <view class="section-head">
+        <text class="section-title">7 天慢慢练</text>
+        <text class="section-desc">每天一个小动作，不用一次练很多。</text>
+      </view>
+      <view class="plan-list">
+        <view class="plan-item" wx:for="{{zone.sevenDayPlan}}" wx:key="*this">
+          <text class="plan-day">第{{index + 1}}天</text>
+          <text class="plan-name">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card related-card">
+      <text class="section-title">需要继续判断</text>
+      <view class="related-actions">
+        <view class="related-btn related-btn-primary" bindtap="askXiaoniu">问小牛</view>
+        <view class="related-btn" bindtap="recordPractice">记录变化</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="placeholder-card" wx:if="{{!zone}}">
+    <text class="placeholder-title">专区内容正在加载</text>
+    <text class="placeholder-desc">{{loadError || '后续会展示年龄段、表现选择、今日练习和 7 天计划。'}}</text>
+    <view class="empty-action" bindtap="askFallback">问小牛</view>
+  </view>
+</view>

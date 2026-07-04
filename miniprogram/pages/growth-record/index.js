@@ -11,6 +11,7 @@ Page({
     recordDate: getToday(),
     loading: false,
     saving: false,
+    sourceContext: null,
     form: {
       moodStatus: 'steady',
       appetiteStatus: 'normal',
@@ -73,7 +74,8 @@ Page({
     ]
   },
 
-  onLoad: function() {
+  onLoad: function(options) {
+    this.applySourceContext(options || {});
     this.bootstrap();
   },
 
@@ -96,6 +98,29 @@ Page({
         }
       }).catch(function() {
         return null;
+      });
+    }
+  },
+
+  applySourceContext: function(options) {
+    var source = String((options && options.source) || '').trim();
+    var pendingSource = wx.getStorageSync('pendingGrowthRecordSource') || null;
+    if (pendingSource) {
+      wx.removeStorageSync('pendingGrowthRecordSource');
+    }
+    if (pendingSource && pendingSource.sourceType === 'development_zone') {
+      this.setData({ sourceContext: pendingSource });
+      return;
+    }
+    if (source === 'development_zone') {
+      this.setData({
+        sourceContext: {
+          sourceType: 'development_zone',
+          zoneCode: String((options && options.zone) || ''),
+          scenarioCode: String((options && options.scenario) || ''),
+          practiceTitle: '专区练习',
+          sourceId: String((options && options.zone) || '') + ':' + String((options && options.scenario) || '')
+        }
       });
     }
   },
@@ -189,6 +214,8 @@ Page({
         recordDate: this.data.recordDate
       })
     }).then(function() {
+      return that.saveSourceEntryIfNeeded();
+    }).then(function() {
       wx.showToast({ title: '已保存', icon: 'success' });
       if (app.trackKbEvent) {
         app.trackKbEvent({
@@ -201,6 +228,29 @@ Page({
       wx.showToast({ title: app.getApiErrorMessage(err, '保存失败'), icon: 'none' });
     }).finally(function() {
       that.setData({ saving: false });
+    });
+  },
+
+  saveSourceEntryIfNeeded: function() {
+    var sourceContext = this.data.sourceContext || null;
+    if (!sourceContext || sourceContext.sourceType !== 'development_zone') {
+      return Promise.resolve();
+    }
+    return app.request({
+      url: '/growth-records/entry',
+      method: 'POST',
+      data: {
+        childId: this.data.currentChild.id,
+        entry_type: 'development_zone',
+        source_type: 'development_zone',
+        title: sourceContext.practiceTitle || sourceContext.scenarioTitle || '专区练习',
+        summary: this.data.form.noteText || sourceContext.practiceAction || '',
+        source_id: sourceContext.sourceId || ((sourceContext.zoneCode || '') + ':' + (sourceContext.scenarioCode || '')),
+        zone_code: sourceContext.zoneCode || '',
+        scenario_code: sourceContext.scenarioCode || '',
+        practice_title: sourceContext.practiceTitle || sourceContext.scenarioTitle || '专区练习',
+        user_note: this.data.form.noteText || ''
+      }
     });
   },
 

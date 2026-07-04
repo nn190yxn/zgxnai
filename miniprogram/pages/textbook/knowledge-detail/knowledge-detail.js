@@ -719,7 +719,7 @@ Page({
           { id: 3, content: '创造无干扰的学习环境' }
         ],
         difficulties: [
-          { id: 1, content: '不要强迫宝宝专注' },
+          { id: 1, content: '尊重宝宝当前专注时长' },
           { id: 2, content: '注意力时间因人而异' }
         ],
         examples: [
@@ -736,7 +736,7 @@ Page({
             id: 1,
             type: 'choice',
             question: '注意力训练应该？',
-            options: ['强迫长时间专注', '逐步延长', '随意中断', '不给予反馈'],
+            options: ['一次安排太久', '逐步延长', '随意中断', '不给予反馈'],
             answer: 1,
             analysis: '注意力训练要循序渐进。'
           }

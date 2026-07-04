@@ -1,4 +1,4 @@
-// AI聊天页面
+// 小牛聊天页面
 var app = getApp();
 var msgIdCounter = 0;
 var speechPlugin = null;

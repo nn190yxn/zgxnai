@@ -1,0 +1,110 @@
+<view class="page">
+  <view class="header" wx:if="{{scenario}}" style="background: linear-gradient(135deg, {{zone.theme.color}}, #FF8C5A);">
+    <text class="zone-label">{{zone.title}}</text>
+    <text class="title">{{scenario.title}}</text>
+    <text class="subtitle">{{scenario.symptomText}}</text>
+  </view>
+
+  <block wx:if="{{scenario}}">
+    <view class="content-card">
+      <text class="card-eyebrow">先判断</text>
+      <text class="card-title">家长先看什么</text>
+      <text class="card-desc">{{scenario.parentCheck}}</text>
+    </view>
+
+    <view class="content-card practice-card">
+      <view class="card-row">
+        <view>
+          <text class="card-eyebrow">今天做什么</text>
+          <text class="card-title">{{scenario.todayAction}}</text>
+        </view>
+        <text class="duration-badge">{{scenario.durationMinutes}} 分钟</text>
+      </view>
+    </view>
+
+    <view class="content-card">
+      <text class="card-eyebrow">可以这样说</text>
+      <text class="script-text">{{scenario.parentScript}}</text>
+    </view>
+
+    <view class="content-card">
+      <text class="card-eyebrow">看什么变化</text>
+      <text class="card-desc">{{scenario.observeSignal}}</text>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.developmentalFocus}}">
+      <text class="card-eyebrow">为什么这样练</text>
+      <text class="card-desc">{{scenario.developmentalFocus}}</text>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.ageGuidance.length}}">
+      <text class="card-eyebrow">分龄做法</text>
+      <view class="depth-list">
+        <view class="depth-item" wx:for="{{scenario.ageGuidance}}" wx:key="ageGroup">
+          <text class="depth-label">{{item.ageGroup}}</text>
+          <text class="depth-text">{{item.guidance}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.playGame}}">
+      <text class="card-eyebrow">亲子小游戏</text>
+      <text class="game-title">{{scenario.playGame.name}}</text>
+      <view class="depth-list">
+        <view class="depth-item">
+          <text class="depth-label">准备</text>
+          <text class="depth-text">{{scenario.playGame.setup}}</text>
+        </view>
+        <view class="depth-item">
+          <text class="depth-label">玩法</text>
+          <text class="depth-text">{{scenario.playGame.howToPlay}}</text>
+        </view>
+        <view class="depth-item">
+          <text class="depth-label">家长提示</text>
+          <text class="depth-text">{{scenario.playGame.parentTip}}</text>
+        </view>
+        <view class="depth-item">
+          <text class="depth-label">进阶变化</text>
+          <text class="depth-text">{{scenario.playGame.variation}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.difficultySteps.length}}">
+      <text class="card-eyebrow">难度阶梯</text>
+      <view class="depth-list">
+        <text class="depth-line" wx:for="{{scenario.difficultySteps}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.progressSignals.length}}">
+      <text class="card-eyebrow">连续观察什么</text>
+      <view class="depth-list">
+        <text class="depth-line" wx:for="{{scenario.progressSignals}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.commonPitfalls.length || scenario.safetyBoundary}}">
+      <text class="card-eyebrow">家长少踩坑</text>
+      <text class="card-desc" wx:if="{{scenario.safetyBoundary}}">{{scenario.safetyBoundary}}</text>
+      <view class="depth-list" wx:if="{{scenario.commonPitfalls.length}}">
+        <text class="depth-line" wx:for="{{scenario.commonPitfalls}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="content-card action-card">
+      <text class="card-title">做完以后</text>
+      <text class="card-desc">有拿不准的地方可以问小牛，也可以把今天的变化记下来。</text>
+      <view class="action-row">
+        <view class="action-btn action-btn-primary" bindtap="askXiaoniu">问小牛</view>
+        <view class="action-btn" bindtap="recordPractice">记录变化</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="placeholder-card" wx:else>
+    <text class="placeholder-title">练习内容正在准备</text>
+    <text class="placeholder-desc">{{loadError || '后续会展示孩子表现、家长判断点、今日动作、话术和观察指标。'}}</text>
+    <view class="placeholder-action" bindtap="askFallback">问小牛</view>
+  </view>
+</view>

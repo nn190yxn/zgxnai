@@ -46,7 +46,8 @@
   font-size: 28rpx;
   font-weight: 600;
   color: #9A3412;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
+  line-height: 1.45;
 }
 
 .service-banner-desc {
@@ -103,13 +104,14 @@
 
 .service-action {
   min-width: 150rpx;
-  height: 60rpx;
-  line-height: 60rpx;
+  min-height: 64rpx;
+  line-height: 1.45;
   border-radius: 8rpx;
   background: var(--primary);
   color: #fff;
   font-size: 24rpx;
-  padding: 0 22rpx;
+  padding: 14rpx 22rpx;
+  text-align: center;
 }
 
 .service-action.secondary {
@@ -149,6 +151,7 @@
 
 .ai-intro-title {
   font-size: 32rpx;
+  line-height: 1.45;
   font-weight: 700;
   color: var(--text);
 }
@@ -168,6 +171,7 @@
 
 .ai-intro-hint-item {
   font-size: 24rpx;
+  line-height: 1.45;
   color: var(--primary);
   background: var(--primary-bg);
   padding: 8rpx 18rpx;
@@ -183,6 +187,7 @@
   background: #FEF3C7;
   color: #92400E;
   font-size: 22rpx;
+  line-height: 1.45;
   font-weight: 600;
 }
 
@@ -212,6 +217,7 @@
 
 .voice-result-label {
   font-size: 22rpx;
+  line-height: 1.45;
   color: var(--primary);
   font-weight: 600;
   margin-bottom: 12rpx;
@@ -236,13 +242,13 @@
 
 .voice-result-btn {
   flex: 1;
-  height: 72rpx;
-  line-height: 72rpx;
+  min-height: 76rpx;
+  line-height: 1.45;
   border-radius: 36rpx;
   font-size: 28rpx;
   font-weight: 600;
   border: none;
-  padding: 0;
+  padding: 16rpx 18rpx;
   text-align: center;
 }
 
@@ -264,6 +270,7 @@
   border-top: 1rpx solid #FDE68A;
   color: #92400E;
   font-size: 22rpx;
+  line-height: 1.5;
   text-align: center;
 }
 
@@ -280,7 +287,7 @@
 /* 消息 */
 .message {
   display: flex;
-  margin-bottom: 32rpx;
+  margin-bottom: 36rpx;
   animation: fadeIn 0.3s ease;
 }
 
@@ -315,11 +322,11 @@
 }
 
 .bubble {
-  max-width: 70%;
-  padding: 24rpx 28rpx;
+  max-width: 76%;
+  padding: 26rpx 30rpx;
   border-radius: 24rpx;
   font-size: 28rpx;
-  line-height: 1.7;
+  line-height: 1.75;
   word-wrap: break-word;
 }
 
@@ -364,7 +371,8 @@
 .sources-label {
   font-size: 22rpx;
   color: var(--text-muted);
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
+  line-height: 1.45;
 }
 
 .sources text {
@@ -396,8 +404,8 @@
 
 .answer-next-btn {
   flex: 1;
-  height: 64rpx;
-  line-height: 64rpx;
+  min-height: 68rpx;
+  line-height: 1.45;
   padding: 0 10rpx;
   border-radius: 14rpx;
   background: #F8FAFC;
@@ -405,6 +413,9 @@
   border: 1rpx solid #CBD5E1;
   font-size: 22rpx;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .answer-next-btn::after {
@@ -478,6 +489,7 @@
   border: 1rpx solid #CBD5E1;
   color: #334155;
   font-size: 30rpx;
+  line-height: 1.45;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -513,7 +525,7 @@
   max-height: 240rpx;
   font-size: 32rpx;
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
   padding: 20rpx 32rpx;
   background: #F8FAFC;
   border-radius: 20rpx;
@@ -529,15 +541,15 @@
 .send-btn {
   flex-shrink: 0;
   width: 160rpx;
-  height: 100rpx;
-  line-height: 100rpx;
+  min-height: 100rpx;
+  line-height: 1.45;
   background: var(--primary);
   color: #fff;
   border-radius: 20rpx;
   font-size: 32rpx;
   font-weight: 600;
   border: none;
-  padding: 0;
+  padding: 24rpx 0;
   text-align: center;
 }
 
@@ -557,29 +569,26 @@
   padding-left: 18rpx;
   border-left: 4rpx solid var(--primary);
   margin-bottom: 20rpx;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .followup-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  margin-top: 8rpx;
+  margin-top: 14rpx;
 }
 
 .followup-btn {
   flex: 0 0 calc(50% - 8rpx);
   min-width: 0;
-  padding: 12rpx 16rpx;
+  padding: 14rpx 16rpx;
   font-size: 24rpx;
   color: var(--text);
   background: var(--primary-bg);
   border: none;
   border-radius: 8rpx;
-  line-height: 1.4;
+  line-height: 1.5;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-height: 44rpx;
+  min-height: 52rpx;
 }

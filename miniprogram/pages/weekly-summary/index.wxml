@@ -31,6 +31,18 @@
     <text class="summary-copy">能力练习完成 {{summary.completedTaskCount}} 次。</text>
   </view>
 
+  <view class="summary-card" wx:if="{{currentChild && summary}}">
+    <text class="section-title">发展专区练习</text>
+    <text class="summary-copy" wx:if="{{summary.developmentZoneSummary.totalCount > 0}}">本周做过 {{summary.developmentZoneSummary.totalCount}} 次专区练习，主要方向是 {{summary.developmentZoneSummary.primaryZoneTitle}}。</text>
+    <text class="summary-copy" wx:else>本周还没有专区练习记录，下周先从一个方向做 3 分钟。</text>
+    <view class="zone-chip-row" wx:if="{{summary.developmentZoneSummary.zones.length}}">
+      <text class="zone-chip" wx:for="{{summary.developmentZoneSummary.zones}}" wx:key="code">{{item.title}} {{item.count}}次</text>
+    </view>
+    <view class="practice-list" wx:if="{{summary.developmentZoneSummary.recentPractices.length}}">
+      <text class="practice-item" wx:for="{{summary.developmentZoneSummary.recentPractices}}" wx:key="title">{{item.zoneTitle}}：{{item.title}}</text>
+    </view>
+  </view>
+
   <view class="summary-card" wx:if="{{currentChild && summary && summary.dimensionScoreList.length}}">
     <text class="section-title">成长维度</text>
     <view class="dimension-item" wx:for="{{summary.dimensionScoreList}}" wx:key="key">

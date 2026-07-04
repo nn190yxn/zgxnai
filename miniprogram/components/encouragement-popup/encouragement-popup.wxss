@@ -100,16 +100,17 @@
 
 .confirm-btn {
   width: 320rpx;
-  height: 80rpx;
-  line-height: 80rpx;
+  min-height: 80rpx;
+  line-height: 1.45;
   background: linear-gradient(135deg, #66BB6A, #43A047);
   color: #fff;
   border-radius: 40rpx;
   font-size: 30rpx;
   font-weight: 600;
   border: none;
-  padding: 0;
+  padding: 18rpx 20rpx;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .confirm-btn::after {
