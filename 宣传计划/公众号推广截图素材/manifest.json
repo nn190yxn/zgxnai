@@ -1,0 +1,122 @@
+[
+  {
+    "id": "01-home",
+    "title": "首页总览",
+    "source": "宣传计划/pages/01-home.html",
+    "file": "screenshots/01-home.png"
+  },
+  {
+    "id": "02-ai-chat",
+    "title": "小牛问答页",
+    "source": "宣传计划/pages/02-ai-chat.html",
+    "file": "screenshots/02-ai-chat.png"
+  },
+  {
+    "id": "03-assessment",
+    "title": "成长观察页",
+    "source": "宣传计划/pages/03-assessment.html",
+    "file": "screenshots/03-assessment.png"
+  },
+  {
+    "id": "04-daily-training",
+    "title": "每日训练页",
+    "source": "宣传计划/pages/04-daily-training.html",
+    "file": "screenshots/04-daily-training.png"
+  },
+  {
+    "id": "05-nutrition",
+    "title": "营养中心页",
+    "source": "宣传计划/pages/05-nutrition.html",
+    "file": "screenshots/05-nutrition.png"
+  },
+  {
+    "id": "06-parenting",
+    "title": "育儿知识页",
+    "source": "宣传计划/pages/06-parenting.html",
+    "file": "screenshots/06-parenting.png"
+  },
+  {
+    "id": "07-growth-record",
+    "title": "成长记录页",
+    "source": "宣传计划/pages/07-growth-record.html",
+    "file": "screenshots/07-growth-record.png"
+  },
+  {
+    "id": "08-weekly-summary",
+    "title": "周总结页",
+    "source": "宣传计划/pages/08-weekly-summary.html",
+    "file": "screenshots/08-weekly-summary.png"
+  },
+  {
+    "id": "09-membership",
+    "title": "会员页",
+    "source": "宣传计划/pages/09-membership.html",
+    "file": "screenshots/09-membership.png"
+  },
+  {
+    "id": "10-profile",
+    "title": "个人中心页",
+    "source": "宣传计划/pages/10-profile.html",
+    "file": "screenshots/10-profile.png"
+  },
+  {
+    "id": "11-quick-tips",
+    "title": "快问快答提示页",
+    "source": "宣传计划/pages/quick-tips.html",
+    "file": "screenshots/11-quick-tips.png"
+  },
+  {
+    "id": "12-weekly-report",
+    "title": "周报详情页",
+    "source": "宣传计划/pages/weekly-report.html",
+    "file": "screenshots/12-weekly-report.png"
+  },
+  {
+    "id": "13-ai-chat-demo",
+    "title": "小牛问答演示页",
+    "source": "宣传计划/pages/ai-chat-demo.html",
+    "file": "screenshots/13-ai-chat-demo.png"
+  },
+  {
+    "id": "14-parenting-article",
+    "title": "育儿文章详情页",
+    "source": "宣传计划/pages/parenting-article.html",
+    "file": "screenshots/14-parenting-article.png"
+  },
+  {
+    "id": "15-daily-quote",
+    "title": "每日金句页",
+    "source": "宣传计划/pages/daily-quote.html",
+    "file": "screenshots/15-daily-quote.png"
+  },
+  {
+    "id": "16-assessment-result",
+    "title": "观察结果页",
+    "source": "宣传计划/pages/assessment-result.html",
+    "file": "screenshots/16-assessment-result.png"
+  },
+  {
+    "id": "17-growth-trend",
+    "title": "成长趋势页",
+    "source": "宣传计划/pages/growth-trend.html",
+    "file": "screenshots/17-growth-trend.png"
+  },
+  {
+    "id": "18-meal-recipe",
+    "title": "食谱详情页",
+    "source": "宣传计划/pages/meal-recipe.html",
+    "file": "screenshots/18-meal-recipe.png"
+  },
+  {
+    "id": "19-training-exercise",
+    "title": "训练练习页",
+    "source": "宣传计划/pages/training-exercise.html",
+    "file": "screenshots/19-training-exercise.png"
+  },
+  {
+    "id": "20-social-cover",
+    "title": "社交传播封面页",
+    "source": "宣传计划/pages/social-cover.html",
+    "file": "screenshots/20-social-cover.png"
+  }
+]
