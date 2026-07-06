@@ -651,6 +651,10 @@ function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET || 'dev-niuniu-secret', { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 }
 
+function signRefreshToken(payload) {
+  return jwt.sign(Object.assign({}, payload, { tokenType: 'refresh' }), JWT_SECRET || 'dev-niuniu-secret', { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' });
+}
+
 function signAdminToken(payload) {
   return jwt.sign(payload, process.env.ADMIN_JWT_SECRET || JWT_SECRET || 'dev-niuniu-admin-secret', { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '12h' });
 }
@@ -3857,7 +3861,7 @@ async function loginHandler(req, res) {
       data: {
         user,
         token: signToken(payload),
-        refresh_token: signToken(Object.assign({}, payload, { tokenType: 'refresh' })),
+        refresh_token: signRefreshToken(payload),
         signup_reward: signupReward,
         referral_reward: referralReward
       }
@@ -3876,9 +3880,19 @@ async function refreshHandler(req, res) {
     res.status(400).json({ success: false, message: '缺少刷新令牌' });
     return;
   }
-  const decoded = jwt.verify(refreshToken, JWT_SECRET || 'dev-niuniu-secret');
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, JWT_SECRET || 'dev-niuniu-secret');
+  } catch (err) {
+    res.status(401).json({ success: false, code: 'REFRESH_TOKEN_EXPIRED', message: '登录状态已过期，请重新登录' });
+    return;
+  }
+  if (!decoded || decoded.tokenType !== 'refresh' || !decoded.userId) {
+    res.status(401).json({ success: false, code: 'REFRESH_TOKEN_INVALID', message: '登录状态已过期，请重新登录' });
+    return;
+  }
   const payload = { userId: decoded.userId, openid: decoded.openid, username: decoded.username || '微信用户' };
-  res.json({ success: true, data: { token: signToken(payload) } });
+  res.json({ success: true, data: { token: signToken(payload), refresh_token: signRefreshToken(payload) } });
 }
 
 async function meHandler(req, res) {

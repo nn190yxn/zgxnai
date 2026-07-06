@@ -639,6 +639,10 @@ onError: function(error) {
             var data = that.unwrapResponse(res.data);
             if (data && data.token) {
               wx.setStorageSync('token', data.token);
+              if (data.refresh_token) {
+                wx.setStorageSync('refreshToken', data.refresh_token);
+                that.globalData.refreshToken = data.refresh_token;
+              }
               that.globalData.isLoggedIn = true;
               resolve(data);
               return;
