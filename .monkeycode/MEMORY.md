@@ -40,7 +40,7 @@
   - 部署目录 `/home/ubuntu/niuniu-parenting`，PM2 进程名 `niuniu-backend`
   - 后端入口 `/home/ubuntu/niuniu-parenting/backend/src/mysql-production/server.js`
   - 业务环境变量从 `/home/ubuntu/niuniu-parenting/.env` 加载
-  - 生产目录不是 Git 工作树，热修复采用 SCP 单文件同步 → pm2 restart
+  - 生产目录不是 Git 工作树，热修复采用 SCP 同步 → pm2 restart；同步 `backend/src/mysql-production/server.js` 时需同时确认同目录 helper 依赖（如 `chat-context.js`、`daily-plan-text.js`、`development-zones.js`）已在生产存在
   - 每次同步前先备份到 `/home/ubuntu/niuniu-parenting/backups/`
   - 后台运营统计由 ubuntu 用户 crontab 定时跑 `/home/ubuntu/niuniu-parenting/backend/src/scripts/build-admin-daily-stats.js`：每天 01:15 汇总昨天，每小时 20 分汇总当天，日志在 `/home/ubuntu/niuniu-parenting/logs/admin-daily-stats.log`
   - 修改 RUNTIME_* 环境变量后需 `pm2 restart niuniu-backend --update-env`
