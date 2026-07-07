@@ -486,27 +486,50 @@
 }
 
 .development-zone-section {
-  padding-top: 24rpx;
+  padding: 30rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #3A2A22 0%, #6A412F 100%);
+  box-shadow: 0 14rpx 34rpx rgba(91, 56, 41, 0.18);
+}
+
+.development-zone-section .section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 22rpx;
+}
+
+.development-zone-section .section-title {
+  display: block;
+  color: #FFFFFF;
+}
+
+.development-zone-section .section-header-link {
+  flex-shrink: 0;
+  color: #FFE8D6;
+  font-weight: 800;
 }
 
 .development-zone-subtitle {
   max-width: 620rpx;
   line-height: 1.6;
+  color: rgba(255, 250, 244, 0.82);
 }
 
 .development-zone-entry {
   padding: 28rpx;
   border-radius: 24rpx;
-  background: linear-gradient(180deg, #FFFFFF 0%, #FFF4EC 100%);
-  border: 2rpx solid rgba(255, 107, 53, 0.12);
-  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+  background: rgba(255, 255, 255, 0.14);
+  border: 2rpx solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.16);
 }
 
 .development-zone-entry-title {
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #FFFFFF;
   font-weight: 800;
   letter-spacing: 0;
   overflow-wrap: break-word;
@@ -517,7 +540,7 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: #7A6660;
+  color: rgba(255, 250, 244, 0.86);
   letter-spacing: 0;
   overflow-wrap: break-word;
 }
@@ -532,8 +555,8 @@
 .development-zone-tag {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: rgba(255, 107, 53, 0.1);
-  color: #A94B20;
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFE8D6;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 700;
@@ -544,7 +567,7 @@
   margin-top: 22rpx;
   font-size: 25rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #FFFFFF;
   font-weight: 700;
   letter-spacing: 0;
   overflow-wrap: break-word;
