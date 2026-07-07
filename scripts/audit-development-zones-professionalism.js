@@ -37,6 +37,9 @@ const REQUIRED_FIELDS = [
   'observeSignal',
   'chatQuestion',
   'developmentalFocus',
+  'parentInsight',
+  'practicePrinciples',
+  'adjustmentSignals',
   'safetyBoundary'
 ];
 
@@ -91,6 +94,15 @@ function assertScenarioProfessional(zone, scenario) {
   assert.strictEqual(scenario.difficultySteps.length, 3, zone.code + '.' + scenario.code + ' difficultySteps should have three levels');
   assert.ok(/降低难度/.test(scenario.difficultySteps[0]), zone.code + '.' + scenario.code + ' difficultySteps should include fallback');
   assert.ok(/进阶/.test(scenario.difficultySteps[2]), zone.code + '.' + scenario.code + ' difficultySteps should include stretch');
+  assert.ok(Array.isArray(scenario.parentInsight), zone.code + '.' + scenario.code + ' parentInsight missing');
+  assert.ok(scenario.parentInsight.length >= 3, zone.code + '.' + scenario.code + ' parentInsight should have enough items');
+  scenario.parentInsight.forEach(function(item) {
+    assert.ok(item.length >= 24, zone.code + '.' + scenario.code + ' parentInsight too thin');
+  });
+  assert.ok(Array.isArray(scenario.practicePrinciples), zone.code + '.' + scenario.code + ' practicePrinciples missing');
+  assert.ok(scenario.practicePrinciples.length >= 3, zone.code + '.' + scenario.code + ' practicePrinciples should have enough items');
+  assert.ok(Array.isArray(scenario.adjustmentSignals), zone.code + '.' + scenario.code + ' adjustmentSignals missing');
+  assert.ok(scenario.adjustmentSignals.length >= 3, zone.code + '.' + scenario.code + ' adjustmentSignals should have enough items');
   assert.ok(scenario.playGame, zone.code + '.' + scenario.code + ' playGame missing');
   assert.ok(scenario.playGame.name.length >= 4, zone.code + '.' + scenario.code + ' playGame name too thin');
   assert.ok(/准备/.test(scenario.playGame.setup) || /空间|材料/.test(scenario.playGame.setup), zone.code + '.' + scenario.code + ' playGame setup should be usable');

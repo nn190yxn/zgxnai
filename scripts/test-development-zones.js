@@ -28,6 +28,12 @@ function assertScenarioDepthComplete(scenario, zoneCode) {
   });
   assert.ok(Array.isArray(scenario.difficultySteps), zoneCode + ' scenario difficultySteps missing');
   assert.strictEqual(scenario.difficultySteps.length, 3, zoneCode + ' scenario difficultySteps should have three levels');
+  assert.ok(Array.isArray(scenario.parentInsight), zoneCode + ' scenario parentInsight missing');
+  assert.ok(scenario.parentInsight.length >= 3, zoneCode + ' scenario parentInsight should have enough items');
+  assert.ok(Array.isArray(scenario.practicePrinciples), zoneCode + ' scenario practicePrinciples missing');
+  assert.ok(scenario.practicePrinciples.length >= 3, zoneCode + ' scenario practicePrinciples should have enough items');
+  assert.ok(Array.isArray(scenario.adjustmentSignals), zoneCode + ' scenario adjustmentSignals missing');
+  assert.ok(scenario.adjustmentSignals.length >= 3, zoneCode + ' scenario adjustmentSignals should have enough items');
   assert.ok(scenario.playGame, zoneCode + ' scenario playGame missing');
   ['name', 'setup', 'howToPlay', 'parentTip', 'variation'].forEach(function(key) {
     assert.ok(scenario.playGame[key], zoneCode + ' scenario playGame.' + key + ' missing');
@@ -195,6 +201,9 @@ function testScenePageFallbacks() {
   assert.strictEqual(scenePage.data.selectedAgeGroup, '4-5岁');
   assert.strictEqual(scenePage.data.displayAgeGuidance.length, 1);
   assert.strictEqual(scenePage.data.displayAgeGuidance[0].ageGroup, '4-5岁');
+  assert.ok(scenePage.data.scenario.parentInsight.length >= 3);
+  assert.ok(scenePage.data.scenario.practicePrinciples.length >= 3);
+  assert.ok(scenePage.data.scenario.adjustmentSignals.length >= 3);
   assert.ok(scenePage.data.scenario.playGame && scenePage.data.scenario.playGame.howToPlay);
   assert.strictEqual(typeof scenePage.askFallback, 'function');
 }

@@ -3411,6 +3411,49 @@ var DEVELOPMENT_PLAY_GUIDE = {
   }
 };
 
+var DEVELOPMENT_PROFESSIONAL_GUIDE = {
+  language: {
+    mechanism: '语言表达需要先听懂意思，再把词语排成句子，最后在互动里说出来。',
+    parentFocus: '家长重点看孩子能不能接住问题、说出关键词、把一句话补完整。',
+    cue: '少追问，多示范一句孩子马上能跟上的说法。'
+  },
+  sensory: {
+    mechanism: '身体感觉处理会影响孩子坐下、等待、用力和接受触碰的状态。',
+    parentFocus: '家长重点看声音、触碰、空间变化或身体用力是不是让孩子更难配合。',
+    cue: '先给身体一个短动作，再回到安静任务。'
+  },
+  focus: {
+    mechanism: '专注力来自启动、保持、转换和完成几个能力一起配合。',
+    parentFocus: '家长重点看孩子卡在开始、坚持、听指令，还是做完收尾。',
+    cue: '一次只给一个动作，让孩子看见开始点和完成点。'
+  },
+  gross_motor: {
+    mechanism: '大运动练习靠身体控制、平衡、节奏和空间判断慢慢建立。',
+    parentFocus: '家长重点看孩子能不能稳住身体、看清路线、按节奏完成动作。',
+    cue: '先稳再快，先近再远，先短再长。'
+  },
+  emotion: {
+    mechanism: '情绪能力从认出感受开始，再学会用语言和动作表达需要。',
+    parentFocus: '家长重点看孩子情绪升高前有什么身体信号，以及平稳后能不能复盘。',
+    cue: '情绪高时先陪孩子降下来，平稳后再练说法。'
+  },
+  social: {
+    mechanism: '社交能力需要看懂别人、表达自己、等待轮流和冲突后修复。',
+    parentFocus: '家长重点看孩子是不知道怎么说，还是不知道怎么等、怎么回应。',
+    cue: '先练一句可用的话，再放进真实互动。'
+  },
+  confidence: {
+    mechanism: '自信来自可预期的小成功，孩子需要在安全感里多试一次。',
+    parentFocus: '家长重点看孩子害怕的是环境、人、任务难度，还是失败后的感受。',
+    cue: '把尝试拆成看一看、靠近一点、做一下。'
+  },
+  habits: {
+    mechanism: '生活习惯靠固定顺序、环境线索和少量提醒慢慢形成。',
+    parentFocus: '家长重点看孩子是不知道顺序、容易被打断，还是需要更多时间。',
+    cue: '把流程放在固定位置，用 2 到 3 步让孩子能跟上。'
+  }
+};
+
 function buildAgeGuidance(scenario) {
   var title = scenario.title || '这个练习';
   return [
@@ -3448,15 +3491,44 @@ function buildPlayGame(zone, scenario) {
   };
 }
 
+function buildParentInsight(zone, scenario) {
+  var guide = DEVELOPMENT_PROFESSIONAL_GUIDE[zone.code] || DEVELOPMENT_PROFESSIONAL_GUIDE.habits;
+  return [
+    guide.mechanism,
+    '放到“' + (scenario.title || '这个场景') + '”里，先不用急着纠正结果，先看孩子卡在哪一步。',
+    guide.parentFocus
+  ];
+}
+
+function buildPracticePrinciples(zone, scenario) {
+  var guide = DEVELOPMENT_PROFESSIONAL_GUIDE[zone.code] || DEVELOPMENT_PROFESSIONAL_GUIDE.habits;
+  return [
+    '先降低要求：把练习缩小到孩子今天能完成的一小步。',
+    '再给清楚提示：' + guide.cue,
+    '最后保留成功感：完成后用一句话说出孩子刚才做到了什么。'
+  ];
+}
+
+function buildAdjustmentSignals(scenario) {
+  return [
+    '继续当前做法：孩子愿意再试一次，或者提醒后能更快进入练习。',
+    '降一档：孩子明显躲开、沉默很久、动作变乱时，把时间缩短，只保留最容易的一步。',
+    '进一档：孩子连续两三次能完成当前动作，再增加一点等待、表达或选择。'
+  ];
+}
+
 function enrichScenario(zone, scenario) {
   var guide = DEVELOPMENT_DEPTH_GUIDE[zone.code] || DEVELOPMENT_DEPTH_GUIDE.habits;
   var enriched = Object.assign({}, scenario);
   enriched.developmentalFocus = enriched.developmentalFocus || guide.focus;
+  enriched.parentInsight = enriched.parentInsight || buildParentInsight(zone, enriched);
+  enriched.practicePrinciples = enriched.practicePrinciples || buildPracticePrinciples(zone, enriched);
   enriched.ageGuidance = enriched.ageGuidance || buildAgeGuidance(enriched);
   enriched.difficultySteps = enriched.difficultySteps || buildDifficultySteps(enriched);
   enriched.playGame = enriched.playGame || buildPlayGame(zone, enriched);
   enriched.commonPitfalls = enriched.commonPitfalls || guide.pitfalls;
   enriched.safetyBoundary = enriched.safetyBoundary || guide.safety;
+  enriched.adjustmentSignals = enriched.adjustmentSignals || buildAdjustmentSignals(enriched);
   enriched.progressSignals = enriched.progressSignals || [
     enriched.observeSignal,
     '同样场景下，孩子需要的提醒次数减少。',

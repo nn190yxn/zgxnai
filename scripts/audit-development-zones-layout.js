@@ -118,7 +118,7 @@ function testScenePageLayout() {
   const wxss = read('miniprogram/pages/development/scene/scene.wxss');
   const wxml = read('miniprogram/pages/development/scene/scene.wxml');
 
-  ['先判断', '今天做什么', '可以这样说', '看什么变化', '亲子小游戏', '难度阶梯', '做完以后'].forEach(function(text) {
+  ['先判断', '今天做什么', '可以这样说', '看什么变化', '家长先理解', '陪练要点', '什么时候调整做法', '亲子小游戏', '难度阶梯', '做完以后'].forEach(function(text) {
     assert.ok(wxml.includes(text), 'scene page should keep section copy: ' + text);
   });
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'scene page should support long text wrapping');

@@ -37,6 +37,13 @@
       <text class="card-desc">{{scenario.developmentalFocus}}</text>
     </view>
 
+    <view class="content-card" wx:if="{{scenario.parentInsight.length}}">
+      <text class="card-eyebrow">家长先理解</text>
+      <view class="depth-list">
+        <text class="depth-line" wx:for="{{scenario.parentInsight}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
     <view class="content-card" wx:if="{{displayAgeGuidance.length}}">
       <view class="card-row">
         <text class="card-eyebrow">分龄做法</text>
@@ -47,6 +54,13 @@
           <text class="depth-label">{{item.ageGroup}}</text>
           <text class="depth-text">{{item.guidance}}</text>
         </view>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.practicePrinciples.length}}">
+      <text class="card-eyebrow">陪练要点</text>
+      <view class="depth-list">
+        <text class="depth-line" wx:for="{{scenario.practicePrinciples}}" wx:key="*this">{{item}}</text>
       </view>
     </view>
 
@@ -84,6 +98,13 @@
       <text class="card-eyebrow">连续观察什么</text>
       <view class="depth-list">
         <text class="depth-line" wx:for="{{scenario.progressSignals}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="content-card" wx:if="{{scenario.adjustmentSignals.length}}">
+      <text class="card-eyebrow">什么时候调整做法</text>
+      <view class="depth-list">
+        <text class="depth-line" wx:for="{{scenario.adjustmentSignals}}" wx:key="*this">{{item}}</text>
       </view>
     </view>
 
