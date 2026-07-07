@@ -454,6 +454,37 @@
   line-height: 1.6;
 }
 
+.feature-module-subtitle {
+  line-height: 1.65;
+}
+
+.feature-module-grid {
+  gap: 18rpx;
+}
+
+.feature-module-card {
+  width: calc((100% - 18rpx) / 2);
+  min-height: 184rpx;
+  padding: 24rpx 22rpx;
+  text-align: left;
+}
+
+.feature-module-card .module-name {
+  margin-bottom: 12rpx;
+  font-size: 27rpx;
+  line-height: 1.45;
+  font-weight: 800;
+  color: #2F241F;
+}
+
+.feature-module-card .module-desc {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: #7A6660;
+  overflow-wrap: break-word;
+}
+
 .development-zone-section {
   padding-top: 24rpx;
 }

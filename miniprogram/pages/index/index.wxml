@@ -91,54 +91,55 @@
 
   <view class="section">
     <view class="section-header">
-      <text class="section-title">从这里开始</text>
+      <text class="section-title">功能板块</text>
+      <text class="section-subtitle feature-module-subtitle">按需求选择：观察状态、做练习、查方法、问小牛、记成长。</text>
     </view>
 
-    <view class="module-grid">
-      <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card" bindtap="goToAssessment">
-        <text class="module-name">成长观察</text>
-        <text class="module-desc">看看孩子最近的整体状态</text>
+    <view class="module-grid feature-module-grid">
+      <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card feature-module-card" bindtap="goToAssessment">
+        <text class="module-name">成长观察测评</text>
+        <text class="module-desc">测一测孩子最近的情绪、睡眠、饮食和社交状态。</text>
       </view>
-      <view wx:else class="module-card module-card-disabled" bindtap="goToAssessment">
-        <text class="module-name">成长观察</text>
+      <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToAssessment">
+        <text class="module-name">成长观察测评</text>
         <text class="module-desc">还在准备中</text>
       </view>
 
-      <view wx:if="{{featureFlags.educationEnabled}}" class="module-card" bindtap="goToTextbook">
-        <text class="module-name">每日练习</text>
-        <text class="module-desc">今天带娃练什么</text>
+      <view wx:if="{{featureFlags.educationEnabled}}" class="module-card feature-module-card" bindtap="goToTextbook">
+        <text class="module-name">每日能力练习</text>
+        <text class="module-desc">按年龄做语言、阅读、专注和表达小练习。</text>
       </view>
-      <view wx:else class="module-card module-card-disabled" bindtap="goToTextbook">
-        <text class="module-name">每日练习</text>
+      <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToTextbook">
+        <text class="module-name">每日能力练习</text>
         <text class="module-desc">还在准备中</text>
       </view>
 
-      <view class="module-card" bindtap="goToNutrition">
-        <text class="module-name">营养食谱</text>
-        <text class="module-desc">饮食搭配参考</text>
+      <view class="module-card feature-module-card" bindtap="goToNutrition">
+        <text class="module-name">营养食谱建议</text>
+        <text class="module-desc">看一日搭配、挑食应对和适龄家常做法。</text>
       </view>
 
-      <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card" bindtap="goToParenting">
-        <text class="module-name">育儿锦囊</text>
-        <text class="module-desc">遇到问题来这里找方法</text>
+      <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card feature-module-card" bindtap="goToParenting">
+        <text class="module-name">场景育儿方法</text>
+        <text class="module-desc">按吃饭、睡前、情绪、出门等问题找步骤。</text>
       </view>
-      <view wx:else class="module-card module-card-disabled" bindtap="goToParenting">
-        <text class="module-name">育儿锦囊</text>
+      <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToParenting">
+        <text class="module-name">场景育儿方法</text>
         <text class="module-desc">还在准备中</text>
       </view>
 
-      <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card" bindtap="goToChat">
-        <text class="module-name">小牛育儿问答</text>
-        <text class="module-desc">有问题直接问</text>
+      <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card feature-module-card" bindtap="goToChat">
+        <text class="module-name">小牛即时问答</text>
+        <text class="module-desc">临时拿不准时，直接描述孩子情况拿建议。</text>
       </view>
-      <view wx:else class="module-card module-card-disabled" bindtap="goToChat">
-        <text class="module-name">小牛育儿问答</text>
+      <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToChat">
+        <text class="module-name">小牛即时问答</text>
         <text class="module-desc">还在准备中</text>
       </view>
 
-      <view class="module-card" bindtap="goToGrowthRecord">
-        <text class="module-name">成长记录</text>
-        <text class="module-desc">每天花30秒记一下</text>
+      <view class="module-card feature-module-card" bindtap="goToGrowthRecord">
+        <text class="module-name">成长记录档案</text>
+        <text class="module-desc">记录今天表现，用来生成周总结和趋势变化。</text>
       </view>
     </view>
   </view>
