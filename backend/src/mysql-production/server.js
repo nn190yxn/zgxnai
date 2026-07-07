@@ -9632,52 +9632,164 @@ async function loadDailyPlanRecords(userId, childId, planDate) {
   return rows.map(normalizeDailyPlanRecord);
 }
 
+function buildFallbackDailyPlanResponse(child, planDate) {
+  const childId = child && child.id ? child.id : 0;
+  const fallbackCards = [
+    {
+      id: 'fallback_1',
+      childId,
+      planDate,
+      type: 'habit_reminder',
+      title: '今天先观察孩子一个小变化',
+      reason: '先用最轻的一步恢复今日建议。',
+      actionText: '去记录',
+      summary: '记录一次情绪、吃饭、睡眠或互动变化。',
+      durationMinutes: 3,
+      targetType: 'growth_record',
+      targetId: '',
+      targetPath: '/pages/growth-record/index',
+      sourceKey: 'fallback_growth_record',
+      score: 60,
+      status: 'pending',
+      completed: false,
+      completedAt: null
+    },
+    {
+      id: 'fallback_2',
+      childId,
+      planDate,
+      type: 'parenting_article',
+      title: '遇到具体场景，先找一个做法',
+      reason: '首页建议暂时降级，育儿方法仍可正常查看。',
+      actionText: '看方法',
+      summary: '从吃饭、睡前、情绪或出门场景里选一个。',
+      durationMinutes: 5,
+      targetType: 'parenting',
+      targetId: '',
+      targetPath: '/pages/parenting/parenting',
+      sourceKey: 'fallback_parenting',
+      score: 50,
+      status: 'pending',
+      completed: false,
+      completedAt: null
+    },
+    {
+      id: 'fallback_3',
+      childId,
+      planDate,
+      type: 'development_zone',
+      title: '3 分钟做一个发展小练习',
+      reason: '先从一个容易完成的家庭动作开始。',
+      actionText: '进入专区',
+      summary: '语言、专注、情绪和生活习惯都可以从小动作开始。',
+      durationMinutes: 3,
+      targetType: 'development_zone',
+      targetId: 'language',
+      targetPath: '/pages/development/detail/detail?zone=language',
+      sourceKey: 'fallback_development_zone',
+      score: 45,
+      status: 'pending',
+      completed: false,
+      completedAt: null
+    }
+  ];
+  return {
+    date: planDate,
+    child_id: childId,
+    child_name: (child && child.name) || '',
+    age_group: child ? (inferAgeRangeFromChild(child) || '') : '',
+    streak_days: 0,
+    cards: fallbackCards
+  };
+}
+
 async function dailyPlanHandler(req, res) {
   const userId = getUserId(req);
   const childId = Number(req.query.childId || 0);
   const planDate = getPlanDateValue(req.query.date);
-  const child = await resolveDailyPlanChild(userId, childId);
-  if (childId && !child) {
-    res.status(403).json({ success: false, message: '无权访问该孩子的计划' });
-    return;
-  }
+  let child = null;
+  try {
+    child = await resolveDailyPlanChild(userId, childId);
+    if (childId && !child) {
+      res.status(403).json({ success: false, message: '无权访问该孩子的计划' });
+      return;
+    }
 
-  if (!child) {
-    const noChildCards = buildNoChildDailyPlanCards(planDate);
-    res.json({
-      success: true,
-      data: {
-        date: planDate,
-        child_id: 0,
-        child_name: '',
-        age_group: '',
-        cards: noChildCards.map((item, index) => ({
-          id: `guest_${index + 1}`,
-          childId: 0,
-          planDate,
-          type: item.planType,
-          title: item.title,
-          reason: item.reasonText,
-          actionText: item.actionText,
-          summary: item.summaryText,
-          durationMinutes: item.durationMinutes,
-          targetType: item.targetType,
-          targetId: item.targetId,
-          targetPath: item.targetPath,
-          sourceKey: item.sourceKey,
-          score: item.score,
-          status: 'pending',
-          completed: false,
-          completedAt: null
-        }))
-      }
-    });
-    return;
-  }
+    if (!child) {
+      const noChildCards = buildNoChildDailyPlanCards(planDate);
+      res.json({
+        success: true,
+        data: {
+          date: planDate,
+          child_id: 0,
+          child_name: '',
+          age_group: '',
+          cards: noChildCards.map((item, index) => ({
+            id: `guest_${index + 1}`,
+            childId: 0,
+            planDate,
+            type: item.planType,
+            title: item.title,
+            reason: item.reasonText,
+            actionText: item.actionText,
+            summary: item.summaryText,
+            durationMinutes: item.durationMinutes,
+            targetType: item.targetType,
+            targetId: item.targetId,
+            targetPath: item.targetPath,
+            sourceKey: item.sourceKey,
+            score: item.score,
+            status: 'pending',
+            completed: false,
+            completedAt: null
+          }))
+        }
+      });
+      return;
+    }
 
-  const ageGroup = inferAgeRangeFromChild(child) || '';
-  if (!ageGroup) {
-    const missingAgeCards = dailyPlanText.buildMissingAgeDailyPlanCards(child, planDate);
+    const ageGroup = inferAgeRangeFromChild(child) || '';
+    if (!ageGroup) {
+      const missingAgeCards = dailyPlanText.buildMissingAgeDailyPlanCards(child, planDate);
+      const streak = await getUserPlanStreak(userId, child.id);
+      res.json({
+        success: true,
+        data: {
+          date: planDate,
+          child_id: child.id,
+          child_name: child.name || '',
+          age_group: '',
+          streak_days: streak.streakDays,
+          cards: missingAgeCards.map((item, index) => ({
+            id: `missing_age_${index + 1}`,
+            childId: child.id,
+            planDate,
+            type: item.planType,
+            title: item.title,
+            reason: item.reasonText,
+            actionText: item.actionText,
+            summary: item.summaryText,
+            durationMinutes: item.durationMinutes,
+            targetType: item.targetType,
+            targetId: item.targetId,
+            targetPath: item.targetPath,
+            sourceKey: item.sourceKey,
+            score: item.score,
+            status: 'pending',
+            completed: false,
+            completedAt: null
+          }))
+        }
+      });
+      return;
+    }
+
+    let cards = await loadDailyPlanRecords(userId, child.id, planDate);
+    if (!cards.length) {
+      const generated = await buildDailyPlanCards(userId, child, planDate);
+      await storeDailyPlanCards(userId, child.id, planDate, generated);
+      cards = await loadDailyPlanRecords(userId, child.id, planDate);
+    }
     const streak = await getUserPlanStreak(userId, child.id);
     res.json({
       success: true,
@@ -9685,50 +9797,21 @@ async function dailyPlanHandler(req, res) {
         date: planDate,
         child_id: child.id,
         child_name: child.name || '',
-        age_group: '',
+        age_group: ageGroup,
         streak_days: streak.streakDays,
-        cards: missingAgeCards.map((item, index) => ({
-          id: `missing_age_${index + 1}`,
-          childId: child.id,
-          planDate,
-          type: item.planType,
-          title: item.title,
-          reason: item.reasonText,
-          actionText: item.actionText,
-          summary: item.summaryText,
-          durationMinutes: item.durationMinutes,
-          targetType: item.targetType,
-          targetId: item.targetId,
-          targetPath: item.targetPath,
-          sourceKey: item.sourceKey,
-          score: item.score,
-          status: 'pending',
-          completed: false,
-          completedAt: null
-        }))
+        cards
       }
     });
-    return;
+  } catch (err) {
+    console.error('[daily-plan] failed', {
+      userId,
+      childId,
+      planDate,
+      resolvedChildId: child && child.id,
+      message: err && err.message
+    });
+    res.json({ success: true, data: buildFallbackDailyPlanResponse(child, planDate) });
   }
-
-  let cards = await loadDailyPlanRecords(userId, child.id, planDate);
-  if (!cards.length) {
-    const generated = await buildDailyPlanCards(userId, child, planDate);
-    await storeDailyPlanCards(userId, child.id, planDate, generated);
-    cards = await loadDailyPlanRecords(userId, child.id, planDate);
-  }
-  const streak = await getUserPlanStreak(userId, child.id);
-  res.json({
-    success: true,
-    data: {
-      date: planDate,
-      child_id: child.id,
-      child_name: child.name || '',
-      age_group: ageGroup,
-      streak_days: streak.streakDays,
-      cards
-    }
-  });
 }
 
 async function dailyPlanCompleteHandler(req, res) {
