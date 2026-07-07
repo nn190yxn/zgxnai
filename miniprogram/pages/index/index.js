@@ -2,6 +2,7 @@
 const app = getApp();
 const encouragementUtils = require('../../utils/encouragement.js');
 const developmentZones = require('../../utils/development-zones.js');
+const allDevelopmentZones = developmentZones.getDevelopmentZones();
 
 Page({
   data: {
@@ -31,7 +32,8 @@ Page({
     dailyPlanDate: '',
     dailyPlanCompletedCount: 0,
     dailyPlanEmptyText: '',
-    developmentZones: developmentZones.getDevelopmentZones(),
+    developmentZones: allDevelopmentZones,
+    featuredDevelopmentZones: allDevelopmentZones.slice(0, 4),
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
     membershipTouchpointDesc: '查看每周成长趋势和下周建议。',
@@ -1070,6 +1072,15 @@ Page({
     }
     wx.navigateTo({
       url: '/pages/development/detail/detail?zone=' + encodeURIComponent(zone.code),
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  goToAllDevelopmentZones() {
+    wx.navigateTo({
+      url: '/pages/development/detail/detail?zone=' + encodeURIComponent('language'),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }

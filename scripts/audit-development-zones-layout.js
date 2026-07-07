@@ -37,12 +37,23 @@ function assertRuleHasNumberAtLeast(source, selector, property, minValue) {
   assert.ok(Number(match[1]) >= minValue, selector + ' ' + property + ' should be at least ' + minValue);
 }
 
+function assertRuleHasNumberAtMost(source, selector, property, maxValue) {
+  const pattern = new RegExp(property + '\\s*:\\s*([0-9.]+)');
+  const match = getRules(source, selector).map(function(rule) {
+    return rule.match(pattern);
+  }).find(function(item) { return !!item; });
+  assert.ok(match, selector + ' should include ' + property);
+  assert.ok(Number(match[1]) <= maxValue, selector + ' ' + property + ' should be at most ' + maxValue);
+}
+
 function testIndexZoneLayout() {
   const wxss = read('miniprogram/pages/index/index.wxss');
   const wxml = read('miniprogram/pages/index/index.wxml');
 
   assert.ok(wxml.includes('3-6 岁发展专区'), 'index should show development zone entry title');
   assert.ok(wxml.includes('每天一个小动作'), 'index should show action-oriented zone subtitle');
+  assert.ok(wxml.includes('featuredDevelopmentZones'), 'index should show featured development zones instead of expanding all zones');
+  assert.ok(wxml.includes('goToAllDevelopmentZones'), 'index should keep a compact entry to development zones');
   assert.strictEqual(wxss.includes('word-break: break-all'), false, 'development zone cards should avoid hard character breaks');
 
   ['.development-zone-card .module-name', '.development-zone-card .module-desc', '.development-zone-action'].forEach(function(selector) {
@@ -51,7 +62,8 @@ function testIndexZoneLayout() {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
   assertRuleHas(wxss, '.development-zone-card .module-desc', 'word-break', 'normal');
-  assertRuleHasNumberAtLeast(wxss, '.development-zone-card', 'min-height', 228);
+  assertRuleHasNumberAtMost(wxss, '.development-zone-card', 'min-height', 210);
+  assertRuleHasNumberAtLeast(wxss, '.development-zone-more-title', 'line-height', 1.45);
 }
 
 function testDetailPageLayout() {

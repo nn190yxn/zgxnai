@@ -410,6 +410,15 @@
   gap: 16rpx;
 }
 
+.section-header-link {
+  flex-shrink: 0;
+  margin-left: 18rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #D85C26;
+  font-weight: 700;
+}
+
 .module-card {
   width: calc((100% - 32rpx) / 3);
   box-sizing: border-box;
@@ -460,8 +469,8 @@
 
 .development-zone-card {
   width: calc((100% - 18rpx) / 2);
-  min-height: 228rpx;
-  padding: 24rpx 22rpx;
+  min-height: 198rpx;
+  padding: 22rpx 20rpx;
   text-align: left;
   border-radius: 20rpx;
   background: linear-gradient(180deg, #FFFFFF 0%, #FFF9F3 100%);
@@ -480,7 +489,7 @@
 
 .development-zone-card .module-desc {
   display: block;
-  min-height: 78rpx;
+  min-height: 70rpx;
   font-size: 22rpx;
   line-height: 1.65;
   color: #7A6660;
@@ -491,13 +500,40 @@
 
 .development-zone-action {
   display: block;
-  margin-top: 18rpx;
+  margin-top: 14rpx;
   font-size: 22rpx;
   line-height: 1.55;
   color: #D85C26;
   font-weight: 700;
   letter-spacing: 0;
   overflow-wrap: break-word;
+}
+
+.development-zone-more {
+  margin-top: 18rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 107, 53, 0.08);
+  border: 2rpx solid rgba(255, 107, 53, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.development-zone-more-title {
+  flex: 1;
+  font-size: 23rpx;
+  line-height: 1.6;
+  color: #7A6660;
+}
+
+.development-zone-more-action {
+  flex-shrink: 0;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #D85C26;
+  font-weight: 700;
 }
 
 /* 快速入口 */
