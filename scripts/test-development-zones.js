@@ -157,7 +157,18 @@ function testDetailPageFallbacks() {
   detailPage.applyAgeGroup('4-5岁', null);
   assert.strictEqual(detailPage.data.selectedAgeGroup, '4-5岁');
   assert.ok(detailPage.data.scenarios.length > 0);
+  assert.strictEqual(detailPage.data.selectedScenarioCode, '');
+  assert.strictEqual(detailPage.data.activePractice, null);
   assert.strictEqual(typeof detailPage.askFallback, 'function');
+}
+
+function testDetailPageScenarioNavigation() {
+  let lastNavigateUrl = '';
+  const detailPage = loadPageModule('miniprogram/pages/development/detail/detail.js');
+  global.wx.navigateTo = function(options) { lastNavigateUrl = options.url; };
+  detailPage.loadZone('language');
+  detailPage.openScenarioDetail({ currentTarget: { dataset: { scenario: 'unclear_speech' } } });
+  assert.strictEqual(lastNavigateUrl, '/pages/development/scene/scene?zone=language&scenario=unclear_speech');
 }
 
 function testOverviewPageNavigation() {
@@ -196,6 +207,7 @@ testSeedSync();
 testBackendZoneDataRules();
 testOverviewPageNavigation();
 testDetailPageFallbacks();
+testDetailPageScenarioNavigation();
 testScenePageFallbacks();
 testDevelopmentZoneRouteSource();
 

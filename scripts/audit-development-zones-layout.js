@@ -91,16 +91,19 @@ function testDetailPageLayout() {
   const wxss = read('miniprogram/pages/development/detail/detail.wxss');
   const wxml = read('miniprogram/pages/development/detail/detail.wxml');
 
-  ['先选年龄段', '你家孩子像哪种情况', '今日练习', '7 天慢慢练', '需要继续判断'].forEach(function(text) {
+  ['先选年龄段', '你家孩子像哪种情况', '查看专题方法', '7 天慢慢练', '没找到很像的表现'].forEach(function(text) {
     assert.ok(wxml.includes(text), 'detail page should keep section copy: ' + text);
   });
   assert.ok(wxml.includes('scenarioGroups'), 'detail page should group scenarios after age selection');
+  assert.ok(wxml.includes('bindtap="openScenarioDetail"'), 'detail page should open the scenario topic directly');
+  assert.strictEqual(wxml.includes('bindtap="selectScenario"'), false, 'detail page should not keep users on the page after scenario tap');
+  assert.strictEqual(wxml.includes('activePractice'), false, 'detail page should not show practice details below the scenario list');
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'detail page should support long text wrapping');
   assert.ok(wxss.includes('letter-spacing: 0'), 'detail page should set stable letter spacing');
-  ['.title', '.section-title', '.scenario-group-title', '.scenario-title', '.practice-title', '.practice-action', '.practice-note-text', '.plan-name', '.placeholder-desc'].forEach(function(selector) {
+  ['.title', '.section-title', '.scenario-group-title', '.scenario-title', '.scenario-link', '.plan-name', '.placeholder-desc'].forEach(function(selector) {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
-  ['.empty-action', '.detail-link', '.related-btn'].forEach(function(selector) {
+  ['.empty-action', '.related-btn'].forEach(function(selector) {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
 }

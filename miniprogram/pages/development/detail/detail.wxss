@@ -19,6 +19,7 @@
 .scenario-title,
 .scenario-text,
 .scenario-check,
+.scenario-link,
 .scenario-group-title,
 .scenario-group-count,
 .empty-action,
@@ -191,11 +192,6 @@
   border: 2rpx solid rgba(255, 107, 53, 0.1);
 }
 
-.scenario-card-active {
-  background: #FFF4EC;
-  border-color: #FF6B35;
-}
-
 .scenario-title {
   display: block;
   font-size: 27rpx;
@@ -215,6 +211,15 @@
 
 .scenario-check {
   color: #A16207;
+}
+
+.scenario-link {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #D85C26;
+  font-weight: 800;
 }
 
 .empty-card {

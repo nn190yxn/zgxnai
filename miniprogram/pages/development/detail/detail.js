@@ -59,16 +59,15 @@ Page({
   applyAgeGroup(ageGroup, child) {
     var validAgeGroup = developmentZones.isDevelopmentAgeGroup(ageGroup) ? ageGroup : '';
     var scenarios = validAgeGroup ? developmentZones.getDevelopmentScenarios(this.data.zoneCode, validAgeGroup) : [];
-    var selectedScenario = scenarios[0] || null;
     this.setData({
       currentChild: child || null,
       selectedAgeGroup: validAgeGroup,
       ageStatusText: validAgeGroup ? '当前按 ' + validAgeGroup + ' 展示' : this.data.agePrompt,
       scenarios: scenarios,
       scenarioGroups: this.buildScenarioGroups(scenarios),
-      selectedScenarioCode: selectedScenario ? selectedScenario.code : '',
-      selectedScenario: selectedScenario,
-      activePractice: this.buildActivePractice(selectedScenario)
+      selectedScenarioCode: '',
+      selectedScenario: null,
+      activePractice: null
     });
   },
 
@@ -162,13 +161,15 @@ Page({
     });
   },
 
-  openScenarioDetail() {
-    if (!this.data.zoneCode || !this.data.selectedScenarioCode) {
+  openScenarioDetail(e) {
+    var scenarioCode = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.scenario : '';
+    var targetScenarioCode = scenarioCode || this.data.selectedScenarioCode;
+    if (!this.data.zoneCode || !targetScenarioCode) {
       wx.showToast({ title: '先选一个表现', icon: 'none' });
       return;
     }
     wx.navigateTo({
-      url: '/pages/development/scene/scene?zone=' + encodeURIComponent(this.data.zoneCode) + '&scenario=' + encodeURIComponent(this.data.selectedScenarioCode),
+      url: '/pages/development/scene/scene?zone=' + encodeURIComponent(this.data.zoneCode) + '&scenario=' + encodeURIComponent(targetScenarioCode),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
