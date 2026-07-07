@@ -19,6 +19,8 @@
 .scenario-title,
 .scenario-text,
 .scenario-check,
+.scenario-group-title,
+.scenario-group-count,
 .empty-action,
 .practice-badge,
 .practice-title,
@@ -138,6 +140,42 @@
   flex-shrink: 0;
   color: #D85C26;
   font-weight: 800;
+}
+
+.scenario-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 26rpx;
+}
+
+.scenario-group {
+  padding-top: 2rpx;
+}
+
+.scenario-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 14rpx;
+}
+
+.scenario-group-title {
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 800;
+}
+
+.scenario-group-count {
+  flex-shrink: 0;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #FFF3EC;
+  color: #A94B20;
+  font-size: 21rpx;
+  line-height: 1.45;
+  font-weight: 700;
 }
 
 .scenario-list {

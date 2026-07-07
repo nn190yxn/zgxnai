@@ -33,7 +33,6 @@ Page({
     dailyPlanCompletedCount: 0,
     dailyPlanEmptyText: '',
     developmentZones: allDevelopmentZones,
-    featuredDevelopmentZones: allDevelopmentZones.slice(0, 4),
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
     membershipTouchpointDesc: '查看每周成长趋势和下周建议。',

@@ -70,22 +70,15 @@
       <text class="section-header-link" bindtap="goToAllDevelopmentZones">进入专区</text>
     </view>
 
-    <view class="module-grid development-zone-grid">
-      <view
-        class="module-card development-zone-card"
-        wx:for="{{featuredDevelopmentZones}}"
-        wx:key="code"
-        data-zone="{{item.code}}"
-        bindtap="goToDevelopmentZone"
-      >
-        <text class="module-name">{{item.title}}</text>
-        <text class="module-desc">{{item.subtitle}}</text>
-        <text class="development-zone-action">{{item.actionText}}</text>
+    <view class="development-zone-entry" bindtap="goToAllDevelopmentZones">
+      <text class="development-zone-entry-title">8 个发展方向，一次看清</text>
+      <text class="development-zone-entry-desc">按年龄进入语言发育、感统支持、专注力、大运动、情绪管理、社交能力、自信与适应、生活习惯，选择最像孩子当前表现的场景。</text>
+      <view class="development-zone-tags">
+        <text class="development-zone-tag">先选年龄</text>
+        <text class="development-zone-tag">再选场景</text>
+        <text class="development-zone-tag">每天 3 分钟</text>
       </view>
-    </view>
-    <view class="development-zone-more" bindtap="goToAllDevelopmentZones">
-      <text class="development-zone-more-title">还有情绪管理、社交能力、自信与适应、生活习惯等方向</text>
-      <text class="development-zone-more-action">进入专区 ></text>
+      <text class="development-zone-entry-action">进入 3-6 岁专区 ></text>
     </view>
   </view>
 

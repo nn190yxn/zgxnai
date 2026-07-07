@@ -52,18 +52,17 @@ function testIndexZoneLayout() {
 
   assert.ok(wxml.includes('3-6 岁发展专区'), 'index should show development zone entry title');
   assert.ok(wxml.includes('每天一个小动作'), 'index should show action-oriented zone subtitle');
-  assert.ok(wxml.includes('featuredDevelopmentZones'), 'index should show featured development zones instead of expanding all zones');
+  assert.strictEqual(wxml.includes('featuredDevelopmentZones'), false, 'index should use one compact development zone entry');
+  assert.ok(wxml.includes('development-zone-entry'), 'index should show one compact development zone card');
   assert.ok(wxml.includes('goToAllDevelopmentZones'), 'index should keep a compact entry to development zones');
   assert.strictEqual(wxss.includes('word-break: break-all'), false, 'development zone cards should avoid hard character breaks');
 
-  ['.development-zone-card .module-name', '.development-zone-card .module-desc', '.development-zone-action'].forEach(function(selector) {
+  ['.development-zone-entry-title', '.development-zone-entry-desc', '.development-zone-entry-action'].forEach(function(selector) {
     assertRuleHas(wxss, selector, 'letter-spacing', '0');
     assertRuleHas(wxss, selector, 'overflow-wrap', 'break-word');
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
-  assertRuleHas(wxss, '.development-zone-card .module-desc', 'word-break', 'normal');
-  assertRuleHasNumberAtMost(wxss, '.development-zone-card', 'min-height', 210);
-  assertRuleHasNumberAtLeast(wxss, '.development-zone-more-title', 'line-height', 1.45);
+  assertRuleHasNumberAtLeast(wxss, '.development-zone-tag', 'line-height', 1.45);
 }
 
 function testDetailPageLayout() {
@@ -73,9 +72,10 @@ function testDetailPageLayout() {
   ['先选年龄段', '你家孩子像哪种情况', '今日练习', '7 天慢慢练', '需要继续判断'].forEach(function(text) {
     assert.ok(wxml.includes(text), 'detail page should keep section copy: ' + text);
   });
+  assert.ok(wxml.includes('scenarioGroups'), 'detail page should group scenarios after age selection');
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'detail page should support long text wrapping');
   assert.ok(wxss.includes('letter-spacing: 0'), 'detail page should set stable letter spacing');
-  ['.title', '.section-title', '.scenario-title', '.practice-title', '.practice-action', '.practice-note-text', '.plan-name', '.placeholder-desc'].forEach(function(selector) {
+  ['.title', '.section-title', '.scenario-group-title', '.scenario-title', '.practice-title', '.practice-action', '.practice-note-text', '.plan-name', '.placeholder-desc'].forEach(function(selector) {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
   ['.empty-action', '.detail-link', '.related-btn'].forEach(function(selector) {

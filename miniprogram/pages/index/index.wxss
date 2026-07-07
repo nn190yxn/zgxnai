@@ -494,77 +494,60 @@
   line-height: 1.6;
 }
 
-.development-zone-grid {
-  gap: 18rpx;
-}
-
-.development-zone-card {
-  width: calc((100% - 18rpx) / 2);
-  min-height: 198rpx;
-  padding: 22rpx 20rpx;
-  text-align: left;
-  border-radius: 20rpx;
-  background: linear-gradient(180deg, #FFFFFF 0%, #FFF9F3 100%);
-  border: 2rpx solid rgba(255, 107, 53, 0.1);
+.development-zone-entry {
+  padding: 28rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF4EC 100%);
+  border: 2rpx solid rgba(255, 107, 53, 0.12);
   box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
 }
 
-.development-zone-card .module-name {
-  margin-bottom: 10rpx;
-  font-size: 28rpx;
+.development-zone-entry-title {
+  display: block;
+  font-size: 30rpx;
   line-height: 1.45;
+  color: #2F241F;
   font-weight: 800;
   letter-spacing: 0;
   overflow-wrap: break-word;
 }
 
-.development-zone-card .module-desc {
+.development-zone-entry-desc {
   display: block;
-  min-height: 70rpx;
-  font-size: 22rpx;
-  line-height: 1.65;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
   color: #7A6660;
   letter-spacing: 0;
-  word-break: normal;
   overflow-wrap: break-word;
 }
 
-.development-zone-action {
-  display: block;
-  margin-top: 14rpx;
-  font-size: 22rpx;
-  line-height: 1.55;
-  color: #D85C26;
-  font-weight: 700;
-  letter-spacing: 0;
-  overflow-wrap: break-word;
-}
-
-.development-zone-more {
-  margin-top: 18rpx;
-  padding: 20rpx 22rpx;
-  border-radius: 18rpx;
-  background: rgba(255, 107, 53, 0.08);
-  border: 2rpx solid rgba(255, 107, 53, 0.1);
+.development-zone-tags {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 20rpx;
 }
 
-.development-zone-more-title {
-  flex: 1;
-  font-size: 23rpx;
-  line-height: 1.6;
-  color: #7A6660;
+.development-zone-tag {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 107, 53, 0.1);
+  color: #A94B20;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 700;
 }
 
-.development-zone-more-action {
-  flex-shrink: 0;
-  font-size: 23rpx;
+.development-zone-entry-action {
+  display: block;
+  margin-top: 22rpx;
+  font-size: 25rpx;
   line-height: 1.45;
   color: #D85C26;
   font-weight: 700;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
 }
 
 /* 快速入口 */

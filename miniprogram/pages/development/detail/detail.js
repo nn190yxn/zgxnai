@@ -8,6 +8,7 @@ Page({
     ageGroups: developmentZones.DEVELOPMENT_AGE_GROUPS,
     selectedAgeGroup: '',
     scenarios: [],
+    scenarioGroups: [],
     selectedScenarioCode: '',
     selectedScenario: null,
     activePractice: null,
@@ -35,6 +36,7 @@ Page({
         zone: null,
         selectedAgeGroup: '',
         scenarios: [],
+        scenarioGroups: [],
         loadError: '这个方向正在补充，先问小牛'
       });
       return;
@@ -63,6 +65,7 @@ Page({
       selectedAgeGroup: validAgeGroup,
       ageStatusText: validAgeGroup ? '当前按 ' + validAgeGroup + ' 展示' : this.data.agePrompt,
       scenarios: scenarios,
+      scenarioGroups: this.buildScenarioGroups(scenarios),
       selectedScenarioCode: selectedScenario ? selectedScenario.code : '',
       selectedScenario: selectedScenario,
       activePractice: this.buildActivePractice(selectedScenario)
@@ -91,6 +94,55 @@ Page({
       parentScript: '',
       observeSignal: ''
     };
+  },
+
+  getScenarioCategory(scenario) {
+    var text = [
+      scenario && scenario.title,
+      scenario && scenario.symptomText,
+      scenario && scenario.parentCheck,
+      scenario && scenario.todayAction
+    ].filter(function(item) { return !!item; }).join('');
+    if (/吃饭|饭|挑食|睡|洗漱|穿衣|如厕|收拾|整理|生活|习惯|刷牙|起床/.test(text)) {
+      return '生活习惯';
+    }
+    if (/情绪|生气|哭|害怕|紧张|挫折|适应|自信|不敢|分离|害羞|胆|怕/.test(text)) {
+      return '情绪与适应';
+    }
+    if (/同伴|朋友|分享|轮流|合作|社交|集体|排队|规则|冲突/.test(text)) {
+      return '社交与规则';
+    }
+    if (/坐|专注|开始|完成|听|等|指令|任务|拖|注意|坚持/.test(text)) {
+      return '专注与任务';
+    }
+    if (/跑|跳|走|碰|动作|身体|吵|声音|洗头|剪指甲|用力|平衡|爬|球|手眼/.test(text)) {
+      return '身体与感官';
+    }
+    if (/说|讲|回答|故事|表达|句|词|听|绘本|复述|开口/.test(text)) {
+      return '表达与理解';
+    }
+    return '日常表现';
+  },
+
+  buildScenarioGroups(scenarios) {
+    var order = ['表达与理解', '专注与任务', '身体与感官', '情绪与适应', '社交与规则', '生活习惯', '日常表现'];
+    var grouped = {};
+    (scenarios || []).forEach(function(scenario) {
+      var category = this.getScenarioCategory(scenario);
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(scenario);
+    }, this);
+    return order.filter(function(category) {
+      return grouped[category] && grouped[category].length;
+    }).map(function(category) {
+      return {
+        title: category,
+        count: grouped[category].length,
+        scenarios: grouped[category]
+      };
+    });
   },
 
   selectAgeGroup(e) {

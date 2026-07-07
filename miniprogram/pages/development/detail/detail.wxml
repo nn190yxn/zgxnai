@@ -31,17 +31,26 @@
         <text class="section-title">你家孩子像哪种情况</text>
         <text class="section-desc">先选一个最接近的表现，今晚就做一个小动作。</text>
       </view>
-      <view class="scenario-list">
-        <view
-          class="scenario-card {{selectedScenarioCode === item.code ? 'scenario-card-active' : ''}}"
-          wx:for="{{scenarios}}"
-          wx:key="code"
-          data-scenario="{{item.code}}"
-          bindtap="selectScenario"
-        >
-          <text class="scenario-title">{{item.title}}</text>
-          <text class="scenario-text">{{item.symptomText}}</text>
-          <text class="scenario-check">先判断：{{item.parentCheck}}</text>
+      <view class="scenario-group-list">
+        <view class="scenario-group" wx:for="{{scenarioGroups}}" wx:key="title" wx:for-item="group">
+          <view class="scenario-group-head">
+            <text class="scenario-group-title">{{group.title}}</text>
+            <text class="scenario-group-count">{{group.count}} 个场景</text>
+          </view>
+          <view class="scenario-list">
+            <view
+              class="scenario-card {{selectedScenarioCode === item.code ? 'scenario-card-active' : ''}}"
+              wx:for="{{group.scenarios}}"
+              wx:key="code"
+              wx:for-item="item"
+              data-scenario="{{item.code}}"
+              bindtap="selectScenario"
+            >
+              <text class="scenario-title">{{item.title}}</text>
+              <text class="scenario-text">{{item.symptomText}}</text>
+              <text class="scenario-check">先判断：{{item.parentCheck}}</text>
+            </view>
+          </view>
         </view>
       </view>
     </view>
