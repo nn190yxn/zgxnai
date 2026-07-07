@@ -160,6 +160,17 @@ function testDetailPageFallbacks() {
   assert.strictEqual(typeof detailPage.askFallback, 'function');
 }
 
+function testOverviewPageNavigation() {
+  let lastNavigateUrl = '';
+  const overviewPage = loadPageModule('miniprogram/pages/development/index/index.js');
+  global.wx.navigateTo = function(options) { lastNavigateUrl = options.url; };
+  overviewPage.onLoad();
+  assert.strictEqual(overviewPage.data.zones.length, 8);
+  assert.deepStrictEqual(overviewPage.data.zones.map(function(zone) { return [zone.code, zone.title]; }), EXPECTED_ZONES);
+  overviewPage.openZone({ currentTarget: { dataset: { zone: 'sensory' } } });
+  assert.strictEqual(lastNavigateUrl, '/pages/development/detail/detail?zone=sensory');
+}
+
 function testScenePageFallbacks() {
   const scenePage = loadPageModule('miniprogram/pages/development/scene/scene.js');
   scenePage.loadScene({ zone: 'language', scenario: 'missing' });
@@ -183,6 +194,7 @@ testMiniprogramConfig();
 testBirthdayAgeMapping();
 testSeedSync();
 testBackendZoneDataRules();
+testOverviewPageNavigation();
 testDetailPageFallbacks();
 testScenePageFallbacks();
 testDevelopmentZoneRouteSource();

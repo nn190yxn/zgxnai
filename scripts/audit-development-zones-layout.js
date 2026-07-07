@@ -49,12 +49,15 @@ function assertRuleHasNumberAtMost(source, selector, property, maxValue) {
 function testIndexZoneLayout() {
   const wxss = read('miniprogram/pages/index/index.wxss');
   const wxml = read('miniprogram/pages/index/index.wxml');
+  const js = read('miniprogram/pages/index/index.js');
 
   assert.ok(wxml.includes('3-6 岁发展专区'), 'index should show development zone entry title');
   assert.ok(wxml.includes('每天一个小动作'), 'index should show action-oriented zone subtitle');
   assert.strictEqual(wxml.includes('featuredDevelopmentZones'), false, 'index should use one compact development zone entry');
   assert.ok(wxml.includes('development-zone-entry'), 'index should show one compact development zone card');
   assert.ok(wxml.includes('goToAllDevelopmentZones'), 'index should keep a compact entry to development zones');
+  assert.ok(js.includes("url: '/pages/development/index/index'"), 'index should open the development zone overview first');
+  assert.strictEqual(js.includes("goToAllDevelopmentZones() {\n    wx.navigateTo({\n      url: '/pages/development/detail/detail?zone="), false, 'index should not default to language detail page');
   assert.strictEqual(wxss.includes('word-break: break-all'), false, 'development zone cards should avoid hard character breaks');
 
   ['.development-zone-entry-title', '.development-zone-entry-desc', '.development-zone-entry-action'].forEach(function(selector) {
@@ -63,6 +66,25 @@ function testIndexZoneLayout() {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
   });
   assertRuleHasNumberAtLeast(wxss, '.development-zone-tag', 'line-height', 1.45);
+}
+
+function testOverviewPageLayout() {
+  const appJson = read('miniprogram/app.json');
+  const js = read('miniprogram/pages/development/index/index.js');
+  const wxss = read('miniprogram/pages/development/index/index.wxss');
+  const wxml = read('miniprogram/pages/development/index/index.wxml');
+
+  assert.ok(appJson.includes('pages/development/index/index'), 'app should register development overview page');
+  assert.ok(wxml.includes('先选发展方向，再看具体场景'), 'overview page should explain the second-level step');
+  assert.ok(wxml.includes('wx:for="{{zones}}"'), 'overview page should render eight zone cards from data');
+  assert.ok(wxml.includes('openZone'), 'overview page should open zone detail from each card');
+  assert.ok(js.includes('developmentZones.getDevelopmentZones()'), 'overview page should load the eight zone modules');
+  assert.ok(js.includes('/pages/development/detail/detail?zone='), 'overview page should navigate to the detail page as the next level');
+  assert.strictEqual(wxss.includes('word-break: break-all'), false, 'overview cards should avoid hard character breaks');
+
+  ['.title', '.subtitle', '.zone-title', '.zone-subtitle', '.zone-meta', '.zone-action', '.guide-title', '.guide-desc'].forEach(function(selector) {
+    assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.45);
+  });
 }
 
 function testDetailPageLayout() {
@@ -101,6 +123,7 @@ function testScenePageLayout() {
 }
 
 testIndexZoneLayout();
+testOverviewPageLayout();
 testDetailPageLayout();
 testScenePageLayout();
 

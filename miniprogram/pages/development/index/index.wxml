@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="header">
+    <text class="eyebrow">3-6 岁发展专区</text>
+    <text class="title">先选发展方向，再看具体场景</text>
+    <text class="subtitle">语言发育、感统支持、专注力、大运动练习、情绪管理、社交能力、自信与适应、生活习惯，按孩子当前表现进入。</text>
+  </view>
+
+  <view class="zone-grid">
+    <view wx:for="{{zones}}" wx:key="code" class="zone-card" data-zone="{{item.code}}" bindtap="openZone" style="border-color: {{item.color}}; background: {{item.tint}};">
+      <view class="zone-card-head">
+        <text class="zone-title">{{item.title}}</text>
+        <text class="zone-arrow">></text>
+      </view>
+      <text class="zone-subtitle">{{item.subtitle}}</text>
+      <view class="zone-meta-row">
+        <text class="zone-meta">{{item.scenarioCount}} 个场景</text>
+        <text class="zone-action">{{item.actionText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="guide-card">
+    <text class="guide-title">进入后怎么看</text>
+    <text class="guide-desc">先选孩子年龄段，再从场景分类里挑最像的一项，最后看今天能做的小练习。</text>
+  </view>
+</view>

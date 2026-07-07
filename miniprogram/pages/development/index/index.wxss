@@ -1,0 +1,149 @@
+.page {
+  min-height: 100vh;
+  background: #FAF6F3;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  padding: 56rpx 32rpx 30rpx;
+  background: linear-gradient(135deg, #3A2A22 0%, #6A412F 100%);
+}
+
+.eyebrow,
+.title,
+.subtitle,
+.zone-title,
+.zone-subtitle,
+.zone-meta,
+.zone-action,
+.guide-title,
+.guide-desc {
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+
+.eyebrow {
+  display: inline-block;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFE8D6;
+  font-size: 23rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.title {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 40rpx;
+  line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 900;
+}
+
+.subtitle {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  line-height: 1.7;
+  color: rgba(255, 250, 244, 0.86);
+}
+
+.zone-grid {
+  padding: 28rpx 32rpx 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.zone-card {
+  width: calc((100% - 18rpx) / 2);
+  min-height: 210rpx;
+  padding: 24rpx 22rpx;
+  box-sizing: border-box;
+  border-radius: 22rpx;
+  border: 2rpx solid rgba(255, 107, 53, 0.16);
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.zone-card:active {
+  transform: scale(0.98);
+}
+
+.zone-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.zone-title {
+  flex: 1;
+  font-size: 29rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.zone-arrow {
+  color: #D85C26;
+  font-size: 25rpx;
+  line-height: 1.45;
+  font-weight: 900;
+}
+
+.zone-subtitle {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.65;
+  color: #6F5B53;
+}
+
+.zone-meta-row {
+  margin-top: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.zone-meta,
+.zone-action {
+  display: block;
+  font-size: 21rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.zone-meta {
+  color: #9A6E61;
+}
+
+.zone-action {
+  color: #D85C26;
+}
+
+.guide-card {
+  margin: 28rpx 32rpx 0;
+  padding: 26rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+}
+
+.guide-title {
+  display: block;
+  font-size: 28rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.guide-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #7A6660;
+}

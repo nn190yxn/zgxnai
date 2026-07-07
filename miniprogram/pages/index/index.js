@@ -1079,7 +1079,7 @@ Page({
 
   goToAllDevelopmentZones() {
     wx.navigateTo({
-      url: '/pages/development/detail/detail?zone=' + encodeURIComponent('language'),
+      url: '/pages/development/index/index',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
