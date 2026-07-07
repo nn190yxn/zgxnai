@@ -169,7 +169,7 @@ Page({
       return;
     }
     wx.navigateTo({
-      url: '/pages/development/scene/scene?zone=' + encodeURIComponent(this.data.zoneCode) + '&scenario=' + encodeURIComponent(targetScenarioCode),
+      url: '/pages/development/scene/scene?zone=' + encodeURIComponent(this.data.zoneCode) + '&scenario=' + encodeURIComponent(targetScenarioCode) + '&ageGroup=' + encodeURIComponent(this.data.selectedAgeGroup || ''),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }

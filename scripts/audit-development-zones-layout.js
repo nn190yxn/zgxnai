@@ -96,6 +96,7 @@ function testDetailPageLayout() {
   });
   assert.ok(wxml.includes('scenarioGroups'), 'detail page should group scenarios after age selection');
   assert.ok(wxml.includes('bindtap="openScenarioDetail"'), 'detail page should open the scenario topic directly');
+  assert.ok(jsIncludesAgeGroupParam(), 'detail page should pass selected age group to scenario topic');
   assert.strictEqual(wxml.includes('bindtap="selectScenario"'), false, 'detail page should not keep users on the page after scenario tap');
   assert.strictEqual(wxml.includes('activePractice'), false, 'detail page should not show practice details below the scenario list');
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'detail page should support long text wrapping');
@@ -108,6 +109,11 @@ function testDetailPageLayout() {
   });
 }
 
+function jsIncludesAgeGroupParam() {
+  const js = read('miniprogram/pages/development/detail/detail.js');
+  return js.includes("'&ageGroup=' + encodeURIComponent(this.data.selectedAgeGroup || '')");
+}
+
 function testScenePageLayout() {
   const wxss = read('miniprogram/pages/development/scene/scene.wxss');
   const wxml = read('miniprogram/pages/development/scene/scene.wxml');
@@ -117,6 +123,8 @@ function testScenePageLayout() {
   });
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'scene page should support long text wrapping');
   assert.ok(wxss.includes('letter-spacing: 0'), 'scene page should set stable letter spacing');
+  assert.ok(wxml.includes('displayAgeGuidance'), 'scene page should render age-filtered guidance');
+  assert.strictEqual(wxml.includes('scenario.ageGuidance}}'), false, 'scene page should not render all age guidance by default');
   ['.title', '.card-title', '.card-desc', '.script-text', '.game-title', '.depth-text', '.depth-line', '.placeholder-desc'].forEach(function(selector) {
     assertRuleHasNumberAtLeast(wxss, selector, 'line-height', 1.4);
   });

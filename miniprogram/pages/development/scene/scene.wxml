@@ -37,10 +37,13 @@
       <text class="card-desc">{{scenario.developmentalFocus}}</text>
     </view>
 
-    <view class="content-card" wx:if="{{scenario.ageGuidance.length}}">
-      <text class="card-eyebrow">分龄做法</text>
+    <view class="content-card" wx:if="{{displayAgeGuidance.length}}">
+      <view class="card-row">
+        <text class="card-eyebrow">分龄做法</text>
+        <text class="age-badge" wx:if="{{selectedAgeGroup}}">{{selectedAgeGroup}}</text>
+      </view>
       <view class="depth-list">
-        <view class="depth-item" wx:for="{{scenario.ageGuidance}}" wx:key="ageGroup">
+        <view class="depth-item" wx:for="{{displayAgeGuidance}}" wx:key="ageGroup">
           <text class="depth-label">{{item.ageGroup}}</text>
           <text class="depth-text">{{item.guidance}}</text>
         </view>

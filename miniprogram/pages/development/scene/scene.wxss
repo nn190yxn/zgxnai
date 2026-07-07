@@ -16,6 +16,7 @@
 .card-title,
 .card-desc,
 .duration-badge,
+.age-badge,
 .script-text,
 .game-title,
 .depth-label,
@@ -101,7 +102,8 @@
   color: #5B463E;
 }
 
-.duration-badge {
+.duration-badge,
+.age-badge {
   flex-shrink: 0;
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
@@ -110,6 +112,11 @@
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
+}
+
+.age-badge {
+  background: #FFF0E8;
+  color: #D85C26;
 }
 
 .script-text {

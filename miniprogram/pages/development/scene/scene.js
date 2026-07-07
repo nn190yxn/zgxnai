@@ -4,8 +4,10 @@ Page({
   data: {
     zoneCode: '',
     scenarioCode: '',
+    selectedAgeGroup: '',
     zone: null,
     scenario: null,
+    displayAgeGuidance: [],
     loadError: ''
   },
 
@@ -16,6 +18,8 @@ Page({
   loadScene(options) {
     var zoneCode = options && options.zone ? String(options.zone) : '';
     var scenarioCode = options && options.scenario ? String(options.scenario) : '';
+    var selectedAgeGroup = options && options.ageGroup ? decodeURIComponent(String(options.ageGroup)) : '';
+    var validAgeGroup = developmentZones.isDevelopmentAgeGroup(selectedAgeGroup) ? selectedAgeGroup : '';
     var zone = developmentZones.getDevelopmentZoneByCode(zoneCode);
     var scenario = developmentZones.getDevelopmentScenario(zoneCode, scenarioCode);
 
@@ -23,18 +27,27 @@ Page({
       this.setData({
         zoneCode: zoneCode,
         scenarioCode: scenarioCode,
+        selectedAgeGroup: validAgeGroup,
         zone: zone || null,
         scenario: null,
+        displayAgeGuidance: [],
         loadError: '这个方向正在补充，先问小牛'
       });
       return;
     }
 
+    var ageGuidance = Array.isArray(scenario.ageGuidance) ? scenario.ageGuidance : [];
+    var displayAgeGuidance = validAgeGroup
+      ? ageGuidance.filter(function(item) { return item.ageGroup === validAgeGroup; })
+      : ageGuidance;
+
     this.setData({
       zoneCode: zone.code,
       scenarioCode: scenario.code,
+      selectedAgeGroup: validAgeGroup,
       zone: zone,
       scenario: scenario,
+      displayAgeGuidance: displayAgeGuidance,
       loadError: ''
     });
     wx.setNavigationBarTitle({ title: scenario.title });

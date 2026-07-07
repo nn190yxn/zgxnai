@@ -167,8 +167,9 @@ function testDetailPageScenarioNavigation() {
   const detailPage = loadPageModule('miniprogram/pages/development/detail/detail.js');
   global.wx.navigateTo = function(options) { lastNavigateUrl = options.url; };
   detailPage.loadZone('language');
+  detailPage.applyAgeGroup('4-5岁', null);
   detailPage.openScenarioDetail({ currentTarget: { dataset: { scenario: 'unclear_speech' } } });
-  assert.strictEqual(lastNavigateUrl, '/pages/development/scene/scene?zone=language&scenario=unclear_speech');
+  assert.strictEqual(lastNavigateUrl, '/pages/development/scene/scene?zone=language&scenario=unclear_speech&ageGroup=4-5%E5%B2%81');
 }
 
 function testOverviewPageNavigation() {
@@ -189,6 +190,11 @@ function testScenePageFallbacks() {
   scenePage.loadScene({ zone: 'language', scenario: 'unclear_speech' });
   assert.strictEqual(scenePage.data.scenario.code, 'unclear_speech');
   assert.strictEqual(scenePage.data.scenario.ageGuidance.length, 3);
+  assert.strictEqual(scenePage.data.displayAgeGuidance.length, 3);
+  scenePage.loadScene({ zone: 'language', scenario: 'unclear_speech', ageGroup: '4-5岁' });
+  assert.strictEqual(scenePage.data.selectedAgeGroup, '4-5岁');
+  assert.strictEqual(scenePage.data.displayAgeGuidance.length, 1);
+  assert.strictEqual(scenePage.data.displayAgeGuidance[0].ageGroup, '4-5岁');
   assert.ok(scenePage.data.scenario.playGame && scenePage.data.scenario.playGame.howToPlay);
   assert.strictEqual(typeof scenePage.askFallback, 'function');
 }
