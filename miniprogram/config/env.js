@@ -16,7 +16,7 @@ var ENV_CONFIG = {
     enableNativeApiDiagnostics: true,
     enableNetworkProbe: false,
     enableBootIsolation: false,
-    enableRuntimeConfigFetch: false,
+    enableRuntimeConfigFetch: true,
     enableStartupSafeMode: false,
     enableAssessments: true,
     enableEducation: true,
@@ -27,8 +27,8 @@ var ENV_CONFIG = {
     enableAiChat: true,
     enableMultimodal: false,
     enableRetentionStatus: false,
-    enableCoreRefactor: false,
-    coreRefactorRolloutPercent: 0,
+    enableCoreRefactor: true,
+    coreRefactorRolloutPercent: 100,
     coreRefactorUserWhitelist: []
   },
   production: {
