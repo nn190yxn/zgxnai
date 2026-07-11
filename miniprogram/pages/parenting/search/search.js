@@ -12,6 +12,7 @@ Page({
     searchResults: [],
     sceneSolutions: [],
     matchedScene: null,
+    coreActionContext: null,
     showResults: false,
     loading: false,
     hasMore: false,
@@ -36,13 +37,34 @@ Page({
   },
 
   onLoad: function(options) {
+    var sceneKey = String((options && (options.sceneKey || options.scene_key)) || '').trim();
+    var keyword = String((options && options.keyword) || '').trim();
+    var bottleneckTitle = String((options && (options.bottleneckTitle || options.bottleneck_title)) || '').trim();
+    var ageGroup = String((options && (options.ageGroup || options.age_group)) || '').trim();
     this.setData({
-      currentAgeGroup: String((options && (options.ageGroup || options.age_group)) || '').trim(),
-      currentCategory: String((options && options.category) || '').trim()
+      keyword: keyword || bottleneckTitle,
+      currentAgeGroup: ageGroup,
+      currentCategory: String((options && options.category) || '').trim(),
+      coreActionContext: sceneKey ? {
+        sceneKey: sceneKey,
+        ageGroup: ageGroup,
+        bottleneckTitle: bottleneckTitle,
+        keyword: keyword || bottleneckTitle
+      } : null
     });
     this.loadSearchHistory();
     this.loadHotKeywords();
     this.loadSceneTags();
+    if (sceneKey || keyword || bottleneckTitle) {
+      this.trackSceneEvent('scene_search_submit', {
+        submit_type: 'core_action_result',
+        keyword: keyword || bottleneckTitle,
+        scene_key: sceneKey,
+        bottleneck_title: bottleneckTitle,
+        age_group: ageGroup
+      });
+      this.doSearch({ sceneKey: sceneKey, keyword: keyword || bottleneckTitle, ageGroup: ageGroup });
+    }
   },
 
   onShow: function() {
@@ -197,7 +219,7 @@ Page({
       app.request({
         url: '/search/solutions',
         method: 'GET',
-        data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {})
+        data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {}, ageGroup ? { ageGroup: ageGroup } : {})
       }).catch(function() {
         return { matched: false, scene: null, solutions: [], articles: [] };
       }),

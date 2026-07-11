@@ -3,6 +3,16 @@ var envConfig = require('../config/env.js');
 
 function normalizeRuntimeConfig(payload) {
   var data = payload || {};
+  var rolloutPercentSource = data.core_refactor_rollout_percent !== undefined
+    ? data.core_refactor_rollout_percent
+    : (data.coreRefactorRolloutPercent !== undefined ? data.coreRefactorRolloutPercent : envConfig.coreRefactorRolloutPercent || 0);
+  var rolloutPercent = Number(rolloutPercentSource);
+  var whitelistSource = data.core_refactor_user_whitelist !== undefined
+    ? data.core_refactor_user_whitelist
+    : (data.coreRefactorUserWhitelist !== undefined ? data.coreRefactorUserWhitelist : envConfig.coreRefactorUserWhitelist || []);
+  var coreRefactorEnabled = data.core_refactor_enabled !== undefined
+    ? !!data.core_refactor_enabled
+    : (data.coreRefactorEnabled !== undefined ? !!data.coreRefactorEnabled : envConfig.enableCoreRefactor === true);
   return {
     envName: data.env_name || data.envName || (envConfig.envName || 'development'),
     debug: !!data.debug,
@@ -14,6 +24,9 @@ function normalizeRuntimeConfig(payload) {
     growthRecordEnabled: data.growth_record_enabled !== undefined ? !!data.growth_record_enabled : true,
     weeklySummaryEnabled: data.weekly_summary_enabled !== undefined ? !!data.weekly_summary_enabled : true,
     sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
+    coreRefactorEnabled: coreRefactorEnabled,
+    coreRefactorRolloutPercent: Math.max(0, Math.min(100, isNaN(rolloutPercent) ? 0 : rolloutPercent)),
+    coreRefactorUserWhitelist: normalizeStringList(whitelistSource),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
     paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : (envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true),
     retentionStatusEnabled: data.retention_status_enabled !== undefined ? !!data.retention_status_enabled : (envConfig.enableRetentionStatus === true),
@@ -21,6 +34,16 @@ function normalizeRuntimeConfig(payload) {
     aiServiceReady: data.ai_service_ready !== undefined ? !!data.ai_service_ready : (envConfig.envName !== 'production'),
     configLoaded: true
   };
+}
+
+function normalizeStringList(value) {
+  if (Array.isArray(value)) {
+    return value.map(function(item) { return String(item || '').trim(); }).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map(function(item) { return item.trim(); }).filter(Boolean);
+  }
+  return [];
 }
 
 function loadRuntimeConfig(options) {
@@ -104,6 +127,9 @@ function isFeatureEnabled(app, featureName) {
   }
   if (featureName === 'sceneSearch') {
     return !!config.sceneSearchEnabled;
+  }
+  if (featureName === 'coreRefactor') {
+    return !!config.coreRefactorEnabled;
   }
   return true;
 }

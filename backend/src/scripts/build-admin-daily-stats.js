@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const mysql = require('mysql2/promise');
+let mysql = null;
 
 loadEnv(path.resolve(__dirname, '../../../.env'));
 loadEnv('/home/ubuntu/niuniu-parenting/.env');
 
 async function main() {
+  mysql = mysql || require('mysql2/promise');
   const statDate = String(process.argv[2] || '').trim() || formatDate(new Date(Date.now() - 86400000));
   const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -41,7 +42,7 @@ async function upsertDailyUserStats(pool, statDate) {
            AND um.current_end_date IS NOT NULL
            AND um.current_end_date >= NOW()) AS paid_active_users,
        (SELECT COUNT(*) FROM user_memberships WHERE is_trial_used = 1 AND DATE(updated_at) = ?) AS trial_users,
-       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ? AND event_type IN ('ai_chat_submit', 'ai_chat_response_success', 'ai_chat_response_fallback')) AS ai_users,
+       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ? AND (event_type IN ('ai_chat_submit', 'ai_chat_response_success', 'ai_chat_response_fallback', 'ai_chat_reply', 'article_ai_followup') OR event_type LIKE 'ai_chat_%')) AS ai_users,
        (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ? AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete')) AS content_users`,
     [statDate, statDate, statDate, statDate, statDate, statDate]
   );
@@ -136,7 +137,7 @@ async function rebuildDailyFeatureStats(pool, statDate) {
                 CASE WHEN event_type LIKE '%_view' OR event_type IN ('task_exposure', 'share_preview', 'membership_touchpoint_exposure', 'scene_search_exposure', 'growth_record_open', 'weekly_summary_view') THEN 1 ELSE 0 END AS view_count,
                 CASE WHEN event_type LIKE '%_click' OR event_type IN ('share_entry', 'share_copy', 'membership_plan_select', 'daily_plan_click', 'article_entry_click', 'recipe_entry_click', 'weekly_summary_action_click') THEN 1 ELSE 0 END AS click_count,
                 CASE WHEN event_type LIKE '%_start' OR event_type = 'task_start' THEN 1 ELSE 0 END AS start_count,
-                CASE WHEN event_type LIKE '%_complete' OR event_type IN ('task_complete', 'retell_complete', 'path_day_complete', 'output_submit', 'growth_record_submit', 'membership_payment_success') THEN 1 ELSE 0 END AS complete_count,
+                CASE WHEN event_type LIKE '%_complete' OR event_type IN ('task_complete', 'retell_complete', 'path_day_complete', 'output_submit', 'growth_record_submit', 'membership_payment_success', 'tonight_action_save', 'action_effect_submit') THEN 1 ELSE 0 END AS complete_count,
                 CASE WHEN event_type IN ('membership_page_view', 'membership_center_view', 'membership_touchpoint_exposure') THEN 1 ELSE 0 END AS paywall_visit_count,
                 CASE WHEN event_type IN ('payment_order_success', 'membership_payment_success') THEN 1 ELSE 0 END AS membership_conversion_count
            FROM event_tracks
@@ -172,7 +173,7 @@ async function rebuildDailyContentStats(pool, statDate) {
                    ELSE ${buildContentFallbackTitleSql('et.event_data', 'et.event_type')}
                  END AS title,
                 CASE WHEN et.event_type LIKE '%_view' OR et.event_type = 'knowledge_detail_view' THEN 1 ELSE 0 END AS view_count,
-                CASE WHEN et.event_type LIKE '%favorite%' THEN 1 ELSE 0 END AS favorite_count,
+                 CASE WHEN et.event_type REGEXP '(^|_)favorite$' THEN 1 ELSE 0 END AS favorite_count,
                 CASE WHEN et.event_type LIKE '%like%' THEN 1 ELSE 0 END AS like_count,
                 CASE WHEN et.event_type LIKE '%comment%' THEN 1 ELSE 0 END AS comment_count,
                 CASE WHEN et.event_type LIKE '%_complete' OR et.event_type IN ('task_complete', 'retell_complete', 'output_submit') THEN 1 ELSE 0 END AS completion_count
@@ -198,7 +199,7 @@ function buildFeatureKeySql(eventDataExpr, eventTypeExpr) {
     WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${eventDataExpr}, '$.module_key')), '') IN ('scene_search') THEN 'scene_search'
     WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${eventDataExpr}, '$.module_key')), '') IS NOT NULL THEN JSON_UNQUOTE(JSON_EXTRACT(${eventDataExpr}, '$.module_key'))
     WHEN ${eventTypeExpr} LIKE 'task_%' OR ${eventTypeExpr} IN ('retell_complete', 'path_day_complete', 'path_dropout') THEN 'reading_tasks'
-    WHEN ${eventTypeExpr} LIKE 'ai_chat_%' THEN 'ai_chat'
+    WHEN ${eventTypeExpr} LIKE 'ai_chat_%' OR ${eventTypeExpr} = 'article_ai_followup' THEN 'ai_chat'
     WHEN ${eventTypeExpr} LIKE 'assessment_%' OR ${eventTypeExpr} = 'output_submit' THEN 'assessment'
     WHEN ${eventTypeExpr} LIKE 'recipe_%' THEN 'nutrition_recipe'
     WHEN ${eventTypeExpr} LIKE 'article_%' OR ${eventTypeExpr} LIKE 'knowledge_%' THEN 'knowledge'
@@ -275,7 +276,18 @@ function loadEnv(envPath) {
   }
 }
 
-main().catch((error) => {
-  console.error('[build-admin-daily-stats]', error.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('[build-admin-daily-stats]', error.message);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  buildContentFallbackTitleSql,
+  buildContentIdSql,
+  buildContentTypeSql,
+  buildFeatureKeySql,
+  buildNumericContentIdSql,
+  formatDate
+};

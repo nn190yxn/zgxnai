@@ -146,6 +146,8 @@
     <view class="empty-wrap" wx:if="{{!loading && !loadError && hotRecipes.length === 0}}">
       <text class="empty-icon">🍽️</text>
       <text class="empty-text">暂时还没有热门食谱</text>
+      <text class="empty-desc">可以换个年龄段，或者按食材搜索一道家常菜。</text>
+      <button class="empty-action" size="mini" bindtap="onMoreHotTap">再找几道菜</button>
     </view>
 
     <!-- 食谱列表 -->

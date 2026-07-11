@@ -80,11 +80,34 @@ Page({
   applyPendingQuestion: function() {
     var question = String(wx.getStorageSync('pendingChatQuestion') || '').trim();
     if (!question) {
+      question = this.buildPendingCoreActionQuestion(wx.getStorageSync('pendingCoreActionContext'));
+    }
+    if (!question) {
       return;
     }
     wx.removeStorageSync('pendingChatQuestion');
+    wx.removeStorageSync('pendingCoreActionContext');
     this.setData({ inputValue: question });
     wx.showToast({ title: '已带入问题，可直接发送', icon: 'none' });
+  },
+
+  buildPendingCoreActionQuestion: function(context) {
+    if (!context || context.source !== 'home_core_action_result') {
+      return '';
+    }
+    var steps = Array.isArray(context.actionSteps) && context.actionSteps.length
+      ? ('今晚第一步：' + context.actionTitle + '\n具体步骤：' + context.actionSteps.join('；'))
+      : ('今晚第一步：' + (context.actionTitle || '未填写'));
+    return [
+      '我想继续追问孩子这个卡点的细节。',
+      '年龄：' + (context.ageGroup || '未确认'),
+      '场景：' + (context.sceneLabel || '未填写'),
+      '表现：' + (context.symptomLabel || '未填写'),
+      '卡点判断：' + (context.bottleneckTitle || '未填写'),
+      '判断解释：' + (context.bottleneckText || '未填写'),
+      steps,
+      '请围绕这个年龄、场景和卡点，帮我细化今晚怎么说、怎么做、孩子反应不同怎么办，以及明天要观察什么。'
+    ].join('\n');
   },
 
   onHide: function() {

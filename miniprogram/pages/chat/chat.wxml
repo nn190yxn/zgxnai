@@ -24,16 +24,16 @@
     </view>
 
     <!-- AI 介绍（未开始对话时展示） -->
-    <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}" style="margin:24rpx 24rpx 32rpx;padding:28rpx 28rpx 32rpx;background:#FFFFFF;border:1rpx solid #E9D7CF;border-radius:24rpx;display:flex;gap:20rpx;box-sizing:border-box;">
-      <view class="ai-intro-avatar" style="width:84rpx;height:84rpx;border-radius:42rpx;background:#FFF3ED;color:#FF6B35;font-size:28rpx;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">小牛</view>
-      <view class="ai-intro-content" style="flex:1;min-width:0;padding-right:12rpx;box-sizing:border-box;overflow:hidden;">
-        <text class="ai-intro-title" style="display:block;font-size:34rpx;font-weight:700;line-height:1.4;color:#1B2A1B;margin-bottom:12rpx;">小牛问答</text>
-        <text class="ai-intro-desc" style="display:block;font-size:28rpx;line-height:1.8;color:#7A6660;padding-right:16rpx;box-sizing:border-box;word-break:break-word;">把孩子的情况说出来，小牛帮你拆成能做的几步。</text>
-        <view class="ai-intro-hint" style="display:flex;flex-wrap:wrap;gap:12rpx 12rpx;margin-top:20rpx;padding-right:12rpx;box-sizing:border-box;">
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">孩子状态怎么看</text>
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">儿童营养与饮食</text>
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">亲子沟通与育儿方法</text>
-          <text class="ai-intro-hint-item" style="padding:10rpx 16rpx;border-radius:999rpx;background:#FFF3ED;color:#FF6B35;font-size:24rpx;line-height:1.4;">表达和开口练习</text>
+    <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}">
+      <view class="ai-intro-avatar">小牛</view>
+      <view class="ai-intro-content">
+        <text class="ai-intro-title">继续追问细节</text>
+        <text class="ai-intro-desc">带着孩子的年龄、场景和卡点，把今晚怎么说、怎么做、明天观察什么拆清楚。</text>
+        <view class="ai-intro-hint">
+          <text class="ai-intro-hint-item">孩子状态怎么看</text>
+          <text class="ai-intro-hint-item">儿童营养与饮食</text>
+          <text class="ai-intro-hint-item">亲子沟通与育儿方法</text>
+          <text class="ai-intro-hint-item">表达和开口练习</text>
         </view>
       </view>
     </view>
@@ -82,7 +82,7 @@
           </view>
           <!-- 显示来源 -->
           <view wx:if="{{item.sources && item.sources.length > 0}}" class="sources">
-            <text class="sources-label">📚 参考资料：</text>
+            <text class="sources-label">参考资料：</text>
             <text wx:for="{{item.sources}}" wx:for-item="source" wx:key="*this">{{source}}</text>
           </view>
           <view wx:if="{{item.role !== 'user' && !item.isError}}" class="answer-next-actions">
@@ -106,7 +106,7 @@
 
     <!-- 加载中 -->
     <view class="message bot" wx:if="{{loading}}">
-      <view class="avatar">🤖</view>
+      <view class="avatar avatar-ai">牛</view>
       <view class="bubble loading-bubble">
         <view class="typing">
           <view class="dot"></view>
@@ -133,20 +133,19 @@
     </view>
 
     <!-- 输入区域 -->
-    <view class="input-area" style="padding:24rpx 32rpx;background:#FFFFFF;border-top:1rpx solid #E9D7CF;display:flex;flex-direction:column;gap:16rpx;">
-      <view class="voice-row" style="display:flex;">
+    <view class="input-area">
+      <view class="voice-row">
         <view
           class="hold-to-talk {{isRecording ? 'hold-to-talk-recording' : ''}} {{isRecognizing ? 'hold-to-talk-waiting' : ''}}"
           bindtouchstart="onVoiceTouchStart"
           bindtouchend="onVoiceTouchEnd"
           bindtouchcancel="onVoiceTouchCancel"
-          style="flex:1;height:96rpx;border-radius:20rpx;background:#F8FAFC;border:1rpx solid #CBD5E1;color:#334155;font-size:30rpx;font-weight:600;display:flex;align-items:center;justify-content:center;"
         >
           <text>{{isRecording ? '松开发送' : (isRecognizing ? '识别中...' : '按住说话，松开自动转文字')}}</text>
         </view>
       </view>
-      <view class="text-row" style="display:flex;align-items:flex-end;gap:16rpx;">
-        <view class="input-wrapper" style="flex:1;min-width:0;">
+      <view class="text-row">
+        <view class="input-wrapper">
           <textarea
             class="input"
             value="{{inputValue}}"
@@ -156,15 +155,14 @@
             adjust-position="{{true}}"
             hold-keyboard="{{false}}"
             disabled="{{!featureFlags.aiChatEnabled}}"
-            placeholder="{{featureFlags.aiChatEnabled ? '输入你的问题...' : '小牛问答还在准备中'}}"
+            placeholder="{{featureFlags.aiChatEnabled ? '追问今晚怎么做、怎么说、观察什么...' : '小牛问答还在准备中'}}"
             auto-height
             maxlength="2000"
             show-confirm-bar="{{false}}"
             cursor-spacing="16"
-            style="width:100%;min-height:100rpx;max-height:240rpx;font-size:32rpx;line-height:1.5;padding:20rpx 32rpx;background:#F8FAFC;border-radius:20rpx;border:1rpx solid #CBD5E1;box-sizing:border-box;"
           />
         </view>
-        <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}" style="flex-shrink:0;width:160rpx;height:100rpx;line-height:100rpx;background:#FF6B35;color:#fff;border-radius:20rpx;font-size:32rpx;font-weight:600;border:none;padding:0;">发送</button>
+        <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">发送</button>
       </view>
     </view>
   </view>

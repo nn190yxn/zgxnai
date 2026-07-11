@@ -6,6 +6,189 @@
   </view>
 
   <block wx:if="{{!startupSafeMode}}">
+  <view class="core-hero" wx:if="{{coreRefactorEnabled}}">
+    <view class="core-hero-content">
+      <text class="core-brand">小牛育儿</text>
+      <text class="core-title">{{homePrimaryCard.title}}</text>
+      <text class="core-desc">{{homePrimaryCard.desc}}</text>
+      <view class="core-primary-action" bindtap="onHomePrimaryActionTap">
+        <text class="core-primary-action-text">{{homePrimaryCard.cta}}</text>
+      </view>
+    </view>
+
+    <view class="core-scenes">
+      <view class="core-scenes-header">
+        <text class="core-scenes-title">先选一个家里正在发生的场景</text>
+        <text class="core-scenes-subtitle">3 次点击内看到一个判断结果</text>
+      </view>
+      <view class="core-scene-grid">
+        <view
+          class="core-scene-item"
+          wx:for="{{coreScenes}}"
+          wx:key="key"
+          data-scene-key="{{item.key}}"
+          bindtap="onCoreSceneTap"
+        >
+          <text class="core-scene-name">{{item.label}}</text>
+          <text class="core-scene-desc">{{item.familyLanguage}}</text>
+        </view>
+      </view>
+
+      <view class="core-age-panel" wx:if="{{coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'symptom_select'}}">
+        <view class="core-age-header">
+          <text class="core-age-title">确认一下孩子年龄</text>
+          <text class="core-age-subtitle" wx:if="{{coreRefactorState.profileAgeGroup}}">已按 {{coreRefactorState.profileAgeGroup.childName}} 的档案先选 {{coreRefactorState.profileAgeGroup.label}}</text>
+          <text class="core-age-subtitle" wx:else>没有完整档案也可以先选年龄继续</text>
+        </view>
+        <view class="core-age-options">
+          <view
+            class="core-age-option {{coreRefactorState.selectedAgeGroup === item.key ? 'core-age-option-active' : ''}}"
+            wx:for="{{coreRefactorState.ageOptions}}"
+            wx:key="key"
+            data-age-key="{{item.key}}"
+            bindtap="onCoreAgeTap"
+          >
+            <text class="core-age-option-text">{{item.label}}</text>
+          </view>
+        </view>
+        <view class="core-profile-entry" bindtap="goToCoreChildProfile">
+          <text class="core-profile-entry-text">完善孩子档案，让判断更贴合</text>
+        </view>
+      </view>
+
+      <view class="core-symptom-panel" wx:if="{{coreRefactorState.stage === 'symptom_select'}}">
+        <view class="core-symptom-header">
+          <text class="core-symptom-title">{{coreRefactorState.selectedScene.question}}</text>
+          <text class="core-symptom-subtitle">选最像今天家里发生的那个表现</text>
+        </view>
+        <view class="core-symptom-list">
+          <view
+            class="core-symptom-item {{coreRefactorState.selectedSymptomKey === item.key ? 'core-symptom-item-active' : ''}}"
+            wx:for="{{coreRefactorState.selectedScene.symptoms}}"
+            wx:key="key"
+            data-symptom-key="{{item.key}}"
+            bindtap="onCoreSymptomTap"
+          >
+            <text class="core-symptom-name">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="core-result-card" wx:if="{{coreRefactorState.stage === 'bottleneck_result' && coreRefactorState.currentBottleneck}}">
+        <view class="core-result-header">
+          <text class="core-result-eyebrow">卡点判断</text>
+          <text class="core-result-title">{{coreRefactorState.currentBottleneck.bottleneckTitle}}</text>
+          <text class="core-result-desc">{{coreRefactorState.currentBottleneck.bottleneckText}}</text>
+        </view>
+
+        <view class="core-action-box">
+          <text class="core-action-eyebrow">今晚第一步</text>
+          <text class="core-action-title">{{coreRefactorState.currentBottleneck.actionTitle}}</text>
+          <view class="core-action-steps">
+            <view class="core-action-step" wx:for="{{coreRefactorState.currentBottleneck.actionSteps}}" wx:key="index">
+              <text class="core-action-step-index">{{index + 1}}</text>
+              <text class="core-action-step-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="core-result-actions">
+          <view class="core-result-primary" bindtap="onCoreTryTonightTap">
+            <text class="core-result-primary-text">我今晚试试</text>
+          </view>
+          <view class="core-result-secondary" bindtap="onCoreAskDetailTap">
+            <text class="core-result-secondary-text">继续问细节</text>
+          </view>
+        </view>
+        <view class="core-result-tertiary" bindtap="onSaveCoreActionToGrowthRecordTap">
+          <text class="core-result-tertiary-text">记到成长记录</text>
+        </view>
+
+        <view class="core-result-support" wx:if="{{coreRefactorState.resultSupportItems && coreRefactorState.resultSupportItems.length > 0}}">
+          <text class="core-result-support-title">继续深入</text>
+          <view class="core-result-support-grid">
+            <view
+              class="core-result-support-item"
+              wx:for="{{coreRefactorState.resultSupportItems}}"
+              wx:key="key"
+              data-action="{{item.action}}"
+              bindtap="onCoreResultSupportTap"
+            >
+              <text class="core-result-support-item-title">{{item.title}}</text>
+              <text class="core-result-support-item-desc">{{item.desc}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="core-effect-panel" wx:if="{{coreRefactorState.stage === 'effect_record' && coreRefactorState.currentBottleneck}}">
+        <view class="core-effect-header">
+          <text class="core-effect-eyebrow">效果记录</text>
+          <text class="core-effect-title">昨晚这一步效果怎么样？</text>
+          <text class="core-effect-desc">{{coreRefactorState.currentBottleneck.actionTitle}}</text>
+        </view>
+        <view class="core-effect-options">
+          <view
+            class="core-effect-option"
+            wx:for="{{coreRefactorState.effectOptions}}"
+            wx:key="key"
+            data-effect-key="{{item.key}}"
+            bindtap="onCoreEffectTap"
+          >
+            <text class="core-effect-option-text">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="core-next-panel" wx:if="{{coreRefactorState.stage === 'effect_recorded' && coreRefactorState.nextActionSuggestion}}">
+        <view class="core-next-header">
+          <text class="core-next-eyebrow">下一步建议</text>
+          <text class="core-next-title">{{coreRefactorState.nextActionSuggestion.actionTitle}}</text>
+          <text class="core-next-desc">{{coreRefactorState.nextActionSuggestion.nextActionDesc}}</text>
+        </view>
+        <view class="core-next-steps">
+          <view class="core-next-step" wx:for="{{coreRefactorState.nextActionSuggestion.actionSteps}}" wx:key="index">
+            <text class="core-next-step-index">{{index + 1}}</text>
+            <text class="core-next-step-text">{{item}}</text>
+          </view>
+        </view>
+        <view class="core-next-save" bindtap="onSaveNextCoreActionTap">
+          <text class="core-next-save-text">保存为今晚小任务</text>
+        </view>
+        <view class="core-next-record" bindtap="onSaveCoreActionToGrowthRecordTap">
+          <text class="core-next-record-text">记到成长记录</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="core-membership" wx:if="{{coreRefactorEnabled && membershipTouchpointVisible}}" bindtap="goToMembership">
+    <text class="core-membership-eyebrow">连续陪伴</text>
+    <text class="core-membership-title">{{membershipTouchpointTitle}}</text>
+    <text class="core-membership-desc">{{membershipTouchpointDesc}}</text>
+    <text class="core-membership-action">{{membershipTouchpointCta}}</text>
+  </view>
+
+  <view class="core-tools" wx:if="{{coreRefactorEnabled}}">
+    <view class="core-tools-header">
+      <text class="core-tools-title">更多工具</text>
+      <text class="core-tools-subtitle">先看懂卡点，再按需要进入深度功能</text>
+    </view>
+    <view class="core-tool-grid">
+      <view
+        class="core-tool-item"
+        wx:for="{{coreSupportTools}}"
+        wx:key="key"
+        data-action="{{item.action}}"
+        bindtap="onCoreToolTap"
+      >
+        <text class="core-tool-title">{{item.title}}</text>
+        <text class="core-tool-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{showLegacyHomeSections}}">
   <view class="hero">
     <view class="hero-content">
       <text class="hero-badge">小牛育儿</text>
@@ -204,10 +387,11 @@
         <text class="progress-line">{{membershipTouchpointTitle}}</text>
         <text class="progress-line">{{membershipTouchpointDesc}}</text>
         <view class="progress-actions">
-          <text class="progress-action">查看宝贝成长总结</text>
+          <text class="progress-action">{{membershipTouchpointCta}}</text>
         </view>
       </view>
   </view>
+  </block>
 
   <view class="tips-card">
     <text class="tips-title">温馨提示</text>

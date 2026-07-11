@@ -2,6 +2,7 @@
   min-height: 100vh;
   background: #f6f1eb;
   padding: 24rpx;
+  box-sizing: border-box;
 }
 
 .hero-card,
@@ -11,6 +12,7 @@
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
+  box-sizing: border-box;
 }
 
 .hero-title,
@@ -20,6 +22,7 @@
   line-height: 1.45;
   color: #2c2623;
   font-weight: 700;
+  word-break: break-word;
 }
 
 .date-chip {
@@ -36,6 +39,7 @@
 .option-list {
   display: flex;
   flex-wrap: wrap;
+  gap: 16rpx;
   margin-top: 16rpx;
 }
 
@@ -43,11 +47,11 @@
   padding: 16rpx 22rpx;
   border-radius: 999rpx;
   background: #f3f0ec;
-  margin-right: 16rpx;
-  margin-bottom: 16rpx;
   color: #6c625b;
   font-size: 24rpx;
   line-height: 1.45;
+  box-sizing: border-box;
+  word-break: break-word;
 }
 
 .option-chip-active {
@@ -64,6 +68,8 @@
   padding: 20rpx;
   box-sizing: border-box;
   line-height: 1.7;
+  font-size: 26rpx;
+  color: #2c2623;
 }
 
 .helper-copy {
@@ -72,10 +78,12 @@
   color: #6c625b;
   font-size: 24rpx;
   line-height: 1.7;
+  word-break: break-word;
 }
 
 .action-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   margin-bottom: 20rpx;
 }
@@ -87,6 +95,8 @@
   padding: 22rpx 24rpx;
   font-size: 28rpx;
   line-height: 1.45;
+  box-sizing: border-box;
+  word-break: break-word;
 }
 
 .primary-btn {
@@ -99,7 +109,8 @@
 }
 
 .secondary-btn {
-  flex: 1;
+  flex: 1 1 260rpx;
+  min-width: 0;
   background: #fff;
   color: #6c625b;
 }

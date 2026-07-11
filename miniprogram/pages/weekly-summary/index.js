@@ -5,7 +5,8 @@ Page({
     currentChild: null,
     childId: 0,
     loading: false,
-    summary: null
+    summary: null,
+    errorMessage: ''
   },
 
   getDimensionLabel: function(key) {
@@ -65,6 +66,7 @@ Page({
       highlights: Array.isArray(summary.highlights) ? summary.highlights : [],
       concerns: Array.isArray(summary.concerns) ? summary.concerns : [],
       nextActions: Array.isArray(summary.nextActions) ? summary.nextActions : [],
+      trendItems: Array.isArray(summary.trendItems) ? summary.trendItems : [],
       recommendedContent: Array.isArray(summary.recommendedContent) ? summary.recommendedContent : [],
       developmentZoneSummary: summary.developmentZoneSummary || {
         totalCount: 0,
@@ -72,10 +74,62 @@ Page({
         zones: [],
         recentPractices: []
       },
+      childName: summary.childName || (this.data.currentChild && (this.data.currentChild.name || this.data.currentChild.nickname)) || '孩子',
+      overview: summary.overview || '这周的记录已经整理好，可以先看变化，再定下周一步。',
+      recordDays: Number(summary.recordDays || 0),
+      completedPlanCount: Number(summary.completedPlanCount || 0),
+      totalPlanCount: Number(summary.totalPlanCount || 0),
+      completedTaskCount: Number(summary.completedTaskCount || 0),
+      premiumUnlocked: !!summary.premiumUnlocked,
+      premiumTip: summary.premiumTip || '开通后可以看到更细的变化趋势和下周陪娃建议。',
       ageGroup: summary.ageGroup || '',
       weakestDimensionLabel: summary.weakestDimensionLabel || (dimensionScoreList[0] ? dimensionScoreList[0].label : ''),
       dimensionScoreList: dimensionScoreList
     });
+  },
+
+  getPendingCoreWeeklySummary: function(options) {
+    var opts = options || {};
+    try {
+      var pending = wx.getStorageSync('pendingCoreWeeklySummary') || null;
+      if (!pending || pending.source !== 'core_action') {
+        return null;
+      }
+      if (pending.childId && this.data.childId && Number(pending.childId) !== Number(this.data.childId)) {
+        return null;
+      }
+      if (opts.consume) {
+        wx.removeStorageSync('pendingCoreWeeklySummary');
+      }
+      return pending;
+    } catch (err) {
+      return null;
+    }
+  },
+
+  clearPendingCoreWeeklySummary: function() {
+    this.getPendingCoreWeeklySummary({ consume: true });
+  },
+
+  applySummary: function(rawSummary, source) {
+    var summary = this.normalizeSummaryForDisplay(rawSummary);
+    this.setData({
+      summary: summary,
+      currentChild: this.data.currentChild || (summary ? { id: this.data.childId, name: summary.childName || '' } : null)
+    });
+    if (summary && app.trackKbEvent) {
+      app.trackKbEvent({
+        event_type: 'weekly_summary_view',
+        module_key: 'weekly_summary',
+        page_key: 'weekly_summary_index',
+        child_id: this.data.childId,
+        event_meta: {
+          source: source || 'api',
+          premium_unlocked: !!summary.premiumUnlocked,
+          record_days: Number(summary.recordDays || 0)
+        }
+      });
+    }
   },
 
   onLoad: function(options) {
@@ -123,30 +177,28 @@ Page({
       return;
     }
     this.setData({ loading: true });
+    this.setData({ errorMessage: '' });
     app.request({
       url: '/weekly-summary',
       method: 'GET',
       data: { childId: this.data.childId }
     }).then(function(data) {
-      var summary = that.normalizeSummaryForDisplay(data);
-      that.setData({
-        summary: summary,
-        currentChild: that.data.currentChild || (summary ? { id: that.data.childId, name: summary.childName || '' } : null)
-      });
-      if (app.trackKbEvent) {
-        app.trackKbEvent({
-          event_type: 'weekly_summary_view',
-          module_key: 'weekly_summary',
-          page_key: 'weekly_summary_index',
-          child_id: that.data.childId,
-          event_meta: {
-            premium_unlocked: !!(summary && summary.premiumUnlocked),
-            record_days: Number((summary && summary.recordDays) || 0)
-          }
-        });
+      if (data) {
+        that.clearPendingCoreWeeklySummary();
+        that.applySummary(data, 'api');
+        return;
       }
+      that.applySummary(that.getPendingCoreWeeklySummary({ consume: true }), 'core_action_fallback');
     }).catch(function(err) {
-      wx.showToast({ title: app.getApiErrorMessage(err, '每周总结没加载出来'), icon: 'none' });
+      var fallback = that.getPendingCoreWeeklySummary({ consume: true });
+      if (fallback) {
+        that.applySummary(fallback, 'core_action_fallback');
+        return;
+      }
+      that.setData({
+        summary: null,
+        errorMessage: app.getApiErrorMessage(err, '每周总结没加载出来')
+      });
     }).finally(function() {
       that.setData({ loading: false });
     });
@@ -189,5 +241,17 @@ Page({
       }
       wx.navigateTo({ url: '/pages/profile/child-edit/child-edit' });
     });
+  },
+
+  retryLoadSummary: function() {
+    this.loadSummary();
+  },
+
+  goToGrowthRecord: function() {
+    wx.navigateTo({ url: '/pages/growth-record/index' });
+  },
+
+  goHome: function() {
+    wx.switchTab({ url: '/pages/index/index' });
   }
 });

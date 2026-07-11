@@ -66,6 +66,21 @@ const demoSnapshot = {
       average_order_value: 104.71
     }
   },
+  coreActionFunnel: {
+    items: [
+      { key: 'home_to_first_action', label: '首页到第一动作点击率', count: 720, base_count: 1200, rate: 60 },
+      { key: 'scene_select_completion', label: '场景选择完成率', count: 612, base_count: 720, rate: 85 },
+      { key: 'result_generation', label: '结果生成率', count: 504, base_count: 560, rate: 90 },
+      { key: 'tonight_action_save', label: '今晚小任务保存率', count: 268, base_count: 504, rate: 53.17 },
+      { key: 'next_day_record', label: '次日记录入口率', count: 124, base_count: 268, rate: 46.27 },
+      { key: 'effect_submit', label: '效果提交率', count: 92, base_count: 124, rate: 74.19 },
+      { key: 'continuous_2_record', label: '连续 2 次记录率', count: 48, base_count: 92, rate: 52.17 }
+    ],
+    scene_items: [
+      { scene_key: 'homework_restless', scene_title: '写作业坐不住', scene_select: 128, result_view: 108, result_rate: 84.38, tonight_action_save: 58, save_rate: 53.7, action_effect_submit: 24, effect_submit_rate: 41.38 },
+      { scene_key: 'bedtime_meltdown', scene_title: '睡前崩溃', scene_select: 96, result_view: 81, result_rate: 84.38, tonight_action_save: 40, save_rate: 49.38, action_effect_submit: 16, effect_submit_rate: 40 }
+    ]
+  },
   membershipStructure: [
     { key: 'month', label: '月会员', count: 1748, percentage: 53.95 },
     { key: 'quarter', label: '季会员', count: 702, percentage: 21.67 },
@@ -475,12 +490,13 @@ async function loadDashboard() {
     throw error;
   }
 
-  const [overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
+  const [overview, userTrends, revenueTrends, featureRanking, contentRanking, coreActionFunnel, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
     safeRequest('/dashboard/overview', { users: {}, memberships: {}, revenue: {}, family: {}, operations: {}, membership_structure: [], child_age_distribution: [], child_gender_distribution: [], conversion_funnel: [], membership_lifecycle: {}, age_feature_preferences: [], feature_conversion: [], user_segments: [] }),
     safeRequest('/analytics/users/trends?days=14', { items: [] }),
     safeRequest('/analytics/revenue/trends?days=14', { items: [] }),
     safeRequest('/analytics/features/ranking?days=14&limit=8', { items: [] }),
     safeRequest('/analytics/content/ranking?days=14&limit=8', { items: [] }),
+    safeRequest('/analytics/core-action/funnel?days=14', { items: [] }),
     safeRequest('/insights/weekly?days=7', { cards: [] }),
     safeRequest('/content/ops/overview', {}),
     safeRequest('/content/ops/tips?limit=8', { items: [] }),
@@ -490,7 +506,7 @@ async function loadDashboard() {
     safeRequest('/analytics/ai-chat/recent?days=7', { items: [] })
   ]);
 
-  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent });
+  renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, coreActionFunnel, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent });
 }
 
 function renderDashboard(snapshot) {
@@ -507,6 +523,7 @@ function renderDashboard(snapshot) {
     snapshot.overview
   );
   renderConversionFunnel(snapshot.conversionFunnel || snapshot.overview.conversion_funnel || []);
+  renderCoreActionFunnel(snapshot.coreActionFunnel || {});
   renderMembershipLifecycle(snapshot.membershipLifecycle || snapshot.overview.membership_lifecycle || {});
   renderAgeFeaturePreferences(snapshot.ageFeaturePreferences || snapshot.overview.age_feature_preferences || []);
   renderFeatureConversion(snapshot.featureConversion || snapshot.overview.feature_conversion || []);
@@ -804,6 +821,40 @@ function renderConversionFunnel(items) {
       </div>
       <div class="distribution-track"><div class="distribution-fill funnel" style="width:${width}%"></div></div>
       <span class="distribution-meta">总转化 ${escapeHtml(formatPercent(item.total_rate))} / 步进转化 ${escapeHtml(formatPercent(item.conversion_rate))}</span>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function renderCoreActionFunnel(data) {
+  const items = (data && data.items) || [];
+  renderMiniStats('coreActionFunnel', items.map((item) => ({
+    label: item.label || item.key || '-',
+    value: formatPercent(item.rate),
+    meta: `${formatNumber(item.count)} / ${formatNumber(item.base_count)} 次`
+  })));
+  renderCoreActionSceneFunnel((data && data.scene_items) || []);
+}
+
+function renderCoreActionSceneFunnel(items) {
+  const container = document.getElementById('coreActionSceneFunnel');
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无按场景拆分的第一动作漏斗。</div>';
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = 'scene-funnel-item';
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.scene_title || item.scene_key || '-')}</span>
+        <strong>${escapeHtml(formatNumber(item.scene_select || 0))}</strong>
+      </div>
+      <span class="distribution-meta">结果 ${escapeHtml(formatPercent(item.result_rate))} / 保存 ${escapeHtml(formatPercent(item.save_rate))} / 记录 ${escapeHtml(formatPercent(item.effect_submit_rate))}</span>
     `;
     container.appendChild(node);
   });
@@ -1290,6 +1341,9 @@ function renderRanking(containerId, items, mapper) {
 
 function renderMiniStats(containerId, items) {
   const container = document.getElementById(containerId);
+  if (!container) {
+    return;
+  }
   container.innerHTML = '';
   items.forEach((item) => {
     const node = document.createElement('div');
@@ -1305,6 +1359,9 @@ function renderMiniStats(containerId, items) {
 
 function renderDistribution(containerId, items, emptyMessage) {
   const container = document.getElementById(containerId);
+  if (!container) {
+    return;
+  }
   container.innerHTML = '';
   if (!items || !items.length) {
     container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
@@ -1377,6 +1434,32 @@ function renderContentOpsOverview(data) {
         : `当前没有识别出高阅读文章，建议检查阅读埋点或高阅读阈值。更新于 ${formatDateTime(articles.latest_updated_at)}。`
     }
   ]);
+  renderCoreSceneCoverage(tips.core_scene_coverage || []);
+}
+
+function renderCoreSceneCoverage(items) {
+  const container = document.getElementById('coreSceneCoverage');
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="empty-state">当前暂无核心场景覆盖数据。</div>';
+    return;
+  }
+  items.forEach((item) => {
+    const node = document.createElement('div');
+    node.className = `scene-coverage-item${item.status === 'gap' ? ' has-gap' : ''}`;
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item.scene_title || item.scene_key || '-')}</span>
+        <strong>${escapeHtml(formatNumber(item.content_count || 0))} 条</strong>
+      </div>
+      <span class="distribution-meta">模板 ${escapeHtml(formatNumber(item.result_template_count || 0))} / 锦囊 ${escapeHtml(formatNumber(item.ready_tip_count || 0))} / 文章 ${escapeHtml(formatNumber(item.article_count || 0))}</span>
+      <p>${escapeHtml(item.suggested_action || '')}</p>
+    `;
+    container.appendChild(node);
+  });
 }
 
 function renderTipsOps(data) {

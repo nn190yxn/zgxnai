@@ -1,6 +1,8 @@
 // 首页逻辑
 const app = getApp();
 const encouragementUtils = require('../../utils/encouragement.js');
+const coreActionScenes = require('../../utils/core-action-scenes.js');
+const coreActionStorage = require('../../utils/core-action-storage.js');
 const developmentZones = require('../../utils/development-zones.js');
 const allDevelopmentZones = developmentZones.getDevelopmentZones();
 
@@ -20,6 +22,92 @@ Page({
       paymentEnabled: false,
       configLoaded: false
     },
+    coreRefactorState: {
+      claim: '先看懂孩子当前卡点，再做今晚第一步',
+      primaryActionText: '开始看看孩子卡在哪',
+      activeScene: '',
+      selectedScene: null,
+      selectedAgeGroup: '',
+      selectedAgeLabel: '',
+      selectedSymptomKey: '',
+      selectedSymptomLabel: '',
+      profileAgeGroup: null,
+      effectOptions: [
+        { key: 'started_smoothly', label: '顺利开始了' },
+        { key: 'still_resisted', label: '还是抗拒' },
+        { key: 'slow_but_started', label: '写了一点但很慢' },
+        { key: 'not_tried', label: '没来得及试' }
+      ],
+      nextActionSuggestion: null,
+      currentBottleneck: null,
+      nextAction: null,
+      resultSupportItems: [],
+      stage: 'idle',
+      ageOptions: coreActionScenes.getCoreActionAgeGroups()
+    },
+    coreScenes: coreActionScenes.getCoreActionScenes(),
+    coreSupportTools: [
+      {
+        key: 'chat',
+        title: '继续追问细节',
+        desc: '围绕刚才的卡点问做法',
+        action: 'chat'
+      },
+      {
+        key: 'assessment',
+        title: '做观察',
+        desc: '系统看一次整体状态',
+        action: 'assessment'
+      },
+      {
+        key: 'textbook',
+        title: '做练习',
+        desc: '按年龄练阅读表达',
+        action: 'textbook'
+      },
+      {
+        key: 'parenting',
+        title: '找方法',
+        desc: '按场景查育儿步骤',
+        action: 'parenting'
+      },
+      {
+        key: 'nutrition',
+        title: '看营养',
+        desc: '查挑食和搭配建议',
+        action: 'nutrition'
+      },
+      {
+        key: 'growth',
+        title: '记成长',
+        desc: '看看最近变化',
+        action: 'growth_record'
+      },
+      {
+        key: 'weekly',
+        title: '看周报',
+        desc: '复盘一周变化',
+        action: 'weekly_report'
+      },
+      {
+        key: 'membership',
+        title: '成长服务',
+        desc: '解锁连续陪伴建议',
+        action: 'membership'
+      }
+    ],
+    homePrimaryCard: {
+      primaryCardType: 'first_action',
+      reason: 'no_context',
+      title: '孩子今天这个表现，先看懂卡在哪',
+      desc: '选一个家里正在发生的场景，小牛帮你判断原因，再给今晚能做的一步。',
+      cta: '开始看看孩子卡在哪',
+      targetPath: '',
+      targetPayload: {}
+    },
+    recentCoreAction: null,
+    coreRefactorEnabled: false,
+    showLegacyHomeSections: true,
     startupSafeMode: false,
     heroImageReady: false,
     growthStatus: {
@@ -36,6 +124,8 @@ Page({
     membershipTouchpointVisible: false,
     membershipTouchpointTitle: '宝贝每周成长总结',
     membershipTouchpointDesc: '查看每周成长趋势和下周建议。',
+    membershipTouchpointCta: '查看宝贝成长总结',
+    membershipTouchpointEligible: true,
     operationTouchpoint: {
       key: '',
       title: '',
@@ -91,6 +181,7 @@ Page({
       return;
     }
     this.syncFeatureFlags();
+    this.refreshCoreActionHomeState();
     this.checkLogin();
     this.loadReadingStatus();
     this.loadDailyPlan();
@@ -106,6 +197,7 @@ Page({
       return;
     }
     this.syncFeatureFlags();
+    this.refreshCoreActionHomeState();
     this.checkLogin();
     this.loadReadingStatus();
     this.loadDailyPlan();
@@ -137,6 +229,901 @@ Page({
     }, 300);
   },
 
+  refreshCoreActionHomeState: function() {
+    var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : (app.globalData.runtimeConfig || {});
+    var coreRefactorEnabled = this.resolveCoreRefactorEnabled(runtimeConfig);
+    var recentAction = coreActionStorage.getLatestCoreAction();
+    var continuousRecordCount = coreActionStorage.getContinuousRecordCount();
+    var primaryCard = this.buildHomePrimaryCard({
+      recentAction: recentAction,
+      retentionSummary: this.data.retentionSummary,
+      continueTask: this.data.continueTask,
+      continuousRecordCount: continuousRecordCount
+    });
+
+    this.setData({
+      recentCoreAction: recentAction,
+      homePrimaryCard: primaryCard,
+      coreRefactorEnabled: coreRefactorEnabled,
+      showLegacyHomeSections: !coreRefactorEnabled
+    });
+    if (!coreRefactorEnabled) {
+      return;
+    }
+    this.trackCoreHomeClaimView(primaryCard);
+    this.trackNextDayRecordView(primaryCard, recentAction);
+  },
+
+  resolveCoreRefactorEnabled: function(runtimeConfig) {
+    var config = runtimeConfig || {};
+    if (config.coreRefactorEnabled === true) {
+      return true;
+    }
+    var whitelist = config.coreRefactorUserWhitelist || [];
+    var userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo') || {};
+    var userKeys = [userInfo.id, userInfo.openid, userInfo.open_id, userInfo.unionid, userInfo.union_id].map(function(item) {
+      return String(item || '').trim();
+    }).filter(Boolean);
+    if (userKeys.some(function(key) { return whitelist.indexOf(key) !== -1; })) {
+      return true;
+    }
+    var rolloutPercent = Number(config.coreRefactorRolloutPercent || 0);
+    if (!rolloutPercent || rolloutPercent <= 0) {
+      return false;
+    }
+    return this.getCoreRefactorBucket(userKeys[0] || this.getCoreRefactorAnonymousKey()) < Math.min(100, Math.max(0, rolloutPercent));
+  },
+
+  getCoreRefactorAnonymousKey: function() {
+    var key = wx.getStorageSync('coreRefactorAnonKey');
+    if (!key) {
+      key = 'anon_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+      wx.setStorageSync('coreRefactorAnonKey', key);
+    }
+    return key;
+  },
+
+  getCoreRefactorBucket: function(key) {
+    var text = String(key || 'anonymous');
+    var hash = 0;
+    for (var i = 0; i < text.length; i += 1) {
+      hash = (hash * 31 + text.charCodeAt(i)) % 10000;
+    }
+    return hash % 100;
+  },
+
+  trackCoreActionEvent: function(eventType, payload) {
+    if (!eventType || !app.trackKbEvent) {
+      return;
+    }
+    var data = payload || {};
+    var meta = Object.assign({}, data.event_meta || {});
+    if (data.scene_key || data.sceneKey) {
+      meta.scene_key = data.scene_key || data.sceneKey;
+    }
+    if (data.age_group || data.ageGroup) {
+      meta.age_group = data.age_group || data.ageGroup;
+    }
+    if (data.symptom_key || data.symptomKey) {
+      meta.symptom_key = data.symptom_key || data.symptomKey;
+    }
+    if (data.result_id || data.resultId) {
+      meta.result_id = data.result_id || data.resultId;
+    }
+    app.trackKbEvent({
+      event_type: eventType,
+      module_key: 'core_action',
+      page_key: 'home_index',
+      scene_key: data.scene_key || data.sceneKey || '',
+      event_meta: meta
+    });
+  },
+
+  trackCoreHomeClaimView: function(primaryCard) {
+    var card = primaryCard || this.data.homePrimaryCard || {};
+    var viewKey = card.reason || card.primaryCardType || 'default';
+    if (this._trackedCoreHomeClaimView === viewKey) {
+      return;
+    }
+    this._trackedCoreHomeClaimView = viewKey;
+    this.trackCoreActionEvent('home_core_claim_view', {
+      event_meta: {
+        card_type: card.primaryCardType || '',
+        reason: card.reason || '',
+        cta: card.cta || ''
+      }
+    });
+  },
+
+  trackNextDayRecordView: function(primaryCard, recentAction) {
+    if (!primaryCard || primaryCard.reason !== 'next_day_record' || !recentAction || !recentAction.id) {
+      return;
+    }
+    this._trackedNextDayRecordIds = this._trackedNextDayRecordIds || {};
+    if (this._trackedNextDayRecordIds[recentAction.id]) {
+      return;
+    }
+    this._trackedNextDayRecordIds[recentAction.id] = true;
+    this.trackCoreActionEvent('next_day_record_view', {
+      sceneKey: recentAction.sceneKey,
+      ageGroup: recentAction.ageGroup,
+      symptomKey: recentAction.symptomKey,
+      resultId: recentAction.id,
+      event_meta: {
+        action_id: recentAction.id,
+        saved_at: recentAction.savedAt || 0
+      }
+    });
+  },
+
+  isBeforeToday: function(timestamp) {
+    var time = Number(timestamp || 0);
+    if (!time) {
+      return false;
+    }
+    var target = new Date(time);
+    var today = new Date();
+    target.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return target.getTime() < today.getTime();
+  },
+
+  buildHomePrimaryCard: function(options) {
+    var context = options || {};
+    var recentAction = context.recentAction || null;
+    var continueTask = context.continueTask || null;
+    var retentionSummary = context.retentionSummary || null;
+    var continuousRecordCount = Number(context.continuousRecordCount || 0);
+
+    if (recentAction && recentAction.completed && continuousRecordCount >= 2) {
+      return {
+        primaryCardType: 'weekly_summary',
+        reason: 'continuous_record',
+        title: '已经连续记录 ' + continuousRecordCount + ' 次',
+        desc: '看看这个问题这几天怎么变了，再选下一周的小步骤。',
+        cta: '看一周变化',
+        targetPath: '/pages/weekly-summary/index',
+        targetPayload: { actionId: recentAction.id, continuousRecordCount: continuousRecordCount }
+      };
+    }
+
+    if (recentAction && recentAction.saved && !recentAction.completed && this.isBeforeToday(recentAction.savedAt || recentAction.createdAt)) {
+      return {
+        primaryCardType: 'continue_action',
+        reason: 'next_day_record',
+        title: '昨晚这一步效果怎么样？',
+        desc: recentAction.actionTitle || '记录一下效果，小牛再给下一步。',
+        cta: '记录一下效果',
+        targetPath: '',
+        targetPayload: { actionId: recentAction.id }
+      };
+    }
+
+    if (recentAction && recentAction.saved && !recentAction.completed) {
+      return {
+        primaryCardType: 'continue_action',
+        reason: 'unfinished_action',
+        title: '今晚继续这一步',
+        desc: recentAction.actionTitle || '上次的小行动还可以继续试一次。',
+        cta: '继续看看',
+        targetPath: '',
+        targetPayload: { actionId: recentAction.id }
+      };
+    }
+
+    if (recentAction && recentAction.completed) {
+      return {
+        primaryCardType: 'weekly_summary',
+        reason: 'recent_record',
+        title: '上次记录有结果了',
+        desc: recentAction.effectLabel || '看看下一步怎么做。',
+        cta: '看下一步',
+        targetPath: '',
+        targetPayload: { actionId: recentAction.id }
+      };
+    }
+
+    if (continueTask && continueTask.id) {
+      return {
+        primaryCardType: 'continue_action',
+        reason: 'unfinished_action',
+        title: continueTask.title || '接着完成上次那件事',
+        desc: '继续完成后，小牛会帮你整理下一步。',
+        cta: '继续完成',
+        targetPath: continueTask.targetPath || '',
+        targetPayload: { sourceId: continueTask.id }
+      };
+    }
+
+    if (retentionSummary) {
+      return {
+        primaryCardType: 'weekly_summary',
+        reason: 'recent_record',
+        title: '最近状态有记录了',
+        desc: String(retentionSummary || '看看孩子最近的变化，再选今晚一步。'),
+        cta: '看下一步',
+        targetPath: '/pages/growth-record/index',
+        targetPayload: {}
+      };
+    }
+
+    return {
+      primaryCardType: 'first_action',
+      reason: 'no_context',
+      title: '孩子今天这个表现，先看懂卡在哪',
+      desc: '选一个家里正在发生的场景，小牛帮你判断原因，再给今晚能做的一步。',
+      cta: '开始看看孩子卡在哪',
+      targetPath: '',
+      targetPayload: {}
+    };
+  },
+
+  onHomePrimaryActionTap: function() {
+    var card = this.data.homePrimaryCard || {};
+    var recentAction = this.data.recentCoreAction;
+    this.trackCoreActionEvent('first_action_entry_click', {
+      event_meta: {
+        card_type: card.primaryCardType || '',
+        reason: card.reason || '',
+        cta: card.cta || ''
+      }
+    });
+    if (card.reason === 'next_day_record' && recentAction && recentAction.id) {
+      this.setData({
+        'coreRefactorState.currentBottleneck': recentAction,
+        'coreRefactorState.nextAction': {
+          title: recentAction.actionTitle,
+          steps: recentAction.actionSteps || []
+        },
+        'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(recentAction),
+        'coreRefactorState.stage': 'effect_record'
+      });
+      wx.showToast({ title: '记录昨晚效果', icon: 'none' });
+      return;
+    }
+    if (card.reason === 'unfinished_action' && recentAction && recentAction.id) {
+      this.setData({
+        'coreRefactorState.currentBottleneck': recentAction,
+        'coreRefactorState.nextAction': {
+          title: recentAction.actionTitle,
+          steps: recentAction.actionSteps || []
+        },
+        'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(recentAction),
+        'coreRefactorState.stage': 'bottleneck_result'
+      });
+      return;
+    }
+    if (card.primaryCardType === 'weekly_summary' || card.targetPath === '/pages/weekly-summary/index') {
+      this.goToWeeklyReport();
+      return;
+    }
+    if (card.targetPath) {
+      this.navigateByDailyPlan({ targetPath: card.targetPath });
+      return;
+    }
+    this.startCoreActionFlow();
+  },
+
+  startCoreActionFlow: function() {
+    var profileAgeGroup = this.getProfileCoreActionAgeGroup();
+    this.setData({
+      'coreRefactorState.stage': 'scene_select',
+      'coreRefactorState.profileAgeGroup': profileAgeGroup
+    });
+    wx.showToast({ title: '先选一个场景', icon: 'none' });
+  },
+
+  getProfileCoreActionAgeGroup: function() {
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    if (!currentChild) {
+      return null;
+    }
+    var ageYears = Number(currentChild.age || currentChild.age_years || currentChild.ageYears || 0);
+    if (!ageYears && app.calculateAgeYears) {
+      ageYears = app.calculateAgeYears(currentChild.birthday || currentChild.birth_date || '') || 0;
+    }
+    if (!ageYears) {
+      return null;
+    }
+    var matched = null;
+    if (ageYears <= 3) {
+      matched = { key: '3-4', label: '3-4岁' };
+    } else if (ageYears === 4) {
+      matched = { key: '4-5', label: '4-5岁' };
+    } else if (ageYears === 5) {
+      matched = { key: '5-6', label: '5-6岁' };
+    } else {
+      matched = { key: '6-plus', label: '6岁以上' };
+    }
+    return {
+      key: matched.key,
+      label: matched.label,
+      childId: currentChild.id || 0,
+      childName: currentChild.name || currentChild.nickname || '孩子'
+    };
+  },
+
+  trackCoreSceneSelect: function(scene) {
+    if (!scene) {
+      return;
+    }
+    this.trackCoreActionEvent('scene_select', {
+      sceneKey: scene.key,
+      event_meta: {
+        scene_label: scene.label,
+        source: 'home_core_scene_grid'
+      }
+    });
+  },
+
+  onCoreSceneTap: function(e) {
+    var sceneKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.sceneKey : '';
+    var scene = coreActionScenes.getCoreActionScene(sceneKey);
+    var profileAgeGroup = this.getProfileCoreActionAgeGroup();
+    if (!scene) {
+      wx.showToast({ title: '场景还在准备中', icon: 'none' });
+      return;
+    }
+    this.setData({
+      'coreRefactorState.activeScene': scene.key,
+      'coreRefactorState.selectedScene': scene,
+      'coreRefactorState.selectedAgeGroup': profileAgeGroup ? profileAgeGroup.key : '',
+      'coreRefactorState.selectedAgeLabel': profileAgeGroup ? profileAgeGroup.label : '',
+      'coreRefactorState.selectedSymptomKey': '',
+      'coreRefactorState.selectedSymptomLabel': '',
+      'coreRefactorState.profileAgeGroup': profileAgeGroup,
+      'coreRefactorState.currentBottleneck': null,
+      'coreRefactorState.nextAction': null,
+      'coreRefactorState.resultSupportItems': [],
+      'coreRefactorState.stage': 'age_select'
+    });
+    this.trackCoreSceneSelect(scene);
+    wx.showToast({ title: '下一步确认年龄', icon: 'none' });
+  },
+
+  onCoreAgeTap: function(e) {
+    var ageKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.ageKey : '';
+    var ageOptions = this.data.coreRefactorState.ageOptions || [];
+    var ageGroup = ageOptions.find(function(item) {
+      return item.key === ageKey;
+    });
+    if (!ageGroup) {
+      wx.showToast({ title: '年龄选项没找到', icon: 'none' });
+      return;
+    }
+    this.setData({
+      'coreRefactorState.selectedAgeGroup': ageGroup.key,
+      'coreRefactorState.selectedAgeLabel': ageGroup.label,
+      'coreRefactorState.stage': 'symptom_select'
+    });
+    this.trackCoreActionEvent('age_select', {
+      sceneKey: (this.data.coreRefactorState.selectedScene || {}).key || this.data.coreRefactorState.activeScene || '',
+      ageGroup: ageGroup.key,
+      event_meta: {
+        age_label: ageGroup.label
+      }
+    });
+    wx.showToast({ title: '接着选最像的表现', icon: 'none' });
+  },
+
+  trackCoreSymptomSelect: function(result) {
+    if (!result) {
+      return;
+    }
+    this.trackCoreActionEvent('symptom_select', {
+      sceneKey: result.sceneKey,
+      ageGroup: result.ageGroup,
+      symptomKey: result.symptomKey,
+      event_meta: {
+        symptom_label: result.symptomLabel
+      }
+    });
+  },
+
+  trackCoreBottleneckView: function(result) {
+    if (!result) {
+      return;
+    }
+    this.trackCoreActionEvent('bottleneck_result_view', {
+      sceneKey: result.sceneKey,
+      ageGroup: result.ageGroup,
+      symptomKey: result.symptomKey,
+      resultId: result.id || '',
+      event_meta: {
+        bottleneck_title: result.bottleneckTitle,
+        fallback_reason: result.fallbackReason
+      }
+    });
+  },
+
+  onCoreSymptomTap: function(e) {
+    var symptomKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.symptomKey : '';
+    var state = this.data.coreRefactorState || {};
+    var scene = state.selectedScene || coreActionScenes.getCoreActionScene(state.activeScene);
+    var symptoms = scene && scene.symptoms ? scene.symptoms : [];
+    var symptom = symptoms.find(function(item) {
+      return item.key === symptomKey;
+    });
+    if (!scene || !symptom) {
+      wx.showToast({ title: '表现选项没找到', icon: 'none' });
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var result = coreActionScenes.buildFirstActionResult({
+      sceneKey: scene.key,
+      symptomKey: symptom.key,
+      ageGroup: state.selectedAgeGroup || state.selectedAgeLabel || '',
+      childId: currentChild && currentChild.id ? currentChild.id : 0
+    });
+    this.setData({
+      'coreRefactorState.selectedSymptomKey': symptom.key,
+      'coreRefactorState.selectedSymptomLabel': symptom.label,
+      'coreRefactorState.currentBottleneck': result,
+      'coreRefactorState.nextAction': {
+        title: result.actionTitle,
+        steps: result.actionSteps
+      },
+      'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(result),
+      'coreRefactorState.stage': 'bottleneck_result'
+    });
+    this.applyCoreMembershipTouchpoint('bottleneck_result');
+    this.trackCoreSymptomSelect(result);
+    this.trackCoreBottleneckView(result);
+  },
+
+  onCoreTryTonightTap: function() {
+    this.onSaveTonightAction();
+  },
+
+  onSaveTonightAction: function() {
+    if (!this.data.coreRefactorState.currentBottleneck) {
+      wx.showToast({ title: '先选一个表现', icon: 'none' });
+      return;
+    }
+    var saved = coreActionStorage.saveTonightAction(this.data.coreRefactorState.currentBottleneck);
+    if (!saved.success || !saved.record) {
+      wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
+      return;
+    }
+    this.trackCoreActionEvent('tonight_action_save', {
+      sceneKey: saved.record.sceneKey,
+      ageGroup: saved.record.ageGroup,
+      symptomKey: saved.record.symptomKey,
+      resultId: saved.record.id,
+      event_meta: {
+        action_id: saved.record.id,
+        action_title: saved.record.actionTitle
+      }
+    });
+    this.setData({
+      'coreRefactorState.currentBottleneck': saved.record,
+      recentCoreAction: saved.record,
+      homePrimaryCard: this.buildHomePrimaryCard({
+        recentAction: saved.record,
+        retentionSummary: this.data.retentionSummary,
+        continueTask: this.data.continueTask,
+        continuousRecordCount: coreActionStorage.getContinuousRecordCount()
+      })
+    });
+    this.applyCoreMembershipTouchpoint('tonight_action_save');
+    wx.showToast({ title: '已保存，今晚照这一步试试', icon: 'success' });
+  },
+
+  buildCoreResultSupportItems: function(result) {
+    var sceneKey = result && result.sceneKey ? result.sceneKey : '';
+    var itemsByScene = {
+      homework_restless: [
+        { key: 'parenting_homework', title: '看写作业方法', desc: '查同场景育儿步骤', action: 'parenting' },
+        { key: 'assessment_focus', title: '做专注观察', desc: '看整体注意力状态', action: 'assessment' }
+      ],
+      bedtime_meltdown: [
+        { key: 'parenting_bedtime', title: '看睡前方法', desc: '查睡前流程和情绪安抚', action: 'parenting' },
+        { key: 'growth_bedtime', title: '记录睡前反应', desc: '保存今晚尝试后的变化', action: 'growth_record' }
+      ],
+      picture_book_runs: [
+        { key: 'reading_practice', title: '做阅读练习', desc: '用更短任务练坐住和复述', action: 'textbook' },
+        { key: 'parenting_reading', title: '看绘本方法', desc: '查亲子阅读步骤', action: 'parenting' }
+      ],
+      meal_dawdling: [
+        { key: 'nutrition_meal', title: '看饮食建议', desc: '查挑食和正餐安排', action: 'nutrition' },
+        { key: 'parenting_meal', title: '看饭桌方法', desc: '查饭桌规则和沟通步骤', action: 'parenting' }
+      ],
+      class_departure_dawdling: [
+        { key: 'parenting_morning', title: '看出门方法', desc: '查早晨流程和分离步骤', action: 'parenting' },
+        { key: 'growth_morning', title: '记录明早变化', desc: '保存明早执行后的反应', action: 'growth_record' }
+      ],
+      weak_expression: [
+        { key: 'expression_practice', title: '做表达练习', desc: '用短句练开口和复述', action: 'textbook' },
+        { key: 'assessment_expression', title: '做表达观察', desc: '看语言表达整体状态', action: 'assessment' }
+      ]
+    };
+    return (itemsByScene[sceneKey] || [
+      { key: 'parenting_default', title: '看相关方法', desc: '查同场景育儿步骤', action: 'parenting' },
+      { key: 'growth_default', title: '记录孩子反应', desc: '把今晚变化记下来', action: 'growth_record' }
+    ]).slice(0, 2);
+  },
+
+  applyCoreMembershipTouchpoint: function(reason) {
+    if (this.data.membershipTouchpointEligible === false) {
+      return;
+    }
+    var copy = {
+      bottleneck_result: {
+        title: '连续 7 天跟踪孩子变化',
+        desc: '今天先看懂卡点，后面每天一个更适合的小步骤，周末看孩子变化。',
+        cta: '查看 7 天陪伴'
+      },
+      tonight_action_save: {
+        title: '每天一个更适合的小步骤',
+        desc: '已保存今晚任务，连续记录后可以看到下一步怎么微调。',
+        cta: '查看连续计划'
+      },
+      effect_recorded: {
+        title: '周末看变化',
+        desc: '记录孩子反应后，小牛会把这几天的尝试整理成趋势和建议。',
+        cta: '查看周总结'
+      },
+      continuous_record: {
+        title: '继续跟踪这个问题',
+        desc: '继续跟 7 天，每天一个更适合的小步骤，周末看孩子真正的变化。',
+        cta: '解锁连续跟踪'
+      }
+    }[reason] || null;
+    if (!copy) {
+      return;
+    }
+    this.setData({
+      membershipTouchpointVisible: true,
+      membershipTouchpointTitle: copy.title,
+      membershipTouchpointDesc: copy.desc,
+      membershipTouchpointCta: copy.cta
+    });
+    if (!this._coreMembershipTouchpointExposed || this._coreMembershipTouchpointReason !== reason) {
+      this._coreMembershipTouchpointExposed = true;
+      this._coreMembershipTouchpointReason = reason;
+      this.trackMembershipTouchpointEvent('membership_touchpoint_exposure', {
+        mode: 'core_action',
+        reason: reason
+      });
+    }
+  },
+
+  onCoreAskDetailTap: function() {
+    var state = this.data.coreRefactorState || {};
+    var result = state.currentBottleneck;
+    if (!result) {
+      wx.showToast({ title: '先选一个表现', icon: 'none' });
+      return;
+    }
+    if (!this.ensureFeatureEnabled('aiChat', '小牛问答还在准备中')) {
+      var fallbackSuggestion = this.buildCoreNextActionSuggestion(result);
+      this.setData({
+        'coreRefactorState.nextActionSuggestion': fallbackSuggestion,
+        'coreRefactorState.stage': 'effect_recorded'
+      });
+      this.trackCoreNextActionView(result, fallbackSuggestion);
+      return;
+    }
+    wx.setStorageSync('pendingCoreActionContext', {
+      source: 'home_core_action_result',
+      sceneKey: result.sceneKey,
+      sceneLabel: result.sceneLabel,
+      ageGroup: result.ageGroup,
+      symptomKey: result.symptomKey,
+      symptomLabel: result.symptomLabel,
+      bottleneckTitle: result.bottleneckTitle,
+      bottleneckText: result.bottleneckText,
+      actionTitle: result.actionTitle,
+      actionSteps: result.actionSteps || []
+    });
+    wx.switchTab({
+      url: '/pages/chat/chat',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  onCoreEffectTap: function(e) {
+    var effectKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.effectKey : '';
+    var state = this.data.coreRefactorState || {};
+    var action = state.currentBottleneck || this.data.recentCoreAction;
+    var effect = (state.effectOptions || []).find(function(item) {
+      return item.key === effectKey;
+    });
+    if (!action || !action.id || !effect) {
+      wx.showToast({ title: '记录项没找到', icon: 'none' });
+      return;
+    }
+    var updated = coreActionStorage.updateActionEffect(action.id, effect);
+    if (!updated.success || !updated.record) {
+      wx.showToast({ title: '没记录成功，请再试一次', icon: 'none' });
+      return;
+    }
+    var nextSuggestion = this.buildCoreNextActionSuggestion(updated.record);
+    var continuousCount = coreActionStorage.getContinuousRecordCount();
+    this.trackCoreActionEvent('action_effect_submit', {
+      sceneKey: updated.record.sceneKey,
+      ageGroup: updated.record.ageGroup,
+      symptomKey: updated.record.symptomKey,
+      resultId: updated.record.id,
+      event_meta: {
+        action_id: updated.record.id,
+        effect_key: updated.record.effectKey,
+        effect_label: updated.record.effectLabel,
+        continuous_record_count: continuousCount
+      }
+    });
+    this.setData({
+      recentCoreAction: updated.record,
+      'coreRefactorState.currentBottleneck': updated.record,
+      'coreRefactorState.nextActionSuggestion': nextSuggestion,
+      'coreRefactorState.stage': 'effect_recorded',
+      homePrimaryCard: this.buildHomePrimaryCard({
+        recentAction: updated.record,
+        retentionSummary: this.data.retentionSummary,
+        continueTask: this.data.continueTask,
+        continuousRecordCount: continuousCount
+      })
+    });
+    this.applyCoreMembershipTouchpoint(continuousCount >= 2 ? 'continuous_record' : 'effect_recorded');
+    this.trackCoreNextActionView(updated.record, nextSuggestion);
+    wx.showToast({ title: '已记录效果', icon: 'success' });
+  },
+
+  buildCoreNextActionSuggestion: function(record) {
+    var effectKey = record && record.effectKey;
+    var baseTitle = record && record.actionTitle ? record.actionTitle : '今晚继续一个小步骤';
+    var sceneLabel = record && record.sceneLabel ? record.sceneLabel : '这个场景';
+    var configuredNextActions = record && record.nextActions ? record.nextActions : null;
+    if (configuredNextActions && configuredNextActions[effectKey]) {
+      var configured = configuredNextActions[effectKey];
+      return {
+        id: String((record && record.id) || 'core_action') + '_next_' + Date.now(),
+        sourceRecordId: record && record.id ? record.id : '',
+        sceneKey: record && record.sceneKey ? record.sceneKey : '',
+        sceneLabel: sceneLabel,
+        ageGroup: record && record.ageGroup ? record.ageGroup : '',
+        symptomKey: record && record.symptomKey ? record.symptomKey : '',
+        symptomLabel: record && record.symptomLabel ? record.symptomLabel : '',
+        bottleneckTitle: record && record.bottleneckTitle ? record.bottleneckTitle : '',
+        bottleneckText: record && record.bottleneckText ? record.bottleneckText : '',
+        actionTitle: configured.title || baseTitle,
+        actionSteps: configured.steps || [],
+        nextActionDesc: configured.desc || '',
+        nextActions: configuredNextActions,
+        sourceType: 'next_action_recommendation',
+        createdAt: Date.now(),
+        saved: false,
+        completed: false
+      };
+    }
+    var map = {
+      started_smoothly: {
+        title: '今晚把这一步再稳定一次',
+        desc: '孩子已经能开始了，先保持同一个步骤，让它变成更熟的家庭节奏。',
+        steps: ['沿用昨晚的开头方式。', '只比昨晚多坚持 1 分钟。', '结束时说一句：你今天比昨天更快开始了。']
+      },
+      still_resisted: {
+        title: '今晚再把目标缩小一半',
+        desc: '抗拒还在，说明入口仍然偏大。今晚先追求愿意靠近这件事。',
+        steps: ['先不要求完成任务。', '只做原步骤里的第一个动作。', '孩子抗拒时停 30 秒，再给一个二选一。']
+      },
+      slow_but_started: {
+        title: '今晚保留开始动作，减少催促',
+        desc: '能开始就是有效信号。慢的时候先稳住节奏，再看能否多走一步。',
+        steps: ['先重复昨晚的开始动作。', '中间只提醒一次下一步。', '完成一点就停下来记录反应。']
+      },
+      not_tried: {
+        title: '今晚只安排一个最小开头',
+        desc: '昨天没试也没关系，先把任务放到更容易发生的时间点。',
+        steps: ['提前选好今晚要试的时间。', '只做第一步，不追完整结果。', '试完马上记录孩子的第一反应。']
+      }
+    };
+    var suggestion = map[effectKey] || {
+      title: '今晚继续观察一个小变化',
+      desc: '先围绕' + sceneLabel + '保留一个可观察的小动作。',
+      steps: ['重复昨晚最容易开始的一步。', '观察孩子是更愿意、还是更抗拒。', '记录一个最明显的变化。']
+    };
+    return {
+      id: String((record && record.id) || 'core_action') + '_next_' + Date.now(),
+      sourceRecordId: record && record.id ? record.id : '',
+      sceneKey: record && record.sceneKey ? record.sceneKey : '',
+      sceneLabel: sceneLabel,
+      ageGroup: record && record.ageGroup ? record.ageGroup : '',
+      symptomKey: record && record.symptomKey ? record.symptomKey : '',
+      symptomLabel: record && record.symptomLabel ? record.symptomLabel : '',
+      bottleneckTitle: record && record.bottleneckTitle ? record.bottleneckTitle : '',
+      bottleneckText: record && record.bottleneckText ? record.bottleneckText : '',
+      actionTitle: suggestion.title || baseTitle,
+      actionSteps: suggestion.steps || [],
+      nextActionDesc: suggestion.desc || '',
+      nextActions: configuredNextActions || {},
+      sourceType: 'next_action_recommendation',
+      createdAt: Date.now(),
+      saved: false,
+      completed: false
+    };
+  },
+
+  trackCoreNextActionView: function(record, suggestion) {
+    if (!record || !suggestion) {
+      return;
+    }
+    this.trackCoreActionEvent('next_action_view', {
+      sceneKey: record.sceneKey,
+      ageGroup: record.ageGroup,
+      symptomKey: record.symptomKey,
+      resultId: record.id,
+      event_meta: {
+        action_id: record.id,
+        effect_key: record.effectKey,
+        next_action_title: suggestion.actionTitle
+      }
+    });
+  },
+
+  onSaveNextCoreActionTap: function() {
+    var suggestion = this.data.coreRefactorState.nextActionSuggestion;
+    if (!suggestion) {
+      wx.showToast({ title: '下一步还没生成', icon: 'none' });
+      return;
+    }
+    var saved = coreActionStorage.saveTonightAction(suggestion);
+    if (!saved.success || !saved.record) {
+      wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
+      return;
+    }
+    this.trackCoreActionEvent('tonight_action_save', {
+      sceneKey: saved.record.sceneKey,
+      ageGroup: saved.record.ageGroup,
+      symptomKey: saved.record.symptomKey,
+      resultId: saved.record.id,
+      event_meta: {
+        action_id: saved.record.id,
+        action_title: saved.record.actionTitle,
+        source_type: saved.record.sourceType || 'next_action_recommendation'
+      }
+    });
+    this.setData({
+      recentCoreAction: saved.record,
+      'coreRefactorState.nextActionSuggestion': saved.record,
+      homePrimaryCard: this.buildHomePrimaryCard({
+        recentAction: saved.record,
+        retentionSummary: this.data.retentionSummary,
+        continueTask: this.data.continueTask,
+        continuousRecordCount: coreActionStorage.getContinuousRecordCount()
+      })
+    });
+    this.applyCoreMembershipTouchpoint('tonight_action_save');
+    wx.showToast({ title: '已保存为今晚小任务', icon: 'success' });
+  },
+
+  buildCoreGrowthRecordPayload: function(record) {
+    var item = record || this.data.coreRefactorState.nextActionSuggestion || this.data.coreRefactorState.currentBottleneck || this.data.recentCoreAction;
+    if (!item) {
+      return null;
+    }
+    var effectLine = item.effectLabel ? ('效果记录：' + item.effectLabel) : '';
+    var steps = Array.isArray(item.actionSteps) && item.actionSteps.length ? item.actionSteps.join('；') : '';
+    var note = [
+      '场景：' + (item.sceneLabel || '未填写'),
+      '年龄：' + (item.ageGroup || '未确认'),
+      '表现：' + (item.symptomLabel || '未填写'),
+      '卡点判断：' + (item.bottleneckTitle || '未填写'),
+      item.bottleneckText || '',
+      '行动建议：' + (item.actionTitle || '未填写'),
+      steps ? ('步骤：' + steps) : '',
+      effectLine
+    ].filter(Boolean).join('\n');
+    return {
+      note: note,
+      source: {
+        sourceType: 'core_action',
+        sourceId: item.id || ('core_action_' + Date.now()),
+        sceneKey: item.sceneKey || '',
+        sceneLabel: item.sceneLabel || '',
+        symptomKey: item.symptomKey || '',
+        symptomLabel: item.symptomLabel || '',
+        ageGroup: item.ageGroup || '',
+        bottleneckTitle: item.bottleneckTitle || '',
+        actionTitle: item.actionTitle || '今晚小任务',
+        effectKey: item.effectKey || '',
+        effectLabel: item.effectLabel || '',
+        summary: note
+      }
+    };
+  },
+
+  onSaveCoreActionToGrowthRecordTap: function() {
+    var payload = this.buildCoreGrowthRecordPayload();
+    if (!payload) {
+      wx.showToast({ title: '先生成一个判断结果', icon: 'none' });
+      return;
+    }
+    wx.setStorageSync('pendingGrowthRecordNote', payload.note);
+    wx.setStorageSync('pendingGrowthRecordSource', payload.source);
+    wx.navigateTo({
+      url: '/pages/growth-record/index?source=core_action',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  goToCoreChildProfile: function() {
+    this.navigateByDailyPlan({ targetPath: '/pages/profile/child-edit/child-edit' });
+  },
+
+  onCoreToolTap: function(e) {
+    var action = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.action : '';
+    this.openCoreSupportAction(action);
+  },
+
+  onCoreResultSupportTap: function(e) {
+    var action = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.action : '';
+    var state = this.data.coreRefactorState || {};
+    this.openCoreSupportAction(action, state.currentBottleneck || this.data.recentCoreAction || null);
+  },
+
+  openCoreSupportAction: function(action, context) {
+    if (action === 'chat') {
+      this.goToChat();
+      return;
+    }
+    if (action === 'assessment') {
+      this.goToAssessment();
+      return;
+    }
+    if (action === 'parenting') {
+      if (context && context.sceneKey) {
+        this.goToParentingSearchWithCoreContext(context);
+        return;
+      }
+      this.goToParenting();
+      return;
+    }
+    if (action === 'growth_record') {
+      this.goToGrowthRecord();
+      return;
+    }
+    if (action === 'nutrition') {
+      this.goToNutrition();
+      return;
+    }
+    if (action === 'textbook') {
+      this.goToTextbook();
+      return;
+    }
+    if (action === 'weekly_report') {
+      this.goToWeeklyReport();
+      return;
+    }
+    if (action === 'membership') {
+      this.goToMembership();
+      return;
+    }
+    wx.showToast({ title: '入口暂未准备好', icon: 'none' });
+  },
+
+  goToParentingSearchWithCoreContext: function(context) {
+    if (!this.ensureFeatureEnabled('sceneSearch', '场景搜索还在准备中')) {
+      return;
+    }
+    var query = [
+      'sceneKey=' + encodeURIComponent(context.sceneKey || ''),
+      'ageGroup=' + encodeURIComponent(context.ageGroup || ''),
+      'bottleneckTitle=' + encodeURIComponent(context.bottleneckTitle || ''),
+      'keyword=' + encodeURIComponent(context.sceneLabel || context.bottleneckTitle || '')
+    ].join('&');
+    wx.navigateTo({
+      url: '/pages/parenting/search/search?' + query,
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
   syncFeatureFlags() {
     var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
     var shouldFetchRuntimeConfig = !!(app.globalData && app.globalData.enableRuntimeConfigFetch);
@@ -149,6 +1136,7 @@ Page({
         this.setData({
           featureFlags: app.getRuntimeConfig()
         });
+        this.refreshCoreActionHomeState();
       }).finally(() => {
         this._runtimeConfigLoading = false;
       });
@@ -599,7 +1587,9 @@ Page({
       that.setData({
         membershipTouchpointVisible: true,
         membershipTouchpointTitle: '演示模式：会员周总结入口示例',
-        membershipTouchpointDesc: '当前展示为演示文案，真实会员状态和完整周总结以正式环境数据为准。'
+        membershipTouchpointDesc: '当前展示为演示文案，真实会员状态和完整周总结以正式环境数据为准。',
+        membershipTouchpointCta: '查看示例',
+        membershipTouchpointEligible: true
       });
       if (!that._membershipTouchpointExposed) {
         that._membershipTouchpointExposed = true;
@@ -611,7 +1601,9 @@ Page({
       that.setData({
         membershipTouchpointVisible: true,
         membershipTouchpointTitle: '登录后可查看宝贝每周成长总结',
-        membershipTouchpointDesc: '登录并完成记录后，这里会展示本周趋势、提醒和陪伴建议。'
+        membershipTouchpointDesc: '登录并完成记录后，这里会展示本周趋势、提醒和陪伴建议。',
+        membershipTouchpointCta: '登录后查看',
+        membershipTouchpointEligible: true
       });
       if (!that._membershipTouchpointExposed) {
         that._membershipTouchpointExposed = true;
@@ -626,14 +1618,15 @@ Page({
       });
     }).then(function(data) {
       that.setData({
-        membershipTouchpointVisible: !(data && data.is_active)
+        membershipTouchpointVisible: !(data && data.is_active),
+        membershipTouchpointEligible: !(data && data.is_active)
       });
       if (!(data && data.is_active) && !that._membershipTouchpointExposed) {
         that._membershipTouchpointExposed = true;
         that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'logged_in_preview' });
       }
     }).catch(function() {
-      that.setData({ membershipTouchpointVisible: false });
+      that.setData({ membershipTouchpointVisible: false, membershipTouchpointEligible: false });
     });
   },
 
@@ -692,9 +1685,9 @@ Page({
         targetPath: '/pages/growth-record/index'
       },
       continue_ai_chat: {
-        title: '继续问小牛',
-        desc: '上次和小牛聊了育儿话题，还有问题可以接着问。',
-        cta: '继续提问',
+        title: '继续追问细节',
+        desc: '带着孩子的具体场景、卡点和今天行动，继续拆今晚怎么做。',
+        cta: '追问做法',
         targetType: 'ai_chat',
         targetPath: '/pages/chat/chat'
       },
@@ -749,6 +1742,7 @@ Page({
         retentionSummary: null,
         continueTask: null
       });
+      that.refreshCoreActionHomeState();
       return;
     }
     if (!app.globalData.isLoggedIn && !wx.getStorageSync('token')) {
@@ -759,6 +1753,7 @@ Page({
         retentionSummary: null,
         continueTask: null
       });
+      that.refreshCoreActionHomeState();
       return;
     }
     var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : (app.globalData.runtimeConfig || {});
@@ -770,6 +1765,7 @@ Page({
         retentionSummary: null,
         continueTask: null
       });
+      that.refreshCoreActionHomeState();
       return;
     }
     app.ensureLogin().then(function() {
@@ -785,6 +1781,7 @@ Page({
           retentionSummary: null,
           continueTask: null
         });
+        that.refreshCoreActionHomeState();
         return;
       }
       var tp = that.buildRetentionTouchpoint(data);
@@ -796,6 +1793,7 @@ Page({
         retentionSummary: data.recent_record_summary || null,
         continueTask: ct
       });
+      that.refreshCoreActionHomeState();
       var encouragementState = encouragementUtils.buildHomeEncouragementState(data);
       if (encouragementState.visible) {
         that.setData({
@@ -829,6 +1827,7 @@ Page({
           retentionSummary: null,
           continueTask: null
         });
+        that.refreshCoreActionHomeState();
         return;
       }
       that.setData({
@@ -836,6 +1835,7 @@ Page({
         retentionSummary: null,
         continueTask: null
       });
+      that.refreshCoreActionHomeState();
     });
   },
 
@@ -1145,12 +2145,63 @@ Page({
       this.goToGrowthRecord();
       return;
     }
+    this.prepareCoreWeeklySummaryDraft(currentChild);
     wx.navigateTo({
       url: '/pages/weekly-summary/index' + (currentChild && currentChild.id ? ('?childId=' + currentChild.id) : ''),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
+  },
+
+  prepareCoreWeeklySummaryDraft: function(currentChild) {
+    var records = coreActionStorage.getCoreActionRecords().filter(function(item) {
+      return item && item.sceneKey;
+    }).slice(0, 7);
+    if (!records.length) {
+      return;
+    }
+    var completedRecords = records.filter(function(item) { return item.completed; });
+    var latest = records[0] || {};
+    var continuousCount = coreActionStorage.getContinuousRecordCount();
+    var nextDraft = latest.sevenDayPlanDraft || [];
+    var oldest = records[records.length - 1] || {};
+    wx.setStorageSync('pendingCoreWeeklySummary', {
+      source: 'core_action',
+      childId: currentChild && currentChild.id ? Number(currentChild.id) : 0,
+      childName: (currentChild && (currentChild.name || currentChild.nickname)) || '孩子',
+      weekStart: oldest.createdAt || oldest.savedAt || oldest.recordedAt ? this.formatCoreActionDate(oldest.createdAt || oldest.savedAt || oldest.recordedAt) : this.formatCoreActionDate(Date.now()),
+      weekEnd: this.formatCoreActionDate(Date.now()),
+      recordDays: completedRecords.length,
+      completedPlanCount: completedRecords.length,
+      totalPlanCount: records.length,
+      completedTaskCount: records.length,
+      ageGroup: latest.ageGroup || '',
+      overview: '这周主要围绕' + (latest.sceneLabel || '一个高频场景') + '做小步骤尝试，已经连续记录 ' + continuousCount + ' 次。',
+      highlights: completedRecords.length ? completedRecords.map(function(item) {
+        return (item.sceneLabel || '场景') + '：' + (item.effectLabel || '已记录一次反应');
+      }).slice(0, 3) : ['已经开始把孩子的表现拆成具体卡点和今晚小步骤。'],
+      concerns: ['继续观察孩子在' + (latest.sceneLabel || '这个场景') + '里是更愿意开始，还是仍然抗拒。'],
+      nextActions: nextDraft.length ? nextDraft.slice(1, 4).map(function(item) {
+        return item.title + '：' + item.desc;
+      }) : ['下周继续保留一个小步骤，记录孩子最明显的变化。'],
+      trendItems: completedRecords.map(function(item) {
+        return {
+          label: item.sceneLabel || '第一动作',
+          direction: item.effectKey === 'started_smoothly' ? 'up' : (item.effectKey === 'still_resisted' ? 'down' : 'stable'),
+          detail: (item.sceneLabel || '这个场景') + '记录为：' + (item.effectLabel || '已尝试')
+        };
+      }).slice(0, 4),
+      premiumUnlocked: false,
+      premiumTip: '开通后可以把连续 7 天的小步骤和效果变化整理成更完整的周总结。'
+    });
+  },
+
+  formatCoreActionDate: function(timestamp) {
+    var date = new Date(Number(timestamp) || Date.now());
+    var month = date.getMonth() + 1;
+    var day = date.getDate();
+    return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
   },
 
   onTapBannerCta(e) {

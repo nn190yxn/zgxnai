@@ -477,6 +477,36 @@ td {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.core-action-funnel {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.scene-funnel-list,
+.scene-coverage-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scene-funnel-item,
+.scene-coverage-item {
+  padding: 12px 14px;
+  border: 1px solid rgba(61, 42, 24, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.scene-coverage-item.has-gap {
+  border-color: rgba(182, 84, 47, 0.28);
+  background: rgba(182, 84, 47, 0.08);
+}
+
+.scene-coverage-item p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .mini-stat {
   display: grid;
   gap: 8px;

@@ -9,6 +9,7 @@ const { generateAIAnswer, getAIStatus } = require('../services/ai');
 const chatContextUtil = require('./chat-context');
 const dailyPlanText = require('./daily-plan-text');
 const developmentZones = require('./development-zones');
+const coreActionAnalytics = require('./core-action-analytics');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -115,6 +116,14 @@ const VALID_CONTENT_FORMS = new Set(['theory', 'method', 'both']);
 const VALID_TIP_DISPLAY_TYPES = new Set(['action', 'insight', 'raw']);
 const CORE_TIP_CATEGORIES = ['情绪管理', '行为习惯', '认知发展', '社交能力', '营养健康'];
 const CORE_TIP_AGE_GROUPS = ['2-3岁', '3-4岁', '4-5岁', '5-6岁', '6-9岁'];
+const CORE_ACTION_SCENES = [
+  { sceneKey: 'homework_restless', searchSceneKey: 'homework_focus', title: '写作业坐不住', category: '认知发展', keyword: '作业', resultTemplateCount: 5 },
+  { sceneKey: 'picture_book_runs', searchSceneKey: 'picture_book_escape', title: '绘本读两页就跑', category: '认知发展', keyword: '绘本', resultTemplateCount: 5 },
+  { sceneKey: 'meal_dawdling', searchSceneKey: 'meal_picky', title: '吃饭拖拉', category: '营养健康', keyword: '吃饭', resultTemplateCount: 5 },
+  { sceneKey: 'bedtime_meltdown', searchSceneKey: 'sleep_resist', title: '睡前崩溃', category: '行为习惯', keyword: '睡前', resultTemplateCount: 5 },
+  { sceneKey: 'class_departure_dawdling', searchSceneKey: 'morning_rush', title: '出门上课磨蹭', category: '行为习惯', keyword: '出门', resultTemplateCount: 5 },
+  { sceneKey: 'weak_expression', searchSceneKey: 'weak_expression', title: '说话表达弱', category: '社交能力', keyword: '表达', resultTemplateCount: 5 }
+];
 const chatRateLimitStore = new Map();
 let sceneTagsCache = {
   expiresAt: 0,
@@ -484,6 +493,7 @@ app.get(`${ADMIN_API_PREFIX}/analytics/users/trends`, authenticateAdmin, asyncHa
 app.get(`${ADMIN_API_PREFIX}/analytics/revenue/trends`, authenticateAdmin, asyncHandler(adminRevenueTrendsHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/features/ranking`, authenticateAdmin, asyncHandler(adminFeatureRankingHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/content/ranking`, authenticateAdmin, asyncHandler(adminContentRankingHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/core-action/funnel`, authenticateAdmin, asyncHandler(adminCoreActionFunnelHandler));
 app.get(`${ADMIN_API_PREFIX}/insights/weekly`, authenticateAdmin, asyncHandler(adminWeeklyInsightsHandler));
 app.get(`${ADMIN_API_PREFIX}/segments/:segmentKey/users`, authenticateAdmin, asyncHandler(adminSegmentUsersHandler));
 app.get(`${ADMIN_API_PREFIX}/content/ops/overview`, authenticateAdmin, asyncHandler(adminContentOpsOverviewHandler));
@@ -552,6 +562,18 @@ function parseRuntimeBooleanEnv(name, fallbackValue) {
   return fallbackValue;
 }
 
+function parseRuntimeNumberEnv(name, fallbackValue) {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) ? parsed : fallbackValue;
+}
+
+function parseRuntimeListEnv(name) {
+  return String(process.env[name] || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function getRuntimeFeatureFlags(aiStatus) {
   const virtualPayEnabled = ['month', 'quarter', 'year'].some(isVirtualPayConfigured);
   return {
@@ -563,6 +585,9 @@ function getRuntimeFeatureFlags(aiStatus) {
     growth_record_enabled: parseRuntimeBooleanEnv('RUNTIME_GROWTH_RECORD_ENABLED', true),
     weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true),
     scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true),
+    core_refactor_enabled: parseRuntimeBooleanEnv('RUNTIME_CORE_REFACTOR_ENABLED', false),
+    core_refactor_rollout_percent: Math.max(0, Math.min(100, parseRuntimeNumberEnv('RUNTIME_CORE_REFACTOR_ROLLOUT_PERCENT', 0))),
+    core_refactor_user_whitelist: parseRuntimeListEnv('RUNTIME_CORE_REFACTOR_USER_WHITELIST'),
     multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),
     payment_enabled: parseRuntimeBooleanEnv('RUNTIME_PAYMENT_ENABLED', virtualPayEnabled),
     ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false)
@@ -583,6 +608,9 @@ function runtimeConfigHandler(req, res) {
     growth_record_enabled: runtimeFlags.growth_record_enabled,
     weekly_summary_enabled: runtimeFlags.weekly_summary_enabled,
     scene_search_enabled: runtimeFlags.scene_search_enabled,
+    core_refactor_enabled: runtimeFlags.core_refactor_enabled,
+    core_refactor_rollout_percent: runtimeFlags.core_refactor_rollout_percent,
+    core_refactor_user_whitelist: runtimeFlags.core_refactor_user_whitelist,
     multimodal_enabled: runtimeFlags.multimodal_enabled,
     payment_enabled: runtimeFlags.payment_enabled,
     ai_mock_fallback: runtimeFlags.ai_mock_fallback,
@@ -1242,7 +1270,7 @@ function buildFeatureKeySql(alias) {
     WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IN ('scene_search') THEN 'scene_search'
     WHEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key')), '') IS NOT NULL THEN JSON_UNQUOTE(JSON_EXTRACT(${prefix}event_data, '$.module_key'))
     WHEN ${prefix}event_type LIKE 'task_%' OR ${prefix}event_type IN ('retell_complete', 'path_day_complete', 'path_dropout') THEN 'reading_tasks'
-    WHEN ${prefix}event_type LIKE 'ai_chat_%' THEN 'ai_chat'
+    WHEN ${prefix}event_type LIKE 'ai_chat_%' OR ${prefix}event_type = 'article_ai_followup' THEN 'ai_chat'
     WHEN ${prefix}event_type LIKE 'assessment_%' OR ${prefix}event_type = 'output_submit' THEN 'assessment'
     WHEN ${prefix}event_type LIKE 'recipe_%' THEN 'nutrition_recipe'
     WHEN ${prefix}event_type LIKE 'article_%' OR ${prefix}event_type LIKE 'knowledge_%' THEN 'knowledge'
@@ -1271,7 +1299,8 @@ function getFeatureLabel(featureKey) {
     daily_guidance: '每日指导',
     scene_search: '场景搜索',
     growth_record: '成长记录',
-    weekly_summary: '周报总结'
+    weekly_summary: '周报总结',
+    core_action: '第一动作'
   };
   return map[String(featureKey || '')] || '未归类功能';
 }
@@ -1394,6 +1423,100 @@ async function adminContentRankingHandler(req, res) {
     display_title: buildContentDisplayTitle(row)
   }));
   res.json({ success: true, data: { range, content_type: contentType || null, items } });
+}
+
+async function adminCoreActionFunnelHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(
+    `SELECT event_type,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('home_core_claim_view', 'first_action_entry_click', 'scene_select', 'age_select', 'symptom_select', 'bottleneck_result_view', 'tonight_action_save', 'next_day_record_view', 'action_effect_submit', 'next_action_view')
+      GROUP BY event_type`,
+    [range.startDate, range.endDate]
+  );
+  const [continuousRows] = await pool.execute(
+    `SELECT COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type = 'action_effect_submit'
+        AND CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.continuous_record_count')), '0') AS UNSIGNED) >= 2`,
+    [range.startDate, range.endDate]
+  );
+  const [sceneRows] = await pool.execute(
+    `SELECT event_type,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.scene_key')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.scene_key')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.matched_scene_key')), ''),
+              'unknown'
+            ) AS scene_key,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('scene_select', 'bottleneck_result_view', 'tonight_action_save', 'next_day_record_view', 'action_effect_submit')
+      GROUP BY event_type, scene_key`,
+    [range.startDate, range.endDate]
+  );
+  const countByType = rows.reduce((map, row) => {
+    map[row.event_type] = {
+      event_count: Number(row.event_count || 0),
+      user_count: Number(row.user_count || 0)
+    };
+    return map;
+  }, {});
+  const getEvents = (eventType) => (countByType[eventType] && countByType[eventType].event_count) || 0;
+  const getUsers = (eventType) => (countByType[eventType] && countByType[eventType].user_count) || 0;
+  const homeViews = getEvents('home_core_claim_view');
+  const entryClicks = getEvents('first_action_entry_click');
+  const sceneSelects = getEvents('scene_select');
+  const symptomSelects = getEvents('symptom_select');
+  const resultViews = getEvents('bottleneck_result_view');
+  const saves = getEvents('tonight_action_save');
+  const nextDayViews = getEvents('next_day_record_view');
+  const effectSubmits = getEvents('action_effect_submit');
+  const continuous = continuousRows[0] || {};
+  const summary = {
+    home_core_claim_view: homeViews,
+    first_action_entry_click: entryClicks,
+    first_action_click_rate: calculateRatio(entryClicks, homeViews),
+    scene_select: sceneSelects,
+    scene_select_rate: calculateRatio(sceneSelects, entryClicks || homeViews),
+    symptom_select: symptomSelects,
+    result_view: resultViews,
+    result_generation_rate: calculateRatio(resultViews, symptomSelects),
+    tonight_action_save: saves,
+    save_rate: calculateRatio(saves, resultViews),
+    next_day_record_view: nextDayViews,
+    next_day_record_rate: calculateRatio(nextDayViews, saves),
+    action_effect_submit: effectSubmits,
+    effect_submit_rate: calculateRatio(effectSubmits, nextDayViews || saves),
+    continuous_2_record: Number(continuous.event_count || 0),
+    continuous_2_user_count: Number(continuous.user_count || 0),
+    continuous_2_rate: calculateRatio(continuous.event_count, effectSubmits)
+  };
+  const items = [
+    { key: 'home_to_first_action', label: '首页到第一动作点击率', count: entryClicks, base_count: homeViews, rate: summary.first_action_click_rate },
+    { key: 'scene_select_completion', label: '场景选择完成率', count: sceneSelects, base_count: entryClicks || homeViews, rate: summary.scene_select_rate },
+    { key: 'result_generation', label: '结果生成率', count: resultViews, base_count: symptomSelects, rate: summary.result_generation_rate },
+    { key: 'tonight_action_save', label: '今晚小任务保存率', count: saves, base_count: resultViews, rate: summary.save_rate },
+    { key: 'next_day_record', label: '次日记录入口率', count: nextDayViews, base_count: saves, rate: summary.next_day_record_rate },
+    { key: 'effect_submit', label: '效果提交率', count: effectSubmits, base_count: nextDayViews || saves, rate: summary.effect_submit_rate },
+    { key: 'continuous_2_record', label: '连续 2 次记录率', count: summary.continuous_2_record, base_count: effectSubmits, rate: summary.continuous_2_rate }
+  ];
+  const sceneItems = buildCoreActionSceneFunnel(sceneRows);
+  res.json({ success: true, data: { range, summary, items, scene_items: sceneItems, event_breakdown: rows.map((row) => ({ ...row, user_count: getUsers(row.event_type) })) } });
+}
+
+function buildCoreActionSceneFunnel(rows) {
+  return coreActionAnalytics.buildCoreActionSceneFunnel(rows);
 }
 
 async function adminWeeklyInsightsHandler(req, res) {
@@ -1657,6 +1780,7 @@ async function adminContentOpsOverviewHandler(req, res) {
   const coreReadyTips = Number(coreTips.core_ready_count || 0);
   const coreTargetCount = Math.ceil(coreTotalTips * CORE_TIP_TARGET_RATE / 100);
   const totalPublishedArticles = Number(articles.total_published || 0);
+  const coreSceneCoverageResult = await loadCoreSceneContentCoverageSafe();
 
   res.json({
     success: true,
@@ -1679,6 +1803,8 @@ async function adminContentOpsOverviewHandler(req, res) {
         core_ready_rate: calculateRatio(coreReadyTips, coreTotalTips),
         core_category_labels: CORE_TIP_CATEGORIES,
         core_age_group_labels: CORE_TIP_AGE_GROUPS,
+        core_scene_coverage: coreSceneCoverageResult.items,
+        core_scene_coverage_status: coreSceneCoverageResult.status,
         latest_updated_at: tips.latest_tip_updated_at || null
       },
       articles: {
@@ -1693,6 +1819,75 @@ async function adminContentOpsOverviewHandler(req, res) {
       }
     }
   });
+}
+
+async function loadCoreSceneContentCoverageSafe() {
+  try {
+    return {
+      status: 'ready',
+      items: await buildCoreSceneContentCoverage()
+    };
+  } catch (err) {
+    console.error('[content-ops] core scene coverage failed:', err.message);
+    return {
+      status: 'unavailable',
+      items: []
+    };
+  }
+}
+
+async function buildCoreSceneContentCoverage() {
+  const items = [];
+  for (const scene of CORE_ACTION_SCENES) {
+    const keyword = `%${scene.keyword}%`;
+    const [tipRows] = await pool.execute(
+      `SELECT
+         COUNT(*) AS total_count,
+         SUM(CASE WHEN display_type IN ('action', 'insight') AND NULLIF(TRIM(COALESCE(display_title, '')), '') IS NOT NULL AND NULLIF(TRIM(COALESCE(display_text, '')), '') IS NOT NULL THEN 1 ELSE 0 END) AS ready_count
+       FROM parenting_tips
+       WHERE is_active = 1
+         AND category = ?
+         AND (title LIKE ? OR content LIKE ? OR display_title LIKE ? OR display_text LIKE ? OR source_article_title LIKE ?)`,
+      [scene.category, keyword, keyword, keyword, keyword, keyword]
+    );
+    const [articleRows] = await pool.execute(
+      `SELECT COUNT(*) AS article_count
+       FROM articles
+       WHERE is_published = 1
+         AND (category = ? OR title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)`,
+      [scene.category, keyword, keyword, keyword, keyword]
+    );
+    const [recommendationRows] = await pool.execute(
+      'SELECT COUNT(*) AS recommendation_count FROM parenting_scene_recommendations WHERE scene_key = ?',
+      [scene.searchSceneKey]
+    );
+    const tipCount = Number((tipRows[0] && tipRows[0].total_count) || 0);
+    const readyTipCount = Number((tipRows[0] && tipRows[0].ready_count) || 0);
+    const articleCount = Number((articleRows[0] && articleRows[0].article_count) || 0);
+    const recommendationCount = Number((recommendationRows[0] && recommendationRows[0].recommendation_count) || 0);
+    const contentCount = tipCount + articleCount + recommendationCount;
+    const contentTarget = 3;
+    const templateTarget = scene.resultTemplateCount;
+    const gapCount = Math.max(0, contentTarget - contentCount) + Math.max(0, templateTarget - scene.resultTemplateCount);
+    items.push({
+      scene_key: scene.sceneKey,
+      search_scene_key: scene.searchSceneKey,
+      scene_title: scene.title,
+      category: scene.category,
+      content_count: contentCount,
+      article_count: articleCount,
+      tip_count: tipCount,
+      ready_tip_count: readyTipCount,
+      recommendation_count: recommendationCount,
+      result_template_count: scene.resultTemplateCount,
+      content_target_count: contentTarget,
+      result_template_target_count: templateTarget,
+      gap_count: gapCount,
+      status: gapCount > 0 ? 'gap' : 'ready',
+      suggested_action: gapCount > 0 ? '补齐' + scene.title + '的结构化锦囊或相关文章，优先覆盖结果页承接。' : '内容和结果模板已覆盖，继续观察点击和保存转化。'
+    });
+  }
+  return items;
 }
 
 async function adminPendingCoreItemsHandler(req, res) {
@@ -2286,6 +2481,27 @@ function setCachedParentingArticles(key, value) {
     expiresAt: Date.now() + PARENTING_ARTICLES_CACHE_TTL_MS,
     value
   });
+}
+
+function getCoreActionSceneProfile(sceneKey) {
+  const key = String(sceneKey || '').trim();
+  return CORE_ACTION_SCENES.find((scene) => scene.sceneKey === key || scene.searchSceneKey === key) || null;
+}
+
+function normalizeCoreActionSceneKey(sceneKey) {
+  const profile = getCoreActionSceneProfile(sceneKey);
+  return profile ? profile.sceneKey : String(sceneKey || '').trim();
+}
+
+function buildCoreActionVirtualScene(profile) {
+  if (!profile) return null;
+  return {
+    scene_key: profile.sceneKey,
+    scene_title: profile.title,
+    scene_category: profile.category,
+    principle_text: '先把场景说具体，再判断孩子卡在哪一步。',
+    suggested_action: '从今晚能执行的一小步开始，第二天再记录效果。'
+  };
 }
 
 async function generateChatAIResultWithTimeout(prompt, options) {
@@ -8929,7 +9145,15 @@ function getSceneProfileByKey(sceneKey) {
     tantrum_public: { articleCategory: '情绪管理', articleKeyword: '情绪', recipeKeyword: '镁', subjectCode: 'expression_communication' },
     sleep_resist: { articleCategory: '行为习惯', articleKeyword: '睡眠', recipeKeyword: '晚餐', subjectCode: 'learning_metacognition' },
     meal_picky: { articleCategory: '营养健康', articleKeyword: '挑食', recipeKeyword: '补铁', subjectCode: 'reading_comprehension' },
+    homework_restless: { articleCategory: '认知发展', articleKeyword: '专注', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
     homework_focus: { articleCategory: '认知发展', articleKeyword: '专注', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    picture_book_runs: { articleCategory: '认知发展', articleKeyword: '绘本', recipeKeyword: '早餐', subjectCode: 'reading_comprehension' },
+    picture_book_escape: { articleCategory: '认知发展', articleKeyword: '绘本', recipeKeyword: '早餐', subjectCode: 'reading_comprehension' },
+    meal_dawdling: { articleCategory: '营养健康', articleKeyword: '吃饭', recipeKeyword: '补铁', subjectCode: 'learning_metacognition' },
+    bedtime_meltdown: { articleCategory: '行为习惯', articleKeyword: '睡前', recipeKeyword: '晚餐', subjectCode: 'learning_metacognition' },
+    class_departure_dawdling: { articleCategory: '行为习惯', articleKeyword: '出门', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    school_morning_delay: { articleCategory: '行为习惯', articleKeyword: '出门', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
+    weak_expression: { articleCategory: '社交能力', articleKeyword: '表达', recipeKeyword: '能量', subjectCode: 'expression_communication' },
     peer_conflict: { articleCategory: '社交能力', articleKeyword: '同伴', recipeKeyword: '能量', subjectCode: 'expression_communication' },
     morning_rush: { articleCategory: '行为习惯', articleKeyword: '习惯', recipeKeyword: '早餐', subjectCode: 'learning_metacognition' },
     kindergarten_separation_anxiety: { articleCategory: '情绪养育', articleKeyword: '分离', recipeKeyword: '早餐', subjectCode: 'expression_communication' },
@@ -10591,16 +10815,19 @@ async function searchParentingArticlesByKeyword(keyword, page, pageSize, userId)
 async function sceneSearchSolutionsHandler(req, res) {
   const keyword = String(req.query.keyword || '').trim();
   const sceneKey = String(req.query.sceneKey || '').trim();
+  const coreSceneProfile = getCoreActionSceneProfile(sceneKey);
+  const searchSceneKey = coreSceneProfile ? coreSceneProfile.searchSceneKey : sceneKey;
   const childId = Number(req.query.childId || 0);
+  const requestedAgeGroup = String(req.query.ageGroup || req.query.age_group || '').trim();
   const userId = req.user ? getUserId(req) : 0;
   let child = null;
   if (userId) {
     child = childId ? await getOwnedChild(userId, childId) : await getDefaultChildForUser(userId);
   }
-  const ageGroup = child ? (inferAgeRangeFromChild(child) || '3-4岁') : '3-4岁';
+  const ageGroup = requestedAgeGroup || (child ? (inferAgeRangeFromChild(child) || '3-4岁') : '3-4岁');
   let matchedScene = null;
-  if (sceneKey) {
-    const [sceneRows] = await pool.execute('SELECT * FROM parenting_scene_tags WHERE scene_key = ? AND status = ? LIMIT 1', [sceneKey, 'active']);
+  if (searchSceneKey) {
+    const [sceneRows] = await pool.execute('SELECT * FROM parenting_scene_tags WHERE scene_key = ? AND status = ? LIMIT 1', [searchSceneKey, 'active']);
     matchedScene = sceneRows[0] || null;
   }
   if (!matchedScene && keyword) {
@@ -10616,6 +10843,9 @@ async function sceneSearchSolutionsHandler(req, res) {
       [searchTerm, searchTerm]
     );
     matchedScene = sceneRows[0] || null;
+  }
+  if (!matchedScene) {
+    matchedScene = buildCoreActionVirtualScene(coreSceneProfile);
   }
   if (!matchedScene) {
     const fallbackArticles = keyword ? await searchParentingArticlesByKeyword(keyword, 1, 10, userId) : [];
@@ -10684,7 +10914,8 @@ async function sceneSearchSolutionsHandler(req, res) {
     data: {
       matched: true,
       scene: {
-        sceneKey: matchedScene.scene_key,
+        sceneKey: coreSceneProfile ? coreSceneProfile.sceneKey : matchedScene.scene_key,
+        matchedSceneKey: matchedScene.scene_key,
         sceneTitle: matchedScene.scene_title,
         sceneCategory: matchedScene.scene_category,
         principleText: matchedScene.principle_text || '',
@@ -11535,6 +11766,7 @@ async function kbEventTrackHandler(req, res) {
   const payload = {
     module_key: req.body.module_key || null,
     page_key: req.body.page_key || null,
+    scene_key: req.body.scene_key || null,
     content_type: req.body.content_type || null,
     content_id: req.body.content_id || null,
     child_id: req.body.child_id || null,

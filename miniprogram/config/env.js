@@ -26,7 +26,10 @@ var ENV_CONFIG = {
     enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false,
-    enableRetentionStatus: false
+    enableRetentionStatus: false,
+    enableCoreRefactor: false,
+    coreRefactorRolloutPercent: 0,
+    coreRefactorUserWhitelist: []
   },
   production: {
     apiBaseUrl: 'https://api.woyai.cn/api/v1',
@@ -50,7 +53,10 @@ var ENV_CONFIG = {
     enableWechatPay: true,
     enableAiChat: true,
     enableMultimodal: false,
-    enableRetentionStatus: false
+    enableRetentionStatus: false,
+    enableCoreRefactor: false,
+    coreRefactorRolloutPercent: 0,
+    coreRefactorUserWhitelist: []
   }
 };
 

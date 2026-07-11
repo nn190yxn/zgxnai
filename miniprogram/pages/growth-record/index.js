@@ -108,8 +108,19 @@ Page({
     if (pendingSource) {
       wx.removeStorageSync('pendingGrowthRecordSource');
     }
-    if (pendingSource && pendingSource.sourceType === 'development_zone') {
+    if (pendingSource && (pendingSource.sourceType === 'development_zone' || pendingSource.sourceType === 'core_action')) {
       this.setData({ sourceContext: pendingSource });
+      return;
+    }
+    if (source === 'core_action') {
+      this.setData({
+        sourceContext: {
+          sourceType: 'core_action',
+          sourceId: String((options && options.sourceId) || ''),
+          actionTitle: '今晚小任务',
+          summary: ''
+        }
+      });
       return;
     }
     if (source === 'development_zone') {
@@ -233,7 +244,32 @@ Page({
 
   saveSourceEntryIfNeeded: function() {
     var sourceContext = this.data.sourceContext || null;
-    if (!sourceContext || sourceContext.sourceType !== 'development_zone') {
+    if (!sourceContext) {
+      return Promise.resolve();
+    }
+    if (sourceContext.sourceType === 'core_action') {
+      return app.request({
+        url: '/growth-records/entry',
+        method: 'POST',
+        data: {
+          childId: this.data.currentChild.id,
+          entry_type: 'core_action',
+          source_type: 'core_action',
+          title: sourceContext.actionTitle || sourceContext.bottleneckTitle || '今晚小任务',
+          summary: this.data.form.noteText || sourceContext.summary || '',
+          source_id: sourceContext.sourceId || ('core_action_' + Date.now()),
+          scene_key: sourceContext.sceneKey || '',
+          scene_label: sourceContext.sceneLabel || '',
+          symptom_key: sourceContext.symptomKey || '',
+          symptom_label: sourceContext.symptomLabel || '',
+          age_group: sourceContext.ageGroup || '',
+          effect_key: sourceContext.effectKey || '',
+          effect_label: sourceContext.effectLabel || '',
+          user_note: this.data.form.noteText || ''
+        }
+      });
+    }
+    if (sourceContext.sourceType !== 'development_zone') {
       return Promise.resolve();
     }
     return app.request({

@@ -60,6 +60,15 @@
     </view>
   </view>
 
+  <view class="reading-empty-section" wx:else>
+    <text class="reading-empty-title">今天还没有匹配到练习</text>
+    <text class="reading-empty-desc">可以先切换年级，或者用下面的口头复述录音做一个轻任务。</text>
+    <view class="reading-empty-actions">
+      <text class="reading-empty-btn" bindtap="showGradePicker">切换年级</text>
+      <text class="reading-empty-btn secondary" bindtap="startRecording">开始复述</text>
+    </view>
+  </view>
+
   <!-- 复述录音（最小版） -->
   <view class="recording-section">
     <view class="section-header">
