@@ -41,15 +41,25 @@ Page({
     var keyword = String((options && options.keyword) || '').trim();
     var bottleneckTitle = String((options && (options.bottleneckTitle || options.bottleneck_title)) || '').trim();
     var ageGroup = String((options && (options.ageGroup || options.age_group)) || '').trim();
+    var ageSegmentKey = String((options && (options.ageSegmentKey || options.age_segment_key)) || '').trim();
+    var ageSegmentLabel = String((options && (options.ageSegmentLabel || options.age_segment_label)) || '').trim();
+    var painPointKey = String((options && (options.painPointKey || options.pain_point_key)) || '').trim();
+    var painPointTitle = String((options && (options.painPointTitle || options.pain_point_title)) || '').trim();
+    var abilityTags = String((options && (options.abilityTags || options.ability_tags)) || '').trim();
     this.setData({
-      keyword: keyword || bottleneckTitle,
+      keyword: keyword || painPointTitle || bottleneckTitle,
       currentAgeGroup: ageGroup,
       currentCategory: String((options && options.category) || '').trim(),
       coreActionContext: sceneKey ? {
         sceneKey: sceneKey,
         ageGroup: ageGroup,
+        ageSegmentKey: ageSegmentKey,
+        ageSegmentLabel: ageSegmentLabel,
+        painPointKey: painPointKey,
+        painPointTitle: painPointTitle,
+        abilityTags: abilityTags,
         bottleneckTitle: bottleneckTitle,
-        keyword: keyword || bottleneckTitle
+        keyword: keyword || painPointTitle || bottleneckTitle
       } : null
     });
     this.loadSearchHistory();
@@ -58,12 +68,25 @@ Page({
     if (sceneKey || keyword || bottleneckTitle) {
       this.trackSceneEvent('scene_search_submit', {
         submit_type: 'core_action_result',
-        keyword: keyword || bottleneckTitle,
+        keyword: keyword || painPointTitle || bottleneckTitle,
         scene_key: sceneKey,
+        age_segment_key: ageSegmentKey,
+        pain_point_key: painPointKey,
+        pain_point_title: painPointTitle,
+        ability_tags: abilityTags,
         bottleneck_title: bottleneckTitle,
         age_group: ageGroup
       });
-      this.doSearch({ sceneKey: sceneKey, keyword: keyword || bottleneckTitle, ageGroup: ageGroup });
+      this.doSearch({
+        sceneKey: sceneKey,
+        keyword: keyword || painPointTitle || bottleneckTitle,
+        ageGroup: ageGroup,
+        ageSegmentKey: ageSegmentKey,
+        ageSegmentLabel: ageSegmentLabel,
+        painPointKey: painPointKey,
+        painPointTitle: painPointTitle,
+        abilityTags: abilityTags
+      });
     }
   },
 
@@ -170,6 +193,16 @@ Page({
     var sceneKey = String(opts.sceneKey || '').trim();
     var ageGroup = String(opts.ageGroup || opts.age_group || this.data.currentAgeGroup || '').trim();
     var category = String(opts.category || this.data.currentCategory || '').trim();
+    var coreContext = opts.sceneKey ? opts : (this.data.coreActionContext || {});
+    var abilityTags = Array.isArray(coreContext.abilityTags) ? coreContext.abilityTags.join('、') : String(coreContext.abilityTags || '');
+    var coreQuery = Object.assign(
+      {},
+      coreContext.ageSegmentKey ? { ageSegmentKey: coreContext.ageSegmentKey } : {},
+      coreContext.ageSegmentLabel ? { ageSegmentLabel: coreContext.ageSegmentLabel } : {},
+      coreContext.painPointKey ? { painPointKey: coreContext.painPointKey } : {},
+      coreContext.painPointTitle ? { painPointTitle: coreContext.painPointTitle } : {},
+      abilityTags ? { abilityTags: abilityTags } : {}
+    );
     if (!keyword && !sceneKey) {
       return;
     }
@@ -219,7 +252,7 @@ Page({
       app.request({
         url: '/search/solutions',
         method: 'GET',
-        data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {}, ageGroup ? { ageGroup: ageGroup } : {})
+        data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {}, ageGroup ? { ageGroup: ageGroup } : {}, coreQuery)
       }).catch(function() {
         return { matched: false, scene: null, solutions: [], articles: [] };
       }),
@@ -230,7 +263,7 @@ Page({
           keyword: keyword || sceneKey,
           page: 1,
           page_size: that.data.pageSize
-        }, ageGroup ? { age_group: ageGroup } : {}, category ? { category: category } : {})
+        }, ageGroup ? { age_group: ageGroup } : {}, category ? { category: category } : {}, coreQuery)
       }).catch(function() {
         return [];
       })

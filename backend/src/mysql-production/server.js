@@ -586,6 +586,7 @@ function getRuntimeFeatureFlags(aiStatus) {
     weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true),
     scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true),
     core_refactor_enabled: parseRuntimeBooleanEnv('RUNTIME_CORE_REFACTOR_ENABLED', false),
+    age_first_core_enabled: parseRuntimeBooleanEnv('RUNTIME_AGE_FIRST_CORE_ENABLED', false),
     core_refactor_rollout_percent: Math.max(0, Math.min(100, parseRuntimeNumberEnv('RUNTIME_CORE_REFACTOR_ROLLOUT_PERCENT', 0))),
     core_refactor_user_whitelist: parseRuntimeListEnv('RUNTIME_CORE_REFACTOR_USER_WHITELIST'),
     multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),
@@ -609,6 +610,7 @@ function runtimeConfigHandler(req, res) {
     weekly_summary_enabled: runtimeFlags.weekly_summary_enabled,
     scene_search_enabled: runtimeFlags.scene_search_enabled,
     core_refactor_enabled: runtimeFlags.core_refactor_enabled,
+    age_first_core_enabled: runtimeFlags.age_first_core_enabled,
     core_refactor_rollout_percent: runtimeFlags.core_refactor_rollout_percent,
     core_refactor_user_whitelist: runtimeFlags.core_refactor_user_whitelist,
     multimodal_enabled: runtimeFlags.multimodal_enabled,
@@ -1434,7 +1436,7 @@ async function adminCoreActionFunnelHandler(req, res) {
        FROM event_tracks
       WHERE created_at >= ?
         AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
-        AND event_type IN ('home_core_claim_view', 'first_action_entry_click', 'scene_select', 'age_select', 'symptom_select', 'bottleneck_result_view', 'tonight_action_save', 'next_day_record_view', 'action_effect_submit', 'next_action_view')
+        AND event_type IN ('home_core_claim_view', 'first_action_entry_click', 'scene_select', 'age_select', 'age_segment_select', 'pain_point_select', 'symptom_select', 'bottleneck_result_view', 'tonight_action_save', 'next_day_record_view', 'action_effect_submit', 'next_action_view')
       GROUP BY event_type`,
     [range.startDate, range.endDate]
   );
@@ -1465,6 +1467,66 @@ async function adminCoreActionFunnelHandler(req, res) {
       GROUP BY event_type, scene_key`,
     [range.startDate, range.endDate]
   );
+  const [ageSegmentRows] = await pool.execute(
+    `SELECT event_type,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_segment_key')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.age_segment_key')), ''),
+              'unknown'
+            ) AS age_segment_key,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_segment_label')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.age_segment_label')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_group')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.age_group')), ''),
+              'unknown'
+            ) AS age_segment_label,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('age_segment_select', 'pain_point_select', 'bottleneck_result_view', 'tonight_action_save', 'action_effect_submit')
+      GROUP BY event_type, age_segment_key, age_segment_label`,
+    [range.startDate, range.endDate]
+  );
+  const [painPointRows] = await pool.execute(
+    `SELECT event_type,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.pain_point_key')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.pain_point_key')), ''),
+              'unknown'
+            ) AS pain_point_key,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.pain_point_title')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.pain_point_title')), ''),
+              'unknown'
+            ) AS pain_point_title,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('pain_point_select', 'bottleneck_result_view', 'tonight_action_save', 'action_effect_submit')
+      GROUP BY event_type, pain_point_key, pain_point_title`,
+    [range.startDate, range.endDate]
+  );
+  const [abilityRows] = await pool.execute(
+    `SELECT event_type,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.ability_tags')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.ability_tags')), ''),
+              ''
+            ) AS ability_tags,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('pain_point_select', 'bottleneck_result_view', 'tonight_action_save', 'action_effect_submit')
+      GROUP BY event_type, ability_tags`,
+    [range.startDate, range.endDate]
+  );
   const countByType = rows.reduce((map, row) => {
     map[row.event_type] = {
       event_count: Number(row.event_count || 0),
@@ -1477,6 +1539,8 @@ async function adminCoreActionFunnelHandler(req, res) {
   const homeViews = getEvents('home_core_claim_view');
   const entryClicks = getEvents('first_action_entry_click');
   const sceneSelects = getEvents('scene_select');
+  const ageSegmentSelects = getEvents('age_segment_select');
+  const painPointSelects = getEvents('pain_point_select');
   const symptomSelects = getEvents('symptom_select');
   const resultViews = getEvents('bottleneck_result_view');
   const saves = getEvents('tonight_action_save');
@@ -1489,9 +1553,11 @@ async function adminCoreActionFunnelHandler(req, res) {
     first_action_click_rate: calculateRatio(entryClicks, homeViews),
     scene_select: sceneSelects,
     scene_select_rate: calculateRatio(sceneSelects, entryClicks || homeViews),
+    age_segment_select: ageSegmentSelects,
+    pain_point_select: painPointSelects,
     symptom_select: symptomSelects,
     result_view: resultViews,
-    result_generation_rate: calculateRatio(resultViews, symptomSelects),
+    result_generation_rate: calculateRatio(resultViews, painPointSelects || symptomSelects),
     tonight_action_save: saves,
     save_rate: calculateRatio(saves, resultViews),
     next_day_record_view: nextDayViews,
@@ -1505,14 +1571,19 @@ async function adminCoreActionFunnelHandler(req, res) {
   const items = [
     { key: 'home_to_first_action', label: '首页到第一动作点击率', count: entryClicks, base_count: homeViews, rate: summary.first_action_click_rate },
     { key: 'scene_select_completion', label: '场景选择完成率', count: sceneSelects, base_count: entryClicks || homeViews, rate: summary.scene_select_rate },
-    { key: 'result_generation', label: '结果生成率', count: resultViews, base_count: symptomSelects, rate: summary.result_generation_rate },
+    { key: 'age_segment_select', label: '年龄段选择完成率', count: ageSegmentSelects, base_count: entryClicks || homeViews, rate: calculateRatio(ageSegmentSelects, entryClicks || homeViews) },
+    { key: 'pain_point_select', label: '痛点选择完成率', count: painPointSelects, base_count: ageSegmentSelects, rate: calculateRatio(painPointSelects, ageSegmentSelects) },
+    { key: 'result_generation', label: '结果生成率', count: resultViews, base_count: painPointSelects || symptomSelects, rate: summary.result_generation_rate },
     { key: 'tonight_action_save', label: '今晚小任务保存率', count: saves, base_count: resultViews, rate: summary.save_rate },
     { key: 'next_day_record', label: '次日记录入口率', count: nextDayViews, base_count: saves, rate: summary.next_day_record_rate },
     { key: 'effect_submit', label: '效果提交率', count: effectSubmits, base_count: nextDayViews || saves, rate: summary.effect_submit_rate },
     { key: 'continuous_2_record', label: '连续 2 次记录率', count: summary.continuous_2_record, base_count: effectSubmits, rate: summary.continuous_2_rate }
   ];
   const sceneItems = buildCoreActionSceneFunnel(sceneRows);
-  res.json({ success: true, data: { range, summary, items, scene_items: sceneItems, event_breakdown: rows.map((row) => ({ ...row, user_count: getUsers(row.event_type) })) } });
+  const ageSegmentItems = coreActionAnalytics.buildCoreActionAgeSegmentFunnel(ageSegmentRows);
+  const painPointItems = coreActionAnalytics.buildCoreActionPainPointFunnel(painPointRows);
+  const abilityItems = coreActionAnalytics.buildCoreActionAbilityFunnel(abilityRows);
+  res.json({ success: true, data: { range, summary, items, scene_items: sceneItems, age_segment_items: ageSegmentItems, pain_point_items: painPointItems, ability_items: abilityItems, event_breakdown: rows.map((row) => ({ ...row, user_count: getUsers(row.event_type) })) } });
 }
 
 function buildCoreActionSceneFunnel(rows) {
@@ -2801,9 +2872,10 @@ async function chatHandler(req, res) {
       return;
     }
 
-    const references = await collectChatReferences(chatAnalysis, message, ageGroup);
+    const coreActionContext = buildCoreActionChatContext(req, message);
+    const references = await collectChatReferences(chatAnalysis, message, ageGroup, coreActionContext);
     const fallbackAnswer = buildChatAnswer(message, chatAnalysis, references, ageGroup, childName);
-    const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, chatChildContext), {
+    const aiResult = await generateChatAIResultWithTimeout(buildChatPrompt(message, chatAnalysis, references, ageGroup, chatChildContext, coreActionContext), {
       systemPrompt: getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel),
       temperature: 0.6,
       maxTokens: 4000
@@ -3221,7 +3293,7 @@ function getChatSystemPrompt(intent, ageGroup, subIntent, riskLevel) {
   return basePrompts[intent] || basePrompts.general;
 }
 
-function buildChatPrompt(message, chatAnalysis, references, ageGroup, childContext) {
+function buildChatPrompt(message, chatAnalysis, references, ageGroup, childContext, coreActionContext) {
   const referenceBlock = references.length
     ? references.map((item, index) => `${index + 1}. [${item.sourceType}] ${item.title}\n${String(item.content || '').slice(0, 1000)}`).join('\n\n')
     : '当前没有直接匹配的知识库条目。请你基于通用的育儿知识，给出温和、专业、可操作的建议。先共情家长的困扰，再解释可能的原因，接着给家庭能立刻开始的1-2个小动作，最后提醒观察窗口。不要要求用户补充更多信息。';
@@ -3245,13 +3317,18 @@ function buildChatPrompt(message, chatAnalysis, references, ageGroup, childConte
   if (childProfileLine) {
     parts.push(childProfileLine);
   }
+  const coreActionLines = buildCoreActionPromptLines(coreActionContext);
+  if (coreActionLines.length) {
+    parts.push('核心行动上下文：', coreActionLines.join('\n'));
+  }
   parts.push(
     '回答要求：',
     '1. 只允许基于参考资料回答，不补充参考资料之外的育儿结论。',
     '2. 按"判断→归因→方案→预期→底线"路径组织回答，每个环节给出具体内容而不是泛泛而谈。',
     ageGroup ? `3. 所有建议必须严格匹配${ageGroup}的发育特点，不推荐超出此年龄段的活动、食材和能力要求。` : '3. 当年龄信息不足时，明确指出建议准确性受限。',
     '4. 回答要有深度：归因时至少列出 2 个可能原因，方案给具体的执行动作、频次和时长，预期说明观察窗口和好转标准。语气亲和但判断明确。',
-    `5. ${riskInstruction}`,
+    coreActionLines.length ? '5. 优先围绕核心行动上下文中的痛点、可观察表现和背后能力来组织建议，缺少专属内容时使用同年龄段、同能力维度的知识片段兜底。' : '',
+    `${coreActionLines.length ? '6' : '5'}. ${riskInstruction}`,
     '参考资料：',
     referenceBlock
   );
@@ -3372,6 +3449,137 @@ function extractChatKeywords(message) {
     uniqueTerms.push(String(message || '').trim().toLowerCase());
   }
   return uniqueTerms;
+}
+
+function normalizeCoreActionText(value) {
+  return String(value || '').trim();
+}
+
+function normalizeCoreActionList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeCoreActionText(item)).filter(Boolean).slice(0, 8);
+  }
+  const text = normalizeCoreActionText(value);
+  if (!text || text === '未填写' || text === '未确认') {
+    return [];
+  }
+  return text.split(/[、,，;；|]/).map((item) => normalizeCoreActionText(item)).filter(Boolean).slice(0, 8);
+}
+
+function parseCoreActionContextBody(body) {
+  const raw = body && (body.core_action_context || body.coreActionContext || body.core_context || body.coreContext) || {};
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      return {};
+    }
+  }
+  return raw && typeof raw === 'object' ? raw : {};
+}
+
+function extractCoreActionLine(message, label) {
+  const pattern = new RegExp(`${label}[:：]([^\\n]+)`);
+  const matched = String(message || '').match(pattern);
+  const value = matched ? normalizeCoreActionText(matched[1]) : '';
+  if (value === '未填写' || value === '未确认') {
+    return '';
+  }
+  return value;
+}
+
+function firstCoreActionValue() {
+  for (let index = 0; index < arguments.length; index += 1) {
+    const value = normalizeCoreActionText(arguments[index]);
+    if (value && value !== '未填写' && value !== '未确认') {
+      return value;
+    }
+  }
+  return '';
+}
+
+function buildCoreActionChatContext(req, message) {
+  const body = req && req.body || {};
+  const source = parseCoreActionContextBody(body);
+  const context = {
+    ageSegmentKey: firstCoreActionValue(body.age_segment_key, body.ageSegmentKey, source.ageSegmentKey, source.age_segment_key, extractCoreActionLine(message, '年龄段Key')),
+    ageSegmentLabel: firstCoreActionValue(body.age_segment_label, body.ageSegmentLabel, source.ageSegmentLabel, source.age_segment_label, extractCoreActionLine(message, '年龄段')),
+    painPointKey: firstCoreActionValue(body.pain_point_key, body.painPointKey, source.painPointKey, source.pain_point_key),
+    painPointTitle: firstCoreActionValue(body.pain_point_title, body.painPointTitle, source.painPointTitle, source.pain_point_title, extractCoreActionLine(message, '痛点')),
+    sceneLabel: firstCoreActionValue(body.scene_label, body.sceneLabel, source.sceneLabel, source.scene_label, extractCoreActionLine(message, '场景')),
+    symptomLabel: firstCoreActionValue(body.symptom_label, body.symptomLabel, source.symptomLabel, source.symptom_label, extractCoreActionLine(message, '表现')),
+    bottleneckTitle: firstCoreActionValue(body.bottleneck_title, body.bottleneckTitle, source.bottleneckTitle, source.bottleneck_title, extractCoreActionLine(message, '卡点判断')),
+    actionTitle: firstCoreActionValue(body.action_title, body.actionTitle, source.actionTitle, source.action_title)
+  };
+  context.abilityTags = normalizeCoreActionList(body.ability_tags || body.abilityTags || source.abilityTags || source.ability_tags || extractCoreActionLine(message, '背后能力'));
+  context.observableSigns = normalizeCoreActionList(body.observable_signs || body.observableSigns || source.observableSigns || source.observable_signs || extractCoreActionLine(message, '可观察表现'));
+  context.actionSteps = normalizeCoreActionList(body.action_steps || body.actionSteps || source.actionSteps || source.action_steps || extractCoreActionLine(message, '具体步骤'));
+  return context;
+}
+
+function hasCoreActionChatContext(context) {
+  if (!context) {
+    return false;
+  }
+  return Boolean(
+    context.ageSegmentKey ||
+    context.ageSegmentLabel ||
+    context.painPointKey ||
+    context.painPointTitle ||
+    context.sceneLabel ||
+    context.symptomLabel ||
+    context.bottleneckTitle ||
+    (Array.isArray(context.abilityTags) && context.abilityTags.length) ||
+    (Array.isArray(context.observableSigns) && context.observableSigns.length)
+  );
+}
+
+function appendCoreActionKeywords(keywords, coreActionContext) {
+  const unique = Array.isArray(keywords) ? keywords.slice() : [];
+  if (!hasCoreActionChatContext(coreActionContext)) {
+    return unique;
+  }
+  const values = [
+    coreActionContext.painPointTitle,
+    coreActionContext.sceneLabel,
+    coreActionContext.symptomLabel,
+    coreActionContext.bottleneckTitle,
+    coreActionContext.actionTitle
+  ].concat(coreActionContext.abilityTags || [], coreActionContext.observableSigns || [], coreActionContext.actionSteps || []);
+
+  for (const value of values) {
+    const fragments = extractChatKeywords(value);
+    for (const fragment of fragments) {
+      if (fragment && unique.indexOf(fragment) < 0) {
+        unique.push(fragment);
+      }
+      if (hasEnoughChatKeywords(unique)) {
+        return unique;
+      }
+    }
+  }
+  return unique;
+}
+
+function buildCoreActionPromptLines(context) {
+  if (!hasCoreActionChatContext(context)) {
+    return [];
+  }
+  const lines = [];
+  if (context.ageSegmentLabel || context.ageSegmentKey) {
+    lines.push(`年龄段：${[context.ageSegmentLabel, context.ageSegmentKey].filter(Boolean).join(' / ')}`);
+  }
+  if (context.painPointTitle || context.painPointKey) {
+    lines.push(`家长痛点：${[context.painPointTitle, context.painPointKey].filter(Boolean).join(' / ')}`);
+  }
+  if (context.sceneLabel) lines.push(`家庭场景：${context.sceneLabel}`);
+  if (context.symptomLabel) lines.push(`孩子表现：${context.symptomLabel}`);
+  if (context.observableSigns && context.observableSigns.length) lines.push(`可观察表现：${context.observableSigns.join('、')}`);
+  if (context.abilityTags && context.abilityTags.length) lines.push(`背后能力：${context.abilityTags.join('、')}`);
+  if (context.bottleneckTitle) lines.push(`卡点判断：${context.bottleneckTitle}`);
+  if (context.actionTitle) lines.push(`今晚第一步：${context.actionTitle}`);
+  if (context.actionSteps && context.actionSteps.length) lines.push(`行动步骤：${context.actionSteps.join('；')}`);
+  return lines;
 }
 
 function hasEnoughChatKeywords(keywords) {
@@ -3537,7 +3745,7 @@ function getPregnancyReferenceBonus(reference) {
   return score;
 }
 
-function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords) {
+function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords, coreActionContext) {
   let score = Number(reference.score || 0);
   const pregnancyContext = isPregnancyContext(keywords);
   const titleText = String(reference.title || '');
@@ -3591,6 +3799,11 @@ function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords) {
     score += scenarioHits * 10;
   }
 
+  if (hasCoreActionChatContext(coreActionContext)) {
+    const contextHits = countChatKeywordHits(sourceText, appendCoreActionKeywords([], coreActionContext));
+    score += contextHits * 10;
+  }
+
   if (chatAnalysis.riskLevel !== 'low' && /(就医|医生|专业|评估|持续|明显影响)/.test(sourceText)) {
     score += 8;
   }
@@ -3607,7 +3820,7 @@ function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords) {
   return score;
 }
 
-function finalizeChatReferences(references, chatAnalysis, ageGroup, keywords) {
+function finalizeChatReferences(references, chatAnalysis, ageGroup, keywords, coreActionContext) {
   const deduped = [];
   const seen = new Set();
   for (const reference of references) {
@@ -3616,7 +3829,7 @@ function finalizeChatReferences(references, chatAnalysis, ageGroup, keywords) {
       continue;
     }
     seen.add(dedupeKey);
-    reference.score = getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords);
+    reference.score = getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords, coreActionContext);
     deduped.push(reference);
   }
   deduped.sort((a, b) => b.score - a.score);
@@ -3802,8 +4015,8 @@ function getContentTypeBonus(queryType, contentType) {
   return 0;
 }
 
-async function collectChatReferences(chatAnalysis, message, ageGroup) {
-  const keywords = extractChatKeywords(message);
+async function collectChatReferences(chatAnalysis, message, ageGroup, coreActionContext) {
+  const keywords = appendCoreActionKeywords(extractChatKeywords(message), coreActionContext);
   const scoreText = createChatScoreText(keywords);
   const references = [];
 
@@ -3868,7 +4081,7 @@ async function collectChatReferences(chatAnalysis, message, ageGroup) {
     }
   }
 
-  return finalizeChatReferences(references, chatAnalysis, ageGroup, keywords);
+  return finalizeChatReferences(references, chatAnalysis, ageGroup, keywords, coreActionContext);
 }
 
 function buildChatSections(sections) {
@@ -9180,6 +9393,38 @@ function getSceneProfileByKey(sceneKey) {
   return profiles[sceneKey] || { articleCategory: '行为习惯', articleKeyword: '', recipeKeyword: '', subjectCode: 'learning_metacognition' };
 }
 
+function normalizeSearchKeywordList(value) {
+  const source = Array.isArray(value) ? value : String(value || '').split(/[、,，;；|\s]+/);
+  const keywords = [];
+  source.forEach((item) => {
+    const text = String(item || '').trim();
+    if (text && keywords.indexOf(text) < 0) {
+      keywords.push(text);
+    }
+  });
+  return keywords.slice(0, 8);
+}
+
+function buildCoreSearchContextFromQuery(query) {
+  const source = query || {};
+  return {
+    ageSegmentKey: String(source.ageSegmentKey || source.age_segment_key || '').trim(),
+    ageSegmentLabel: String(source.ageSegmentLabel || source.age_segment_label || '').trim(),
+    painPointKey: String(source.painPointKey || source.pain_point_key || '').trim(),
+    painPointTitle: String(source.painPointTitle || source.pain_point_title || '').trim(),
+    abilityTags: normalizeSearchKeywordList(source.abilityTags || source.ability_tags || '')
+  };
+}
+
+function buildCoreSearchKeywords(keyword, profile, coreSearchContext) {
+  return normalizeSearchKeywordList([
+    keyword,
+    coreSearchContext && coreSearchContext.painPointTitle,
+    profile && profile.articleKeyword,
+    coreSearchContext && coreSearchContext.ageSegmentLabel
+  ].concat(coreSearchContext && coreSearchContext.abilityTags || []));
+}
+
 function getWeeklyDimensionLabel(dimensionKey) {
   const labels = {
     moodStatus: '情绪状态',
@@ -9520,6 +9765,7 @@ async function getRecommendedReadingTask(childId, ageGroup, subjectCode) {
 }
 
 async function getRecommendedParentingArticle(ageGroup, articleCategory, articleKeyword, userId) {
+  const keywords = normalizeSearchKeywordList(articleKeyword);
   const params = [];
   let whereClause = 'WHERE is_published = 1';
   if (ageGroup) {
@@ -9530,10 +9776,12 @@ async function getRecommendedParentingArticle(ageGroup, articleCategory, article
     whereClause += ' AND category = ?';
     params.push(articleCategory);
   }
-  if (articleKeyword) {
-    whereClause += ' AND (title LIKE ? OR summary LIKE ? OR tags LIKE ?)';
-    const searchTerm = `%${articleKeyword}%`;
-    params.push(searchTerm, searchTerm, searchTerm);
+  if (keywords.length) {
+    whereClause += ` AND (${keywords.map(() => '(title LIKE ? OR summary LIKE ? OR tags LIKE ?)').join(' OR ')})`;
+    keywords.forEach((keyword) => {
+      const searchTerm = `%${keyword}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    });
   }
   let [rows] = await pool.execute(
     `SELECT * FROM articles ${whereClause} ORDER BY read_count DESC, created_at DESC LIMIT 1`,
@@ -10792,18 +11040,26 @@ async function sceneSearchTagsHandler(req, res) {
 }
 
 async function searchParentingArticlesByKeyword(keyword, page, pageSize, userId) {
-  const searchTerm = `%${String(keyword || '').trim()}%`;
+  const keywords = normalizeSearchKeywordList(keyword);
   const safePage = normalizeBoundedInt(page, 1, 1, 1000000);
   const safePageSize = normalizeBoundedInt(pageSize, 10, 1, 20);
   const offset = (safePage - 1) * safePageSize;
   const paginationClause = ` LIMIT ${safePageSize} OFFSET ${offset}`;
+  const searchSql = keywords.length
+    ? `AND (${keywords.map(() => '(title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)').join(' OR ')})`
+    : '';
+  const params = [];
+  keywords.forEach((item) => {
+    const searchTerm = `%${item}%`;
+    params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+  });
   const [rows] = await pool.execute(
     `SELECT * FROM articles
      WHERE is_published = 1
-       AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR tags LIKE ?)
+       ${searchSql}
      ORDER BY read_count DESC, created_at DESC
      ${paginationClause}`,
-    [searchTerm, searchTerm, searchTerm, searchTerm]
+    params
   );
   const data = [];
   for (const row of rows) {
@@ -10817,6 +11073,7 @@ async function sceneSearchSolutionsHandler(req, res) {
   const sceneKey = String(req.query.sceneKey || '').trim();
   const coreSceneProfile = getCoreActionSceneProfile(sceneKey);
   const searchSceneKey = coreSceneProfile ? coreSceneProfile.searchSceneKey : sceneKey;
+  const coreSearchContext = buildCoreSearchContextFromQuery(req.query);
   const childId = Number(req.query.childId || 0);
   const requestedAgeGroup = String(req.query.ageGroup || req.query.age_group || '').trim();
   const userId = req.user ? getUserId(req) : 0;
@@ -10848,20 +11105,23 @@ async function sceneSearchSolutionsHandler(req, res) {
     matchedScene = buildCoreActionVirtualScene(coreSceneProfile);
   }
   if (!matchedScene) {
-    const fallbackArticles = keyword ? await searchParentingArticlesByKeyword(keyword, 1, 10, userId) : [];
+    const fallbackKeyword = coreSearchContext.painPointTitle || keyword;
+    const fallbackArticles = fallbackKeyword ? await searchParentingArticlesByKeyword(fallbackKeyword, 1, 10, userId) : [];
     res.json({
       success: true,
       data: {
         matched: false,
         scene: null,
         solutions: [],
-        articles: fallbackArticles
+        articles: fallbackArticles,
+        coreActionContext: coreSearchContext
       }
     });
     return;
   }
   const profile = getSceneProfileByKey(matchedScene.scene_key);
-  const article = await getRecommendedParentingArticle(ageGroup, profile.articleCategory, profile.articleKeyword || keyword, userId || 0);
+  const articleKeywords = buildCoreSearchKeywords(keyword, profile, coreSearchContext);
+  const article = await getRecommendedParentingArticle(ageGroup, profile.articleCategory, articleKeywords, userId || 0);
   const recipe = getRecommendedNutritionRecipe(ageGroup);
   const task = child ? await getRecommendedReadingTask(child.id, ageGroup, profile.subjectCode) : null;
   const [recommendationRows] = await pool.execute(
@@ -10922,7 +11182,8 @@ async function sceneSearchSolutionsHandler(req, res) {
         suggestedAction: matchedScene.suggested_action || ''
       },
       solutions,
-      articles: article ? [article] : []
+      articles: article ? [article] : [],
+      coreActionContext: coreSearchContext
     }
   });
 }
@@ -11324,14 +11585,16 @@ async function parentingHotKeywordsHandler(req, res) {
 }
 
 async function parentingSearchHandler(req, res) {
-  const keyword = String(req.query.keyword || req.query.q || '').trim();
+  const coreSearchContext = buildCoreSearchContextFromQuery(req.query);
+  const keyword = String(req.query.keyword || req.query.q || coreSearchContext.painPointTitle || coreSearchContext.abilityTags[0] || '').trim();
   if (!keyword) {
     res.json({ success: true, data: [] });
     return;
   }
   const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
   const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
-  const data = await searchParentingArticlesByKeyword(keyword, page, pageSize, getUserId(req));
+  const searchKeyword = [keyword].concat(coreSearchContext.abilityTags || []).filter(Boolean).join(' ');
+  const data = await searchParentingArticlesByKeyword(searchKeyword, page, pageSize, getUserId(req));
   res.json({ success: true, data });
 }
 
@@ -11767,6 +12030,11 @@ async function kbEventTrackHandler(req, res) {
     module_key: req.body.module_key || null,
     page_key: req.body.page_key || null,
     scene_key: req.body.scene_key || null,
+    age_segment_key: req.body.age_segment_key || (req.body.event_meta && req.body.event_meta.age_segment_key) || null,
+    age_segment_label: req.body.age_segment_label || (req.body.event_meta && req.body.event_meta.age_segment_label) || null,
+    pain_point_key: req.body.pain_point_key || (req.body.event_meta && req.body.event_meta.pain_point_key) || null,
+    pain_point_title: req.body.pain_point_title || (req.body.event_meta && req.body.event_meta.pain_point_title) || null,
+    ability_tags: req.body.ability_tags || (req.body.event_meta && req.body.event_meta.ability_tags) || null,
     content_type: req.body.content_type || null,
     content_id: req.body.content_id || null,
     child_id: req.body.child_id || null,

@@ -3,6 +3,7 @@ const appConfig = require('../miniprogram/utils/app-config');
 
 const storage = {};
 const events = [];
+const navigations = [];
 
 global.wx = {
   getStorageSync(key) {
@@ -15,7 +16,9 @@ global.wx = {
     delete storage[key];
   },
   showToast() {},
-  navigateTo() {},
+  navigateTo(options) {
+    navigations.push(options && options.url ? options.url : '');
+  },
   switchTab() {}
 };
 
@@ -31,6 +34,7 @@ const app = {
       weeklySummaryEnabled: true,
       sceneSearchEnabled: true,
       coreRefactorEnabled: true,
+      ageFirstCoreEnabled: true,
       coreRefactorRolloutPercent: 0,
       coreRefactorUserWhitelist: [],
       configLoaded: true
@@ -82,8 +86,28 @@ function applyPath(target, path, value) {
 }
 
 function createPageInstance() {
+  page = null;
+  delete require.cache[require.resolve('../miniprogram/pages/index/index.js')];
   require('../miniprogram/pages/index/index.js');
   assert.ok(page, 'home page should register itself');
+  const instance = Object.assign({}, page, { data: clone(page.data) });
+  instance.setData = function(patch) {
+    Object.keys(patch || {}).forEach(function(key) {
+      if (key.indexOf('.') === -1) {
+        instance.data[key] = patch[key];
+        return;
+      }
+      applyPath(instance.data, key, patch[key]);
+    });
+  };
+  return instance;
+}
+
+function createChatPageInstance() {
+  page = null;
+  delete require.cache[require.resolve('../miniprogram/pages/chat/chat.js')];
+  require('../miniprogram/pages/chat/chat.js');
+  assert.ok(page, 'chat page should register itself');
   const instance = Object.assign({}, page, { data: clone(page.data) });
   instance.setData = function(patch) {
     Object.keys(patch || {}).forEach(function(key) {
@@ -102,10 +126,12 @@ function resetState() {
     delete storage[key];
   });
   events.length = 0;
+  navigations.length = 0;
   app.globalData.runtimeConfig.coreRefactorEnabled = true;
   app.globalData.runtimeConfig.coreRefactorRolloutPercent = 0;
   app.globalData.runtimeConfig.coreRefactorUserWhitelist = [];
   app.globalData.runtimeConfig.sceneSearchEnabled = true;
+  app.globalData.runtimeConfig.ageFirstCoreEnabled = true;
 }
 
 function tap(dataset) {
@@ -120,7 +146,31 @@ function testHomeCoreFlow() {
   assert.strictEqual(home.data.showLegacyHomeSections, false);
 
   home.onHomePrimaryActionTap();
-  assert.strictEqual(home.data.coreRefactorState.stage, 'scene_select');
+  assert.strictEqual(home.data.coreRefactorState.stage, 'age_select');
+  assert.ok(home.data.coreRefactorState.selectedAgeSegment, 'home should select a default age segment');
+  assert.ok(home.data.coreRefactorState.painPoints.length >= 1, 'home should expose age pain points');
+
+  home.onCoreAgeSegmentTap(tap({ segmentKey: 'age_8_9' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'pain_point_select');
+  assert.strictEqual(home.data.coreRefactorState.selectedAgeSegment.key, 'age_8_9');
+  assert.strictEqual(home.data.coreRefactorState.selectedAgeLabel, '8-9岁');
+  assert.ok(home.data.coreRefactorState.focusAreas.indexOf('执行力') !== -1);
+  assert.ok(home.data.coreRefactorState.painPoints.some((item) => item.key === 'reading_slow_forgets'));
+  assert.strictEqual(wx.getStorageSync('lastCoreAgeSegmentKey'), 'age_8_9');
+
+  home.onCorePainPointTap(tap({ painPointKey: 'reading_slow_forgets' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'bottleneck_result');
+  assert.strictEqual(home.data.coreRefactorState.selectedPainPoint.key, 'reading_slow_forgets');
+  assert.strictEqual(home.data.coreRefactorState.currentBottleneck.ageSegmentKey, 'age_8_9');
+  assert.strictEqual(home.data.coreRefactorState.currentBottleneck.painPointKey, 'reading_slow_forgets');
+  assert.ok(home.data.coreRefactorState.observableSigns.length >= 1);
+  assert.ok(home.data.coreRefactorState.abilityTags.indexOf('阅读效率') !== -1);
+  assert.ok(home.data.coreRefactorState.nextAction.steps.length >= 1);
+  home.goToParentingSearchWithCoreContext(home.data.coreRefactorState.currentBottleneck);
+  assert.ok(navigations[0].indexOf('ageSegmentKey=age_8_9') !== -1, 'parenting search URL should include age segment key');
+  assert.ok(navigations[0].indexOf('painPointKey=reading_slow_forgets') !== -1, 'parenting search URL should include pain point key');
+  assert.ok(navigations[0].indexOf('painPointTitle=') !== -1, 'parenting search URL should include pain point title');
+  assert.ok(navigations[0].indexOf('abilityTags=') !== -1, 'parenting search URL should include ability tags');
 
   home.onCoreSceneTap(tap({ sceneKey: 'homework_restless' }));
   assert.strictEqual(home.data.coreRefactorState.stage, 'age_select');
@@ -160,6 +210,8 @@ function testHomeCoreFlow() {
 
   const eventTypes = events.map((item) => item.event_type);
   assert.ok(eventTypes.includes('first_action_entry_click'));
+  assert.ok(eventTypes.includes('age_segment_select'));
+  assert.ok(eventTypes.includes('pain_point_select'));
   assert.ok(eventTypes.includes('scene_select'));
   assert.ok(eventTypes.includes('bottleneck_result_view'));
   assert.strictEqual(eventTypes.filter((item) => item === 'tonight_action_save').length, 2);
@@ -187,6 +239,81 @@ function testHomePrimaryCardPriority() {
   assert.strictEqual(home.buildHomePrimaryCard({ retentionSummary: '最近有成长记录' }).reason, 'recent_record');
 }
 
+function testAgeFirstSaveFlow() {
+  resetState();
+  const home = createPageInstance();
+  home.refreshCoreActionHomeState();
+
+  home.onHomePrimaryActionTap();
+  assert.strictEqual(home.data.coreRefactorState.stage, 'age_select');
+
+  home.onCoreAgeSegmentTap(tap({ segmentKey: 'age_9_12' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'pain_point_select');
+
+  home.onCorePainPointTap(tap({ painPointKey: 'middle_exam_training_prepare' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'bottleneck_result');
+
+  home.onCoreAskDetailTap();
+  const pendingContext = wx.getStorageSync('pendingCoreActionContext');
+  assert.strictEqual(pendingContext.ageSegmentKey, 'age_9_12');
+  assert.strictEqual(pendingContext.painPointKey, 'middle_exam_training_prepare');
+  assert.ok(pendingContext.abilityTags.indexOf('中考体训准备') !== -1);
+  assert.ok(pendingContext.observableSigns.length >= 1);
+  assert.ok(pendingContext.actionSteps.length >= 1);
+  const chat = createChatPageInstance();
+  const pendingQuestion = chat.buildPendingCoreActionQuestion(pendingContext);
+  assert.ok(pendingQuestion.indexOf('年龄段Key：age_9_12') !== -1, 'chat question should include age segment key');
+  assert.ok(pendingQuestion.indexOf('痛点：') !== -1, 'chat question should include pain point title');
+  assert.ok(pendingQuestion.indexOf('可观察表现：') !== -1, 'chat question should include observable signs');
+  assert.ok(pendingQuestion.indexOf('背后能力：') !== -1, 'chat question should include ability tags');
+  assert.ok(pendingQuestion.indexOf('今晚第一步：') !== -1, 'chat question should include first action');
+
+  home.onCoreTryTonightTap();
+  const records = wx.getStorageSync('coreActionRecords') || [];
+  assert.strictEqual(records.length, 1);
+  assert.strictEqual(records[0].saved, true);
+  assert.strictEqual(records[0].ageSegmentKey, 'age_9_12');
+  assert.strictEqual(records[0].painPointKey, 'middle_exam_training_prepare');
+  assert.ok(records[0].abilityTags.indexOf('中考体训准备') !== -1);
+  assert.ok(records[0].observableSigns.length >= 1);
+  assert.ok(records[0].actionSteps.length >= 1);
+
+  home.setData({
+    'coreRefactorState.currentBottleneck': records[0],
+    'coreRefactorState.stage': 'effect_record'
+  });
+  home.onCoreEffectTap(tap({ effectKey: 'started_smoothly' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'effect_recorded');
+  assert.strictEqual(home.data.coreRefactorState.nextActionSuggestion.ageSegmentKey, 'age_9_12');
+  assert.strictEqual(home.data.coreRefactorState.nextActionSuggestion.painPointKey, 'middle_exam_training_prepare');
+  assert.ok(home.data.coreRefactorState.nextActionSuggestion.abilityTags.indexOf('中考体训准备') !== -1);
+
+  home.onSaveNextCoreActionTap();
+  const nextRecords = wx.getStorageSync('coreActionRecords') || [];
+  assert.strictEqual(nextRecords.length, 2);
+  assert.strictEqual(nextRecords[0].sourceType, 'next_action_recommendation');
+  assert.strictEqual(nextRecords[0].ageSegmentKey, 'age_9_12');
+  assert.strictEqual(nextRecords[0].painPointKey, 'middle_exam_training_prepare');
+  assert.ok(nextRecords[0].abilityTags.indexOf('中考体训准备') !== -1);
+
+  const eventTypes = events.map((item) => item.event_type);
+  assert.ok(eventTypes.includes('age_segment_select'));
+  assert.ok(eventTypes.includes('pain_point_select'));
+  assert.ok(eventTypes.includes('bottleneck_result_view'));
+  assert.ok(eventTypes.includes('tonight_action_save'));
+  const ageFirstBottleneckEvent = events.find((item) => item.event_type === 'bottleneck_result_view' && item.event_meta.age_segment_key === 'age_9_12');
+  assert.ok(ageFirstBottleneckEvent, 'age-first bottleneck view event should include age segment metadata');
+  assert.strictEqual(ageFirstBottleneckEvent.event_meta.pain_point_key, 'middle_exam_training_prepare');
+  assert.ok(ageFirstBottleneckEvent.event_meta.ability_tags.indexOf('中考体训准备') !== -1);
+  const ageFirstSaveEvents = events.filter((item) => item.event_type === 'tonight_action_save' && item.event_meta.age_segment_key === 'age_9_12');
+  assert.strictEqual(ageFirstSaveEvents.length, 2);
+  assert.strictEqual(ageFirstSaveEvents[0].event_meta.pain_point_key, 'middle_exam_training_prepare');
+  assert.ok(ageFirstSaveEvents[0].event_meta.ability_tags.indexOf('中考体训准备') !== -1);
+  const ageFirstEffectEvent = events.find((item) => item.event_type === 'action_effect_submit' && item.event_meta.age_segment_key === 'age_9_12');
+  assert.ok(ageFirstEffectEvent, 'age-first effect event should include age segment metadata');
+  assert.strictEqual(ageFirstEffectEvent.event_meta.pain_point_key, 'middle_exam_training_prepare');
+}
+
 function testFeatureFlagFallback() {
   resetState();
   app.globalData.runtimeConfig.coreRefactorEnabled = false;
@@ -202,33 +329,90 @@ function testFeatureFlagFallback() {
   assert.strictEqual(home.data.showLegacyHomeSections, false);
 }
 
+function testAgeFirstCoreFlagFallback() {
+  resetState();
+  app.globalData.runtimeConfig.ageFirstCoreEnabled = false;
+  const home = createPageInstance();
+  home.refreshCoreActionHomeState();
+  assert.strictEqual(home.data.coreRefactorEnabled, true);
+  assert.strictEqual(home.data.ageFirstCoreEnabled, false);
+  assert.strictEqual(home.data.showLegacyHomeSections, false);
+
+  home.onHomePrimaryActionTap();
+  assert.strictEqual(home.data.coreRefactorState.stage, 'scene_select');
+  assert.strictEqual(home.data.coreRefactorState.selectedAgeSegment, null);
+  assert.strictEqual(home.data.coreRefactorState.painPoints.length, 0);
+
+  home.onCoreSceneTap(tap({ sceneKey: 'homework_restless' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'age_select');
+  assert.strictEqual(home.data.coreRefactorState.selectedScene.key, 'homework_restless');
+
+  home.onCoreAgeTap(tap({ ageKey: '5-6' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'symptom_select');
+  assert.strictEqual(home.data.coreRefactorState.selectedAgeGroup, '5-6');
+
+  home.onCoreSymptomTap(tap({ symptomKey: 'can_do_but_slow' }));
+  assert.strictEqual(home.data.coreRefactorState.stage, 'bottleneck_result');
+  assert.strictEqual(home.data.coreRefactorState.currentBottleneck.sceneKey, 'homework_restless');
+  assert.ok(home.data.coreRefactorState.currentBottleneck.actionSteps.length > 0);
+}
+
+function testAgeFirstConfigFallback() {
+  resetState();
+  const home = createPageInstance();
+  home.setData({ 'coreRefactorState.ageSegments': [] });
+  home.refreshCoreActionHomeState();
+  assert.strictEqual(home.data.ageFirstCoreEnabled, true);
+  assert.strictEqual(home.data.ageFirstCoreAvailable, false);
+
+  home.onHomePrimaryActionTap();
+  assert.strictEqual(home.data.coreRefactorState.stage, 'scene_select');
+  assert.strictEqual(home.data.coreRefactorState.selectedAgeSegment, null);
+
+  const emptySegmentHome = createPageInstance();
+  emptySegmentHome.setData({
+    'coreRefactorState.ageSegments': [{ key: 'age_empty', label: '空配置', painPoints: [] }]
+  });
+  emptySegmentHome.refreshCoreActionHomeState();
+  assert.strictEqual(emptySegmentHome.data.ageFirstCoreAvailable, false);
+  emptySegmentHome.onHomePrimaryActionTap();
+  assert.strictEqual(emptySegmentHome.data.coreRefactorState.stage, 'scene_select');
+}
+
 function testRuntimeConfigCoreRefactorMapping() {
   const config = appConfig.normalizeRuntimeConfig({
     core_refactor_enabled: true,
+    age_first_core_enabled: true,
     core_refactor_rollout_percent: 35,
     core_refactor_user_whitelist: ['user-a', 'user-b']
   });
   assert.strictEqual(config.coreRefactorEnabled, true);
+  assert.strictEqual(config.ageFirstCoreEnabled, true);
   assert.strictEqual(config.coreRefactorRolloutPercent, 35);
   assert.deepStrictEqual(config.coreRefactorUserWhitelist, ['user-a', 'user-b']);
 
   const clamped = appConfig.normalizeRuntimeConfig({
     core_refactor_enabled: false,
+    age_first_core_enabled: false,
     core_refactor_rollout_percent: 150,
     core_refactor_user_whitelist: 'user-c,user-d'
   });
   assert.strictEqual(clamped.coreRefactorEnabled, false);
+  assert.strictEqual(clamped.ageFirstCoreEnabled, false);
   assert.strictEqual(clamped.coreRefactorRolloutPercent, 100);
   assert.deepStrictEqual(clamped.coreRefactorUserWhitelist, ['user-c', 'user-d']);
 
   const camelCase = appConfig.normalizeRuntimeConfig({
     coreRefactorEnabled: true,
+    ageFirstCoreEnabled: true,
     coreRefactorRolloutPercent: 12,
     coreRefactorUserWhitelist: 'user-e,user-f'
   });
   assert.strictEqual(camelCase.coreRefactorEnabled, true);
+  assert.strictEqual(camelCase.ageFirstCoreEnabled, true);
   assert.strictEqual(camelCase.coreRefactorRolloutPercent, 12);
   assert.deepStrictEqual(camelCase.coreRefactorUserWhitelist, ['user-e', 'user-f']);
+  assert.strictEqual(appConfig.isFeatureEnabled({ globalData: { runtimeConfig: camelCase } }, 'ageFirstCore'), true);
 }
 
 function testCoreSceneSearchFeatureFlag() {
@@ -306,7 +490,10 @@ function testNextDayRecordRuleAndMembershipTouchpoint() {
 
 testHomeCoreFlow();
 testHomePrimaryCardPriority();
+testAgeFirstSaveFlow();
 testFeatureFlagFallback();
+testAgeFirstCoreFlagFallback();
+testAgeFirstConfigFallback();
 testRuntimeConfigCoreRefactorMapping();
 testCoreSceneSearchFeatureFlag();
 testNextDayRecordRuleAndMembershipTouchpoint();

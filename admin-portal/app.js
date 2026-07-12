@@ -79,6 +79,19 @@ const demoSnapshot = {
     scene_items: [
       { scene_key: 'homework_restless', scene_title: '写作业坐不住', scene_select: 128, result_view: 108, result_rate: 84.38, tonight_action_save: 58, save_rate: 53.7, action_effect_submit: 24, effect_submit_rate: 41.38 },
       { scene_key: 'bedtime_meltdown', scene_title: '睡前崩溃', scene_select: 96, result_view: 81, result_rate: 84.38, tonight_action_save: 40, save_rate: 49.38, action_effect_submit: 16, effect_submit_rate: 40 }
+    ],
+    age_segment_items: [
+      { age_segment_key: 'age_4_5', age_segment_label: '4-5岁', select: 168, result_view: 142, result_rate: 84.52, tonight_action_save: 74, save_rate: 52.11, action_effect_submit: 32, effect_submit_rate: 43.24 },
+      { age_segment_key: 'age_8_9', age_segment_label: '8-9岁', select: 96, result_view: 82, result_rate: 85.42, tonight_action_save: 46, save_rate: 56.1, action_effect_submit: 20, effect_submit_rate: 43.48 },
+      { age_segment_key: 'unknown', age_segment_label: '未分龄', select: 42, result_view: 30, result_rate: 71.43, tonight_action_save: 12, save_rate: 40, action_effect_submit: 5, effect_submit_rate: 41.67 }
+    ],
+    pain_point_items: [
+      { pain_point_key: 'reading_slow_forgets', pain_point_title: '读得慢还记不住', select: 92, result_view: 78, result_rate: 84.78, tonight_action_save: 40, save_rate: 51.28, action_effect_submit: 18, effect_submit_rate: 45 },
+      { pain_point_key: 'homework_restless', pain_point_title: '写作业坐不住', select: 84, result_view: 70, result_rate: 83.33, tonight_action_save: 34, save_rate: 48.57, action_effect_submit: 14, effect_submit_rate: 41.18 }
+    ],
+    ability_items: [
+      { ability_tag: '阅读效率', ability_label: '阅读效率', select: 118, result_view: 94, result_rate: 79.66, tonight_action_save: 52, save_rate: 55.32, action_effect_submit: 24, effect_submit_rate: 46.15 },
+      { ability_tag: '执行力', ability_label: '执行力', select: 102, result_view: 84, result_rate: 82.35, tonight_action_save: 44, save_rate: 52.38, action_effect_submit: 18, effect_submit_rate: 40.91 }
     ]
   },
   membershipStructure: [
@@ -834,6 +847,21 @@ function renderCoreActionFunnel(data) {
     meta: `${formatNumber(item.count)} / ${formatNumber(item.base_count)} 次`
   })));
   renderCoreActionSceneFunnel((data && data.scene_items) || []);
+  renderCoreActionDimensionFunnel('coreActionAgeSegmentFunnel', (data && data.age_segment_items) || [], {
+    titleField: 'age_segment_label',
+    keyField: 'age_segment_key',
+    emptyMessage: '当前暂无按年龄段拆分的第一动作漏斗。'
+  });
+  renderCoreActionDimensionFunnel('coreActionPainPointFunnel', (data && data.pain_point_items) || [], {
+    titleField: 'pain_point_title',
+    keyField: 'pain_point_key',
+    emptyMessage: '当前暂无按痛点拆分的第一动作漏斗。'
+  });
+  renderCoreActionDimensionFunnel('coreActionAbilityFunnel', (data && data.ability_items) || [], {
+    titleField: 'ability_label',
+    keyField: 'ability_tag',
+    emptyMessage: '当前暂无按能力标签拆分的第一动作漏斗。'
+  });
 }
 
 function renderCoreActionSceneFunnel(items) {
@@ -855,6 +883,34 @@ function renderCoreActionSceneFunnel(items) {
         <strong>${escapeHtml(formatNumber(item.scene_select || 0))}</strong>
       </div>
       <span class="distribution-meta">结果 ${escapeHtml(formatPercent(item.result_rate))} / 保存 ${escapeHtml(formatPercent(item.save_rate))} / 记录 ${escapeHtml(formatPercent(item.effect_submit_rate))}</span>
+    `;
+    container.appendChild(node);
+  });
+}
+
+function renderCoreActionDimensionFunnel(containerId, items, config) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    return;
+  }
+  container.innerHTML = '';
+  if (!items || !items.length) {
+    container.innerHTML = `<div class="empty-state">${escapeHtml(config.emptyMessage)}</div>`;
+    return;
+  }
+  items.slice(0, 6).forEach((item) => {
+    const node = document.createElement('div');
+    node.className = `dimension-funnel-item${item[config.keyField] === 'unknown' ? ' is-muted' : ''}`;
+    node.innerHTML = `
+      <div class="distribution-topline">
+        <span class="distribution-name">${escapeHtml(item[config.titleField] || item[config.keyField] || '-')}</span>
+        <strong>${escapeHtml(formatNumber(item.select || 0))}</strong>
+      </div>
+      <div class="dimension-metrics">
+        <span>结果 ${escapeHtml(formatNumber(item.result_view || 0))} / ${escapeHtml(formatPercent(item.result_rate))}</span>
+        <span>保存 ${escapeHtml(formatNumber(item.tonight_action_save || 0))} / ${escapeHtml(formatPercent(item.save_rate))}</span>
+        <span>记录 ${escapeHtml(formatNumber(item.action_effect_submit || 0))} / ${escapeHtml(formatPercent(item.effect_submit_rate))}</span>
+      </div>
     `;
     container.appendChild(node);
   });

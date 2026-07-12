@@ -40,6 +40,7 @@ router.get('/config', (req, res) => {
     weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true),
     scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true),
     core_refactor_enabled: parseRuntimeBooleanEnv('RUNTIME_CORE_REFACTOR_ENABLED', false),
+    age_first_core_enabled: parseRuntimeBooleanEnv('RUNTIME_AGE_FIRST_CORE_ENABLED', false),
     core_refactor_rollout_percent: Math.max(0, Math.min(100, parseRuntimeNumberEnv('RUNTIME_CORE_REFACTOR_ROLLOUT_PERCENT', 0))),
     core_refactor_user_whitelist: parseRuntimeListEnv('RUNTIME_CORE_REFACTOR_USER_WHITELIST'),
     multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),

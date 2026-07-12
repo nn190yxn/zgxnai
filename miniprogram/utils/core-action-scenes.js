@@ -5,6 +5,464 @@ var CORE_ACTION_AGE_GROUPS = [
   { key: '6-plus', label: '6岁以上' }
 ];
 
+var AGE_FIRST_SEGMENTS = [
+  {
+    key: 'age_2_3',
+    label: '2-3岁',
+    title: '先建立大运动和表达基础',
+    subtitle: '看孩子能不能稳稳走跑跳、愿不愿意开口表达。',
+    focusAreas: ['大运动模式', '语言表达', '安全感', '模仿能力'],
+    parentSummary: '这个阶段家长最常担心孩子动作不稳、开口少、换环境哭和不愿模仿。',
+    painPoints: [
+      {
+        key: 'gross_motor_unstable',
+        title: '走跑跳总是不稳',
+        description: '走路跑步容易摔，不敢跳，不敢上下台阶。',
+        observableSigns: ['容易摔倒', '不敢双脚跳', '上下台阶要抱'],
+        abilityTags: ['大运动模式', '前庭觉', '本体觉'],
+        sceneKey: 'gross_motor_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看身体稳定和动作信心', text: '孩子可能还没有建立稳定的走跑跳模式，先用安全的小动作建立身体信心。' },
+        defaultAction: { title: '今晚先做 3 次垫脚拿玩具', steps: ['把玩具放在孩子够得到的稍高位置。', '让孩子垫脚拿 3 次。', '拿到后马上结束，不追加要求。'] }
+      },
+      {
+        key: 'language_expression_less',
+        title: '不太开口说话',
+        description: '常用指、拉大人或哭来表达需求。',
+        observableSigns: ['主动词少', '只用手指', '急了就哭'],
+        abilityTags: ['语言表达', '需求表达', '模仿能力'],
+        sceneKey: 'language_expression_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看孩子有没有开口机会', text: '孩子可能知道自己想要什么，但还没有形成用词表达的习惯。' },
+        defaultAction: { title: '今晚只等孩子说一个词', steps: ['拿孩子想要的东西。', '大人先说一次名称。', '等孩子发出一个词或近似音后再给。'] }
+      },
+      {
+        key: 'imitation_resistant',
+        title: '不愿模仿大人动作',
+        description: '跟做拍手、蹲起、挥手等动作时兴趣弱。',
+        observableSigns: ['不跟做动作', '看一眼就跑', '只想自己玩'],
+        abilityTags: ['模仿能力', '动作计划', '亲子互动'],
+        sceneKey: 'imitation_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看模仿动作是否太复杂', text: '模仿需要观察、理解和身体执行同时配合，先从一个动作开始更容易。' },
+        defaultAction: { title: '今晚只玩 3 次拍手模仿', steps: ['大人拍手一次。', '等孩子跟一次。', '完成 3 次就结束。'] }
+      },
+      {
+        key: 'new_environment_cries',
+        title: '一换环境就哭',
+        description: '到新地方紧张、抱人、不愿下来探索。',
+        observableSigns: ['进门就抱紧大人', '不愿下地', '看见陌生人哭'],
+        abilityTags: ['安全感', '环境适应', '情绪调节'],
+        sceneKey: 'environment_adaptation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看安全感是否跟得上环境变化', text: '孩子面对新环境时需要先确认安全，再慢慢开始探索。' },
+        defaultAction: { title: '今晚练一个固定安心动作', steps: ['进入新空间前先抱 10 秒。', '告诉孩子：我们先看一看。', '只要求孩子指出一个看到的东西。'] }
+      },
+      {
+        key: 'separation_hard',
+        title: '亲子分离很难',
+        description: '大人离开时哭闹，反复确认大人在哪里。',
+        observableSigns: ['大人一走就哭', '反复找妈妈', '不愿独自玩一会'],
+        abilityTags: ['安全感', '分离适应', '独立游戏'],
+        sceneKey: 'separation_adaptation',
+        symptoms: [],
+        defaultBottleneck: { title: '先建立短时间可预测分离', text: '孩子需要知道大人会回来，分离才会慢慢变得可承受。' },
+        defaultAction: { title: '今晚先离开 10 秒再回来', steps: ['告诉孩子：我去拿水，马上回来。', '离开 10 秒。', '回来后说：我回来了。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_3_4',
+    label: '3-4岁',
+    title: '先看感统、规则和专注萌芽',
+    subtitle: '看孩子能不能听懂简单规则，并在课堂或游戏里停下来。',
+    focusAreas: ['感统基础', '规则理解', '专注萌芽', '入园适应'],
+    parentSummary: '这个阶段家长最常遇到坐不住、听不进指令、排队困难和情绪来得快。',
+    painPoints: [
+      {
+        key: 'cannot_sit_still',
+        title: '坐不住总想跑',
+        description: '活动或课堂中很难停下来，几分钟就想离开。',
+        observableSigns: ['坐下很快起身', '喜欢跑来跑去', '安静活动坚持短'],
+        abilityTags: ['感统基础', '身体刹车', '专注萌芽'],
+        sceneKey: 'sensory_regulation_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看身体刹车能力', text: '孩子可能还不会从动的状态切到停的状态，需要先给身体一个短出口。' },
+        defaultAction: { title: '今晚先做 5 次停走游戏', steps: ['大人说走，孩子走 3 步。', '大人说停，孩子停住。', '完成 5 次就结束。'] }
+      },
+      {
+        key: 'simple_instruction_missed',
+        title: '听不进简单指令',
+        description: '叫他收玩具、排队、坐好时常像没听见。',
+        observableSigns: ['叫名字反应慢', '指令要重复多次', '做一半就忘'],
+        abilityTags: ['规则理解', '听觉注意', '执行动作'],
+        sceneKey: 'instruction_following',
+        symptoms: [],
+        defaultBottleneck: { title: '先把指令缩短到一个动作', text: '孩子可能听到了，但指令太长时不知道先做哪一步。' },
+        defaultAction: { title: '今晚只给一个动作指令', steps: ['只说：把积木放盒子。', '等孩子完成。', '完成后再给第二个动作。'] }
+      },
+      {
+        key: 'class_queue_uncooperative',
+        title: '排队课堂不配合',
+        description: '排队、坐圈圈、等老师讲话时容易乱跑。',
+        observableSigns: ['排队离开队伍', '坐圈圈乱动', '老师讲规则时跑开'],
+        abilityTags: ['入园适应', '规则理解', '集体配合'],
+        sceneKey: 'classroom_rule_adaptation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看集体规则是否太抽象', text: '孩子需要把规则变成看得见的动作，才更容易跟上集体。' },
+        defaultAction: { title: '今晚只练站在线后面', steps: ['在地上贴一条线。', '让孩子站在线后面 5 秒。', '做到后马上结束。'] }
+      },
+      {
+        key: 'bumps_and_grabs',
+        title: '容易撞人抢东西',
+        description: '靠近别人时力量大，想要玩具就直接拿。',
+        observableSigns: ['靠近同伴会撞到', '直接拿别人玩具', '推人后不知道错'],
+        abilityTags: ['身体边界', '冲动控制', '社交萌芽'],
+        sceneKey: 'body_boundary_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先建立身体边界感', text: '孩子可能还不知道身体和别人之间需要留距离。' },
+        defaultAction: { title: '今晚练一臂距离', steps: ['大人伸出一只手臂。', '让孩子站在手碰不到的位置。', '再练说：我想玩。'] }
+      },
+      {
+        key: 'emotion_escalates_fast',
+        title: '情绪一上来就崩',
+        description: '小事不顺就哭闹，停不下来。',
+        observableSigns: ['一不如意就哭', '哭闹持续久', '安抚后还反复'],
+        abilityTags: ['情绪调节', '安全感', '规则理解'],
+        sceneKey: 'emotion_regulation_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先帮孩子把情绪降下来', text: '这个年龄段先需要大人协助降温，再谈规则和道理。' },
+        defaultAction: { title: '今晚先用一句情绪命名', steps: ['孩子哭时先说：你很着急。', '停 5 秒。', '再给一个选择：抱一下还是喝水。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_4_5',
+    label: '4-5岁',
+    title: '重点看专注力和身体控制',
+    subtitle: '看孩子能不能跟住规则、控制身体，并把想法说清楚。',
+    focusAreas: ['专注力', '身体控制', '表达配合', '情绪调节'],
+    parentSummary: '这个阶段家长最常担心孩子坚持时间短、动作协调差、表达不清和遇到输赢就急。',
+    painPoints: [
+      {
+        key: 'short_attention_play',
+        title: '玩什么都坚持不了多久',
+        description: '玩具、游戏、任务很快换，难以持续完成。',
+        observableSigns: ['玩一会就换', '任务做到一半跑开', '需要大人一直提醒'],
+        abilityTags: ['专注力', '任务持续', '身体控制'],
+        sceneKey: 'focus_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看任务长度是否超过当前专注', text: '孩子可能能专注，只是当前活动持续时间太长。' },
+        defaultAction: { title: '今晚只做 3 分钟完成游戏', steps: ['选一个简单拼图或积木任务。', '计时 3 分钟。', '时间到就结束并肯定完成。'] }
+      },
+      {
+        key: 'coordination_clumsy',
+        title: '动作协调差',
+        description: '跑跳、接球、绕障碍时显得笨拙。',
+        observableSigns: ['接球容易漏', '跑动容易撞', '跨越障碍不稳'],
+        abilityTags: ['身体控制', '动作计划', '协调能力'],
+        sceneKey: 'coordination_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看动作计划和身体协调', text: '协调差常见于身体还没学会按顺序完成动作。' },
+        defaultAction: { title: '今晚走 5 次枕头小路', steps: ['把两个枕头放成小路。', '孩子慢慢走过去。', '完成 5 次就结束。'] }
+      },
+      {
+        key: 'rule_game_breakdown',
+        title: '规则游戏玩不下去',
+        description: '一有规则就乱，轮流、等待和输赢都难。',
+        observableSigns: ['不等轮到自己', '随意改规则', '输了就不玩'],
+        abilityTags: ['规则理解', '等待轮流', '挫折承受'],
+        sceneKey: 'rule_game_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先把规则缩到一个动作', text: '复杂规则对孩子来说太多，先只练一个最关键动作。' },
+        defaultAction: { title: '今晚只玩一轮轮流游戏', steps: ['大人放一个积木。', '孩子放一个积木。', '轮流 3 次就结束。'] }
+      },
+      {
+        key: 'expression_unclear',
+        title: '想说但说不清',
+        description: '有想法但表达断断续续，别人听不明白。',
+        observableSigns: ['说半句就急', '词不达意', '需要大人猜'],
+        abilityTags: ['表达配合', '语言组织', '情绪调节'],
+        sceneKey: 'expression_organization',
+        symptoms: [],
+        defaultBottleneck: { title: '先给表达一个句子框架', text: '孩子想表达但组织不出来时，需要一个简单句式帮他接住想法。' },
+        defaultAction: { title: '今晚只练我想要一句话', steps: ['大人先说：我想要。', '让孩子补一个东西。', '补出来后大人复述完整句。'] }
+      },
+      {
+        key: 'losing_triggers_tantrum',
+        title: '一输就哭或发脾气',
+        description: '游戏输了、做错了就急，不愿继续。',
+        observableSigns: ['输了哭', '做错扔东西', '不愿再试'],
+        abilityTags: ['情绪调节', '挫折承受', '规则理解'],
+        sceneKey: 'frustration_tolerance',
+        symptoms: [],
+        defaultBottleneck: { title: '先练小失败后的恢复', text: '孩子需要体验可承受的小失败，再慢慢学会继续。' },
+        defaultAction: { title: '今晚玩一次故意输小游戏', steps: ['大人先输一次。', '说：输了也可以再来。', '让孩子只再试一次。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_5_6',
+    label: '5-6岁',
+    title: '提前建立社交能力和任务意识',
+    subtitle: '看孩子能不能等待轮流、完成小任务，并适应幼小衔接。',
+    focusAreas: ['社交能力', '任务意识', '等待轮流', '幼小衔接'],
+    parentSummary: '这个阶段家长最常关注同伴冲突、不会轮流、集体活动不合群和任务坚持差。',
+    painPoints: [
+      {
+        key: 'peer_conflicts_often',
+        title: '和小朋友总起冲突',
+        description: '一起玩时容易争抢、告状或动手。',
+        observableSigns: ['抢玩具', '容易告状', '推搡同伴'],
+        abilityTags: ['社交能力', '情绪调节', '规则理解'],
+        sceneKey: 'peer_conflict_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看孩子会不会表达需求', text: '冲突常发生在想要、拒绝、轮流时说不清。' },
+        defaultAction: { title: '今晚只练一句我也想玩', steps: ['大人拿一个玩具。', '让孩子说：我也想玩。', '说完后再给他轮到一次。'] }
+      },
+      {
+        key: 'cannot_wait_turn',
+        title: '不会等待和轮流',
+        description: '等别人时着急，轮不到自己就插队。',
+        observableSigns: ['插队', '抢先开始', '等几秒就急'],
+        abilityTags: ['等待轮流', '冲动控制', '任务意识'],
+        sceneKey: 'turn_taking_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先把等待时间缩短', text: '等待对孩子来说是能力训练，先从很短的可成功时间开始。' },
+        defaultAction: { title: '今晚先等 5 秒轮到自己', steps: ['大人先玩一次。', '孩子等 5 秒。', '马上轮到孩子玩一次。'] }
+      },
+      {
+        key: 'group_activity_withdrawn',
+        title: '集体活动不合群',
+        description: '集体游戏或课堂中不主动加入，常在旁边看。',
+        observableSigns: ['不加入游戏', '站在旁边看', '需要老师拉着参与'],
+        abilityTags: ['社交能力', '集体适应', '安全感'],
+        sceneKey: 'group_participation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看加入集体的入口是否太难', text: '孩子可能不是不想参与，而是不知道怎样开始加入。' },
+        defaultAction: { title: '今晚只练一句我可以一起玩吗', steps: ['大人扮演小朋友。', '孩子说：我可以一起玩吗？', '说完就让他加入游戏。'] }
+      },
+      {
+        key: 'small_task_persistence_low',
+        title: '小任务坚持不下来',
+        description: '收拾、画画、练习等小任务容易半途放弃。',
+        observableSigns: ['做一半停下', '嫌麻烦', '需要反复催'],
+        abilityTags: ['任务意识', '持续专注', '自我管理'],
+        sceneKey: 'task_persistence',
+        symptoms: [],
+        defaultBottleneck: { title: '先把任务拆到可完成', text: '孩子需要先体验完成一个小闭环，再慢慢延长任务。' },
+        defaultAction: { title: '今晚只完成一个收尾动作', steps: ['选一个快结束的小任务。', '只让孩子做最后一步。', '完成后说：这个任务结束了。'] }
+      },
+      {
+        key: 'school_transition_anxiety',
+        title: '幼小衔接有点焦虑',
+        description: '提到上学、课堂、作业时紧张或抗拒。',
+        observableSigns: ['说不想上学', '提到课堂就烦', '怕老师批评'],
+        abilityTags: ['幼小衔接', '课堂适应', '情绪调节'],
+        sceneKey: 'school_transition_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先降低上学想象里的压力', text: '孩子对未知课堂有压力时，先把课堂变成可预期的小动作。' },
+        defaultAction: { title: '今晚玩 3 分钟小课堂', steps: ['大人当老师说一个简单指令。', '孩子完成一个动作。', '完成后马上下课。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_6_8',
+    label: '6-8岁',
+    title: '打好学习状态和基础体能',
+    subtitle: '看孩子能不能坐得住、读得进去，并建立跳绳球类等协调基础。',
+    focusAreas: ['基础学习状态', '阅读坐得住', '协调体能', '课堂专注'],
+    parentSummary: '这个阶段家长最常遇到写作业启动难、阅读坐不住、跳绳学不会和上课走神。',
+    painPoints: [
+      {
+        key: 'homework_start_hard',
+        title: '写作业启动难',
+        description: '会做但不开始，坐到桌前也磨很久。',
+        observableSigns: ['坐下还发呆', '反复找借口', '第一题迟迟不开动'],
+        abilityTags: ['学习启动', '课堂专注', '任务意识'],
+        sceneKey: 'homework_restless',
+        symptoms: [],
+        defaultBottleneck: { title: '先看启动动作是否太大', text: '孩子可能会做，但从零开始太难，先缩到第一小步。' },
+        defaultAction: { title: '今晚只做第一题第一步', steps: ['大人读第一题。', '孩子说这题要做什么。', '只写第一步就暂停。'] }
+      },
+      {
+        key: 'reading_cannot_sit',
+        title: '阅读坐不住',
+        description: '看书两页就跑，读着读着分心。',
+        observableSigns: ['读两页跑开', '眼睛离开书', '听故事坐不住'],
+        abilityTags: ['阅读坐得住', '视觉追踪', '专注力'],
+        sceneKey: 'picture_book_runs',
+        symptoms: [],
+        defaultBottleneck: { title: '先看阅读耐受时间', text: '阅读需要眼睛、身体和注意力一起工作，先从短时间完成开始。' },
+        defaultAction: { title: '今晚只读一页并找一个字', steps: ['选一页。', '让孩子找一个认识的字或图。', '找到后就结束。'] }
+      },
+      {
+        key: 'rope_skipping_hard',
+        title: '跳绳总学不会',
+        description: '甩绳、起跳和落地配合不上。',
+        observableSigns: ['绳子甩不过去', '跳早或跳晚', '连续跳不起来'],
+        abilityTags: ['协调体能', '节奏感', '下肢力量'],
+        sceneKey: 'rope_skipping_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先拆开甩绳和起跳', text: '跳绳是复合动作，先把节奏和起跳分开练更稳。' },
+        defaultAction: { title: '今晚只练无绳跳 10 下', steps: ['双脚并拢。', '听大人口令跳 10 下。', '跳完后再模仿甩手 10 下。'] }
+      },
+      {
+        key: 'class_attention_scattered',
+        title: '上课容易走神',
+        description: '课堂听着听着发呆，小动作多。',
+        observableSigns: ['看窗外', '玩文具', '老师提醒才回神'],
+        abilityTags: ['课堂专注', '听觉注意', '身体控制'],
+        sceneKey: 'class_attention_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看课堂注意是否缺抓手', text: '孩子需要知道听课时身体和眼睛先做什么。' },
+        defaultAction: { title: '今晚练 2 分钟眼睛看说话人', steps: ['大人讲 2 句话。', '孩子眼睛看大人。', '说出听到的一个词。'] }
+      },
+      {
+        key: 'confidence_low_when_hard',
+        title: '一难就说不会',
+        description: '遇到难题或新动作就退缩，不愿试。',
+        observableSigns: ['先说我不会', '不敢尝试', '失败一次就放弃'],
+        abilityTags: ['自信建立', '挫折承受', '任务启动'],
+        sceneKey: 'confidence_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先让孩子体验小成功', text: '孩子遇难退缩时，需要先把任务缩到肯定能完成的一步。' },
+        defaultAction: { title: '今晚只做一个最简单版本', steps: ['把任务降到最简单。', '孩子完成一次。', '大人说：你完成了第一步。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_8_9',
+    label: '8-9岁',
+    title: '开始支持学习能力和执行力',
+    subtitle: '看孩子阅读、计划、执行和运动习惯能不能稳定起来。',
+    focusAreas: ['学习能力底层支持', '执行力', '阅读效率', '体测准备起步'],
+    parentSummary: '这个阶段家长最常担心阅读慢、学习一会儿就烦、作业拖延和体测开始吃力。',
+    painPoints: [
+      {
+        key: 'reading_slow_forgets',
+        title: '阅读慢又记不住',
+        description: '读完一段很快忘，不知道重点在哪里。',
+        observableSigns: ['读得慢', '复述困难', '抓不住重点'],
+        abilityTags: ['阅读效率', '学习能力底层支持', '持续注意'],
+        sceneKey: 'reading_efficiency_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看阅读耐力和信息抓取', text: '阅读慢可能和视觉追踪、持续注意和信息组织有关。' },
+        defaultAction: { title: '今晚只读一小段并圈一个关键词', steps: ['选 3 句话。', '读完圈一个关键词。', '用这个词说一句内容。'] }
+      },
+      {
+        key: 'study_patience_low',
+        title: '学习一会儿就烦',
+        description: '学习刚开始还能做，很快烦躁或逃避。',
+        observableSigns: ['做一会儿叹气', '说太烦了', '想马上停'],
+        abilityTags: ['学习能力底层支持', '情绪调节', '学习耐心'],
+        sceneKey: 'study_patience_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看学习耐受时间', text: '孩子可能不是不想学，而是当前耐受时间短，需要先保护开始。' },
+        defaultAction: { title: '今晚只做 6 分钟学习块', steps: ['设 6 分钟计时。', '只做一个小任务。', '时间到先休息 2 分钟。'] }
+      },
+      {
+        key: 'homework_planning_weak',
+        title: '作业总拖到最后',
+        description: '知道要写，但不会安排顺序和时间。',
+        observableSigns: ['先玩再急', '不知道先写什么', '临睡前赶作业'],
+        abilityTags: ['执行力', '计划能力', '自我管理'],
+        sceneKey: 'homework_planning_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先把任务排序变清楚', text: '拖延常见于不知道先做哪一项，先把顺序外化出来。' },
+        defaultAction: { title: '今晚只排前三个作业顺序', steps: ['把作业写成 3 项。', '让孩子选先做哪一项。', '只开始第一项前 5 分钟。'] }
+      },
+      {
+        key: 'fitness_test_getting_hard',
+        title: '体测项目开始吃力',
+        description: '跑步、跳绳、仰卧起坐等项目感觉跟不上。',
+        observableSigns: ['跑步喘得快', '跳绳断得多', '核心动作做不动'],
+        abilityTags: ['体测准备起步', '基础耐力', '动作效率'],
+        sceneKey: 'fitness_test_foundation',
+        symptoms: [],
+        defaultBottleneck: { title: '先看基础耐力和动作效率', text: '体测吃力通常需要提前从小强度稳定练起。' },
+        defaultAction: { title: '今晚只做 4 分钟轻体能', steps: ['原地慢跑 1 分钟。', '休息 30 秒。', '重复 2 轮。'] }
+      },
+      {
+        key: 'exercise_habit_unstable',
+        title: '运动习惯坚持不了',
+        description: '开始几天有热情，很快断掉。',
+        observableSigns: ['三天后不想练', '没有固定时间', '需要家长催'],
+        abilityTags: ['习惯建立', '执行力', '长期坚持'],
+        sceneKey: 'exercise_habit_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先把运动固定到一个时间点', text: '习惯不是靠一次练很多，而是每天稳定出现一个小动作。' },
+        defaultAction: { title: '今晚固定一个 3 分钟运动时间', steps: ['选晚饭后或洗澡前。', '只做 3 分钟。', '做完打一个勾。'] }
+      }
+    ]
+  },
+  {
+    key: 'age_9_12',
+    label: '9-12岁',
+    title: '建立学习耐力和体训准备',
+    subtitle: '看孩子能不能长期坚持，并为体测和专项能力提前打基础。',
+    focusAreas: ['学习耐力', '中考体训准备', '专项体能', '体态核心'],
+    parentSummary: '这个阶段家长最常关注学习时间变长后状态撑不住、耐力差、跳绳爆发力弱和体态核心不足。',
+    painPoints: [
+      {
+        key: 'long_study_stamina_low',
+        title: '学习时间一长就散',
+        description: '学习时间变长后效率明显下降，后半段坐不住。',
+        observableSigns: ['后半段发呆', '越写越慢', '错误增多'],
+        abilityTags: ['学习耐力', '持续注意', '自我管理'],
+        sceneKey: 'study_stamina_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看学习耐力分段', text: '长时间学习需要分段恢复，先建立稳定节奏。' },
+        defaultAction: { title: '今晚用 15 分钟学习块', steps: ['学习 15 分钟。', '起身活动 2 分钟。', '再开始下一段。'] }
+      },
+      {
+        key: 'middle_exam_training_prepare',
+        title: '中考体育提前准备',
+        description: '家长开始担心体育分提高，想提前打基础。',
+        observableSigns: ['体测项目不了解', '跑跳基础弱', '缺训练节奏'],
+        abilityTags: ['中考体训准备', '专项体能', '长期坚持'],
+        sceneKey: 'middle_school_training_prepare',
+        symptoms: [],
+        defaultBottleneck: { title: '先建立体训基础节奏', text: '中考体训需要提前把耐力、跳绳、核心和恢复节奏做起来。' },
+        defaultAction: { title: '今晚先做 6 分钟基础循环', steps: ['开合跳 30 秒。', '休息 30 秒。', '平板支撑 20 秒，循环 3 轮。'] }
+      },
+      {
+        key: 'running_endurance_weak',
+        title: '跑步耐力差',
+        description: '跑一会儿就喘，速度和坚持都弱。',
+        observableSigns: ['跑几分钟就停', '呼吸很乱', '不愿跑步'],
+        abilityTags: ['耐力', '心肺基础', '长期坚持'],
+        sceneKey: 'running_endurance_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看心肺基础和配速', text: '耐力差要先从可持续的小跑开始，避免一开始就冲太快。' },
+        defaultAction: { title: '今晚只做 1 分钟跑走交替', steps: ['慢跑 30 秒。', '走 30 秒。', '重复 4 轮。'] }
+      },
+      {
+        key: 'jump_power_weak',
+        title: '跳绳和爆发力弱',
+        description: '跳绳连续性差，起跳无力，速度上不去。',
+        observableSigns: ['跳绳常断', '起跳低', '动作节奏乱'],
+        abilityTags: ['爆发力', '跳绳专项', '动作节奏'],
+        sceneKey: 'jump_power_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先拆起跳节奏和下肢力量', text: '跳绳和爆发力需要节奏、脚踝弹性和核心稳定一起配合。' },
+        defaultAction: { title: '今晚只做 20 次小弹跳', steps: ['双脚并拢轻轻弹跳 10 次。', '休息 20 秒。', '再做 10 次。'] }
+      },
+      {
+        key: 'posture_core_weak',
+        title: '体态和核心力量差',
+        description: '含胸驼背、坐姿塌、运动时身体不稳。',
+        observableSigns: ['坐姿塌', '跑步身体晃', '平板支撑坚持短'],
+        abilityTags: ['体态核心', '核心稳定', '身体控制'],
+        sceneKey: 'posture_core_support',
+        symptoms: [],
+        defaultBottleneck: { title: '先看核心稳定和日常姿态', text: '体态和核心影响运动效率，也会影响长时间学习状态。' },
+        defaultAction: { title: '今晚只做 20 秒靠墙站', steps: ['后背靠墙站好。', '保持 20 秒。', '结束后感受肩背有没有打开。'] }
+      }
+    ]
+  }
+];
+
 var CORE_ACTION_SCENES = [
   {
     key: 'homework_restless',
@@ -556,6 +1014,40 @@ function getCoreActionScene(sceneKey) {
   return scene ? clone(scene) : null;
 }
 
+function getAgeFirstSegments() {
+  return clone(AGE_FIRST_SEGMENTS);
+}
+
+function getAgeFirstSegmentByKey(segmentKey) {
+  var segment = findAgeFirstSegment(segmentKey);
+  return segment ? clone(segment) : null;
+}
+
+function getPainPointsByAgeSegment(segmentKey) {
+  var segment = findAgeFirstSegment(segmentKey);
+  return segment ? clone(segment.painPoints || []) : [];
+}
+
+function findAgeFirstSegment(segmentKey) {
+  var key = String(segmentKey || '').trim();
+  if (!key) {
+    return null;
+  }
+  return AGE_FIRST_SEGMENTS.find(function(item) {
+    return item.key === key || item.label === key;
+  }) || null;
+}
+
+function findAgeFirstPainPoint(segment, painPointKey) {
+  var key = String(painPointKey || '').trim();
+  if (!segment || !key) {
+    return null;
+  }
+  return (segment.painPoints || []).find(function(item) {
+    return item.key === key || item.title === key || item.sceneKey === key;
+  }) || null;
+}
+
 function findScene(sceneKey) {
   var key = String(sceneKey || '').trim();
   return CORE_ACTION_SCENES.find(function(item) {
@@ -639,11 +1131,81 @@ function buildFirstActionResult(options) {
   };
 }
 
+function buildAgeFirstActionResult(options) {
+  options = options || {};
+  var requestedSegmentKey = String(options.ageSegmentKey || options.age_segment_key || options.ageGroup || '').trim();
+  var requestedPainPointKey = String(options.painPointKey || options.pain_point_key || options.sceneKey || '').trim();
+  var segment = findAgeFirstSegment(requestedSegmentKey) || AGE_FIRST_SEGMENTS[0];
+  var painPoint = findAgeFirstPainPoint(segment, requestedPainPointKey);
+  var createdAt = Number(options.createdAt) || Date.now();
+  var fallbackReason = '';
+
+  if (!requestedSegmentKey) {
+    fallbackReason = 'missing_age_segment';
+  } else if (requestedSegmentKey !== segment.key && requestedSegmentKey !== segment.label) {
+    fallbackReason = 'unknown_age_segment';
+  } else if (!requestedPainPointKey) {
+    fallbackReason = 'missing_pain_point';
+  } else if (!painPoint) {
+    fallbackReason = 'unknown_pain_point';
+  }
+
+  if (!painPoint) {
+    painPoint = (segment.painPoints && segment.painPoints[0]) || null;
+  }
+
+  var bottleneck = (painPoint && painPoint.defaultBottleneck) || {
+    title: segment.title,
+    text: segment.parentSummary
+  };
+  var action = (painPoint && painPoint.defaultAction) || {
+    title: '今晚先做一个最小行动',
+    steps: ['先选择一个最像孩子现状的问题。', '只做一个 3 分钟以内的小动作。', '明天再记录孩子反应。']
+  };
+  var painPointKey = painPoint ? painPoint.key : '';
+  var sceneKey = painPoint ? painPoint.sceneKey : 'age_first_default';
+
+  return {
+    id: String(options.id || buildLocalResultId(sceneKey, painPointKey, createdAt)),
+    childId: options.childId || options.child_id || 0,
+    ageGroup: segment.label,
+    ageSegmentKey: segment.key,
+    ageSegmentLabel: segment.label,
+    ageSegmentTitle: segment.title,
+    focusAreas: clone(segment.focusAreas || []),
+    parentSummary: segment.parentSummary || '',
+    sceneKey: sceneKey,
+    sceneLabel: painPoint ? painPoint.title : segment.title,
+    painPointKey: painPointKey,
+    painPointTitle: painPoint ? painPoint.title : '',
+    painPointDescription: painPoint ? painPoint.description : '',
+    observableSigns: clone((painPoint && painPoint.observableSigns) || []),
+    abilityTags: clone((painPoint && painPoint.abilityTags) || []),
+    symptomKey: '',
+    symptomLabel: painPoint ? painPoint.title : '先用年龄段默认判断',
+    bottleneckTitle: bottleneck.title,
+    bottleneckText: bottleneck.text,
+    actionTitle: action.title,
+    actionSteps: clone(action.steps || []),
+    nextActions: clone((painPoint && painPoint.nextActions) || {}),
+    sourceType: 'age_first_scene_recommendation',
+    fallbackReason: fallbackReason,
+    createdAt: createdAt,
+    saved: !!options.saved,
+    completed: !!options.completed
+  };
+}
+
 module.exports = {
   CORE_ACTION_AGE_GROUPS: CORE_ACTION_AGE_GROUPS,
+  AGE_FIRST_SEGMENTS: AGE_FIRST_SEGMENTS,
   CORE_ACTION_SCENES: CORE_ACTION_SCENES,
+  buildAgeFirstActionResult: buildAgeFirstActionResult,
   buildFirstActionResult: buildFirstActionResult,
+  getAgeFirstSegments: getAgeFirstSegments,
+  getAgeFirstSegmentByKey: getAgeFirstSegmentByKey,
   getCoreActionAgeGroups: getCoreActionAgeGroups,
   getCoreActionScenes: getCoreActionScenes,
-  getCoreActionScene: getCoreActionScene
+  getCoreActionScene: getCoreActionScene,
+  getPainPointsByAgeSegment: getPainPointsByAgeSegment
 };

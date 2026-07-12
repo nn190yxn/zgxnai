@@ -13,6 +13,9 @@ function normalizeRuntimeConfig(payload) {
   var coreRefactorEnabled = data.core_refactor_enabled !== undefined
     ? !!data.core_refactor_enabled
     : (data.coreRefactorEnabled !== undefined ? !!data.coreRefactorEnabled : envConfig.enableCoreRefactor === true);
+  var ageFirstCoreEnabled = data.age_first_core_enabled !== undefined
+    ? !!data.age_first_core_enabled
+    : (data.ageFirstCoreEnabled !== undefined ? !!data.ageFirstCoreEnabled : envConfig.enableAgeFirstCore === true);
   return {
     envName: data.env_name || data.envName || (envConfig.envName || 'development'),
     debug: !!data.debug,
@@ -25,6 +28,7 @@ function normalizeRuntimeConfig(payload) {
     weeklySummaryEnabled: data.weekly_summary_enabled !== undefined ? !!data.weekly_summary_enabled : true,
     sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
     coreRefactorEnabled: coreRefactorEnabled,
+    ageFirstCoreEnabled: ageFirstCoreEnabled,
     coreRefactorRolloutPercent: Math.max(0, Math.min(100, isNaN(rolloutPercent) ? 0 : rolloutPercent)),
     coreRefactorUserWhitelist: normalizeStringList(whitelistSource),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
@@ -130,6 +134,9 @@ function isFeatureEnabled(app, featureName) {
   }
   if (featureName === 'coreRefactor') {
     return !!config.coreRefactorEnabled;
+  }
+  if (featureName === 'ageFirstCore') {
+    return !!config.ageFirstCoreEnabled;
   }
   return true;
 }

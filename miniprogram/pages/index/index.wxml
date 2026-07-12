@@ -18,27 +18,51 @@
 
     <view class="core-scenes">
       <view class="core-scenes-header">
-        <text class="core-scenes-title">先选一个家里正在发生的场景</text>
-        <text class="core-scenes-subtitle">3 次点击内看到一个判断结果</text>
+        <text class="core-scenes-title" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">先选孩子年龄</text>
+        <text class="core-scenes-title" wx:else>先选家里正在发生的场景</text>
+        <text class="core-scenes-subtitle" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">马上看到这个年龄最常见的家长痛点</text>
+        <text class="core-scenes-subtitle" wx:else>小牛先判断场景，再确认年龄和表现</text>
       </view>
-      <view class="core-scene-grid">
+
+      <view class="core-scene-grid" wx:if="{{(!ageFirstCoreEnabled || !ageFirstCoreAvailable) && coreRefactorState.stage === 'scene_select'}}">
         <view
-          class="core-scene-item"
+          class="core-scene-item {{coreRefactorState.activeScene === item.key ? 'core-scene-item-active' : ''}}"
           wx:for="{{coreScenes}}"
           wx:key="key"
           data-scene-key="{{item.key}}"
           bindtap="onCoreSceneTap"
         >
           <text class="core-scene-name">{{item.label}}</text>
-          <text class="core-scene-desc">{{item.familyLanguage}}</text>
+          <text class="core-scene-desc">{{item.description}}</text>
         </view>
       </view>
 
-      <view class="core-age-panel" wx:if="{{coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'symptom_select'}}">
+      <view class="core-age-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">
         <view class="core-age-header">
-          <text class="core-age-title">确认一下孩子年龄</text>
+          <text class="core-age-title">选择孩子当前年龄段</text>
           <text class="core-age-subtitle" wx:if="{{coreRefactorState.profileAgeGroup}}">已按 {{coreRefactorState.profileAgeGroup.childName}} 的档案先选 {{coreRefactorState.profileAgeGroup.label}}</text>
           <text class="core-age-subtitle" wx:else>没有完整档案也可以先选年龄继续</text>
+        </view>
+        <view class="core-age-options">
+          <view
+            class="core-age-option {{coreRefactorState.selectedAgeSegment && coreRefactorState.selectedAgeSegment.key === item.key ? 'core-age-option-active' : ''}}"
+            wx:for="{{coreRefactorState.ageSegments}}"
+            wx:key="key"
+            data-segment-key="{{item.key}}"
+            bindtap="onCoreAgeSegmentTap"
+          >
+            <text class="core-age-option-text">{{item.label}}</text>
+          </view>
+        </view>
+        <view class="core-profile-entry" bindtap="goToCoreChildProfile">
+          <text class="core-profile-entry-text">完善孩子档案，让判断更贴合</text>
+        </view>
+      </view>
+
+      <view class="core-age-panel" wx:if="{{!ageFirstCoreEnabled && coreRefactorState.stage === 'age_select' && coreRefactorState.selectedScene}}">
+        <view class="core-age-header">
+          <text class="core-age-title">{{coreRefactorState.selectedScene.label}}，孩子现在多大？</text>
+          <text class="core-age-subtitle">同一个场景，不同年龄的第一步会不一样</text>
         </view>
         <view class="core-age-options">
           <view
@@ -51,12 +75,42 @@
             <text class="core-age-option-text">{{item.label}}</text>
           </view>
         </view>
-        <view class="core-profile-entry" bindtap="goToCoreChildProfile">
-          <text class="core-profile-entry-text">完善孩子档案，让判断更贴合</text>
+      </view>
+
+      <view class="core-age-summary" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment}}">
+        <text class="core-age-summary-title">{{coreRefactorState.selectedAgeSegment.title}}</text>
+        <text class="core-age-summary-desc">{{coreRefactorState.selectedAgeSegment.parentSummary || coreRefactorState.selectedAgeSegment.subtitle}}</text>
+        <view class="core-focus-tags" wx:if="{{coreRefactorState.focusAreas && coreRefactorState.focusAreas.length > 0}}">
+          <text class="core-focus-tag" wx:for="{{coreRefactorState.focusAreas}}" wx:key="*this">{{item}}</text>
         </view>
       </view>
 
-      <view class="core-symptom-panel" wx:if="{{coreRefactorState.stage === 'symptom_select'}}">
+      <view class="core-pain-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment && (coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'pain_point_select')}}">
+        <view class="core-pain-header">
+          <text class="core-pain-title">{{coreRefactorState.selectedAgeSegment.label}}家长最常见的卡点</text>
+          <text class="core-pain-subtitle">选一个最像孩子今天状态的问题</text>
+        </view>
+        <view class="core-pain-list">
+          <view
+            class="core-pain-item {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}"
+            wx:for="{{coreRefactorState.painPoints}}"
+            wx:key="key"
+            data-pain-point-key="{{item.key}}"
+            bindtap="onCorePainPointTap"
+          >
+            <text class="core-pain-name">{{item.title}}</text>
+            <text class="core-pain-desc">{{item.description}}</text>
+            <view class="core-pain-signs" wx:if="{{item.observableSigns && item.observableSigns.length > 0}}">
+              <text class="core-pain-sign" wx:for="{{item.observableSigns}}" wx:for-item="sign" wx:key="*this">{{sign}}</text>
+            </view>
+            <view class="core-ability-tags" wx:if="{{item.abilityTags && item.abilityTags.length > 0}}">
+              <text class="core-ability-tag" wx:for="{{item.abilityTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="core-symptom-panel" wx:if="{{coreRefactorState.stage === 'symptom_select' && coreRefactorState.selectedScene}}">
         <view class="core-symptom-header">
           <text class="core-symptom-title">{{coreRefactorState.selectedScene.question}}</text>
           <text class="core-symptom-subtitle">选最像今天家里发生的那个表现</text>
@@ -77,8 +131,20 @@
       <view class="core-result-card" wx:if="{{coreRefactorState.stage === 'bottleneck_result' && coreRefactorState.currentBottleneck}}">
         <view class="core-result-header">
           <text class="core-result-eyebrow">卡点判断</text>
+          <text class="core-result-context" wx:if="{{coreRefactorState.currentBottleneck.ageSegmentLabel || coreRefactorState.currentBottleneck.painPointTitle}}">{{coreRefactorState.currentBottleneck.ageSegmentLabel}} · {{coreRefactorState.currentBottleneck.painPointTitle}}</text>
           <text class="core-result-title">{{coreRefactorState.currentBottleneck.bottleneckTitle}}</text>
           <text class="core-result-desc">{{coreRefactorState.currentBottleneck.bottleneckText}}</text>
+        </view>
+
+        <view class="core-result-observe" wx:if="{{coreRefactorState.observableSigns && coreRefactorState.observableSigns.length > 0}}">
+          <text class="core-result-observe-title">你可能看到</text>
+          <view class="core-result-observe-list">
+            <text class="core-result-observe-item" wx:for="{{coreRefactorState.observableSigns}}" wx:key="*this">{{item}}</text>
+          </view>
+        </view>
+
+        <view class="core-ability-tags core-result-abilities" wx:if="{{coreRefactorState.abilityTags && coreRefactorState.abilityTags.length > 0}}">
+          <text class="core-ability-tag" wx:for="{{coreRefactorState.abilityTags}}" wx:key="*this">{{item}}</text>
         </view>
 
         <view class="core-action-box">

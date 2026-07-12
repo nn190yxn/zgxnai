@@ -130,8 +130,14 @@
   padding: 22rpx 20rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
+  border: 2rpx solid transparent;
   box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
   box-sizing: border-box;
+}
+
+.core-scene-item-active {
+  border-color: #D85C26;
+  background: #FFF8F1;
 }
 
 .core-scene-name {
@@ -228,6 +234,138 @@
   font-weight: 800;
 }
 
+.core-age-summary {
+  margin-top: 18rpx;
+  padding: 24rpx 22rpx;
+  border-radius: 20rpx;
+  background: #F8F5EF;
+  border: 2rpx solid #E9D7CF;
+  box-sizing: border-box;
+}
+
+.core-age-summary-title {
+  display: block;
+  font-size: 29rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.core-age-summary-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: #6F5A52;
+}
+
+.core-focus-tags,
+.core-ability-tags,
+.core-pain-signs,
+.core-result-observe-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.core-focus-tags,
+.core-pain-signs,
+.core-ability-tags {
+  margin-top: 16rpx;
+}
+
+.core-focus-tag,
+.core-ability-tag,
+.core-pain-sign,
+.core-result-observe-item {
+  max-width: 100%;
+  min-height: 42rpx;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  box-sizing: border-box;
+  font-size: 21rpx;
+  line-height: 1.25;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.core-focus-tag {
+  background: #FFFFFF;
+  color: #7A4D3A;
+  border: 2rpx solid #E9D7CF;
+}
+
+.core-pain-panel {
+  margin-top: 20rpx;
+}
+
+.core-pain-header {
+  margin-bottom: 14rpx;
+}
+
+.core-pain-title {
+  display: block;
+  font-size: 29rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.core-pain-subtitle {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: #8F756C;
+}
+
+.core-pain-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14rpx;
+}
+
+.core-pain-item {
+  min-height: 190rpx;
+  padding: 22rpx 20rpx;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  border: 2rpx solid transparent;
+  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
+  box-sizing: border-box;
+}
+
+.core-pain-item-active {
+  border-color: #D85C26;
+  background: #FFF8F1;
+}
+
+.core-pain-name {
+  display: block;
+  font-size: 28rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.core-pain-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  line-height: 1.55;
+  color: #6F5A52;
+}
+
+.core-pain-sign {
+  background: #F3E6DB;
+  color: #7A4D3A;
+}
+
+.core-ability-tag {
+  background: #EAF3F0;
+  color: #38665A;
+}
+
 .core-symptom-panel {
   margin-top: 20rpx;
   padding: 24rpx 22rpx;
@@ -320,12 +458,48 @@
   font-weight: 900;
 }
 
+.core-result-context {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #7A4D3A;
+  font-weight: 800;
+}
+
 .core-result-desc {
   display: block;
   margin-top: 12rpx;
   font-size: 25rpx;
   line-height: 1.7;
   color: #6F5A52;
+}
+
+.core-result-observe {
+  margin-top: 20rpx;
+  padding: 18rpx 18rpx;
+  border-radius: 16rpx;
+  background: #F8F5EF;
+  border: 2rpx solid #E9D7CF;
+}
+
+.core-result-observe-title {
+  display: block;
+  margin-bottom: 12rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #7A4D3A;
+  font-weight: 900;
+}
+
+.core-result-observe-item {
+  background: #FFFFFF;
+  color: #6F5A52;
+  border: 2rpx solid #E9D7CF;
+}
+
+.core-result-abilities {
+  margin-top: 16rpx;
 }
 
 .core-action-box {
@@ -760,10 +934,22 @@
 .core-scene-desc,
 .core-age-title,
 .core-age-subtitle,
+.core-age-summary-title,
+.core-age-summary-desc,
+.core-focus-tag,
+.core-pain-title,
+.core-pain-subtitle,
+.core-pain-name,
+.core-pain-desc,
+.core-pain-sign,
+.core-ability-tag,
 .core-symptom-title,
 .core-symptom-subtitle,
+.core-result-context,
 .core-result-title,
 .core-result-desc,
+.core-result-observe-title,
+.core-result-observe-item,
 .core-action-title,
 .core-action-step-text,
 .core-next-title,

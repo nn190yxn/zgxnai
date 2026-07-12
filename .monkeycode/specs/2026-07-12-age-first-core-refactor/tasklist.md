@@ -1,0 +1,141 @@
+# 需求实施计划
+
+- [x] 1. 建立年龄优先配置模型
+  - [x] 1.1 扩展核心行动配置模块
+    - 修改 `miniprogram/utils/core-action-scenes.js`，新增 2-3岁、3-4岁、4-5岁、5-6岁、6-8岁、8-9岁、9-12岁年龄段配置
+    - 每个年龄段包含 `key`、`label`、`title`、`subtitle`、`focusAreas`、`parentSummary`、`painPoints`
+    - 覆盖需求 R1.1、R1.2、R2.1-R2.7，设计 Age Segment Configuration
+  - [x] 1.2 为每个年龄段配置家长痛点场景
+    - 每个年龄段至少维护 5 个痛点场景，包含标题、说明、可观察表现、背后能力、场景 key、默认卡点和第一动作
+    - 2-3岁覆盖大运动模式、语言表达、安全感、模仿能力；3-4岁覆盖感统基础、规则理解、专注萌芽、入园适应
+    - 4-5岁覆盖专注力、身体控制、表达配合、情绪调节；5-6岁覆盖社交能力、任务意识、等待轮流、幼小衔接
+    - 6-8岁覆盖基础学习状态、阅读坐得住、协调体能、课堂专注；8-9岁覆盖学习能力底层支持、执行力、阅读效率、体测准备起步；9-12岁覆盖学习耐力、中考体训准备、专项体能、体态核心
+    - 覆盖需求 R2.1-R2.7，设计 Parent Pain Point 模型和正确性属性 P1-P5
+  - [x] 1.3 输出年龄段查询和结果构建接口
+    - 在 `core-action-scenes.js` 中新增 `getAgeFirstSegments()`、`getAgeFirstSegmentByKey()`、`getPainPointsByAgeSegment()`、`buildAgeFirstActionResult()`
+    - 保留当前场景优先接口，确保 feature flag 关闭时旧链路可用
+    - 覆盖需求 R3.1-R3.4、R5.4，设计 First Action Result 和 Error Handling
+  - [x]* 1.4 编写年龄段配置完整性单元测试
+    - 扩展 `scripts/test-core-action-scenes.js`，断言 7 个年龄段 key 完整、每段至少 5 个痛点场景、字段完整
+    - 覆盖设计正确性属性 P1、P2，需求 R1.1、R2.1-R2.7
+  - [x]* 1.5 编写年龄段表达边界属性测试
+    - 断言 2-3岁、3-4岁、4-5岁、5-6岁不出现中考体训、专项强化等高龄表达
+    - 断言 8-9岁、9-12岁覆盖学习能力支持或体测准备入口
+    - 覆盖设计正确性属性 P4、P5，需求 R2.1-R2.7
+
+- [x] 2. 改造首页为先选年龄再选痛点
+  - [x] 2.1 调整首页核心状态机
+    - 修改 `miniprogram/pages/index/index.js`，将核心流程调整为 `age_select -> pain_point_select -> symptom_select -> bottleneck_result`
+    - 新增 `selectedAgeSegment`、`selectedPainPoint`、`focusAreas`、`abilityTags` 等状态字段
+    - 覆盖需求 R1.1-R1.4、R3.1，设计 Home Page State Machine
+  - [x] 2.2 实现年龄段选择交互
+    - 新增或调整 `onCoreAgeSegmentTap()`，点击年龄段后更新当前年龄段标题、发展重点和痛点场景
+    - 优先使用孩子档案或最近一次年龄选择作为默认年龄段
+    - 覆盖需求 R1.2-R1.4、R5.4，设计 Error Handling
+  - [x] 2.3 实现痛点场景选择交互
+    - 新增或调整 `onCorePainPointTap()`，点击痛点场景后进入表现选择或直接生成卡点判断
+    - 将痛点场景中的可观察表现、背后能力和默认第一动作写入当前结果上下文
+    - 覆盖需求 R2.1-R2.7、R3.1-R3.2，设计 Parent Pain Point 和 First Action Result
+  - [x] 2.4 重写首页 WXML 年龄优先区域
+    - 修改 `miniprogram/pages/index/index.wxml`，首屏展示年龄段选择、当前年龄发展重点、该年龄段家长痛点场景
+    - 保留当前新版首页的核心主张、今晚第一步、继续问细节、更多工具和旧版回退结构
+    - 覆盖需求 R1.1、R1.3、R5.1，设计 Architecture
+  - [x] 2.5 调整首页 WXSS 视觉和移动端布局
+    - 修改 `miniprogram/pages/index/index.wxss`，为年龄选择、痛点卡片、能力标签和当前年龄说明增加样式
+    - 确保移动端年龄入口可读、痛点卡片点击面积足够、主 CTA 明确
+    - 覆盖需求 R1.1、R1.3、R5.1，设计正确性属性 P6
+  - [x]* 2.6 编写首页年龄优先交互单元测试
+    - 扩展 `scripts/test-home-core-flow.js`，覆盖默认年龄、切换年龄、选择痛点、生成结果、保存第一步
+    - 覆盖需求 R1.1-R1.4、R3.1-R3.4，设计正确性属性 P3、P6
+
+- [x] 3. 检查点 - 确保所有测试通过
+  - 确保所有测试通过,如有疑问请询问用户
+
+- [x] 4. 扩展第一动作结果和本地记录
+  - [x] 4.1 扩展第一动作结果结构
+    - 修改 `buildCoreFirstActionResult` 或新增 `buildAgeFirstActionResult`，输出 `ageSegmentKey`、`ageSegmentLabel`、`painPointKey`、`painPointTitle`、`abilityTags`、`observableSigns`
+    - 保留 `sceneKey`、`ageGroup`、`bottleneckTitle`、`actionTitle`、`actionSteps` 等兼容字段
+    - 覆盖需求 R3.1-R3.4，设计 First Action Result
+  - [x] 4.2 扩展今晚小任务保存字段
+    - 修改 `miniprogram/utils/core-action-storage.js`，保存年龄段、痛点场景、背后能力和可观察表现
+    - 确保旧记录读取和连续记录计算继续可用
+    - 覆盖需求 R3.3、R3.4、R5.2-R5.3，设计 Error Handling
+  - [x] 4.3 调整次日记录和下一步建议生成
+    - 根据年龄段、痛点场景和执行效果生成下一步建议
+    - 对缺少年龄优先字段的旧记录使用当前旧场景逻辑兜底
+    - 覆盖需求 R3.4、R5.2-R5.3，设计 Error Handling
+  - [x]* 4.4 编写结果构建属性测试
+    - 断言任意合法年龄段和痛点场景组合都能生成年龄段、痛点、能力标签、卡点判断和行动步骤
+    - 覆盖设计正确性属性 P3，需求 R3.1-R3.4
+  - [x]* 4.5 编写本地记录兼容测试
+    - 覆盖新记录保存、旧记录读取、效果记录、连续记录和下一步建议
+    - 覆盖需求 R3.3-R3.4、R5.2-R5.3
+
+- [x] 5. 接入 AI 追问和知识库映射
+  - [x] 5.1 扩展首页进入聊天的上下文参数
+    - 修改 `miniprogram/pages/index/index.js`，从年龄痛点结果进入聊天时写入 `ageSegmentKey`、`painPointKey`、`abilityTags`、`observableSigns`、`actionSteps`
+    - 修改 `miniprogram/pages/chat/chat.js`，读取年龄优先上下文并生成追问提示
+    - 覆盖需求 R4.1，设计 Knowledge And AI Context
+  - [x] 5.2 扩展后端聊天知识召回参数
+    - 修改 `backend/src/mysql-production/server.js` 的聊天链路，将年龄段、痛点 key 和能力标签传入知识库引用收集逻辑
+    - 对缺少专属内容的痛点场景使用同年龄段同能力维度内容兜底
+    - 覆盖需求 R4.2-R4.4，设计 Knowledge And AI Context 和 Error Handling
+  - [x] 5.3 扩展场景搜索和育儿知识推荐映射
+    - 修改场景搜索处理逻辑，支持 `ageSegmentKey`、`painPointKey`、`abilityTags` 查询参数
+    - 结果页推荐入口携带年龄段和痛点上下文
+    - 覆盖需求 R4.3-R4.4、R5.1，设计 Knowledge And AI Context
+  - [x]* 5.4 编写 AI 上下文和知识库映射测试
+    - 扩展 `scripts/test-miniprogram-core-ui-structure.js` 和后端相关测试，断言聊天上下文包含年龄段、痛点、背后能力和第一动作
+    - 覆盖需求 R4.1-R4.4
+
+- [x] 6. 扩展埋点和后台统计
+  - [x] 6.1 扩展首页核心埋点字段
+    - 修改 `trackCoreActionEvent()`，在年龄选择、痛点选择、结果展示、保存和效果记录事件中写入 `age_segment_key`、`pain_point_key`、`ability_tags`
+    - 保留现有 `scene_key`、`age_group`、`symptom_key` 字段兼容后台聚合
+    - 覆盖需求 R6.1-R6.3，设计 Analytics 和正确性属性 P7
+  - [x] 6.2 扩展后端事件入库和统计聚合
+    - 修改 `backend/src/mysql-production/server.js` 和 `backend/src/mysql-production/core-action-analytics.js`，支持按年龄段和能力维度聚合核心行动漏斗
+    - 后台响应保留现有总漏斗，同时新增年龄段维度数据
+    - 覆盖需求 R6.4，设计 Analytics
+  - [x] 6.3 调整管理后台核心行动展示
+    - 修改 `admin-portal/app.js`、`admin-portal/index.html`、`admin-portal/styles.css`，展示年龄段选择、痛点选择、结果生成、保存和效果记录漏斗
+    - 对缺少年龄段数据的历史事件显示为未分龄
+    - 覆盖需求 R6.4，设计 Analytics
+  - [x]* 6.4 编写年龄段埋点聚合测试
+    - 扩展 `scripts/test-admin-core-action-analytics.js`，断言年龄段、痛点 key 和能力标签能参与聚合
+    - 覆盖设计正确性属性 P7，需求 R6.1-R6.4
+
+- [x] 7. 检查点 - 确保所有测试通过
+  - 确保所有测试通过,如有疑问请询问用户
+
+- [x] 8. 完成功能开关和回退保护
+  - [x] 8.1 新增年龄优先重构运行时开关
+    - 在 `miniprogram/utils/app-config.js`、`miniprogram/config/env.js` 和后端 runtime config 中新增 `ageFirstCoreEnabled` 或同等字段
+    - 默认在本地开发可开启，生产通过运行时配置控制
+    - 覆盖需求 R5.4，设计 Error Handling
+  - [x] 8.2 保留当前场景优先首页回退路径
+    - 当年龄优先开关关闭或配置异常时，首页回退到当前已上线的场景优先核心重构链路
+    - 回退时保留保存任务、记录效果、AI 追问和后台埋点可用
+    - 覆盖需求 R5.4，设计 Error Handling
+  - [x] 8.3 补齐配置异常兜底
+    - 当年龄段缺失、痛点数组为空、行动建议缺失时，使用默认年龄段、通用痛点或旧场景结果兜底
+    - 页面不渲染无效按钮和空链接
+    - 覆盖需求 R1.2、R3.1-R3.4，设计 Error Handling
+  - [x]* 8.4 编写功能开关和异常配置测试
+    - 覆盖开关开启、开关关闭、年龄段缺失、痛点为空、旧记录兼容等路径
+    - 覆盖需求 R5.4，设计 Error Handling
+
+- [x] 9. 执行最终静态验证和回归
+  - [x] 9.1 执行小程序语法检查
+    - 运行 `npm run lint`，修复小程序、后端和后台语法问题
+    - 覆盖设计 Test Strategy
+  - [x] 9.2 执行现有全量测试
+    - 运行 `npm test`，确认当前核心重构、首页流程、后台统计和 UI 结构测试通过
+    - 覆盖设计 Test Strategy
+  - [x] 9.3 执行差异检查
+    - 运行 `git diff --check`，修复空白字符和格式问题
+    - 检查本轮改动只覆盖年龄优先重构相关文件
+    - 覆盖设计 Test Strategy
+
+- [x] 10. 检查点 - 确保所有测试通过
+  - 确保所有测试通过,如有疑问请询问用户

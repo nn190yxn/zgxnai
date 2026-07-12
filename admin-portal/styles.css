@@ -482,6 +482,7 @@ td {
 }
 
 .scene-funnel-list,
+.dimension-funnel-list,
 .scene-coverage-list {
   display: grid;
   gap: 10px;
@@ -489,11 +490,37 @@ td {
 }
 
 .scene-funnel-item,
+.dimension-funnel-item,
 .scene-coverage-item {
   padding: 12px 14px;
   border: 1px solid rgba(61, 42, 24, 0.08);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.52);
+}
+
+.dimension-funnel-item.is-muted {
+  background: rgba(61, 42, 24, 0.05);
+}
+
+.core-action-dimensions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.core-action-dimensions h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dimension-metrics {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .scene-coverage-item.has-gap {
@@ -973,6 +1000,7 @@ td {
 
   .distribution-split,
   .mini-stats,
+  .core-action-dimensions,
   .content-ops-grid,
   .age-feature-grid,
   .weekly-insight-grid,

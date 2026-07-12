@@ -59,6 +59,7 @@ App({
       weeklySummaryEnabled: true,
       sceneSearchEnabled: true,
       coreRefactorEnabled: envConfig.enableCoreRefactor === true,
+      ageFirstCoreEnabled: envConfig.enableAgeFirstCore === true,
       coreRefactorRolloutPercent: Number(envConfig.coreRefactorRolloutPercent || 0),
       coreRefactorUserWhitelist: envConfig.coreRefactorUserWhitelist || [],
       multimodalEnabled: envConfig.enableMultimodal === true,

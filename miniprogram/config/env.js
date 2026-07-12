@@ -28,6 +28,7 @@ var ENV_CONFIG = {
     enableMultimodal: false,
     enableRetentionStatus: false,
     enableCoreRefactor: true,
+    enableAgeFirstCore: true,
     coreRefactorRolloutPercent: 100,
     coreRefactorUserWhitelist: []
   },
@@ -55,6 +56,7 @@ var ENV_CONFIG = {
     enableMultimodal: false,
     enableRetentionStatus: false,
     enableCoreRefactor: false,
+    enableAgeFirstCore: false,
     coreRefactorRolloutPercent: 0,
     coreRefactorUserWhitelist: []
   }

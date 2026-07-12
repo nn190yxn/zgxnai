@@ -20,17 +20,24 @@ Page({
       sceneSearchEnabled: true,
       multimodalEnabled: true,
       paymentEnabled: false,
+      ageFirstCoreEnabled: true,
       configLoaded: false
     },
     coreRefactorState: {
       claim: '先看懂孩子当前卡点，再做今晚第一步',
       primaryActionText: '开始看看孩子卡在哪',
       activeScene: '',
+      selectedAgeSegment: null,
+      selectedPainPoint: null,
       selectedScene: null,
       selectedAgeGroup: '',
       selectedAgeLabel: '',
       selectedSymptomKey: '',
       selectedSymptomLabel: '',
+      focusAreas: [],
+      abilityTags: [],
+      observableSigns: [],
+      painPoints: [],
       profileAgeGroup: null,
       effectOptions: [
         { key: 'started_smoothly', label: '顺利开始了' },
@@ -43,6 +50,9 @@ Page({
       nextAction: null,
       resultSupportItems: [],
       stage: 'idle',
+      ageSegments: coreActionScenes.getAgeFirstSegments ? coreActionScenes.getAgeFirstSegments().filter(function(segment) {
+        return segment && segment.key && Array.isArray(segment.painPoints) && segment.painPoints.length > 0;
+      }) : [],
       ageOptions: coreActionScenes.getCoreActionAgeGroups()
     },
     coreScenes: coreActionScenes.getCoreActionScenes(),
@@ -107,6 +117,8 @@ Page({
     },
     recentCoreAction: null,
     coreRefactorEnabled: false,
+    ageFirstCoreEnabled: true,
+    ageFirstCoreAvailable: true,
     showLegacyHomeSections: true,
     startupSafeMode: false,
     heroImageReady: false,
@@ -232,6 +244,8 @@ Page({
   refreshCoreActionHomeState: function() {
     var runtimeConfig = app.getRuntimeConfig ? app.getRuntimeConfig() : (app.globalData.runtimeConfig || {});
     var coreRefactorEnabled = this.resolveCoreRefactorEnabled(runtimeConfig);
+    var ageFirstCoreEnabled = coreRefactorEnabled && this.resolveAgeFirstCoreEnabled(runtimeConfig);
+    var ageFirstCoreAvailable = this.hasUsableAgeFirstSegments();
     var recentAction = coreActionStorage.getLatestCoreAction();
     var continuousRecordCount = coreActionStorage.getContinuousRecordCount();
     var primaryCard = this.buildHomePrimaryCard({
@@ -245,6 +259,8 @@ Page({
       recentCoreAction: recentAction,
       homePrimaryCard: primaryCard,
       coreRefactorEnabled: coreRefactorEnabled,
+      ageFirstCoreEnabled: ageFirstCoreEnabled,
+      ageFirstCoreAvailable: ageFirstCoreAvailable,
       showLegacyHomeSections: !coreRefactorEnabled
     });
     if (!coreRefactorEnabled) {
@@ -272,6 +288,11 @@ Page({
       return false;
     }
     return this.getCoreRefactorBucket(userKeys[0] || this.getCoreRefactorAnonymousKey()) < Math.min(100, Math.max(0, rolloutPercent));
+  },
+
+  resolveAgeFirstCoreEnabled: function(runtimeConfig) {
+    var config = runtimeConfig || {};
+    return config.ageFirstCoreEnabled !== false;
   },
 
   getCoreRefactorAnonymousKey: function() {
@@ -303,6 +324,15 @@ Page({
     }
     if (data.age_group || data.ageGroup) {
       meta.age_group = data.age_group || data.ageGroup;
+    }
+    if (data.age_segment_key || data.ageSegmentKey) {
+      meta.age_segment_key = data.age_segment_key || data.ageSegmentKey;
+    }
+    if (data.pain_point_key || data.painPointKey) {
+      meta.pain_point_key = data.pain_point_key || data.painPointKey;
+    }
+    if (data.ability_tags || data.abilityTags) {
+      meta.ability_tags = data.ability_tags || data.abilityTags;
     }
     if (data.symptom_key || data.symptomKey) {
       meta.symptom_key = data.symptom_key || data.symptomKey;
@@ -347,6 +377,9 @@ Page({
     this.trackCoreActionEvent('next_day_record_view', {
       sceneKey: recentAction.sceneKey,
       ageGroup: recentAction.ageGroup,
+      ageSegmentKey: recentAction.ageSegmentKey,
+      painPointKey: recentAction.painPointKey,
+      abilityTags: recentAction.abilityTags,
       symptomKey: recentAction.symptomKey,
       resultId: recentAction.id,
       event_meta: {
@@ -506,11 +539,84 @@ Page({
 
   startCoreActionFlow: function() {
     var profileAgeGroup = this.getProfileCoreActionAgeGroup();
+    if (!this.data.ageFirstCoreEnabled || !this.hasUsableAgeFirstSegments()) {
+      this.startSceneFirstCoreActionFlow(profileAgeGroup);
+      wx.showToast({ title: '先选一个场景', icon: 'none' });
+      return;
+    }
+    var ageSegment = this.resolveCoreAgeFirstSegment(profileAgeGroup);
+    if (!ageSegment || !ageSegment.painPoints || !ageSegment.painPoints.length) {
+      this.startSceneFirstCoreActionFlow(profileAgeGroup);
+      wx.showToast({ title: '先选一个场景', icon: 'none' });
+      return;
+    }
     this.setData({
+      'coreRefactorState.selectedAgeSegment': ageSegment,
+      'coreRefactorState.selectedPainPoint': null,
+      'coreRefactorState.focusAreas': ageSegment ? ageSegment.focusAreas || [] : [],
+      'coreRefactorState.painPoints': ageSegment ? ageSegment.painPoints || [] : [],
+      'coreRefactorState.abilityTags': [],
+      'coreRefactorState.observableSigns': [],
+      'coreRefactorState.stage': 'age_select',
+      'coreRefactorState.profileAgeGroup': profileAgeGroup
+    });
+    wx.showToast({ title: '先选孩子年龄', icon: 'none' });
+  },
+
+  startSceneFirstCoreActionFlow: function(profileAgeGroup) {
+    this.setData({
+      'coreRefactorState.activeScene': '',
+      'coreRefactorState.selectedAgeSegment': null,
+      'coreRefactorState.selectedPainPoint': null,
+      'coreRefactorState.selectedScene': null,
+      'coreRefactorState.selectedAgeGroup': profileAgeGroup ? profileAgeGroup.key : '',
+      'coreRefactorState.selectedAgeLabel': profileAgeGroup ? profileAgeGroup.label : '',
+      'coreRefactorState.selectedSymptomKey': '',
+      'coreRefactorState.selectedSymptomLabel': '',
+      'coreRefactorState.focusAreas': [],
+      'coreRefactorState.painPoints': [],
+      'coreRefactorState.abilityTags': [],
+      'coreRefactorState.observableSigns': [],
+      'coreRefactorState.currentBottleneck': null,
+      'coreRefactorState.nextAction': null,
+      'coreRefactorState.resultSupportItems': [],
       'coreRefactorState.stage': 'scene_select',
       'coreRefactorState.profileAgeGroup': profileAgeGroup
     });
-    wx.showToast({ title: '先选一个场景', icon: 'none' });
+  },
+
+  hasUsableAgeFirstSegments: function() {
+    return (this.data.coreRefactorState.ageSegments || []).some(function(segment) {
+      return segment && segment.key && Array.isArray(segment.painPoints) && segment.painPoints.length > 0;
+    });
+  },
+
+  resolveCoreAgeFirstSegment: function(profileAgeGroup) {
+    var segments = (this.data.coreRefactorState.ageSegments || []).filter(function(segment) {
+      return segment && segment.key && Array.isArray(segment.painPoints) && segment.painPoints.length > 0;
+    });
+    var cachedKey = wx.getStorageSync('lastCoreAgeSegmentKey') || '';
+    var cachedSegment = cachedKey ? segments.find(function(item) {
+      return item.key === cachedKey;
+    }) : null;
+    if (cachedSegment) {
+      return cachedSegment;
+    }
+    var profileKey = profileAgeGroup && profileAgeGroup.key ? profileAgeGroup.key : '';
+    var keyMap = {
+      '3-4': 'age_3_4',
+      '4-5': 'age_4_5',
+      '5-6': 'age_5_6',
+      '6-plus': 'age_6_8'
+    };
+    var targetKey = keyMap[profileKey] || 'age_4_5';
+    var targetSegment = segments.find(function(item) {
+      return item.key === targetKey;
+    });
+    var defaultSegment = segments.find(function(item) {
+      return item.key === 'age_4_5';
+    });
+    return targetSegment || defaultSegment || segments[0] || null;
   },
 
   getProfileCoreActionAgeGroup: function() {
@@ -606,6 +712,101 @@ Page({
     wx.showToast({ title: '接着选最像的表现', icon: 'none' });
   },
 
+  onCoreAgeSegmentTap: function(e) {
+    var segmentKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.segmentKey : '';
+    var ageSegment = (this.data.coreRefactorState.ageSegments || []).find(function(item) {
+      return item.key === segmentKey;
+    }) || (coreActionScenes.getAgeFirstSegmentByKey ? coreActionScenes.getAgeFirstSegmentByKey(segmentKey) : null);
+    if (!ageSegment) {
+      wx.showToast({ title: '年龄段没找到', icon: 'none' });
+      return;
+    }
+    if (!ageSegment.painPoints || !ageSegment.painPoints.length) {
+      this.startSceneFirstCoreActionFlow(this.getProfileCoreActionAgeGroup());
+      wx.showToast({ title: '先选一个场景', icon: 'none' });
+      return;
+    }
+    this.setData({
+      'coreRefactorState.selectedAgeSegment': ageSegment,
+      'coreRefactorState.selectedPainPoint': null,
+      'coreRefactorState.selectedAgeGroup': ageSegment.key,
+      'coreRefactorState.selectedAgeLabel': ageSegment.label,
+      'coreRefactorState.selectedSymptomKey': '',
+      'coreRefactorState.selectedSymptomLabel': '',
+      'coreRefactorState.focusAreas': ageSegment.focusAreas || [],
+      'coreRefactorState.painPoints': ageSegment.painPoints || [],
+      'coreRefactorState.abilityTags': [],
+      'coreRefactorState.observableSigns': [],
+      'coreRefactorState.currentBottleneck': null,
+      'coreRefactorState.nextAction': null,
+      'coreRefactorState.resultSupportItems': [],
+      'coreRefactorState.stage': 'pain_point_select'
+    });
+    this.trackCoreActionEvent('age_segment_select', {
+      ageGroup: ageSegment.label,
+      event_meta: {
+        age_segment_key: ageSegment.key,
+        age_segment_label: ageSegment.label,
+        focus_areas: ageSegment.focusAreas || [],
+        pain_point_count: (ageSegment.painPoints || []).length
+      }
+    });
+    wx.setStorageSync('lastCoreAgeSegmentKey', ageSegment.key);
+    wx.showToast({ title: '接着选最像的问题', icon: 'none' });
+  },
+
+  onCorePainPointTap: function(e) {
+    var painPointKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.painPointKey : '';
+    var state = this.data.coreRefactorState || {};
+    var ageSegment = state.selectedAgeSegment || this.resolveCoreAgeFirstSegment(state.profileAgeGroup);
+    var painPoints = ageSegment && ageSegment.painPoints ? ageSegment.painPoints : [];
+    var painPoint = painPoints.find(function(item) {
+      return item.key === painPointKey;
+    });
+    if (!ageSegment || !painPoint) {
+      wx.showToast({ title: '问题场景没找到', icon: 'none' });
+      return;
+    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var result = coreActionScenes.buildAgeFirstActionResult({
+      ageSegmentKey: ageSegment.key,
+      painPointKey: painPoint.key,
+      childId: currentChild && currentChild.id ? currentChild.id : 0
+    });
+    this.setData({
+      'coreRefactorState.selectedAgeSegment': ageSegment,
+      'coreRefactorState.selectedPainPoint': painPoint,
+      'coreRefactorState.selectedAgeGroup': ageSegment.key,
+      'coreRefactorState.selectedAgeLabel': ageSegment.label,
+      'coreRefactorState.selectedScene': null,
+      'coreRefactorState.activeScene': painPoint.sceneKey || '',
+      'coreRefactorState.selectedSymptomKey': '',
+      'coreRefactorState.selectedSymptomLabel': painPoint.title,
+      'coreRefactorState.focusAreas': ageSegment.focusAreas || [],
+      'coreRefactorState.abilityTags': painPoint.abilityTags || [],
+      'coreRefactorState.observableSigns': painPoint.observableSigns || [],
+      'coreRefactorState.currentBottleneck': result,
+      'coreRefactorState.nextAction': {
+        title: result.actionTitle,
+        steps: result.actionSteps
+      },
+      'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(result),
+      'coreRefactorState.stage': 'bottleneck_result'
+    });
+    this.applyCoreMembershipTouchpoint('bottleneck_result');
+    this.trackCoreActionEvent('pain_point_select', {
+      sceneKey: result.sceneKey,
+      ageGroup: result.ageSegmentLabel || result.ageGroup,
+      event_meta: {
+        age_segment_key: result.ageSegmentKey,
+        pain_point_key: result.painPointKey,
+        pain_point_title: result.painPointTitle,
+        ability_tags: result.abilityTags || []
+      }
+    });
+    this.trackCoreBottleneckView(result);
+  },
+
   trackCoreSymptomSelect: function(result) {
     if (!result) {
       return;
@@ -627,6 +828,9 @@ Page({
     this.trackCoreActionEvent('bottleneck_result_view', {
       sceneKey: result.sceneKey,
       ageGroup: result.ageGroup,
+      ageSegmentKey: result.ageSegmentKey,
+      painPointKey: result.painPointKey,
+      abilityTags: result.abilityTags,
       symptomKey: result.symptomKey,
       resultId: result.id || '',
       event_meta: {
@@ -688,6 +892,9 @@ Page({
     this.trackCoreActionEvent('tonight_action_save', {
       sceneKey: saved.record.sceneKey,
       ageGroup: saved.record.ageGroup,
+      ageSegmentKey: saved.record.ageSegmentKey,
+      painPointKey: saved.record.painPointKey,
+      abilityTags: saved.record.abilityTags,
       symptomKey: saved.record.symptomKey,
       resultId: saved.record.id,
       event_meta: {
@@ -809,6 +1016,12 @@ Page({
       sceneKey: result.sceneKey,
       sceneLabel: result.sceneLabel,
       ageGroup: result.ageGroup,
+      ageSegmentKey: result.ageSegmentKey || '',
+      ageSegmentLabel: result.ageSegmentLabel || '',
+      painPointKey: result.painPointKey || '',
+      painPointTitle: result.painPointTitle || '',
+      abilityTags: result.abilityTags || [],
+      observableSigns: result.observableSigns || [],
       symptomKey: result.symptomKey,
       symptomLabel: result.symptomLabel,
       bottleneckTitle: result.bottleneckTitle,
@@ -845,6 +1058,9 @@ Page({
     this.trackCoreActionEvent('action_effect_submit', {
       sceneKey: updated.record.sceneKey,
       ageGroup: updated.record.ageGroup,
+      ageSegmentKey: updated.record.ageSegmentKey,
+      painPointKey: updated.record.painPointKey,
+      abilityTags: updated.record.abilityTags,
       symptomKey: updated.record.symptomKey,
       resultId: updated.record.id,
       event_meta: {
@@ -884,6 +1100,13 @@ Page({
         sceneKey: record && record.sceneKey ? record.sceneKey : '',
         sceneLabel: sceneLabel,
         ageGroup: record && record.ageGroup ? record.ageGroup : '',
+        ageSegmentKey: record && record.ageSegmentKey ? record.ageSegmentKey : '',
+        ageSegmentLabel: record && record.ageSegmentLabel ? record.ageSegmentLabel : '',
+        painPointKey: record && record.painPointKey ? record.painPointKey : '',
+        painPointTitle: record && record.painPointTitle ? record.painPointTitle : '',
+        focusAreas: record && record.focusAreas ? record.focusAreas : [],
+        abilityTags: record && record.abilityTags ? record.abilityTags : [],
+        observableSigns: record && record.observableSigns ? record.observableSigns : [],
         symptomKey: record && record.symptomKey ? record.symptomKey : '',
         symptomLabel: record && record.symptomLabel ? record.symptomLabel : '',
         bottleneckTitle: record && record.bottleneckTitle ? record.bottleneckTitle : '',
@@ -931,6 +1154,13 @@ Page({
       sceneKey: record && record.sceneKey ? record.sceneKey : '',
       sceneLabel: sceneLabel,
       ageGroup: record && record.ageGroup ? record.ageGroup : '',
+      ageSegmentKey: record && record.ageSegmentKey ? record.ageSegmentKey : '',
+      ageSegmentLabel: record && record.ageSegmentLabel ? record.ageSegmentLabel : '',
+      painPointKey: record && record.painPointKey ? record.painPointKey : '',
+      painPointTitle: record && record.painPointTitle ? record.painPointTitle : '',
+      focusAreas: record && record.focusAreas ? record.focusAreas : [],
+      abilityTags: record && record.abilityTags ? record.abilityTags : [],
+      observableSigns: record && record.observableSigns ? record.observableSigns : [],
       symptomKey: record && record.symptomKey ? record.symptomKey : '',
       symptomLabel: record && record.symptomLabel ? record.symptomLabel : '',
       bottleneckTitle: record && record.bottleneckTitle ? record.bottleneckTitle : '',
@@ -953,6 +1183,9 @@ Page({
     this.trackCoreActionEvent('next_action_view', {
       sceneKey: record.sceneKey,
       ageGroup: record.ageGroup,
+      ageSegmentKey: record.ageSegmentKey,
+      painPointKey: record.painPointKey,
+      abilityTags: record.abilityTags,
       symptomKey: record.symptomKey,
       resultId: record.id,
       event_meta: {
@@ -977,6 +1210,9 @@ Page({
     this.trackCoreActionEvent('tonight_action_save', {
       sceneKey: saved.record.sceneKey,
       ageGroup: saved.record.ageGroup,
+      ageSegmentKey: saved.record.ageSegmentKey,
+      painPointKey: saved.record.painPointKey,
+      abilityTags: saved.record.abilityTags,
       symptomKey: saved.record.symptomKey,
       resultId: saved.record.id,
       event_meta: {
@@ -1110,11 +1346,17 @@ Page({
     if (!this.ensureFeatureEnabled('sceneSearch', '场景搜索还在准备中')) {
       return;
     }
+    var abilityTags = Array.isArray(context.abilityTags) ? context.abilityTags.join('、') : String(context.abilityTags || '');
     var query = [
       'sceneKey=' + encodeURIComponent(context.sceneKey || ''),
       'ageGroup=' + encodeURIComponent(context.ageGroup || ''),
+      'ageSegmentKey=' + encodeURIComponent(context.ageSegmentKey || ''),
+      'ageSegmentLabel=' + encodeURIComponent(context.ageSegmentLabel || ''),
+      'painPointKey=' + encodeURIComponent(context.painPointKey || ''),
+      'painPointTitle=' + encodeURIComponent(context.painPointTitle || ''),
+      'abilityTags=' + encodeURIComponent(abilityTags),
       'bottleneckTitle=' + encodeURIComponent(context.bottleneckTitle || ''),
-      'keyword=' + encodeURIComponent(context.sceneLabel || context.bottleneckTitle || '')
+      'keyword=' + encodeURIComponent(context.painPointTitle || context.sceneLabel || context.bottleneckTitle || '')
     ].join('&');
     wx.navigateTo({
       url: '/pages/parenting/search/search?' + query,

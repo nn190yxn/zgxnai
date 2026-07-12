@@ -45,6 +45,35 @@ assert.strictEqual(saved.record.completed, false);
 assert.strictEqual(saved.record.sevenDayPlanDraft.length, 7);
 assert.strictEqual(storageApi.getLatestCoreAction().id, 'record-a');
 
+const ageFirstRecord = Object.assign(buildRecord('age-first-a', baseTime + 1), {
+  ageSegmentKey: 'age_8_9',
+  ageSegmentLabel: '8-9岁',
+  painPointKey: 'reading_slow_forgets',
+  painPointTitle: '阅读慢又记不住',
+  focusAreas: ['学习能力底层支持', '执行力', null],
+  abilityTags: ['阅读效率', '学习能力底层支持', ''],
+  observableSigns: ['读得慢', '复述困难', undefined],
+  actionSteps: ['读一小段。', '', '说一个关键词。']
+});
+const savedAgeFirst = storageApi.saveTonightAction(ageFirstRecord, baseTime + 1);
+assert.strictEqual(savedAgeFirst.success, true);
+assert.strictEqual(savedAgeFirst.record.ageSegmentKey, 'age_8_9');
+assert.strictEqual(savedAgeFirst.record.ageSegmentLabel, '8-9岁');
+assert.strictEqual(savedAgeFirst.record.painPointKey, 'reading_slow_forgets');
+assert.strictEqual(savedAgeFirst.record.painPointTitle, '阅读慢又记不住');
+assert.deepStrictEqual(savedAgeFirst.record.focusAreas, ['学习能力底层支持', '执行力']);
+assert.deepStrictEqual(savedAgeFirst.record.abilityTags, ['阅读效率', '学习能力底层支持']);
+assert.deepStrictEqual(savedAgeFirst.record.observableSigns, ['读得慢', '复述困难']);
+assert.deepStrictEqual(savedAgeFirst.record.actionSteps, ['读一小段。', '说一个关键词。']);
+
+const updatedAgeFirst = storageApi.updateActionEffect('age-first-a', { key: 'started_smoothly', label: '顺利开始了' }, baseTime + 86400000);
+assert.strictEqual(updatedAgeFirst.success, true);
+assert.strictEqual(updatedAgeFirst.record.completed, true);
+assert.strictEqual(updatedAgeFirst.record.ageSegmentKey, 'age_8_9');
+assert.strictEqual(updatedAgeFirst.record.painPointKey, 'reading_slow_forgets');
+assert.deepStrictEqual(updatedAgeFirst.record.abilityTags, ['阅读效率', '学习能力底层支持']);
+assert.deepStrictEqual(updatedAgeFirst.record.observableSigns, ['读得慢', '复述困难']);
+
 const updated = storageApi.updateActionEffect('record-a', { key: 'slow_but_started', label: '写了一点但很慢' }, baseTime + 86400000);
 assert.strictEqual(updated.success, true);
 assert.strictEqual(updated.record.completed, true);
@@ -54,9 +83,21 @@ assert.strictEqual(updated.record.effectLabel, '写了一点但很慢');
 const missingUpdate = storageApi.updateActionEffect('missing-id', { key: 'not_tried', label: '没来得及试' }, baseTime);
 assert.strictEqual(missingUpdate.success, false);
 
+resetStorage([buildRecord('legacy-record', baseTime)]);
+const legacyRecord = storageApi.getLatestCoreAction();
+assert.strictEqual(legacyRecord.id, 'legacy-record');
+assert.strictEqual(legacyRecord.ageSegmentKey, undefined);
+assert.strictEqual(legacyRecord.painPointKey, undefined);
+
 resetStorage([
   Object.assign(buildRecord('done-today', baseTime), { completed: true, recordedAt: baseTime + 2 * 86400000 }),
-  Object.assign(buildRecord('done-yesterday', baseTime - 86400000), { completed: true, recordedAt: baseTime + 86400000 }),
+  Object.assign(buildRecord('done-yesterday', baseTime - 86400000), {
+    completed: true,
+    recordedAt: baseTime + 86400000,
+    ageSegmentKey: 'age_8_9',
+    painPointKey: 'reading_slow_forgets',
+    abilityTags: ['阅读效率']
+  }),
   Object.assign(buildRecord('done-before', baseTime - 2 * 86400000), { completed: true, recordedAt: baseTime }),
   Object.assign(buildRecord('not-done', baseTime - 3 * 86400000), { completed: false, recordedAt: baseTime - 86400000 })
 ]);
