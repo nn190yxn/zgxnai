@@ -108,6 +108,8 @@ Page({
       '我想继续追问孩子这个卡点的细节。',
       '年龄：' + (context.ageGroup || '未确认'),
       '年龄段Key：' + (context.ageSegmentKey || '未填写'),
+      '类别：' + (context.categoryLabel || '未填写'),
+      '类别Key：' + (context.categoryKey || '未填写'),
       '场景：' + (context.sceneLabel || '未填写'),
       '痛点：' + (context.painPointTitle || '未填写'),
       '表现：' + (context.symptomLabel || '未填写'),
@@ -116,7 +118,7 @@ Page({
       '卡点判断：' + (context.bottleneckTitle || '未填写'),
       '判断解释：' + (context.bottleneckText || '未填写'),
       steps,
-      '请围绕这个年龄段、痛点、背后能力和卡点，帮我细化今晚怎么说、怎么做、孩子反应不同怎么办，以及明天要观察什么。'
+      '请围绕这个年龄段、类别、痛点、背后能力和卡点，帮我细化今晚怎么说、怎么做、孩子反应不同怎么办，以及明天要观察什么。'
     ].join('\n');
   },
 

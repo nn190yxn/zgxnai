@@ -43,6 +43,8 @@ Page({
     var ageGroup = String((options && (options.ageGroup || options.age_group)) || '').trim();
     var ageSegmentKey = String((options && (options.ageSegmentKey || options.age_segment_key)) || '').trim();
     var ageSegmentLabel = String((options && (options.ageSegmentLabel || options.age_segment_label)) || '').trim();
+    var categoryKey = String((options && (options.categoryKey || options.category_key)) || '').trim();
+    var categoryLabel = String((options && (options.categoryLabel || options.category_label)) || '').trim();
     var painPointKey = String((options && (options.painPointKey || options.pain_point_key)) || '').trim();
     var painPointTitle = String((options && (options.painPointTitle || options.pain_point_title)) || '').trim();
     var abilityTags = String((options && (options.abilityTags || options.ability_tags)) || '').trim();
@@ -55,6 +57,8 @@ Page({
         ageGroup: ageGroup,
         ageSegmentKey: ageSegmentKey,
         ageSegmentLabel: ageSegmentLabel,
+        categoryKey: categoryKey,
+        categoryLabel: categoryLabel,
         painPointKey: painPointKey,
         painPointTitle: painPointTitle,
         abilityTags: abilityTags,
@@ -71,6 +75,8 @@ Page({
         keyword: keyword || painPointTitle || bottleneckTitle,
         scene_key: sceneKey,
         age_segment_key: ageSegmentKey,
+        category_key: categoryKey,
+        category_label: categoryLabel,
         pain_point_key: painPointKey,
         pain_point_title: painPointTitle,
         ability_tags: abilityTags,
@@ -83,6 +89,8 @@ Page({
         ageGroup: ageGroup,
         ageSegmentKey: ageSegmentKey,
         ageSegmentLabel: ageSegmentLabel,
+        categoryKey: categoryKey,
+        categoryLabel: categoryLabel,
         painPointKey: painPointKey,
         painPointTitle: painPointTitle,
         abilityTags: abilityTags
@@ -199,6 +207,8 @@ Page({
       {},
       coreContext.ageSegmentKey ? { ageSegmentKey: coreContext.ageSegmentKey } : {},
       coreContext.ageSegmentLabel ? { ageSegmentLabel: coreContext.ageSegmentLabel } : {},
+      coreContext.categoryKey ? { categoryKey: coreContext.categoryKey } : {},
+      coreContext.categoryLabel ? { categoryLabel: coreContext.categoryLabel } : {},
       coreContext.painPointKey ? { painPointKey: coreContext.painPointKey } : {},
       coreContext.painPointTitle ? { painPointTitle: coreContext.painPointTitle } : {},
       abilityTags ? { abilityTags: abilityTags } : {}

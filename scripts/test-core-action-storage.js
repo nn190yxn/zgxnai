@@ -48,6 +48,8 @@ assert.strictEqual(storageApi.getLatestCoreAction().id, 'record-a');
 const ageFirstRecord = Object.assign(buildRecord('age-first-a', baseTime + 1), {
   ageSegmentKey: 'age_8_9',
   ageSegmentLabel: '8-9岁',
+  categoryKey: ' attention_learning ',
+  categoryLabel: ' 专注学习 ',
   painPointKey: 'reading_slow_forgets',
   painPointTitle: '阅读慢又记不住',
   focusAreas: ['学习能力底层支持', '执行力', null],
@@ -59,6 +61,8 @@ const savedAgeFirst = storageApi.saveTonightAction(ageFirstRecord, baseTime + 1)
 assert.strictEqual(savedAgeFirst.success, true);
 assert.strictEqual(savedAgeFirst.record.ageSegmentKey, 'age_8_9');
 assert.strictEqual(savedAgeFirst.record.ageSegmentLabel, '8-9岁');
+assert.strictEqual(savedAgeFirst.record.categoryKey, 'attention_learning');
+assert.strictEqual(savedAgeFirst.record.categoryLabel, '专注学习');
 assert.strictEqual(savedAgeFirst.record.painPointKey, 'reading_slow_forgets');
 assert.strictEqual(savedAgeFirst.record.painPointTitle, '阅读慢又记不住');
 assert.deepStrictEqual(savedAgeFirst.record.focusAreas, ['学习能力底层支持', '执行力']);
@@ -70,6 +74,8 @@ const updatedAgeFirst = storageApi.updateActionEffect('age-first-a', { key: 'sta
 assert.strictEqual(updatedAgeFirst.success, true);
 assert.strictEqual(updatedAgeFirst.record.completed, true);
 assert.strictEqual(updatedAgeFirst.record.ageSegmentKey, 'age_8_9');
+assert.strictEqual(updatedAgeFirst.record.categoryKey, 'attention_learning');
+assert.strictEqual(updatedAgeFirst.record.categoryLabel, '专注学习');
 assert.strictEqual(updatedAgeFirst.record.painPointKey, 'reading_slow_forgets');
 assert.deepStrictEqual(updatedAgeFirst.record.abilityTags, ['阅读效率', '学习能力底层支持']);
 assert.deepStrictEqual(updatedAgeFirst.record.observableSigns, ['读得慢', '复述困难']);
@@ -87,6 +93,7 @@ resetStorage([buildRecord('legacy-record', baseTime)]);
 const legacyRecord = storageApi.getLatestCoreAction();
 assert.strictEqual(legacyRecord.id, 'legacy-record');
 assert.strictEqual(legacyRecord.ageSegmentKey, undefined);
+assert.strictEqual(legacyRecord.categoryKey, undefined);
 assert.strictEqual(legacyRecord.painPointKey, undefined);
 
 resetStorage([

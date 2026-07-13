@@ -856,6 +856,8 @@ onError: function(error) {
       module_key: payload.module_key,
       page_key: payload.page_key,
       scene_key: payload.scene_key,
+      category_key: payload.category_key,
+      category_label: payload.category_label,
       content_type: payload.content_type,
       content_id: payload.content_id,
       child_id: payload.child_id || (currentChild ? currentChild.id : undefined),

@@ -1511,6 +1511,27 @@ async function adminCoreActionFunnelHandler(req, res) {
       GROUP BY event_type, pain_point_key, pain_point_title`,
     [range.startDate, range.endDate]
   );
+  const [categoryRows] = await pool.execute(
+    `SELECT event_type,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.category_key')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.category_key')), ''),
+              'unknown'
+            ) AS category_key,
+            COALESCE(
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.category_label')), ''),
+              NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.event_meta.category_label')), ''),
+              'unknown'
+            ) AS category_label,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS user_count
+       FROM event_tracks
+      WHERE created_at >= ?
+        AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+        AND event_type IN ('pain_point_select', 'bottleneck_result_view', 'tonight_action_save', 'action_effect_submit')
+      GROUP BY event_type, category_key, category_label`,
+    [range.startDate, range.endDate]
+  );
   const [abilityRows] = await pool.execute(
     `SELECT event_type,
             COALESCE(
@@ -1581,9 +1602,10 @@ async function adminCoreActionFunnelHandler(req, res) {
   ];
   const sceneItems = buildCoreActionSceneFunnel(sceneRows);
   const ageSegmentItems = coreActionAnalytics.buildCoreActionAgeSegmentFunnel(ageSegmentRows);
+  const categoryItems = coreActionAnalytics.buildCoreActionCategoryFunnel(categoryRows);
   const painPointItems = coreActionAnalytics.buildCoreActionPainPointFunnel(painPointRows);
   const abilityItems = coreActionAnalytics.buildCoreActionAbilityFunnel(abilityRows);
-  res.json({ success: true, data: { range, summary, items, scene_items: sceneItems, age_segment_items: ageSegmentItems, pain_point_items: painPointItems, ability_items: abilityItems, event_breakdown: rows.map((row) => ({ ...row, user_count: getUsers(row.event_type) })) } });
+  res.json({ success: true, data: { range, summary, items, scene_items: sceneItems, age_segment_items: ageSegmentItems, category_items: categoryItems, pain_point_items: painPointItems, ability_items: abilityItems, event_breakdown: rows.map((row) => ({ ...row, user_count: getUsers(row.event_type) })) } });
 }
 
 function buildCoreActionSceneFunnel(rows) {
@@ -3504,6 +3526,8 @@ function buildCoreActionChatContext(req, message) {
   const context = {
     ageSegmentKey: firstCoreActionValue(body.age_segment_key, body.ageSegmentKey, source.ageSegmentKey, source.age_segment_key, extractCoreActionLine(message, '年龄段Key')),
     ageSegmentLabel: firstCoreActionValue(body.age_segment_label, body.ageSegmentLabel, source.ageSegmentLabel, source.age_segment_label, extractCoreActionLine(message, '年龄段')),
+    categoryKey: firstCoreActionValue(body.category_key, body.categoryKey, source.categoryKey, source.category_key, extractCoreActionLine(message, '类别Key')),
+    categoryLabel: firstCoreActionValue(body.category_label, body.categoryLabel, source.categoryLabel, source.category_label, extractCoreActionLine(message, '类别')),
     painPointKey: firstCoreActionValue(body.pain_point_key, body.painPointKey, source.painPointKey, source.pain_point_key),
     painPointTitle: firstCoreActionValue(body.pain_point_title, body.painPointTitle, source.painPointTitle, source.pain_point_title, extractCoreActionLine(message, '痛点')),
     sceneLabel: firstCoreActionValue(body.scene_label, body.sceneLabel, source.sceneLabel, source.scene_label, extractCoreActionLine(message, '场景')),
@@ -3524,6 +3548,8 @@ function hasCoreActionChatContext(context) {
   return Boolean(
     context.ageSegmentKey ||
     context.ageSegmentLabel ||
+    context.categoryKey ||
+    context.categoryLabel ||
     context.painPointKey ||
     context.painPointTitle ||
     context.sceneLabel ||
@@ -3541,6 +3567,7 @@ function appendCoreActionKeywords(keywords, coreActionContext) {
   }
   const values = [
     coreActionContext.painPointTitle,
+    coreActionContext.categoryLabel,
     coreActionContext.sceneLabel,
     coreActionContext.symptomLabel,
     coreActionContext.bottleneckTitle,
@@ -3571,6 +3598,9 @@ function buildCoreActionPromptLines(context) {
   }
   if (context.painPointTitle || context.painPointKey) {
     lines.push(`家长痛点：${[context.painPointTitle, context.painPointKey].filter(Boolean).join(' / ')}`);
+  }
+  if (context.categoryLabel || context.categoryKey) {
+    lines.push(`痛点类别：${[context.categoryLabel, context.categoryKey].filter(Boolean).join(' / ')}`);
   }
   if (context.sceneLabel) lines.push(`家庭场景：${context.sceneLabel}`);
   if (context.symptomLabel) lines.push(`孩子表现：${context.symptomLabel}`);
@@ -9410,6 +9440,8 @@ function buildCoreSearchContextFromQuery(query) {
   return {
     ageSegmentKey: String(source.ageSegmentKey || source.age_segment_key || '').trim(),
     ageSegmentLabel: String(source.ageSegmentLabel || source.age_segment_label || '').trim(),
+    categoryKey: String(source.categoryKey || source.category_key || '').trim(),
+    categoryLabel: String(source.categoryLabel || source.category_label || '').trim(),
     painPointKey: String(source.painPointKey || source.pain_point_key || '').trim(),
     painPointTitle: String(source.painPointTitle || source.pain_point_title || '').trim(),
     abilityTags: normalizeSearchKeywordList(source.abilityTags || source.ability_tags || '')
@@ -9420,6 +9452,7 @@ function buildCoreSearchKeywords(keyword, profile, coreSearchContext) {
   return normalizeSearchKeywordList([
     keyword,
     coreSearchContext && coreSearchContext.painPointTitle,
+    coreSearchContext && coreSearchContext.categoryLabel,
     profile && profile.articleKeyword,
     coreSearchContext && coreSearchContext.ageSegmentLabel
   ].concat(coreSearchContext && coreSearchContext.abilityTags || []));
@@ -11105,7 +11138,7 @@ async function sceneSearchSolutionsHandler(req, res) {
     matchedScene = buildCoreActionVirtualScene(coreSceneProfile);
   }
   if (!matchedScene) {
-    const fallbackKeyword = coreSearchContext.painPointTitle || keyword;
+    const fallbackKeyword = coreSearchContext.painPointTitle || coreSearchContext.categoryLabel || keyword;
     const fallbackArticles = fallbackKeyword ? await searchParentingArticlesByKeyword(fallbackKeyword, 1, 10, userId) : [];
     res.json({
       success: true,
@@ -11586,14 +11619,14 @@ async function parentingHotKeywordsHandler(req, res) {
 
 async function parentingSearchHandler(req, res) {
   const coreSearchContext = buildCoreSearchContextFromQuery(req.query);
-  const keyword = String(req.query.keyword || req.query.q || coreSearchContext.painPointTitle || coreSearchContext.abilityTags[0] || '').trim();
+  const keyword = String(req.query.keyword || req.query.q || coreSearchContext.painPointTitle || coreSearchContext.categoryLabel || coreSearchContext.abilityTags[0] || '').trim();
   if (!keyword) {
     res.json({ success: true, data: [] });
     return;
   }
   const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
   const pageSize = normalizeBoundedInt(req.query.page_size, 10, 1, 20);
-  const searchKeyword = [keyword].concat(coreSearchContext.abilityTags || []).filter(Boolean).join(' ');
+  const searchKeyword = [keyword, coreSearchContext.categoryLabel].concat(coreSearchContext.abilityTags || []).filter(Boolean).join(' ');
   const data = await searchParentingArticlesByKeyword(searchKeyword, page, pageSize, getUserId(req));
   res.json({ success: true, data });
 }
@@ -12032,6 +12065,8 @@ async function kbEventTrackHandler(req, res) {
     scene_key: req.body.scene_key || null,
     age_segment_key: req.body.age_segment_key || (req.body.event_meta && req.body.event_meta.age_segment_key) || null,
     age_segment_label: req.body.age_segment_label || (req.body.event_meta && req.body.event_meta.age_segment_label) || null,
+    category_key: req.body.category_key || (req.body.event_meta && req.body.event_meta.category_key) || null,
+    category_label: req.body.category_label || (req.body.event_meta && req.body.event_meta.category_label) || null,
     pain_point_key: req.body.pain_point_key || (req.body.event_meta && req.body.event_meta.pain_point_key) || null,
     pain_point_title: req.body.pain_point_title || (req.body.event_meta && req.body.event_meta.pain_point_title) || null,
     ability_tags: req.body.ability_tags || (req.body.event_meta && req.body.event_meta.ability_tags) || null,

@@ -61,6 +61,13 @@ function normalizeStringArray(value) {
   });
 }
 
+function normalizeString(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).trim();
+}
+
 function buildSevenDayPlanDraft(actionResult, timestamp) {
   var baseTitle = actionResult && actionResult.actionTitle ? actionResult.actionTitle : '今晚先做一个小步骤';
   var sceneLabel = actionResult && actionResult.sceneLabel ? actionResult.sceneLabel : '这个场景';
@@ -104,6 +111,8 @@ function saveTonightAction(actionResult, now) {
     return item.id !== actionResult.id;
   });
   var record = Object.assign({}, actionResult, {
+    categoryKey: normalizeString(actionResult.categoryKey),
+    categoryLabel: normalizeString(actionResult.categoryLabel),
     focusAreas: normalizeStringArray(actionResult.focusAreas),
     abilityTags: normalizeStringArray(actionResult.abilityTags),
     observableSigns: normalizeStringArray(actionResult.observableSigns),

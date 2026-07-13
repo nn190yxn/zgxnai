@@ -325,6 +325,49 @@
   gap: 14rpx;
 }
 
+.core-pain-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.core-pain-category {
+  padding: 18rpx;
+  border-radius: 20rpx;
+  background: #F8F5EF;
+  border: 2rpx solid #E9D7CF;
+  box-sizing: border-box;
+}
+
+.core-pain-category-active {
+  border-color: #D85C26;
+  background: #FFF8F1;
+}
+
+.core-pain-category-header {
+  margin-bottom: 14rpx;
+}
+
+.core-pain-category-title {
+  display: block;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 900;
+}
+
+.core-pain-category-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #8F756C;
+}
+
+.core-pain-list-compact {
+  gap: 10rpx;
+}
+
 .core-pain-item {
   min-height: 190rpx;
   padding: 22rpx 20rpx;
@@ -333,6 +376,12 @@
   border: 2rpx solid transparent;
   box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
   box-sizing: border-box;
+}
+
+.core-pain-item-compact {
+  min-height: 132rpx;
+  padding: 18rpx;
+  box-shadow: none;
 }
 
 .core-pain-item-active {
@@ -346,6 +395,33 @@
   line-height: 1.45;
   color: #2F241F;
   font-weight: 900;
+}
+
+.core-pain-name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.core-pain-name-row .core-pain-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 25rpx;
+}
+
+.core-pain-category-tag {
+  flex-shrink: 0;
+  max-width: 150rpx;
+  padding: 6rpx 10rpx;
+  border-radius: 999rpx;
+  background: #EAF3F0;
+  color: #38665A;
+  font-size: 19rpx;
+  line-height: 1.45;
+  font-weight: 850;
+  box-sizing: border-box;
+  word-break: break-word;
 }
 
 .core-pain-desc {
@@ -364,6 +440,25 @@
 .core-ability-tag {
   background: #EAF3F0;
   color: #38665A;
+}
+
+.core-pain-more {
+  min-height: 76rpx;
+  margin-top: 16rpx;
+  border-radius: 18rpx;
+  border: 2rpx solid #D85C26;
+  background: #FFF8F1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.core-pain-more-text {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #B84618;
+  font-weight: 900;
 }
 
 .core-symptom-panel {

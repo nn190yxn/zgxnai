@@ -17,6 +17,13 @@ const CORE_ACTION_AGE_SEGMENTS = [
   { key: 'age_9_12', label: '9-12岁' }
 ];
 
+const CORE_ACTION_CATEGORIES = [
+  { key: 'attention_learning', label: '专注学习' },
+  { key: 'emotion_rules', label: '情绪规则' },
+  { key: 'motor_fitness', label: '运动体能' },
+  { key: 'social_expression', label: '社交表达' }
+];
+
 function calculateRatio(part, total) {
   const numerator = Number(part || 0);
   const denominator = Number(total || 0);
@@ -134,6 +141,25 @@ function buildCoreActionPainPointFunnel(rows) {
   return buildCoreActionDimensionFunnel(rows, 'pain_point_key', 'pain_point_title', 'pain_point_key', 'pain_point_title');
 }
 
+function buildCoreActionCategoryFunnel(rows) {
+  const items = buildCoreActionDimensionFunnel(rows, 'category_key', 'category_label', 'category_key', 'category_label');
+  const itemMap = items.reduce((map, item) => {
+    map[item.category_key] = item;
+    return map;
+  }, {});
+  return CORE_ACTION_CATEGORIES.map((category) => Object.assign({
+    category_key: category.key,
+    category_label: category.label,
+    select: 0,
+    result_view: 0,
+    result_rate: 0,
+    tonight_action_save: 0,
+    save_rate: 0,
+    action_effect_submit: 0,
+    effect_submit_rate: 0
+  }, itemMap[category.key] || {}));
+}
+
 function parseAbilityTags(value) {
   if (Array.isArray(value)) {
     return value.map((item) => String(item || '').trim()).filter(Boolean);
@@ -164,8 +190,10 @@ function buildCoreActionAbilityFunnel(rows) {
 module.exports = {
   CORE_ACTION_SCENES,
   CORE_ACTION_AGE_SEGMENTS,
+  CORE_ACTION_CATEGORIES,
   buildCoreActionSceneFunnel,
   buildCoreActionAgeSegmentFunnel,
+  buildCoreActionCategoryFunnel,
   buildCoreActionPainPointFunnel,
   buildCoreActionAbilityFunnel,
   calculateRatio,

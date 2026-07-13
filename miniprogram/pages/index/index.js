@@ -38,6 +38,10 @@ Page({
       abilityTags: [],
       observableSigns: [],
       painPoints: [],
+      featuredPainPoints: [],
+      painCategories: [],
+      showAllPainPoints: false,
+      recentPainCategoryKey: '',
       profileAgeGroup: null,
       effectOptions: [
         { key: 'started_smoothly', label: '顺利开始了' },
@@ -328,6 +332,12 @@ Page({
     if (data.age_segment_key || data.ageSegmentKey) {
       meta.age_segment_key = data.age_segment_key || data.ageSegmentKey;
     }
+    if (data.category_key || data.categoryKey) {
+      meta.category_key = data.category_key || data.categoryKey;
+    }
+    if (data.category_label || data.categoryLabel) {
+      meta.category_label = data.category_label || data.categoryLabel;
+    }
     if (data.pain_point_key || data.painPointKey) {
       meta.pain_point_key = data.pain_point_key || data.painPointKey;
     }
@@ -345,6 +355,8 @@ Page({
       module_key: 'core_action',
       page_key: 'home_index',
       scene_key: data.scene_key || data.sceneKey || '',
+      category_key: data.category_key || data.categoryKey || '',
+      category_label: data.category_label || data.categoryLabel || '',
       event_meta: meta
     });
   },
@@ -378,6 +390,8 @@ Page({
       sceneKey: recentAction.sceneKey,
       ageGroup: recentAction.ageGroup,
       ageSegmentKey: recentAction.ageSegmentKey,
+      categoryKey: recentAction.categoryKey,
+      categoryLabel: recentAction.categoryLabel,
       painPointKey: recentAction.painPointKey,
       abilityTags: recentAction.abilityTags,
       symptomKey: recentAction.symptomKey,
@@ -555,6 +569,10 @@ Page({
       'coreRefactorState.selectedPainPoint': null,
       'coreRefactorState.focusAreas': ageSegment ? ageSegment.focusAreas || [] : [],
       'coreRefactorState.painPoints': ageSegment ? ageSegment.painPoints || [] : [],
+      'coreRefactorState.featuredPainPoints': this.getFeaturedAgePainPoints(ageSegment),
+      'coreRefactorState.painCategories': ageSegment ? ageSegment.painCategories || [] : [],
+      'coreRefactorState.showAllPainPoints': false,
+      'coreRefactorState.recentPainCategoryKey': '',
       'coreRefactorState.abilityTags': [],
       'coreRefactorState.observableSigns': [],
       'coreRefactorState.stage': 'age_select',
@@ -575,6 +593,10 @@ Page({
       'coreRefactorState.selectedSymptomLabel': '',
       'coreRefactorState.focusAreas': [],
       'coreRefactorState.painPoints': [],
+      'coreRefactorState.featuredPainPoints': [],
+      'coreRefactorState.painCategories': [],
+      'coreRefactorState.showAllPainPoints': false,
+      'coreRefactorState.recentPainCategoryKey': '',
       'coreRefactorState.abilityTags': [],
       'coreRefactorState.observableSigns': [],
       'coreRefactorState.currentBottleneck': null,
@@ -735,6 +757,10 @@ Page({
       'coreRefactorState.selectedSymptomLabel': '',
       'coreRefactorState.focusAreas': ageSegment.focusAreas || [],
       'coreRefactorState.painPoints': ageSegment.painPoints || [],
+      'coreRefactorState.featuredPainPoints': this.getFeaturedAgePainPoints(ageSegment),
+      'coreRefactorState.painCategories': ageSegment.painCategories || [],
+      'coreRefactorState.showAllPainPoints': false,
+      'coreRefactorState.recentPainCategoryKey': '',
       'coreRefactorState.abilityTags': [],
       'coreRefactorState.observableSigns': [],
       'coreRefactorState.currentBottleneck': null,
@@ -747,12 +773,66 @@ Page({
       event_meta: {
         age_segment_key: ageSegment.key,
         age_segment_label: ageSegment.label,
+        category_key: '',
+        category_label: '',
         focus_areas: ageSegment.focusAreas || [],
         pain_point_count: (ageSegment.painPoints || []).length
       }
     });
     wx.setStorageSync('lastCoreAgeSegmentKey', ageSegment.key);
     wx.showToast({ title: '接着选最像的问题', icon: 'none' });
+  },
+
+  getFeaturedAgePainPoints: function(ageSegment) {
+    if (!ageSegment || !Array.isArray(ageSegment.painPoints)) {
+      return [];
+    }
+    var featuredKeys = Array.isArray(ageSegment.featuredPainPointKeys) ? ageSegment.featuredPainPointKeys : [];
+    var featured = featuredKeys.map(function(key) {
+      return ageSegment.painPoints.find(function(item) {
+        return item.key === key;
+      });
+    }).filter(Boolean);
+    if (featured.length >= 5) {
+      return featured.slice(0, 5);
+    }
+    ageSegment.painPoints.forEach(function(painPoint) {
+      if (featured.length >= 5) {
+        return;
+      }
+      if (!featured.some(function(item) { return item.key === painPoint.key; })) {
+        featured.push(painPoint);
+      }
+    });
+    return featured.slice(0, 5);
+  },
+
+  onToggleCorePainPointList: function() {
+    var showAll = !this.data.coreRefactorState.showAllPainPoints;
+    this.setData({
+      'coreRefactorState.showAllPainPoints': showAll
+    });
+    this.trackCoreActionEvent(showAll ? 'pain_point_more_open' : 'pain_point_more_close', {
+      ageGroup: this.data.coreRefactorState.selectedAgeLabel || '',
+      event_meta: {
+        age_segment_key: (this.data.coreRefactorState.selectedAgeSegment || {}).key || '',
+        pain_point_count: (this.data.coreRefactorState.painPoints || []).length
+      }
+    });
+  },
+
+  onCorePainCategoryTap: function(e) {
+    var categoryKey = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.categoryKey : '';
+    var category = (this.data.coreRefactorState.painCategories || []).find(function(item) {
+      return item.key === categoryKey;
+    });
+    if (!category) {
+      return;
+    }
+    this.setData({
+      'coreRefactorState.recentPainCategoryKey': category.key,
+      'coreRefactorState.showAllPainPoints': true
+    });
   },
 
   onCorePainPointTap: function(e) {
@@ -785,6 +865,7 @@ Page({
       'coreRefactorState.focusAreas': ageSegment.focusAreas || [],
       'coreRefactorState.abilityTags': painPoint.abilityTags || [],
       'coreRefactorState.observableSigns': painPoint.observableSigns || [],
+      'coreRefactorState.recentPainCategoryKey': painPoint.categoryKey || '',
       'coreRefactorState.currentBottleneck': result,
       'coreRefactorState.nextAction': {
         title: result.actionTitle,
@@ -797,6 +878,8 @@ Page({
     this.trackCoreActionEvent('pain_point_select', {
       sceneKey: result.sceneKey,
       ageGroup: result.ageSegmentLabel || result.ageGroup,
+      categoryKey: result.categoryKey,
+      categoryLabel: result.categoryLabel,
       event_meta: {
         age_segment_key: result.ageSegmentKey,
         pain_point_key: result.painPointKey,
@@ -829,6 +912,8 @@ Page({
       sceneKey: result.sceneKey,
       ageGroup: result.ageGroup,
       ageSegmentKey: result.ageSegmentKey,
+      categoryKey: result.categoryKey,
+      categoryLabel: result.categoryLabel,
       painPointKey: result.painPointKey,
       abilityTags: result.abilityTags,
       symptomKey: result.symptomKey,
@@ -893,6 +978,8 @@ Page({
       sceneKey: saved.record.sceneKey,
       ageGroup: saved.record.ageGroup,
       ageSegmentKey: saved.record.ageSegmentKey,
+      categoryKey: saved.record.categoryKey,
+      categoryLabel: saved.record.categoryLabel,
       painPointKey: saved.record.painPointKey,
       abilityTags: saved.record.abilityTags,
       symptomKey: saved.record.symptomKey,
@@ -1018,6 +1105,8 @@ Page({
       ageGroup: result.ageGroup,
       ageSegmentKey: result.ageSegmentKey || '',
       ageSegmentLabel: result.ageSegmentLabel || '',
+      categoryKey: result.categoryKey || '',
+      categoryLabel: result.categoryLabel || '',
       painPointKey: result.painPointKey || '',
       painPointTitle: result.painPointTitle || '',
       abilityTags: result.abilityTags || [],
@@ -1059,6 +1148,8 @@ Page({
       sceneKey: updated.record.sceneKey,
       ageGroup: updated.record.ageGroup,
       ageSegmentKey: updated.record.ageSegmentKey,
+      categoryKey: updated.record.categoryKey,
+      categoryLabel: updated.record.categoryLabel,
       painPointKey: updated.record.painPointKey,
       abilityTags: updated.record.abilityTags,
       symptomKey: updated.record.symptomKey,
@@ -1102,6 +1193,8 @@ Page({
         ageGroup: record && record.ageGroup ? record.ageGroup : '',
         ageSegmentKey: record && record.ageSegmentKey ? record.ageSegmentKey : '',
         ageSegmentLabel: record && record.ageSegmentLabel ? record.ageSegmentLabel : '',
+        categoryKey: record && record.categoryKey ? record.categoryKey : '',
+        categoryLabel: record && record.categoryLabel ? record.categoryLabel : '',
         painPointKey: record && record.painPointKey ? record.painPointKey : '',
         painPointTitle: record && record.painPointTitle ? record.painPointTitle : '',
         focusAreas: record && record.focusAreas ? record.focusAreas : [],
@@ -1156,6 +1249,8 @@ Page({
       ageGroup: record && record.ageGroup ? record.ageGroup : '',
       ageSegmentKey: record && record.ageSegmentKey ? record.ageSegmentKey : '',
       ageSegmentLabel: record && record.ageSegmentLabel ? record.ageSegmentLabel : '',
+      categoryKey: record && record.categoryKey ? record.categoryKey : '',
+      categoryLabel: record && record.categoryLabel ? record.categoryLabel : '',
       painPointKey: record && record.painPointKey ? record.painPointKey : '',
       painPointTitle: record && record.painPointTitle ? record.painPointTitle : '',
       focusAreas: record && record.focusAreas ? record.focusAreas : [],
@@ -1184,6 +1279,8 @@ Page({
       sceneKey: record.sceneKey,
       ageGroup: record.ageGroup,
       ageSegmentKey: record.ageSegmentKey,
+      categoryKey: record.categoryKey,
+      categoryLabel: record.categoryLabel,
       painPointKey: record.painPointKey,
       abilityTags: record.abilityTags,
       symptomKey: record.symptomKey,
@@ -1211,6 +1308,8 @@ Page({
       sceneKey: saved.record.sceneKey,
       ageGroup: saved.record.ageGroup,
       ageSegmentKey: saved.record.ageSegmentKey,
+      categoryKey: saved.record.categoryKey,
+      categoryLabel: saved.record.categoryLabel,
       painPointKey: saved.record.painPointKey,
       abilityTags: saved.record.abilityTags,
       symptomKey: saved.record.symptomKey,
@@ -1352,6 +1451,8 @@ Page({
       'ageGroup=' + encodeURIComponent(context.ageGroup || ''),
       'ageSegmentKey=' + encodeURIComponent(context.ageSegmentKey || ''),
       'ageSegmentLabel=' + encodeURIComponent(context.ageSegmentLabel || ''),
+      'categoryKey=' + encodeURIComponent(context.categoryKey || ''),
+      'categoryLabel=' + encodeURIComponent(context.categoryLabel || ''),
       'painPointKey=' + encodeURIComponent(context.painPointKey || ''),
       'painPointTitle=' + encodeURIComponent(context.painPointTitle || ''),
       'abilityTags=' + encodeURIComponent(abilityTags),

@@ -7,7 +7,7 @@ Updated: 2026-07-12
 
 本设计在当前“小程序核心重构”基础上继续演进。当前首页已具备核心主张、场景选择、年龄选择、表现选择、卡点判断、今晚第一步、保存任务、次日记录和后台漏斗。本轮将首页第一步调整为年龄段选择，并按年龄段动态展示家长痛点场景。
 
-核心路径为：用户选择年龄段，首页展示该年龄段的重点发展任务和家长痛点，用户选择痛点场景，系统生成年龄匹配的卡点判断和今晚第一步，后续承接 AI 追问、知识库推荐、成长记录、连续计划和周总结。
+核心路径为：用户选择年龄段，首页展示该年龄段的重点发展任务和 5 个高频家长痛点，用户可展开 4 类完整场景列表，选择痛点场景后系统生成年龄匹配的卡点判断和今晚第一步，后续承接 AI 追问、知识库推荐、成长记录、连续计划和周总结。
 
 ## Architecture
 
@@ -37,7 +37,15 @@ flowchart TD
   label: '2-3岁',
   title: '先建立大运动和表达基础',
   focusAreas: ['大运动模式', '语言表达', '安全感', '模仿能力'],
-  parentPainPoints: [
+  featuredPainPointKeys: ['gross_motor_unstable'],
+  painCategories: [
+    {
+      key: 'motor_fitness',
+      label: '运动体能',
+      painPoints: []
+    }
+  ],
+  painPoints: [
     {
       key: 'gross_motor_unstable',
       title: '走跑跳总是不稳',
@@ -60,6 +68,9 @@ coreRefactorState: {
   stage: 'age_select | pain_point_select | symptom_select | bottleneck_result | effect_record | effect_recorded',
   selectedAgeSegment: null,
   selectedPainPoint: null,
+  featuredPainPoints: [],
+  painCategories: [],
+  showAllPainPoints: false,
   selectedSymptomKey: '',
   currentBottleneck: null,
   nextAction: null
@@ -105,6 +116,19 @@ coreRefactorState: {
   subtitle: '',
   focusAreas: [],
   parentSummary: '',
+  featuredPainPointKeys: [],
+  painCategories: [],
+  painPoints: []
+}
+```
+
+### Pain Point Category
+
+```javascript
+{
+  key: 'attention_learning',
+  label: '专注学习',
+  description: '',
   painPoints: []
 }
 ```
@@ -118,6 +142,8 @@ coreRefactorState: {
   description: '',
   observableSigns: [],
   abilityTags: [],
+  categoryKey: '',
+  categoryLabel: '',
   sceneKey: '',
   symptoms: [],
   defaultBottleneck: {},
@@ -127,13 +153,14 @@ coreRefactorState: {
 
 ## Correctness Properties
 
-- P1: 每个合法年龄段必须至少包含 5 个家长痛点场景。
+- P1: 每个合法年龄段必须包含 4 个痛点类别，每个类别必须包含 10 个家长痛点场景。
 - P2: 每个家长痛点场景必须包含标题、可观察表现、背后能力、场景 key 和默认第一动作。
 - P3: 任意合法年龄段和痛点场景组合都必须生成包含年龄段、痛点、能力标签、卡点判断和行动步骤的结果。
 - P4: 2-3岁、3-4岁、4-5岁、5-6岁痛点场景中不得出现中考体训、专项强化等高龄表达。
 - P5: 8-9岁、9-12岁痛点场景必须覆盖学习能力支持或体测准备相关入口。
 - P6: 首页任意阶段渲染时必须保留一个明确主 CTA 和一个可返回年龄选择的入口。
 - P7: 埋点事件在年龄优先链路中必须携带年龄段 key，场景选择之后必须携带痛点 key 和能力标签。
+- P8: 首页年龄段选中后必须先展示 5 个高频痛点场景，完整 40 个场景通过查看更多入口按类别展示。
 
 ## Error Handling
 
@@ -147,8 +174,8 @@ coreRefactorState: {
 
 - 执行 `npm run lint` 验证小程序和后端语法。
 - 执行 `npm test` 验证现有核心链路回归。
-- 扩展 `scripts/test-core-action-scenes.js`，覆盖年龄段配置完整性和低龄/高龄表达边界。
-- 扩展 `scripts/test-home-core-flow.js`，覆盖年龄选择、痛点选择、结果生成和保存闭环。
+- 扩展 `scripts/test-core-action-scenes.js`，覆盖年龄段配置完整性、4 类 × 10 个场景数量和低龄/高龄表达边界。
+- 扩展 `scripts/test-home-core-flow.js`，覆盖年龄选择、首屏 5 个高频痛点、查看更多完整分组、痛点选择、结果生成和保存闭环。
 - 扩展 `scripts/test-admin-core-action-analytics.js`，覆盖年龄段和能力维度埋点聚合。
 
 ## References

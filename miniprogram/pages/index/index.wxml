@@ -88,12 +88,13 @@
       <view class="core-pain-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment && (coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'pain_point_select')}}">
         <view class="core-pain-header">
           <text class="core-pain-title">{{coreRefactorState.selectedAgeSegment.label}}家长最常见的卡点</text>
-          <text class="core-pain-subtitle">选一个最像孩子今天状态的问题</text>
+          <text class="core-pain-subtitle" wx:if="{{!coreRefactorState.showAllPainPoints}}">先看 5 个高频情况，选一个最像孩子今天状态的问题</text>
+          <text class="core-pain-subtitle" wx:else>按 4 个类别查看完整情况，每类 10 个</text>
         </view>
-        <view class="core-pain-list">
+        <view class="core-pain-list" wx:if="{{!coreRefactorState.showAllPainPoints}}">
           <view
             class="core-pain-item {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}"
-            wx:for="{{coreRefactorState.painPoints}}"
+            wx:for="{{coreRefactorState.featuredPainPoints}}"
             wx:key="key"
             data-pain-point-key="{{item.key}}"
             bindtap="onCorePainPointTap"
@@ -107,6 +108,33 @@
               <text class="core-ability-tag" wx:for="{{item.abilityTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
             </view>
           </view>
+        </view>
+        <view class="core-pain-category-list" wx:else>
+          <view class="core-pain-category {{coreRefactorState.recentPainCategoryKey === category.key ? 'core-pain-category-active' : ''}}" wx:for="{{coreRefactorState.painCategories}}" wx:key="key" wx:for-item="category">
+            <view class="core-pain-category-header" data-category-key="{{category.key}}" bindtap="onCorePainCategoryTap">
+              <text class="core-pain-category-title">{{category.label}}</text>
+              <text class="core-pain-category-desc">{{category.description}}</text>
+            </view>
+            <view class="core-pain-list core-pain-list-compact">
+              <view
+                class="core-pain-item core-pain-item-compact {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}"
+                wx:for="{{category.painPoints}}"
+                wx:key="key"
+                data-pain-point-key="{{item.key}}"
+                bindtap="onCorePainPointTap"
+              >
+                <view class="core-pain-name-row">
+                  <text class="core-pain-name">{{item.title}}</text>
+                  <text class="core-pain-category-tag">{{item.categoryLabel}}</text>
+                </view>
+                <text class="core-pain-desc">{{item.description}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view class="core-pain-more" wx:if="{{coreRefactorState.painPoints && coreRefactorState.painPoints.length > coreRefactorState.featuredPainPoints.length}}" bindtap="onToggleCorePainPointList">
+          <text class="core-pain-more-text" wx:if="{{!coreRefactorState.showAllPainPoints}}">查看更多情况（{{coreRefactorState.painPoints.length}}个）</text>
+          <text class="core-pain-more-text" wx:else>收起，只看高频 5 个</text>
         </view>
       </view>
 

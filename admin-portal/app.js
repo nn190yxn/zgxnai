@@ -85,6 +85,10 @@ const demoSnapshot = {
       { age_segment_key: 'age_8_9', age_segment_label: '8-9岁', select: 96, result_view: 82, result_rate: 85.42, tonight_action_save: 46, save_rate: 56.1, action_effect_submit: 20, effect_submit_rate: 43.48 },
       { age_segment_key: 'unknown', age_segment_label: '未分龄', select: 42, result_view: 30, result_rate: 71.43, tonight_action_save: 12, save_rate: 40, action_effect_submit: 5, effect_submit_rate: 41.67 }
     ],
+    category_items: [
+      { category_key: 'attention_learning', category_label: '专注学习', select: 138, result_view: 112, result_rate: 81.16, tonight_action_save: 62, save_rate: 55.36, action_effect_submit: 28, effect_submit_rate: 45.16 },
+      { category_key: 'motor_fitness', category_label: '运动体能', select: 104, result_view: 88, result_rate: 84.62, tonight_action_save: 48, save_rate: 54.55, action_effect_submit: 21, effect_submit_rate: 43.75 }
+    ],
     pain_point_items: [
       { pain_point_key: 'reading_slow_forgets', pain_point_title: '读得慢还记不住', select: 92, result_view: 78, result_rate: 84.78, tonight_action_save: 40, save_rate: 51.28, action_effect_submit: 18, effect_submit_rate: 45 },
       { pain_point_key: 'homework_restless', pain_point_title: '写作业坐不住', select: 84, result_view: 70, result_rate: 83.33, tonight_action_save: 34, save_rate: 48.57, action_effect_submit: 14, effect_submit_rate: 41.18 }
@@ -851,6 +855,11 @@ function renderCoreActionFunnel(data) {
     titleField: 'age_segment_label',
     keyField: 'age_segment_key',
     emptyMessage: '当前暂无按年龄段拆分的第一动作漏斗。'
+  });
+  renderCoreActionDimensionFunnel('coreActionCategoryFunnel', (data && data.category_items) || [], {
+    titleField: 'category_label',
+    keyField: 'category_key',
+    emptyMessage: '当前暂无按类别拆分的第一动作漏斗。'
   });
   renderCoreActionDimensionFunnel('coreActionPainPointFunnel', (data && data.pain_point_items) || [], {
     titleField: 'pain_point_title',
