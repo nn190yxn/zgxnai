@@ -7083,6 +7083,10 @@ function getVirtualPayOrderNo(payload) {
   return payload.OutTradeNo || payload.outTradeNo || payload.out_trade_no || payload.order_no || payload.attach || '';
 }
 
+function getVirtualPayRefundOrderNo(payload) {
+  return payload.pay_order_id || payload.PayOrderId || payload.order_id || payload.OrderId || getVirtualPayOrderNo(payload);
+}
+
 function getVirtualPayTransactionId(payload) {
   const payInfo = payload.WeChatPayInfo || payload.weChatPayInfo || payload.pay_info || {};
   return payload.TransactionId || payload.transactionId || payload.transaction_id || payInfo.TransactionId || payInfo.transactionId || payInfo.transaction_id || '';
@@ -7251,10 +7255,44 @@ async function wechatMessagePushHandler(req, res) {
 
   const payload = parseWechatMessagePayload(req);
   const eventName = payload.Event || payload.event || '';
+  if (eventName === 'xpay_subscribe_ios_refund_query_notify') {
+    const response = await buildVirtualPayIosRefundQueryResponse(payload);
+    res.json(response);
+    return;
+  }
   if (eventName === 'xpay_goods_deliver_notify') {
     await handleVirtualPayGoodsDeliver(payload);
+  } else if (eventName === 'xpay_refund_notify') {
+    await handleVirtualPayRefundNotify(payload);
   }
   res.type('text/plain').send('success');
+}
+
+async function buildVirtualPayIosRefundQueryResponse(payload) {
+  const orderNo = getVirtualPayRefundOrderNo(payload);
+  if (!orderNo) {
+    return {
+      result_code: 0,
+      result_info: '未匹配到业务订单，建议按平台规则处理退款',
+      evidence: '消息推送未包含可匹配的业务订单号，系统无法确认权益发放状态。'
+    };
+  }
+
+  const [orders] = await pool.execute('SELECT order_no, status, paid_at FROM payment_orders WHERE order_no = ? LIMIT 1', [orderNo]);
+  const order = orders[0];
+  if (order && order.status === 'paid') {
+    return {
+      result_code: 1,
+      result_info: '成长服务权益已发放，建议拒绝退款',
+      evidence: `业务订单${orderNo}已支付并发放成长服务权益，支付确认时间${order.paid_at || '已记录'}。`
+    };
+  }
+
+  return {
+    result_code: 0,
+    result_info: '成长服务权益未确认发放，建议退款',
+    evidence: order ? `业务订单${orderNo}当前状态为${order.status || 'pending'}，未确认完成权益发放。` : `业务订单${orderNo}不存在，未确认完成权益发放。`
+  };
 }
 
 async function handleVirtualPayGoodsDeliver(payload) {
@@ -7287,6 +7325,14 @@ async function handleVirtualPayGoodsDeliver(payload) {
   } finally {
     connection.release();
   }
+}
+
+async function handleVirtualPayRefundNotify(payload) {
+  const orderNo = getVirtualPayRefundOrderNo(payload);
+  if (!orderNo) {
+    throw new Error('虚拟支付退款通知缺少订单号');
+  }
+  await pool.execute('UPDATE payment_orders SET status = ? WHERE order_no = ? AND status != ?', ['refunded', orderNo, 'refunded']);
 }
 
 async function unifiedOrderHandler(req, res) {

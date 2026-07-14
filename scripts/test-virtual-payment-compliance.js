@@ -34,6 +34,11 @@ assert.ok(productionServer.includes('function isVirtualMembershipPlan'), 'produc
 assert.ok(productionServer.includes("code: 'VIRTUAL_PAYMENT_REQUIRED'"), 'production backend should expose virtual payment required error');
 assert.ok(productionServer.includes('res.status(403).json(virtualPaymentRequiredError())'), 'production backend should reject ordinary payment for virtual plans');
 assert.ok(productionServer.includes('xpay_goods_deliver_notify'), 'production backend should handle virtual payment delivery notification');
+assert.ok(productionServer.includes('xpay_subscribe_ios_refund_query_notify'), 'production backend should answer iOS refund query notification');
+assert.ok(productionServer.includes('xpay_refund_notify'), 'production backend should handle virtual payment refund notification');
+assert.ok(productionServer.includes('result_code'), 'iOS refund query response should include result_code');
+assert.ok(productionServer.includes('result_info'), 'iOS refund query response should include result_info');
+assert.ok(productionServer.includes('evidence'), 'iOS refund query response should include required evidence');
 assert.ok(productionServer.includes('function resolveVirtualPayEnv'), 'production backend should resolve virtual payment environment explicitly');
 assert.ok(productionServer.includes("process.env.NODE_ENV === 'production' ? 0 : 1"), 'production backend should default virtual payment to live env for iOS review');
 assert.ok(!productionServer.includes('process.env.WECHAT_VIRTUAL_PAY_ENV || process.env.XPAY_ENV || 1'), 'production backend should avoid sandbox as implicit virtual payment default');
