@@ -16,7 +16,20 @@ const WX_PAY_CONFIG = {
 };
 
 const PAYMENT_NOT_CONFIGURED = 'WECHAT_PAY_NOT_CONFIGURED';
+const VIRTUAL_PAYMENT_REQUIRED = 'VIRTUAL_PAYMENT_REQUIRED';
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
+
+function isVirtualMembershipPlan(planCode) {
+  return ['month', 'quarter', 'year'].includes(String(planCode || '').trim());
+}
+
+function virtualPaymentRequiredError() {
+  return {
+    success: false,
+    code: VIRTUAL_PAYMENT_REQUIRED,
+    message: '成长服务属于虚拟内容服务，请使用小程序官方虚拟支付能力购买'
+  };
+}
 
 function readPrivateKey() {
   return fs.readFileSync(WX_PAY_CONFIG.keyPath, 'utf8');
@@ -188,6 +201,9 @@ function generateOrderNo() {
  * 创建支付订单
  */
 function createPaymentOrder(userId, planCode, options = {}) {
+  if (isVirtualMembershipPlan(planCode)) {
+    return virtualPaymentRequiredError();
+  }
   if (!isWechatPayConfigured()) {
     return paymentConfigError();
   }
@@ -219,10 +235,6 @@ function createPaymentOrder(userId, planCode, options = {}) {
  * 微信支付统一下单（生产环境调用微信真实接口）
  */
 async function unifiedOrder(orderNo, planCode, openid, userId) {
-  if (!isWechatPayConfigured()) {
-    return paymentConfigError();
-  }
-
   if (!openid) {
     return { success: false, message: '缺少微信用户openid' };
   }
@@ -233,6 +245,12 @@ async function unifiedOrder(orderNo, planCode, openid, userId) {
   }
   if (userId && order.user_id !== userId) {
     return { success: false, message: '无权操作该订单' };
+  }
+  if (isVirtualMembershipPlan(order.plan_code)) {
+    return virtualPaymentRequiredError();
+  }
+  if (!isWechatPayConfigured()) {
+    return paymentConfigError();
   }
 
   const plan = db.prepare('SELECT * FROM plans WHERE code = ? AND is_active = 1').get(order.plan_code);
@@ -387,5 +405,6 @@ module.exports = {
   getWechatPayMissingConfig,
   getWechatPayMissingFiles,
   PAYMENT_NOT_CONFIGURED,
+  VIRTUAL_PAYMENT_REQUIRED,
   WX_PAY_CONFIG
 };

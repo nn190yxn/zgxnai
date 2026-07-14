@@ -8,12 +8,16 @@ const {
   handlePaymentNotify,
   queryOrder,
   cancelAutoRenew,
-  PAYMENT_NOT_CONFIGURED
+  PAYMENT_NOT_CONFIGURED,
+  VIRTUAL_PAYMENT_REQUIRED
 } = require('../services/payment');
 
 function sendPaymentResult(res, result) {
   if (result && result.code === PAYMENT_NOT_CONFIGURED) {
     return res.status(503).json(result);
+  }
+  if (result && result.code === VIRTUAL_PAYMENT_REQUIRED) {
+    return res.status(403).json(result);
   }
   return res.json(result);
 }

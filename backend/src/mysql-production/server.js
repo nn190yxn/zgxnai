@@ -7131,14 +7131,30 @@ function isWechatPayConfigured() {
   return getMissingPayConfig().length === 0 && fs.existsSync(wxPayConfig.keyPath);
 }
 
+function isVirtualMembershipPlan(planCode) {
+  return ['month', 'quarter', 'year'].includes(String(planCode || '').trim());
+}
+
+function virtualPaymentRequiredError() {
+  return {
+    success: false,
+    code: 'VIRTUAL_PAYMENT_REQUIRED',
+    message: '成长服务属于虚拟内容服务，请使用小程序官方虚拟支付能力购买'
+  };
+}
+
 async function createPaymentOrderHandler(req, res) {
-  if (!isWechatPayConfigured()) {
-    res.status(503).json(paymentConfigError());
-    return;
-  }
   const planCode = req.body && req.body.plan_code;
   if (!planCode) {
     res.status(400).json({ success: false, message: '请选择套餐' });
+    return;
+  }
+  if (isVirtualMembershipPlan(planCode)) {
+    res.status(403).json(virtualPaymentRequiredError());
+    return;
+  }
+  if (!isWechatPayConfigured()) {
+    res.status(503).json(paymentConfigError());
     return;
   }
   const [plans] = await pool.execute('SELECT * FROM plans WHERE code = ? AND is_active = 1', [planCode]);
@@ -7266,10 +7282,6 @@ async function handleVirtualPayGoodsDeliver(payload) {
 }
 
 async function unifiedOrderHandler(req, res) {
-  if (!isWechatPayConfigured()) {
-    res.status(503).json(paymentConfigError());
-    return;
-  }
   const orderNo = req.body && req.body.order_no;
   if (!orderNo) {
     res.status(400).json({ success: false, message: '订单号不能为空' });
@@ -7281,6 +7293,14 @@ async function unifiedOrderHandler(req, res) {
     return;
   }
   const order = orders[0];
+  if (isVirtualMembershipPlan(order.plan_code)) {
+    res.status(403).json(virtualPaymentRequiredError());
+    return;
+  }
+  if (!isWechatPayConfigured()) {
+    res.status(503).json(paymentConfigError());
+    return;
+  }
   const [plans] = await pool.execute('SELECT * FROM plans WHERE code = ?', [order.plan_code]);
   const wxResult = await requestWechatPay('POST', '/v3/pay/transactions/jsapi', {
     appid: wxPayConfig.appid,
