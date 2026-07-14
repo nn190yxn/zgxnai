@@ -19,6 +19,10 @@ const paymentRoutes = read('backend/src/routes/payment.js');
 
 assert.ok(membershipJs.includes('wx.requestVirtualPayment'), 'membership purchase should use wx.requestVirtualPayment');
 assert.ok(membershipJs.includes("url: '/payment/virtual-order'"), 'membership purchase should request virtual payment order');
+assert.ok(membershipJs.includes("'membership_payment_error'"), 'membership purchase should report virtual payment failures');
+assert.ok(membershipJs.includes('failure_stage: paymentStage'), 'virtual payment failure report should identify the failing stage');
+assert.ok(membershipJs.includes('err.errCode'), 'virtual payment failure report should preserve the WeChat error code');
+assert.ok(membershipJs.includes(".slice(0, 200)"), 'virtual payment failure report should limit error message length');
 assert.ok(!membershipJs.includes('wx.requestPayment'), 'membership purchase should avoid ordinary wx.requestPayment');
 assert.ok(!membershipJs.includes("url: '/payment/unified-order'"), 'membership purchase should avoid ordinary unified order');
 assert.ok(!membershipJs.includes('微信官方支付方式'), 'membership copy should avoid ambiguous ordinary payment wording');

@@ -256,6 +256,7 @@ Page({
 
     const that = this;
     let currentOrderNo = '';
+    let paymentStage = 'create_virtual_order';
     that.ensureLoggedIn('请先完成微信登录，再开通成长服务').then(function() {
       that.setData({ isPaying: true });
       return app.request({
@@ -271,6 +272,7 @@ Page({
         throw new Error((payParams && payParams.message) || '获取虚拟支付参数失败');
       }
       currentOrderNo = payParams.order_no;
+      paymentStage = 'request_virtual_payment';
       return new Promise(function(resolve, reject) {
         wx.requestVirtualPayment({
           mode: payParams.mode || 'short_series_goods',
@@ -282,6 +284,7 @@ Page({
         });
       });
     }).then(function() {
+      paymentStage = 'confirm_membership_activation';
       that.trackMembershipEvent('membership_payment_success', {
         plan_code: that.data.selectedPlan,
         order_no: currentOrderNo
@@ -303,6 +306,21 @@ Page({
         return;
       }
       wx.hideLoading();
+      var systemInfo = {};
+      try {
+        systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : {};
+      } catch (systemInfoError) {
+        systemInfo = {};
+      }
+      that.trackMembershipEvent('membership_payment_error', {
+        plan_code: that.data.selectedPlan,
+        order_no: currentOrderNo,
+        failure_stage: paymentStage,
+        error_code: err && err.errCode !== undefined ? err.errCode : ((err && err.code) || ''),
+        error_message: String((err && (err.errMsg || err.message)) || '').slice(0, 200),
+        platform: systemInfo.platform || '',
+        sdk_version: systemInfo.SDKVersion || ''
+      });
       const message = err && err.errMsg && err.errMsg.indexOf('cancel') !== -1
         ? '已取消支付'
         : app.getApiErrorMessage(err, '支付没完成，请稍后再试');
