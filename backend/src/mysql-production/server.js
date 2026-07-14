@@ -84,9 +84,17 @@ const wxPayConfig = {
   platformCertPath: process.env.WECHAT_PAY_PLATFORM_CERT_PATH || process.env.WX_PLATFORM_CERT_PATH || ''
 };
 
+function resolveVirtualPayEnv() {
+  const configuredEnv = process.env.WECHAT_VIRTUAL_PAY_ENV || process.env.XPAY_ENV;
+  if (configuredEnv !== undefined && configuredEnv !== '') {
+    return Number(configuredEnv) === 0 ? 0 : 1;
+  }
+  return process.env.NODE_ENV === 'production' ? 0 : 1;
+}
+
 const virtualPayConfig = {
   offerId: process.env.WECHAT_VIRTUAL_PAY_OFFER_ID || process.env.XPAY_OFFER_ID || '',
-  env: Number(process.env.WECHAT_VIRTUAL_PAY_ENV || process.env.XPAY_ENV || 1) === 0 ? 0 : 1,
+  env: resolveVirtualPayEnv(),
   sandboxAppKey: process.env.WECHAT_VIRTUAL_PAY_SANDBOX_APP_KEY || process.env.XPAY_SANDBOX_APP_KEY || '',
   appKey: process.env.WECHAT_VIRTUAL_PAY_APP_KEY || process.env.XPAY_APP_KEY || '',
   mode: process.env.WECHAT_VIRTUAL_PAY_MODE || process.env.XPAY_MODE || 'short_series_goods',
