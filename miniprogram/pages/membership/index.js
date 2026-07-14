@@ -1,4 +1,4 @@
-// 成长服务页面 - 审核期版本
+// 成长服务页面
 const app = getApp();
 const { ENABLE_VIRTUAL_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
 
@@ -20,9 +20,10 @@ Page({
     // 支付开关
     showMembership: SHOW_MEMBERSHIP,
     showPayment: ENABLE_VIRTUAL_PAY,
-    paymentNotice: ENABLE_VIRTUAL_PAY ? '成长服务为虚拟内容服务，通过微信官方小程序虚拟支付能力购买。' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励',
+    paymentNotice: ENABLE_VIRTUAL_PAY ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励',
     signupBenefitText: '新用户首次注册自动赠送7天成长服务，可与邀请奖励叠加。',
-    paymentCapabilityHint: 'Android、鸿蒙、Windows 和 iOS 端均使用微信官方小程序虚拟支付能力。',
+    paymentCapabilityHint: '本页月卡、季卡、年卡均为虚拟内容服务，全终端购买均接入微信官方小程序虚拟支付能力。',
+    paymentComplianceText: 'Android、鸿蒙、Windows 和 iOS 端均使用微信官方小程序虚拟支付能力完成购买。',
     
     // 套餐列表
     plans: [
@@ -89,7 +90,7 @@ Page({
     const showPayment = runtimePaymentEnabled !== undefined ? !!runtimePaymentEnabled : ENABLE_VIRTUAL_PAY;
     this.setData({
       showPayment: showPayment,
-      paymentNotice: showPayment ? '成长服务为虚拟内容服务，通过微信官方小程序虚拟支付能力购买。' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励'
+      paymentNotice: showPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励'
     });
     if (app.globalData && app.globalData.enableRuntimeConfigFetch && app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
       app.loadRuntimeConfig().then(() => {
@@ -97,7 +98,7 @@ Page({
         const latestShowPayment = latestConfig.paymentEnabled !== undefined ? !!latestConfig.paymentEnabled : ENABLE_VIRTUAL_PAY;
         this.setData({
           showPayment: latestShowPayment,
-          paymentNotice: latestShowPayment ? '成长服务为虚拟内容服务，通过微信官方小程序虚拟支付能力购买。' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励'
+          paymentNotice: latestShowPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励'
         });
       });
     }
@@ -232,13 +233,13 @@ Page({
     this.setData({ selectedPlan: code });
     this.trackMembershipEvent('membership_plan_select', { plan_code: code });
     if (!this.data.showPayment) {
-      wx.showToast({ title: '虚拟支付能力配置中', icon: 'none' });
+      wx.showToast({ title: '当前无法发起购买，请稍后再试', icon: 'none' });
     }
   },
 
   paySelectedPlan() {
     if (!this.data.showPayment) {
-      wx.showToast({ title: '虚拟支付能力配置中', icon: 'none' });
+      wx.showToast({ title: '当前无法发起购买，请稍后再试', icon: 'none' });
       return;
     }
     if (!wx.requestVirtualPayment) {

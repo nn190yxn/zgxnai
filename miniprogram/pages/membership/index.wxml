@@ -1,4 +1,4 @@
-<!-- 成长服务页面 - 审核期版本 -->
+<!-- 成长服务页面 -->
 <view class="membership-page">
   <!-- 成长服务状态卡片 -->
   <view class="membership-card">
@@ -38,6 +38,11 @@
   <!-- 成长服务方案 -->
   <view class="plans-section" wx:if="{{showMembership}}">
     <view class="section-title">选择成长服务方案</view>
+    <view class="payment-compliance" wx:if="{{showPayment}}">
+      <text class="payment-compliance-title">微信官方小程序虚拟支付</text>
+      <text class="payment-compliance-desc">{{paymentCapabilityHint}}</text>
+      <text class="payment-compliance-desc">{{paymentComplianceText}}</text>
+    </view>
     <view class="plans-list">
       <view class="plan-item {{selectedPlan === item.code ? 'plan-selected' : ''}}" wx:for="{{plans}}" wx:key="code" data-code="{{item.code}}" bindtap="selectPlan">
         <view class="plan-header">
@@ -53,8 +58,8 @@
     <view class="referral-info" wx:if="{{showPayment}}">
       <text class="referral-desc">{{paymentCapabilityHint}}</text>
     </view>
-    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '开通处理中' : '使用官方虚拟支付开通'}}</button>
-    <button wx:else class="btn-pay btn-pay-disabled" disabled="true">官方虚拟支付能力配置中</button>
+    <button wx:if="{{showPayment}}" class="btn-pay" loading="{{isPaying}}" disabled="{{isPaying}}" bindtap="paySelectedPlan">{{isPaying ? '开通处理中' : '微信官方虚拟支付开通'}}</button>
+    <button wx:else class="btn-pay btn-pay-disabled" disabled="true">当前无法发起购买</button>
   </view>
 
   <!-- 兑换码 -->

@@ -95,17 +95,17 @@ describe('会员制度测试', () => {
       db.prepare("DELETE FROM payment_orders WHERE user_id = 1").run();
     });
 
-    it('微信支付配置缺失时应拒绝创建订单', async () => {
+    it('虚拟成长服务应拒绝普通支付下单', async () => {
       const res = await request(app)
         .post('/api/v1/payment/create')
         .set('Authorization', 'Bearer ' + testToken)
         .send({ plan_code: 'month', auto_renew: true });
 
       const orderCount = db.prepare('SELECT COUNT(*) as count FROM payment_orders WHERE user_id = 1').get();
-      expect(res.status).toBe(503);
+      expect(res.status).toBe(403);
       expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('WECHAT_PAY_NOT_CONFIGURED');
-      expect(res.body.message).toContain('微信支付配置中');
+      expect(res.body.code).toBe('VIRTUAL_PAYMENT_REQUIRED');
+      expect(res.body.message).toContain('虚拟内容服务');
       expect(orderCount.count).toBe(0);
     });
 

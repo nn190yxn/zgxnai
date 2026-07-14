@@ -9,6 +9,8 @@ function read(relativePath) {
 }
 
 const membershipJs = read('miniprogram/pages/membership/index.js');
+const membershipWxml = read('miniprogram/pages/membership/index.wxml');
+const paymentConfig = read('miniprogram/config/payment.js');
 const privacyWxml = read('miniprogram/pages/profile/privacy/privacy.wxml');
 const agreementWxml = read('miniprogram/pages/profile/agreement/agreement.wxml');
 const productionServer = read('backend/src/mysql-production/server.js');
@@ -21,6 +23,14 @@ assert.ok(!membershipJs.includes('wx.requestPayment'), 'membership purchase shou
 assert.ok(!membershipJs.includes("url: '/payment/unified-order'"), 'membership purchase should avoid ordinary unified order');
 assert.ok(!membershipJs.includes('微信官方支付方式'), 'membership copy should avoid ambiguous ordinary payment wording');
 assert.ok(!membershipJs.includes('Apple 支付'), 'membership copy should avoid Apple payment wording');
+assert.ok(!membershipJs.includes('审核期版本'), 'membership copy should avoid audit-period wording');
+assert.ok(!membershipWxml.includes('审核期版本'), 'membership markup should avoid audit-period wording');
+assert.ok(!membershipJs.includes('虚拟支付能力配置中'), 'membership runtime copy should avoid configuration-in-progress wording');
+assert.ok(!membershipWxml.includes('虚拟支付能力配置中'), 'membership visible copy should avoid configuration-in-progress wording');
+assert.ok(!paymentConfig.includes('虚拟支付能力正在配置中'), 'payment config should avoid configuration-in-progress wording');
+assert.ok(membershipWxml.includes('微信官方小程序虚拟支付'), 'membership first screen should show official virtual payment capability');
+assert.ok(membershipWxml.includes('paymentCapabilityHint'), 'membership first screen should expose virtual payment compliance hint above plans');
+assert.ok(membershipWxml.includes('微信官方虚拟支付开通'), 'membership purchase button should explicitly use official virtual payment wording');
 assert.ok(!privacyWxml.includes('Apple 支付'), 'privacy copy should avoid Apple payment wording');
 assert.ok(!agreementWxml.includes('Apple 支付'), 'agreement copy should avoid Apple payment wording');
 assert.ok(!agreementWxml.includes('Apple 官方流程'), 'agreement copy should avoid Apple refund wording');

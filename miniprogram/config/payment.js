@@ -1,7 +1,7 @@
 // 小程序虚拟支付开关配置
 const envConfig = require('../config/env.js');
 
-// 会员展示与官方虚拟支付能力分离，避免未完成配置时展示可支付状态。
+// 会员展示与官方虚拟支付能力分离，确保购买入口只走虚拟支付链路。
 const SHOW_MEMBERSHIP = envConfig.showMembership !== false;
 const ENABLE_VIRTUAL_PAY = envConfig.enableVirtualPay === true;
 
@@ -11,7 +11,7 @@ const WX_CONFIG = {
   enabled: ENABLE_VIRTUAL_PAY,
   
   // 未开通提示
-  sandboxTip: '虚拟支付能力正在配置中',
+  sandboxTip: '当前无法发起购买，请稍后再试',
   
   // 支付套餐
   plans: [

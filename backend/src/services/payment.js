@@ -73,7 +73,7 @@ function paymentConfigError() {
   return {
     success: false,
     code: PAYMENT_NOT_CONFIGURED,
-    message: '微信支付配置中，请使用试用或兑换码功能',
+    message: '当前支付能力暂不可用，请使用试用或兑换码功能',
     missing_config: getWechatPayMissingConfig()
   };
 }
