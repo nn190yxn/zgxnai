@@ -18,9 +18,9 @@
 
     <view class="core-scenes">
       <view class="core-scenes-header">
-        <text class="core-scenes-title" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">先选孩子年龄</text>
+        <text class="core-scenes-title" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">按年龄找孩子问题</text>
         <text class="core-scenes-title" wx:else>先选家里正在发生的场景</text>
-        <text class="core-scenes-subtitle" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">马上看到这个年龄最常见的家长痛点</text>
+        <text class="core-scenes-subtitle" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">覆盖学习专注、情绪规则、运动体能、社交表达</text>
         <text class="core-scenes-subtitle" wx:else>小牛先判断场景，再确认年龄和表现</text>
       </view>
 
@@ -39,7 +39,7 @@
 
       <view class="core-age-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">
         <view class="core-age-header">
-          <text class="core-age-title">选择孩子当前年龄段</text>
+          <text class="core-age-title">孩子现在几岁？</text>
           <text class="core-age-subtitle" wx:if="{{coreRefactorState.profileAgeGroup}}">已按 {{coreRefactorState.profileAgeGroup.childName}} 的档案先选 {{coreRefactorState.profileAgeGroup.label}}</text>
           <text class="core-age-subtitle" wx:else>没有完整档案也可以先选年龄继续</text>
         </view>
@@ -87,9 +87,9 @@
 
       <view class="core-pain-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment && (coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'pain_point_select')}}">
         <view class="core-pain-header">
-          <text class="core-pain-title">{{coreRefactorState.selectedAgeSegment.label}}家长最常见的卡点</text>
-          <text class="core-pain-subtitle" wx:if="{{!coreRefactorState.showAllPainPoints}}">先看 5 个高频情况，选一个最像孩子今天状态的问题</text>
-          <text class="core-pain-subtitle" wx:else>按 4 个类别查看完整情况，每类 10 个</text>
+          <text class="core-pain-title">{{coreRefactorState.selectedAgeSegment.label}}常见成长问题</text>
+          <text class="core-pain-subtitle" wx:if="{{!coreRefactorState.showAllPainPoints}}">先选一个最像孩子今天表现的问题，小牛育儿给今晚做法</text>
+          <text class="core-pain-subtitle" wx:else>按学习、情绪、运动、社交 4 类查看完整情况</text>
         </view>
         <view class="core-pain-list" wx:if="{{!coreRefactorState.showAllPainPoints}}">
           <view

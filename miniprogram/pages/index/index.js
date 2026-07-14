@@ -438,9 +438,9 @@ Page({
       return {
         primaryCardType: 'continue_action',
         reason: 'next_day_record',
-        title: '昨晚这一步效果怎么样？',
-        desc: recentAction.actionTitle || '记录一下效果，小牛再给下一步。',
-        cta: '记录一下效果',
+        title: '孩子这个问题，昨晚试得怎么样？',
+        desc: (recentAction.sceneLabel || recentAction.painPointTitle || '孩子的具体表现') + '，记录反应后，小牛育儿会继续给今晚下一步。',
+        cta: '记录孩子反应',
         targetPath: '',
         targetPayload: { actionId: recentAction.id }
       };
@@ -450,9 +450,9 @@ Page({
       return {
         primaryCardType: 'continue_action',
         reason: 'unfinished_action',
-        title: '今晚继续这一步',
-        desc: recentAction.actionTitle || '上次的小行动还可以继续试一次。',
-        cta: '继续看看',
+        title: '继续解决孩子这个表现',
+        desc: (recentAction.sceneLabel || recentAction.painPointTitle || '孩子的问题') + '，今晚沿用一个小动作，先看孩子是否更愿意开始。',
+        cta: '看今晚怎么做',
         targetPath: '',
         targetPayload: { actionId: recentAction.id }
       };
@@ -462,9 +462,9 @@ Page({
       return {
         primaryCardType: 'weekly_summary',
         reason: 'recent_record',
-        title: '上次记录有结果了',
-        desc: recentAction.effectLabel || '看看下一步怎么做。',
-        cta: '看下一步',
+        title: '孩子变化已经记下来了',
+        desc: (recentAction.effectLabel || '看看孩子对这个方法的反应') + '，小牛育儿继续帮你拆下一步。',
+        cta: '看下一步建议',
         targetPath: '',
         targetPayload: { actionId: recentAction.id }
       };
@@ -497,9 +497,9 @@ Page({
     return {
       primaryCardType: 'first_action',
       reason: 'no_context',
-      title: '孩子今天这个表现，先看懂卡在哪',
-      desc: '选一个家里正在发生的场景，小牛帮你判断原因，再给今晚能做的一步。',
-      cta: '开始看看孩子卡在哪',
+      title: '孩子学习、情绪、运动问题，先找原因',
+      desc: '按年龄选择最像的表现，小牛育儿给你今晚能试的一步。',
+      cta: '开始找孩子问题',
       targetPath: '',
       targetPayload: {}
     };

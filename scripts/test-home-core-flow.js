@@ -586,6 +586,10 @@ function testNextDayRecordRuleAndMembershipTouchpoint() {
   storage.coreActionRecords = [record];
   home.refreshCoreActionHomeState();
   assert.strictEqual(home.data.homePrimaryCard.reason, 'next_day_record');
+  assert.strictEqual(home.data.homePrimaryCard.title, '孩子这个问题，昨晚试得怎么样？');
+  assert.ok(home.data.homePrimaryCard.desc.indexOf('写作业坐不住') !== -1);
+  assert.ok(home.data.homePrimaryCard.desc.indexOf('小牛育儿') !== -1);
+  assert.strictEqual(home.data.homePrimaryCard.cta, '记录孩子反应');
   home.onHomePrimaryActionTap();
   assert.strictEqual(home.data.coreRefactorState.stage, 'effect_record');
 
