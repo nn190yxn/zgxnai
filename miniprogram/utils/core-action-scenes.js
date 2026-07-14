@@ -5,7 +5,7 @@ var CORE_ACTION_AGE_GROUPS = [
   { key: '6-plus', label: '6岁以上' }
 ];
 
-var ageFirstCatalog = require('./core-action-age-catalog');
+var ageFirstCatalog = require('./core-action-age-catalog.js');
 
 var AGE_FIRST_SEGMENTS = [
   {

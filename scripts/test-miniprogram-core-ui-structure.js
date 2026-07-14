@@ -8,6 +8,8 @@ function read(relativePath) {
 
 const home = read('miniprogram/pages/index/index.wxml');
 const homeStyles = read('miniprogram/pages/index/index.wxss');
+const coreActionScenes = read('miniprogram/utils/core-action-scenes.js');
+assert.ok(coreActionScenes.includes("require('./core-action-age-catalog.js')"), 'age-first catalog require should use explicit .js extension for WeChat DevTools');
 assert.ok(home.includes('class="core-hero"'), 'home should render core hero');
 assert.ok(home.includes('class="core-hero" wx:if="{{coreRefactorEnabled}}"'), 'core hero should be gated by core refactor flag');
 assert.ok(home.includes('bindtap="onHomePrimaryActionTap"'), 'home should expose primary action');
