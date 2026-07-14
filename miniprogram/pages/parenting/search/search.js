@@ -21,6 +21,18 @@ Page({
     requestSeq: 0
   },
 
+  decodeQueryValue: function(value) {
+    var text = String(value || '').trim();
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text.replace(/\+/g, ' ')).trim();
+    } catch (err) {
+      return text;
+    }
+  },
+
   trackSceneEvent: function(eventType, extraMeta) {
     if (!app.trackKbEvent) {
       return;
@@ -37,21 +49,21 @@ Page({
   },
 
   onLoad: function(options) {
-    var sceneKey = String((options && (options.sceneKey || options.scene_key)) || '').trim();
-    var keyword = String((options && options.keyword) || '').trim();
-    var bottleneckTitle = String((options && (options.bottleneckTitle || options.bottleneck_title)) || '').trim();
-    var ageGroup = String((options && (options.ageGroup || options.age_group)) || '').trim();
-    var ageSegmentKey = String((options && (options.ageSegmentKey || options.age_segment_key)) || '').trim();
-    var ageSegmentLabel = String((options && (options.ageSegmentLabel || options.age_segment_label)) || '').trim();
-    var categoryKey = String((options && (options.categoryKey || options.category_key)) || '').trim();
-    var categoryLabel = String((options && (options.categoryLabel || options.category_label)) || '').trim();
-    var painPointKey = String((options && (options.painPointKey || options.pain_point_key)) || '').trim();
-    var painPointTitle = String((options && (options.painPointTitle || options.pain_point_title)) || '').trim();
-    var abilityTags = String((options && (options.abilityTags || options.ability_tags)) || '').trim();
+    var sceneKey = this.decodeQueryValue(options && (options.sceneKey || options.scene_key));
+    var keyword = this.decodeQueryValue(options && options.keyword);
+    var bottleneckTitle = this.decodeQueryValue(options && (options.bottleneckTitle || options.bottleneck_title));
+    var ageGroup = this.decodeQueryValue(options && (options.ageGroup || options.age_group));
+    var ageSegmentKey = this.decodeQueryValue(options && (options.ageSegmentKey || options.age_segment_key));
+    var ageSegmentLabel = this.decodeQueryValue(options && (options.ageSegmentLabel || options.age_segment_label));
+    var categoryKey = this.decodeQueryValue(options && (options.categoryKey || options.category_key));
+    var categoryLabel = this.decodeQueryValue(options && (options.categoryLabel || options.category_label));
+    var painPointKey = this.decodeQueryValue(options && (options.painPointKey || options.pain_point_key));
+    var painPointTitle = this.decodeQueryValue(options && (options.painPointTitle || options.pain_point_title));
+    var abilityTags = this.decodeQueryValue(options && (options.abilityTags || options.ability_tags));
     this.setData({
       keyword: keyword || painPointTitle || bottleneckTitle,
       currentAgeGroup: ageGroup,
-      currentCategory: String((options && options.category) || '').trim(),
+      currentCategory: this.decodeQueryValue(options && options.category),
       coreActionContext: sceneKey ? {
         sceneKey: sceneKey,
         ageGroup: ageGroup,

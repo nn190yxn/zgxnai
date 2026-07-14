@@ -230,6 +230,9 @@ function testHomeCoreFlow() {
   assert.ok(navigations[0].indexOf('painPointKey=reading_slow_forgets') !== -1, 'parenting search URL should include pain point key');
   assert.ok(navigations[0].indexOf('painPointTitle=') !== -1, 'parenting search URL should include pain point title');
   assert.ok(navigations[0].indexOf('abilityTags=') !== -1, 'parenting search URL should include ability tags');
+  const decodedCoreSearchUrl = decodeURIComponent(navigations[0]);
+  assert.ok(decodedCoreSearchUrl.indexOf('keyword=阅读慢又记不住 专注学习') !== -1, 'parenting search URL should use readable Chinese core keyword');
+  assert.ok(decodedCoreSearchUrl.indexOf('阅读效率') !== -1, 'parenting search URL should include ability keywords for better recall');
 
   home.onCoreSceneTap(tap({ sceneKey: 'homework_restless' }));
   assert.strictEqual(home.data.coreRefactorState.stage, 'age_select');
@@ -561,6 +564,8 @@ function testCoreSceneSearchFeatureFlag() {
   });
   assert.strictEqual(navigations.length, 1);
   assert.ok(navigations[0].includes('sceneKey=homework_restless'));
+  assert.ok(navigations[0].includes('keyword='));
+  assert.ok(decodeURIComponent(navigations[0]).includes('keyword=写作业坐不住'));
 }
 
 function testNextDayRecordRuleAndMembershipTouchpoint() {

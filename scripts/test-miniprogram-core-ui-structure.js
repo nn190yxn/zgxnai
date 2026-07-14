@@ -79,6 +79,8 @@ assert.ok(chatJs.includes('孩子反应不同怎么办'), 'chat follow-up should
 assert.ok(chatWxml.includes('继续追问细节'), 'chat empty state should align with core follow-up copy');
 
 const searchJs = read('miniprogram/pages/parenting/search/search.js');
+assert.ok(searchJs.includes('decodeQueryValue'), 'scene search should decode encoded query parameters');
+assert.ok(searchJs.includes('decodeURIComponent'), 'scene search should decode Chinese keywords from navigation URL');
 assert.ok(searchJs.includes('sceneKey: sceneKey'), 'scene search should keep core scene key');
 assert.ok(searchJs.includes('ageGroup: ageGroup'), 'scene search should keep child age group');
 assert.ok(searchJs.includes('ageSegmentKey: ageSegmentKey'), 'scene search should keep core age segment key');

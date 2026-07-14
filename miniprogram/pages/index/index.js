@@ -1448,6 +1448,11 @@ Page({
       return;
     }
     var abilityTags = Array.isArray(context.abilityTags) ? context.abilityTags.join('、') : String(context.abilityTags || '');
+    var keyword = [
+      context.painPointTitle || context.sceneLabel || context.bottleneckTitle || '',
+      context.categoryLabel || '',
+      abilityTags
+    ].filter(Boolean).join(' ');
     var query = [
       'sceneKey=' + encodeURIComponent(context.sceneKey || ''),
       'ageGroup=' + encodeURIComponent(context.ageGroup || ''),
@@ -1459,7 +1464,7 @@ Page({
       'painPointTitle=' + encodeURIComponent(context.painPointTitle || ''),
       'abilityTags=' + encodeURIComponent(abilityTags),
       'bottleneckTitle=' + encodeURIComponent(context.bottleneckTitle || ''),
-      'keyword=' + encodeURIComponent(context.painPointTitle || context.sceneLabel || context.bottleneckTitle || '')
+      'keyword=' + encodeURIComponent(keyword)
     ].join('&');
     wx.navigateTo({
       url: '/pages/parenting/search/search?' + query,
