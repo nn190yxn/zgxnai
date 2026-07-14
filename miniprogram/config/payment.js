@@ -3,7 +3,7 @@ const envConfig = require('../config/env.js');
 
 // 会员展示与官方虚拟支付能力分离，避免未完成配置时展示可支付状态。
 const SHOW_MEMBERSHIP = envConfig.showMembership !== false;
-const ENABLE_VIRTUAL_PAY = envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true;
+const ENABLE_VIRTUAL_PAY = envConfig.enableVirtualPay === true;
 
 // 官方小程序虚拟支付配置
 const WX_CONFIG = {
@@ -41,7 +41,6 @@ const WX_CONFIG = {
 
 module.exports = {
   ENABLE_PAYMENT: ENABLE_VIRTUAL_PAY,
-  ENABLE_WECHAT_PAY: ENABLE_VIRTUAL_PAY,
   ENABLE_VIRTUAL_PAY,
   SHOW_MEMBERSHIP,
   WX_CONFIG

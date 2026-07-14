@@ -32,7 +32,7 @@ function normalizeRuntimeConfig(payload) {
     coreRefactorRolloutPercent: Math.max(0, Math.min(100, isNaN(rolloutPercent) ? 0 : rolloutPercent)),
     coreRefactorUserWhitelist: normalizeStringList(whitelistSource),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
-    paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : (envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true),
+    paymentEnabled: data.payment_enabled !== undefined ? !!data.payment_enabled : (envConfig.enableVirtualPay === true),
     retentionStatusEnabled: data.retention_status_enabled !== undefined ? !!data.retention_status_enabled : (envConfig.enableRetentionStatus === true),
     aiMockFallback: data.ai_mock_fallback !== undefined ? !!data.ai_mock_fallback : !!envConfig.allowMockFallback,
     aiServiceReady: data.ai_service_ready !== undefined ? !!data.ai_service_ready : (envConfig.envName !== 'production'),

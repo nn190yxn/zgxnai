@@ -63,7 +63,7 @@ App({
       coreRefactorRolloutPercent: Number(envConfig.coreRefactorRolloutPercent || 0),
       coreRefactorUserWhitelist: envConfig.coreRefactorUserWhitelist || [],
       multimodalEnabled: envConfig.enableMultimodal === true,
-      paymentEnabled: envConfig.enableVirtualPay === true || envConfig.enableWechatPay === true,
+      paymentEnabled: envConfig.enableVirtualPay === true,
       retentionStatusEnabled: envConfig.enableRetentionStatus === true,
       aiMockFallback: !!envConfig.allowMockFallback,
       aiServiceReady: envConfig.envName !== 'production',

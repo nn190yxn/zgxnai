@@ -17,6 +17,12 @@ assert.ok(membershipJs.includes('wx.requestVirtualPayment'), 'membership purchas
 assert.ok(membershipJs.includes("url: '/payment/virtual-order'"), 'membership purchase should request virtual payment order');
 assert.ok(!membershipJs.includes('wx.requestPayment'), 'membership purchase should avoid ordinary wx.requestPayment');
 assert.ok(!membershipJs.includes("url: '/payment/unified-order'"), 'membership purchase should avoid ordinary unified order');
+assert.ok(!membershipJs.includes('微信官方支付方式'), 'membership copy should avoid ambiguous ordinary payment wording');
+
+['miniprogram/config/env.js', 'miniprogram/config/payment.js', 'miniprogram/app.js', 'miniprogram/utils/app-config.js'].forEach(function(relativePath) {
+  assert.ok(!read(relativePath).includes('enableWechatPay'), relativePath + ' should avoid ordinary WeChat Pay config naming');
+  assert.ok(!read(relativePath).includes('ENABLE_WECHAT_PAY'), relativePath + ' should avoid ordinary WeChat Pay export naming');
+});
 
 assert.ok(productionServer.includes('function isVirtualMembershipPlan'), 'production backend should identify virtual membership plans');
 assert.ok(productionServer.includes("code: 'VIRTUAL_PAYMENT_REQUIRED'"), 'production backend should expose virtual payment required error');
