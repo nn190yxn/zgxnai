@@ -9,6 +9,8 @@ function read(relativePath) {
 }
 
 const membershipJs = read('miniprogram/pages/membership/index.js');
+const privacyWxml = read('miniprogram/pages/profile/privacy/privacy.wxml');
+const agreementWxml = read('miniprogram/pages/profile/agreement/agreement.wxml');
 const productionServer = read('backend/src/mysql-production/server.js');
 const paymentService = read('backend/src/services/payment.js');
 const paymentRoutes = read('backend/src/routes/payment.js');
@@ -18,6 +20,10 @@ assert.ok(membershipJs.includes("url: '/payment/virtual-order'"), 'membership pu
 assert.ok(!membershipJs.includes('wx.requestPayment'), 'membership purchase should avoid ordinary wx.requestPayment');
 assert.ok(!membershipJs.includes("url: '/payment/unified-order'"), 'membership purchase should avoid ordinary unified order');
 assert.ok(!membershipJs.includes('微信官方支付方式'), 'membership copy should avoid ambiguous ordinary payment wording');
+assert.ok(!membershipJs.includes('Apple 支付'), 'membership copy should avoid Apple payment wording');
+assert.ok(!privacyWxml.includes('Apple 支付'), 'privacy copy should avoid Apple payment wording');
+assert.ok(!agreementWxml.includes('Apple 支付'), 'agreement copy should avoid Apple payment wording');
+assert.ok(!agreementWxml.includes('Apple 官方流程'), 'agreement copy should avoid Apple refund wording');
 
 ['miniprogram/config/env.js', 'miniprogram/config/payment.js', 'miniprogram/app.js', 'miniprogram/utils/app-config.js'].forEach(function(relativePath) {
   assert.ok(!read(relativePath).includes('enableWechatPay'), relativePath + ' should avoid ordinary WeChat Pay config naming');

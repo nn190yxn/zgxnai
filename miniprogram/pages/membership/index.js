@@ -22,7 +22,7 @@ Page({
     showPayment: ENABLE_VIRTUAL_PAY,
     paymentNotice: ENABLE_VIRTUAL_PAY ? '成长服务为虚拟内容服务，通过微信官方小程序虚拟支付能力购买。' : '官方小程序虚拟支付能力正在配置中，新用户可先领取体验服务并使用邀请奖励',
     signupBenefitText: '新用户首次注册自动赠送7天成长服务，可与邀请奖励叠加。',
-    paymentCapabilityHint: 'Android、鸿蒙、Windows 端使用微信虚拟支付，iOS 端按微信官方能力自动拉起 Apple 支付。',
+    paymentCapabilityHint: 'Android、鸿蒙、Windows 和 iOS 端均使用微信官方小程序虚拟支付能力。',
     
     // 套餐列表
     plans: [
