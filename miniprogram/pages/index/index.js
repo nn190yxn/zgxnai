@@ -426,8 +426,8 @@ Page({
       return {
         primaryCardType: 'weekly_summary',
         reason: 'continuous_record',
-        title: '已经连续记录 ' + continuousRecordCount + ' 次',
-        desc: '看看这个问题这几天怎么变了，再选下一周的小步骤。',
+        title: '小牛育儿，孩子成长最佳帮手',
+        desc: '已经连续记录 ' + continuousRecordCount + ' 次，看看这个问题这几天怎么变了，再选下一周的小步骤。',
         cta: '看一周变化',
         targetPath: '/pages/weekly-summary/index',
         targetPayload: { actionId: recentAction.id, continuousRecordCount: continuousRecordCount }
@@ -438,7 +438,7 @@ Page({
       return {
         primaryCardType: 'continue_action',
         reason: 'next_day_record',
-        title: '孩子这个问题，昨晚试得怎么样？',
+        title: '小牛育儿，孩子成长最佳帮手',
         desc: (recentAction.sceneLabel || recentAction.painPointTitle || '孩子的具体表现') + '，记录反应后，小牛育儿会继续给今晚下一步。',
         cta: '记录孩子反应',
         targetPath: '',
@@ -450,7 +450,7 @@ Page({
       return {
         primaryCardType: 'continue_action',
         reason: 'unfinished_action',
-        title: '继续解决孩子这个表现',
+        title: '小牛育儿，孩子成长最佳帮手',
         desc: (recentAction.sceneLabel || recentAction.painPointTitle || '孩子的问题') + '，今晚沿用一个小动作，先看孩子是否更愿意开始。',
         cta: '看今晚怎么做',
         targetPath: '',
@@ -462,7 +462,7 @@ Page({
       return {
         primaryCardType: 'weekly_summary',
         reason: 'recent_record',
-        title: '孩子变化已经记下来了',
+        title: '小牛育儿，孩子成长最佳帮手',
         desc: (recentAction.effectLabel || '看看孩子对这个方法的反应') + '，小牛育儿继续帮你拆下一步。',
         cta: '看下一步建议',
         targetPath: '',
@@ -474,8 +474,8 @@ Page({
       return {
         primaryCardType: 'continue_action',
         reason: 'unfinished_action',
-        title: continueTask.title || '接着完成上次那件事',
-        desc: '继续完成后，小牛会帮你整理下一步。',
+        title: '小牛育儿，孩子成长最佳帮手',
+        desc: (continueTask.title || '接着完成上次那件事') + '，继续完成后，小牛会帮你整理下一步。',
         cta: '继续完成',
         targetPath: continueTask.targetPath || '',
         targetPayload: { sourceId: continueTask.id }
@@ -486,7 +486,7 @@ Page({
       return {
         primaryCardType: 'weekly_summary',
         reason: 'recent_record',
-        title: '最近状态有记录了',
+        title: '小牛育儿，孩子成长最佳帮手',
         desc: String(retentionSummary || '看看孩子最近的变化，再选今晚一步。'),
         cta: '看下一步',
         targetPath: '/pages/growth-record/index',
@@ -497,7 +497,7 @@ Page({
     return {
       primaryCardType: 'first_action',
       reason: 'no_context',
-      title: '孩子学习、情绪、运动问题，先找原因',
+      title: '小牛育儿，孩子成长最佳帮手',
       desc: '按年龄选择最像的表现，小牛育儿给你今晚能试的一步。',
       cta: '开始找孩子问题',
       targetPath: '',
