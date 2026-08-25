@@ -1,0 +1,11 @@
+<view class="page training-page">
+  <view class="page-header"><text class="page-title">家庭训练</text><text class="page-subtitle">每天一个短动作，先看见孩子的具体表现。</text></view>
+  <view wx:if="{{error}}" class="empty-card"><text>{{error}}</text></view>
+  <view wx:if="{{task}}" class="today-card" bindtap="openTask">
+    <text class="eyebrow">今天的训练</text><text class="task-title">{{task.title}}</text><text class="task-objective">{{task.objective}}</text>
+    <text class="task-meta">第{{task.dayIndex}}天 · {{task.durationMinutes}}分钟 · {{task.completed ? '已完成' : '开始训练'}}</text>
+  </view>
+  <view class="section-title">选择计划周期</view>
+  <view class="plan-actions"><button data-days="3" bindtap="generatePlan">3天体验</button><button data-days="7" bindtap="generatePlan">7天训练</button><button data-days="30" bindtap="generatePlan">30天持续</button></view>
+  <view class="plan-list"><view wx:for="{{plans}}" wx:key="id" class="plan-item"><text>{{item.durationDays}}天计划</text><text>{{item.startDate}} 至 {{item.endDate}}</text></view></view>
+</view>

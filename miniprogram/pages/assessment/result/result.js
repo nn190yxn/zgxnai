@@ -33,6 +33,8 @@ Page({
 
     // 家庭支持建议
     trainingPlans: [],
+    abilityProfileId: '',
+    trainingPlanLoading: false,
 
     // 免责声明
     disclaimerText: '本结果仅用于家庭观察和教育参考，不作为医学诊断、心理诊断或治疗依据。如孩子出现持续异常表现，请及时咨询专业医生或发育行为相关专业人士。',
@@ -77,6 +79,7 @@ Page({
     that.clearPendingTimers();
     var recordId = options.recordId;
     var isLocal = options.local === '1';
+    var childId = options.childId ? String(options.childId) : '';
 
     if (!recordId) {
       wx.showToast({
@@ -89,7 +92,8 @@ Page({
 
     that.setData({
       recordId: recordId,
-      isLocal: isLocal
+      isLocal: isLocal,
+      childId: childId
     });
 
     // 加载结果数据
@@ -112,8 +116,9 @@ Page({
   loadLocalResult: function(recordId) {
     var that = this;
     var records = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
+    var expectedChildId = String(this.data.childId || (app.getCurrentChild && app.getCurrentChild() || {}).id || '');
     var record = records.find(function(r) {
-      return r.recordId === recordId;
+      return r.recordId === recordId && (!expectedChildId || String(r.childId || '') === expectedChildId);
     });
 
     if (record) {
@@ -297,6 +302,7 @@ Page({
       assessmentCode: normalizeAssessmentCode(record.assessmentCode),
       assessmentName: record.assessmentName,
       childName: record.childName,
+      childId: record.childId,
       completedAt: completedAt,
       totalScore: record.totalScore,
       maxScore: record.maxScore,
@@ -315,6 +321,18 @@ Page({
       priorityFocus: reportData.priorityFocus || '',
       loading: false
     });
+    if (!that._profileViewTracked && app.trackKbEvent) {
+      that._profileViewTracked = true;
+      app.trackKbEvent({ event_type: 'ability_profile_view', action_id: 'observation:' + (record.childId || 'guest') + ':' + normalizeAssessmentCode(record.assessmentCode), ability_codes: normalizeAssessmentCode(record.assessmentCode) === 'sensory' ? ['sensory_motor'] : ['attention'], source_module: 'ability_observation', source_page: 'assessment_result', source_content_type: 'ability_profile', source_content_id: String(that.data.recordId || '') });
+    }
+  },
+
+  trackSuggestionClick: function(e) {
+    var index = Number(e.currentTarget.dataset.index || 0);
+    var suggestion = (this.data.suggestions || [])[index] || {};
+    if (app.trackKbEvent) {
+      app.trackKbEvent({ event_type: 'ability_suggestion_click', action_id: 'observation:' + (this.data.childId || 'guest') + ':' + this.data.assessmentCode, ability_codes: this.data.assessmentCode === 'sensory' ? ['sensory_motor'] : ['attention'], source_module: 'ability_observation', source_page: 'assessment_result', source_content_type: 'ability_suggestion', source_content_id: String(index), event_meta: { title: suggestion.title || '' } });
+    }
   },
 
   getDisclaimerText: function(assessmentCode) {
@@ -665,6 +683,10 @@ Page({
       var data = (res && res.data) ? res.data : res;
       if (data && !data.is_active && data.is_active_unpaid) {
         that.setData({ showMembershipPrompt: true });
+        if (!that._membershipExposureTracked && app.trackKbEvent) {
+          that._membershipExposureTracked = true;
+          app.trackKbEvent({ event_type: 'membership_touchpoint_exposure', action_id: 'membership:assessment_result:' + (that.data.childId || 'guest'), ability_codes: that.data.assessmentCode === 'sensory' ? ['sensory_motor'] : ['attention'], membership_entry_source: 'assessment_result', source_module: 'membership_touchpoint', source_page: 'assessment_result' });
+        }
       }
     }).catch(function() {});
   },
@@ -713,7 +735,39 @@ Page({
     });
   },
 
+  startExperiencePlan: function() {
+    var that = this;
+    var childId = that.data.childId || (app.getCurrentChild && app.getCurrentChild() || {}).id;
+    if (!childId || that.data.trainingPlanLoading) {
+      return;
+    }
+    that.setData({ trainingPlanLoading: true });
+    app.requireLoginForAction('登录后才能保存训练计划').then(function(canOperate) {
+      if (!canOperate) return null;
+      return app.request({
+        url: '/training-plans/generate',
+        method: 'POST',
+        data: { childId: childId, durationDays: 3, idempotencyKey: 'experience:' + childId + ':' + (that.data.recordId || that.data.assessmentCode) }
+      });
+    }).then(function(res) {
+      if (!res) return;
+      var plan = res.data || res;
+      if (app.trackKbEvent) {
+        app.trackKbEvent({ event_type: 'training_plan_generate', action_id: 'experience:' + childId + ':' + (that.data.recordId || that.data.assessmentCode), plan_id: plan.id, ability_codes: plan.abilityDomain ? [plan.abilityDomain] : null, source_module: 'training', source_page: 'assessment_result', event_meta: { duration_days: 3, entry_source: 'ability_profile' } });
+      }
+      wx.showToast({ title: '3天体验计划已生成', icon: 'success' });
+      wx.navigateTo({ url: '/pages/training/index/index?planId=' + (plan.id || '') });
+    }).catch(function() {
+      wx.showToast({ title: '计划生成失败，请稍后再试', icon: 'none' });
+    }).finally(function() {
+      that.setData({ trainingPlanLoading: false });
+    });
+  },
+
   goToMembershipFromResult: function() {
+    if (app.trackKbEvent) {
+      app.trackKbEvent({ event_type: 'membership_touchpoint_click', action_id: 'membership:assessment_result:' + (this.data.childId || 'guest'), ability_codes: this.data.assessmentCode === 'sensory' ? ['sensory_motor'] : ['attention'], membership_entry_source: 'assessment_result', source_module: 'membership_touchpoint', source_page: 'assessment_result' });
+    }
     wx.navigateTo({
       url: '/pages/membership/index?source=assessment_result',
       fail: function() {

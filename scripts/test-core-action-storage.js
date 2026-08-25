@@ -45,6 +45,12 @@ assert.strictEqual(saved.record.completed, false);
 assert.strictEqual(saved.record.sevenDayPlanDraft.length, 7);
 assert.strictEqual(storageApi.getLatestCoreAction().id, 'record-a');
 
+const childRecord = storageApi.saveTonightAction(Object.assign(buildRecord('record-child-2', baseTime + 2), { childId: 2 }), baseTime + 2);
+assert.strictEqual(childRecord.record.childId, '2');
+assert.deepStrictEqual(storageApi.getCoreActionRecords(1).map(function(item) { return item.id; }), [], 'child queries must exclude records from other children');
+assert.deepStrictEqual(storageApi.getCoreActionRecords(2).map(function(item) { return item.id; }), ['record-child-2'], 'child queries must return only the requested child');
+assert.strictEqual(storageApi.getContinuousRecordCount(baseTime, 2), 0, 'continuity must be isolated by child');
+
 const ageFirstRecord = Object.assign(buildRecord('age-first-a', baseTime + 1), {
   ageSegmentKey: 'age_8_9',
   ageSegmentLabel: '8-9岁',

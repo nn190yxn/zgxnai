@@ -3,10 +3,21 @@ const app = getApp();
 const encouragementUtils = require('../../utils/encouragement.js');
 const coreActionScenes = require('../../utils/core-action-scenes.js');
 const coreActionStorage = require('../../utils/core-action-storage.js');
+const crossPageStorage = require('../../utils/cross-page-storage.js');
+const homeState = require('../../utils/home-state.js');
+const membershipStateUtil = require('../../utils/membership-state.js');
 const developmentZones = require('../../utils/development-zones.js');
 const allDevelopmentZones = developmentZones.getDevelopmentZones();
-const HOME_SLOGAN = '小牛育儿，孩子成长最佳帮手';
-const HOME_SUBTITLE = '学习、情绪、运动、社交问题，按年龄给方法。';
+const HOME_SLOGAN = '看懂孩子的能力状态';
+const HOME_SUBTITLE = '按年龄观察专注力和感觉运动表现，获得今天能做的一步。';
+
+function saveReadingShareDraft(draft) {
+  var child = app.getCurrentChild ? app.getCurrentChild() : null;
+  crossPageStorage.save('readingShareDraft', draft, {
+    childId: child && child.id,
+    source: draft && draft.source ? draft.source : 'index_share'
+  });
+}
 
 Page({
   data: {
@@ -27,7 +38,7 @@ Page({
     },
     coreRefactorState: {
       claim: '先看懂孩子当前卡点，再做今晚第一步',
-      primaryActionText: '开始看看孩子卡在哪',
+      primaryActionText: '开始一次能力观察',
       activeScene: '',
       selectedAgeSegment: null,
       selectedPainPoint: null,
@@ -64,63 +75,75 @@ Page({
     coreScenes: coreActionScenes.getCoreActionScenes(),
     coreSupportTools: [
       {
-        key: 'chat',
-        title: '继续追问细节',
-        desc: '围绕刚才的卡点问做法',
-        action: 'chat'
-      },
-      {
         key: 'assessment',
-        title: '做观察',
-        desc: '系统看一次整体状态',
+        title: '能力观察',
+        desc: '看看孩子当前的表现',
         action: 'assessment'
       },
       {
-        key: 'textbook',
-        title: '做练习',
-        desc: '按年龄练阅读表达',
-        action: 'textbook'
+        key: 'training',
+        title: '今日训练',
+        desc: '完成一个适龄短训练',
+        action: 'today_task'
       },
       {
-        key: 'parenting',
-        title: '找方法',
-        desc: '按场景查育儿步骤',
-        action: 'parenting'
-      },
-      {
-        key: 'nutrition',
-        title: '看营养',
-        desc: '查挑食和搭配建议',
-        action: 'nutrition'
-      },
-      {
-        key: 'growth',
-        title: '记成长',
-        desc: '看看最近变化',
-        action: 'growth_record'
-      },
-      {
-        key: 'weekly',
-        title: '看周报',
-        desc: '复盘一周变化',
+        key: 'report',
+        title: '成长报告',
+        desc: '回看近期表现变化',
         action: 'weekly_report'
       },
       {
-        key: 'membership',
-        title: '成长服务',
-        desc: '解锁连续陪伴建议',
-        action: 'membership'
+        key: 'development',
+        title: '发展专题',
+        desc: '按年龄查看支持内容',
+        action: 'development_zones'
+      },
+    ],
+    coreAuxiliaryTools: [
+      {
+        key: 'chat',
+        title: '家庭支持助手',
+        desc: '描述家庭场景，获得支持步骤',
+        action: 'chat'
+      },
+      {
+        key: 'textbook',
+        title: '文章与练习',
+        desc: '按年龄补充家庭练习',
+        action: 'textbook'
+      },
+      {
+        key: 'nutrition',
+        title: '营养支持',
+        desc: '查看家庭饮食建议',
+        action: 'nutrition'
+      },
+      {
+        key: 'parenting',
+        title: '家庭场景支持',
+        desc: '查找吃饭、睡前和出门步骤',
+        action: 'parenting'
       }
     ],
     homePrimaryCard: {
       primaryCardType: 'first_action',
       reason: 'no_context',
-      title: '孩子今天这个表现，先看懂卡在哪',
-      desc: '选一个家里正在发生的场景，小牛帮你判断原因，再给今晚能做的一步。',
-      cta: '开始看看孩子卡在哪',
+      title: '先做一次能力观察',
+      desc: '了解孩子当前的专注力和感觉运动表现，再获得适龄的第一步。',
+      cta: '开始一次能力观察',
       targetPath: '',
       targetPayload: {}
     },
+    homeState: {
+      status: 'no_observation',
+      source: 'local',
+      recovered: false
+    },
+    hasObservation: false,
+    pendingFeedback: false,
+    reportAvailable: false,
+    membershipState: null,
+    homeStateError: '',
     recentCoreAction: null,
     coreRefactorEnabled: false,
     ageFirstCoreEnabled: true,
@@ -252,18 +275,30 @@ Page({
     var coreRefactorEnabled = this.resolveCoreRefactorEnabled(runtimeConfig);
     var ageFirstCoreEnabled = coreRefactorEnabled && this.resolveAgeFirstCoreEnabled(runtimeConfig);
     var ageFirstCoreAvailable = this.hasUsableAgeFirstSegments();
-    var recentAction = coreActionStorage.getLatestCoreAction();
-    var continuousRecordCount = coreActionStorage.getContinuousRecordCount();
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var currentChildId = currentChild && currentChild.id;
+    var recentAction = coreActionStorage.getLatestCoreAction(currentChildId);
+    var continuousRecordCount = coreActionStorage.getContinuousRecordCount(undefined, currentChildId);
     var primaryCard = this.buildHomePrimaryCard({
       recentAction: recentAction,
       retentionSummary: this.data.retentionSummary,
       continueTask: this.data.continueTask,
-      continuousRecordCount: continuousRecordCount
+      continuousRecordCount: continuousRecordCount,
+      dailyPlanCards: this.data.dailyPlanCards,
+      hasObservation: this.data.hasObservation,
+      pendingFeedback: this.data.pendingFeedback,
+      reportAvailable: this.data.reportAvailable,
+      membershipState: this.data.membershipState
     });
 
     this.setData({
       recentCoreAction: recentAction,
       homePrimaryCard: primaryCard,
+      homeState: {
+        status: primaryCard.status,
+        source: primaryCard.source,
+        recovered: !!this.data.homeState.recovered
+      },
       coreRefactorEnabled: coreRefactorEnabled,
       ageFirstCoreEnabled: ageFirstCoreEnabled,
       ageFirstCoreAvailable: ageFirstCoreAvailable,
@@ -274,6 +309,43 @@ Page({
     }
     this.trackCoreHomeClaimView(primaryCard);
     this.trackNextDayRecordView(primaryCard, recentAction);
+  },
+
+  getLocalHomeStateSnapshot: function() {
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var envelope = crossPageStorage.read('homeStateSnapshot', currentChild && currentChild.id);
+    return envelope && envelope.payload ? envelope.payload : null;
+  },
+
+  saveLocalHomeStateSnapshot: function() {
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    crossPageStorage.save('homeStateSnapshot', {
+      hasObservation: !!this.data.hasObservation,
+      pendingFeedback: !!this.data.pendingFeedback,
+      reportAvailable: !!this.data.reportAvailable,
+      membershipState: this.data.membershipState || null,
+      dailyPlanCards: this.data.dailyPlanCards || [],
+      source: 'local'
+    }, { childId: currentChild && currentChild.id, source: 'home_index' });
+  },
+
+  restoreHomeStateFromLocal: function(message) {
+    var snapshot = this.getLocalHomeStateSnapshot();
+    if (!snapshot) {
+      this.setData({ homeStateError: message || '' });
+      this.refreshCoreActionHomeState();
+      return false;
+    }
+    this.setData({
+      hasObservation: !!snapshot.hasObservation,
+      pendingFeedback: !!snapshot.pendingFeedback,
+      reportAvailable: !!snapshot.reportAvailable,
+      membershipState: snapshot.membershipState || null,
+      dailyPlanCards: snapshot.dailyPlanCards || this.data.dailyPlanCards,
+      homeStateError: message || '远程状态暂时不可用，已使用本地记录'
+    });
+    this.refreshCoreActionHomeState();
+    return true;
   },
 
   resolveCoreRefactorEnabled: function(runtimeConfig) {
@@ -421,90 +493,18 @@ Page({
     var context = options || {};
     var recentAction = context.recentAction || null;
     var continueTask = context.continueTask || null;
-    var retentionSummary = context.retentionSummary || null;
-    var continuousRecordCount = Number(context.continuousRecordCount || 0);
-
-    if (recentAction && recentAction.completed && continuousRecordCount >= 2) {
-      return {
-        primaryCardType: 'weekly_summary',
-        reason: 'continuous_record',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '看一周变化',
-        targetPath: '/pages/weekly-summary/index',
-        targetPayload: { actionId: recentAction.id, continuousRecordCount: continuousRecordCount }
-      };
-    }
-
-    if (recentAction && recentAction.saved && !recentAction.completed && this.isBeforeToday(recentAction.savedAt || recentAction.createdAt)) {
-      return {
-        primaryCardType: 'continue_action',
-        reason: 'next_day_record',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '记录孩子反应',
-        targetPath: '',
-        targetPayload: { actionId: recentAction.id }
-      };
-    }
-
-    if (recentAction && recentAction.saved && !recentAction.completed) {
-      return {
-        primaryCardType: 'continue_action',
-        reason: 'unfinished_action',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '看今晚怎么做',
-        targetPath: '',
-        targetPayload: { actionId: recentAction.id }
-      };
-    }
-
-    if (recentAction && recentAction.completed) {
-      return {
-        primaryCardType: 'weekly_summary',
-        reason: 'recent_record',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '看下一步建议',
-        targetPath: '',
-        targetPayload: { actionId: recentAction.id }
-      };
-    }
-
-    if (continueTask && continueTask.id) {
-      return {
-        primaryCardType: 'continue_action',
-        reason: 'unfinished_action',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '继续完成',
-        targetPath: continueTask.targetPath || '',
-        targetPayload: { sourceId: continueTask.id }
-      };
-    }
-
-    if (retentionSummary) {
-      return {
-        primaryCardType: 'weekly_summary',
-        reason: 'recent_record',
-        title: HOME_SLOGAN,
-        desc: HOME_SUBTITLE,
-        cta: '看下一步',
-        targetPath: '/pages/growth-record/index',
-        targetPayload: {}
-      };
-    }
-
-    return {
-      primaryCardType: 'first_action',
-      reason: 'no_context',
-      title: HOME_SLOGAN,
-      desc: HOME_SUBTITLE,
-      cta: '开始找孩子问题',
-      targetPath: '',
-      targetPayload: {}
-    };
+    var state = Object.assign({}, context, {
+      recentAction: recentAction,
+      continueTask: continueTask,
+      unfinishedTraining: !!(recentAction && recentAction.saved && !recentAction.completed)
+    });
+    var card = homeState.getPrimaryAction(state);
+    card.targetPayload = Object.assign({}, card.targetPayload, recentAction && recentAction.id ? {
+      actionId: recentAction.id
+    } : {}, continueTask && continueTask.id ? {
+      sourceId: continueTask.id
+    } : {});
+    return card;
   },
 
   onHomePrimaryActionTap: function() {
@@ -517,32 +517,29 @@ Page({
         cta: card.cta || ''
       }
     });
-    if (card.reason === 'next_day_record' && recentAction && recentAction.id) {
+    if (card.status === 'unfinished_training' && recentAction && recentAction.id) {
       this.setData({
         'coreRefactorState.currentBottleneck': recentAction,
         'coreRefactorState.nextAction': {
           title: recentAction.actionTitle,
           steps: recentAction.actionSteps || []
         },
+        'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(recentAction),
+        'coreRefactorState.stage': this.isBeforeToday(recentAction.savedAt || recentAction.createdAt) ? 'effect_record' : 'bottleneck_result'
+      });
+      wx.showToast({ title: '记录孩子的表现', icon: 'none' });
+      return;
+    }
+    if (card.status === 'pending_feedback' && recentAction && recentAction.id) {
+      this.setData({
+        'coreRefactorState.currentBottleneck': recentAction,
+        'coreRefactorState.nextAction': { title: recentAction.actionTitle, steps: recentAction.actionSteps || [] },
         'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(recentAction),
         'coreRefactorState.stage': 'effect_record'
       });
-      wx.showToast({ title: '记录昨晚效果', icon: 'none' });
       return;
     }
-    if (card.reason === 'unfinished_action' && recentAction && recentAction.id) {
-      this.setData({
-        'coreRefactorState.currentBottleneck': recentAction,
-        'coreRefactorState.nextAction': {
-          title: recentAction.actionTitle,
-          steps: recentAction.actionSteps || []
-        },
-        'coreRefactorState.resultSupportItems': this.buildCoreResultSupportItems(recentAction),
-        'coreRefactorState.stage': 'bottleneck_result'
-      });
-      return;
-    }
-    if (card.primaryCardType === 'weekly_summary' || card.targetPath === '/pages/weekly-summary/index') {
+    if (card.status === 'report_available' || card.targetPath === '/pages/weekly-summary/index') {
       this.goToWeeklyReport();
       return;
     }
@@ -971,7 +968,10 @@ Page({
       wx.showToast({ title: '先选一个表现', icon: 'none' });
       return;
     }
-    var saved = coreActionStorage.saveTonightAction(this.data.coreRefactorState.currentBottleneck);
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var saved = coreActionStorage.saveTonightAction(Object.assign({}, this.data.coreRefactorState.currentBottleneck, {
+      childId: currentChild && currentChild.id
+    }));
     if (!saved.success || !saved.record) {
       wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
       return;
@@ -998,7 +998,7 @@ Page({
         recentAction: saved.record,
         retentionSummary: this.data.retentionSummary,
         continueTask: this.data.continueTask,
-        continuousRecordCount: coreActionStorage.getContinuousRecordCount()
+        continuousRecordCount: coreActionStorage.getContinuousRecordCount(undefined, currentChild && currentChild.id)
       })
     });
     this.applyCoreMembershipTouchpoint('tonight_action_save');
@@ -1100,7 +1100,8 @@ Page({
       this.trackCoreNextActionView(result, fallbackSuggestion);
       return;
     }
-    wx.setStorageSync('pendingCoreActionContext', {
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    crossPageStorage.save('pendingCoreActionContext', {
       source: 'home_core_action_result',
       sceneKey: result.sceneKey,
       sceneLabel: result.sceneLabel,
@@ -1119,6 +1120,9 @@ Page({
       bottleneckText: result.bottleneckText,
       actionTitle: result.actionTitle,
       actionSteps: result.actionSteps || []
+    }, {
+      childId: currentChild && currentChild.id,
+      source: 'home_core_action_result'
     });
     wx.switchTab({
       url: '/pages/chat/chat',
@@ -1145,7 +1149,8 @@ Page({
       return;
     }
     var nextSuggestion = this.buildCoreNextActionSuggestion(updated.record);
-    var continuousCount = coreActionStorage.getContinuousRecordCount();
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var continuousCount = coreActionStorage.getContinuousRecordCount(undefined, currentChild && currentChild.id);
     this.trackCoreActionEvent('action_effect_submit', {
       sceneKey: updated.record.sceneKey,
       ageGroup: updated.record.ageGroup,
@@ -1301,7 +1306,10 @@ Page({
       wx.showToast({ title: '下一步还没生成', icon: 'none' });
       return;
     }
-    var saved = coreActionStorage.saveTonightAction(suggestion);
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var saved = coreActionStorage.saveTonightAction(Object.assign({}, suggestion, {
+      childId: currentChild && currentChild.id
+    }));
     if (!saved.success || !saved.record) {
       wx.showToast({ title: '没保存成功，请再试一次', icon: 'none' });
       return;
@@ -1329,7 +1337,7 @@ Page({
         recentAction: saved.record,
         retentionSummary: this.data.retentionSummary,
         continueTask: this.data.continueTask,
-        continuousRecordCount: coreActionStorage.getContinuousRecordCount()
+        continuousRecordCount: coreActionStorage.getContinuousRecordCount(undefined, currentChild && currentChild.id)
       })
     });
     this.applyCoreMembershipTouchpoint('tonight_action_save');
@@ -1378,8 +1386,15 @@ Page({
       wx.showToast({ title: '先生成一个判断结果', icon: 'none' });
       return;
     }
-    wx.setStorageSync('pendingGrowthRecordNote', payload.note);
-    wx.setStorageSync('pendingGrowthRecordSource', payload.source);
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    crossPageStorage.save('pendingGrowthRecordNote', payload.note, {
+      childId: currentChild && currentChild.id,
+      source: 'core_action_growth_record'
+    });
+    crossPageStorage.save('pendingGrowthRecordSource', payload.source, {
+      childId: currentChild && currentChild.id,
+      source: 'core_action_growth_record'
+    });
     wx.navigateTo({
       url: '/pages/growth-record/index?source=core_action',
       fail: function() {
@@ -1434,6 +1449,14 @@ Page({
     }
     if (action === 'weekly_report') {
       this.goToWeeklyReport();
+      return;
+    }
+    if (action === 'today_task') {
+      this.goToTodayTask();
+      return;
+    }
+    if (action === 'development_zones') {
+      this.goToAllDevelopmentZones();
       return;
     }
     if (action === 'membership') {
@@ -1635,8 +1658,11 @@ Page({
           streakDays: recordDays,
           actionText: weeklySummary && weeklySummary.premiumUnlocked ? '查看完整周报' : '查看周总结',
           premiumUnlocked: !!(weeklySummary && weeklySummary.premiumUnlocked)
-        }
+        },
+        reportAvailable: !!(weeklySummary && (weeklySummary.reportId || weeklySummary.dataStatus === 'ready' || weeklySummary.completedTaskCount > 0))
       });
+      that.refreshCoreActionHomeState();
+      that.saveLocalHomeStateSnapshot();
       if (weeklySummary && !weeklySummary.premiumUnlocked) {
         that.setData({
           membershipTouchpointTitle: '宝贝每周成长总结',
@@ -1812,10 +1838,19 @@ Page({
       todayTask: todayTask,
       weeklyProgress: weeklyProgress
     });
+    this.setData({
+      hasObservation: this.data.hasObservation || list.length > 0,
+      pendingFeedback: !!(payload && (payload.pending_feedback || payload.feedback_required))
+    });
+    this.refreshCoreActionHomeState();
+    this.saveLocalHomeStateSnapshot();
   },
 
   applyDailyPlanLoadError: function(message) {
     var text = message || '今日建议没加载出来，请稍后再试。';
+    if (this.restoreHomeStateFromLocal(text)) {
+      return;
+    }
     this.setData({
       dailyPlanCards: [],
       dailyPlanDate: '',
@@ -1829,6 +1864,7 @@ Page({
         duration: '可以稍后刷新'
       }
     });
+    this.refreshCoreActionHomeState();
   },
 
   trackDailyPlanEvent: function(eventType, plan, extraMeta) {
@@ -1909,7 +1945,7 @@ Page({
       that.applyDailyPlan(cards, res || {}, streakDaysVal);
       that.trackDailyPlanView(that.data.dailyPlanCards, res || {});
     }).catch(function() {
-      that.applyDailyPlanLoadError('今日建议没加载出来，请稍后再试。');
+      that.applyDailyPlanLoadError('今日训练暂时无法同步，已保留本地记录。');
     }).finally(function() {
       that.setData({ dailyPlanLoading: false });
     });
@@ -1962,11 +1998,11 @@ Page({
       return;
     }
     app.ensureLogin().then(function() {
-      return app.request({
-        url: '/membership/info',
-        method: 'GET'
-      });
+      return membershipStateUtil.refreshMembership(app, { force: true });
     }).then(function(data) {
+      that.setData({ membershipState: data });
+      that.refreshCoreActionHomeState();
+      that.saveLocalHomeStateSnapshot();
       that.setData({
         membershipTouchpointVisible: !(data && data.is_active),
         membershipTouchpointEligible: !(data && data.is_active)
@@ -1976,7 +2012,12 @@ Page({
         that.trackMembershipTouchpointEvent('membership_touchpoint_exposure', { mode: 'logged_in_preview' });
       }
     }).catch(function() {
-      that.setData({ membershipTouchpointVisible: false, membershipTouchpointEligible: false });
+      var cached = membershipStateUtil.getCachedMembership(app);
+      if (cached) {
+        that.setData({ membershipState: cached });
+      }
+      that.restoreHomeStateFromLocal('会员状态暂时无法同步，已保留本地状态。');
+      that.setData({ membershipTouchpointVisible: !!cached && !cached.is_active, membershipTouchpointEligible: !!cached && !cached.is_active });
     });
   },
 
@@ -2505,7 +2546,7 @@ Page({
   },
 
   prepareCoreWeeklySummaryDraft: function(currentChild) {
-    var records = coreActionStorage.getCoreActionRecords().filter(function(item) {
+    var records = coreActionStorage.getCoreActionRecords(currentChild && currentChild.id).filter(function(item) {
       return item && item.sceneKey;
     }).slice(0, 7);
     if (!records.length) {
@@ -2513,10 +2554,10 @@ Page({
     }
     var completedRecords = records.filter(function(item) { return item.completed; });
     var latest = records[0] || {};
-    var continuousCount = coreActionStorage.getContinuousRecordCount();
+    var continuousCount = coreActionStorage.getContinuousRecordCount(undefined, currentChild && currentChild.id);
     var nextDraft = latest.sevenDayPlanDraft || [];
     var oldest = records[records.length - 1] || {};
-    wx.setStorageSync('pendingCoreWeeklySummary', {
+    crossPageStorage.save('pendingCoreWeeklySummary', {
       source: 'core_action',
       childId: currentChild && currentChild.id ? Number(currentChild.id) : 0,
       childName: (currentChild && (currentChild.name || currentChild.nickname)) || '孩子',
@@ -2544,6 +2585,9 @@ Page({
       }).slice(0, 4),
       premiumUnlocked: false,
       premiumTip: '开通后可以把连续 7 天的小步骤和效果变化整理成更完整的周总结。'
+    }, {
+      childId: currentChild && currentChild.id,
+      source: 'core_action'
     });
   },
 
@@ -2604,7 +2648,7 @@ Page({
         scene: 'home_intro_card'
       }
     };
-    wx.setStorageSync('readingShareDraft', draft);
+    saveReadingShareDraft(draft);
     app.trackKbEvent({
       event_type: 'share_preview',
       share_source: draft.source,
@@ -2639,7 +2683,7 @@ Page({
         scene: 'home_weekly_progress'
       }
     };
-    wx.setStorageSync('readingShareDraft', draft);
+    saveReadingShareDraft(draft);
     app.trackKbEvent({
       event_type: 'share_preview',
       share_source: draft.source,
@@ -2677,7 +2721,9 @@ Page({
   },
 
   onShareAppMessage() {
-    var draft = wx.getStorageSync('readingShareDraft') || {};
+    var child = app.getCurrentChild ? app.getCurrentChild() : null;
+    var draftEnvelope = crossPageStorage.read('readingShareDraft', child && child.id);
+    var draft = (draftEnvelope && draftEnvelope.payload) || {};
     var source = draft.type || 'index_default';
     return {
       title: app.buildShareTemplate(draft),

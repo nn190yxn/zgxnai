@@ -313,18 +313,19 @@ function testHomePrimaryCardPriority() {
     id: 'action-a',
     saved: true,
     completed: false,
+    childId: '12',
     savedAt: Date.now(),
     createdAt: Date.now(),
     actionTitle: '今晚先做一个小步骤'
   };
 
-  assert.strictEqual(home.buildHomePrimaryCard({}).reason, 'no_context');
-  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: baseAction }).reason, 'unfinished_action');
-  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: Object.assign({}, baseAction, { savedAt: 1, createdAt: 1 }) }).reason, 'next_day_record');
-  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: Object.assign({}, baseAction, { completed: true }) }).reason, 'recent_record');
-  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: Object.assign({}, baseAction, { completed: true }), continuousRecordCount: 2 }).reason, 'continuous_record');
-  assert.strictEqual(home.buildHomePrimaryCard({ continueTask: { id: 'task-a', title: '继续任务' } }).reason, 'unfinished_action');
-  assert.strictEqual(home.buildHomePrimaryCard({ retentionSummary: '最近有成长记录' }).reason, 'recent_record');
+  assert.strictEqual(home.buildHomePrimaryCard({}).reason, 'no_observation');
+  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: baseAction }).reason, 'unfinished_training');
+  assert.strictEqual(home.buildHomePrimaryCard({ recentAction: Object.assign({}, baseAction, { savedAt: 1, createdAt: 1 }) }).reason, 'unfinished_training');
+  assert.strictEqual(home.buildHomePrimaryCard({ hasObservation: true, pendingFeedback: true }).reason, 'pending_feedback');
+  assert.strictEqual(home.buildHomePrimaryCard({ hasObservation: true, reportAvailable: true }).reason, 'report_available');
+  assert.strictEqual(home.buildHomePrimaryCard({ hasObservation: true, membershipState: { status: 'expired', membership_type: 'expired' } }).reason, 'membership_expired');
+  assert.strictEqual(home.buildHomePrimaryCard({ hasObservation: true, continueTask: { id: 'task-a', title: '继续任务' } }).reason, 'unfinished_training');
 }
 
 function testAgeFirstSaveFlow() {
@@ -342,7 +343,8 @@ function testAgeFirstSaveFlow() {
   assert.strictEqual(home.data.coreRefactorState.stage, 'bottleneck_result');
 
   home.onCoreAskDetailTap();
-  const pendingContext = wx.getStorageSync('pendingCoreActionContext');
+  const pendingContextEnvelope = wx.getStorageSync('pendingCoreActionContext');
+  const pendingContext = pendingContextEnvelope.payload;
   assert.strictEqual(pendingContext.ageSegmentKey, 'age_9_12');
   assert.strictEqual(pendingContext.categoryKey, 'motor_fitness');
   assert.strictEqual(pendingContext.categoryLabel, '运动体能');
@@ -584,16 +586,17 @@ function testNextDayRecordRuleAndMembershipTouchpoint() {
     actionSteps: ['读第一题。'],
     saved: true,
     completed: false,
+    childId: '12',
     savedAt: 1,
     createdAt: 1
   };
 
   storage.coreActionRecords = [record];
   home.refreshCoreActionHomeState();
-  assert.strictEqual(home.data.homePrimaryCard.reason, 'next_day_record');
-  assert.strictEqual(home.data.homePrimaryCard.title, '小牛育儿，孩子成长最佳帮手');
-  assert.strictEqual(home.data.homePrimaryCard.desc, '学习、情绪、运动、社交问题，按年龄给方法。');
-  assert.strictEqual(home.data.homePrimaryCard.cta, '记录孩子反应');
+  assert.strictEqual(home.data.homePrimaryCard.reason, 'unfinished_training');
+  assert.strictEqual(home.data.homePrimaryCard.title, '继续今天的训练');
+  assert.strictEqual(home.data.homePrimaryCard.desc, '沿着当前训练方向完成一个短练习，记录孩子的表现。');
+  assert.strictEqual(home.data.homePrimaryCard.cta, '继续今天的训练');
   home.onHomePrimaryActionTap();
   assert.strictEqual(home.data.coreRefactorState.stage, 'effect_record');
 

@@ -111,6 +111,7 @@ function saveTonightAction(actionResult, now) {
     return item.id !== actionResult.id;
   });
   var record = Object.assign({}, actionResult, {
+    childId: actionResult.childId !== undefined && actionResult.childId !== null ? String(actionResult.childId) : null,
     categoryKey: normalizeString(actionResult.categoryKey),
     categoryLabel: normalizeString(actionResult.categoryLabel),
     focusAreas: normalizeStringArray(actionResult.focusAreas),
@@ -132,12 +133,18 @@ function saveTonightAction(actionResult, now) {
   };
 }
 
-function getCoreActionRecords() {
-  return sortByCreatedAtDesc(readRecords());
+function getCoreActionRecords(childId) {
+  var records = sortByCreatedAtDesc(readRecords());
+  if (childId === undefined || childId === null || childId === '') {
+    return records;
+  }
+  return records.filter(function(item) {
+    return String(item.childId || '') === String(childId);
+  });
 }
 
-function getLatestCoreAction() {
-  return getCoreActionRecords()[0] || null;
+function getLatestCoreAction(childId) {
+  return getCoreActionRecords(childId)[0] || null;
 }
 
 function updateActionEffect(recordId, effect, now) {
@@ -170,11 +177,11 @@ function updateActionEffect(recordId, effect, now) {
   };
 }
 
-function getContinuousRecordCount(now) {
+function getContinuousRecordCount(now, childId) {
   var current = new Date(Number(now) || Date.now());
   current.setHours(0, 0, 0, 0);
   var completedDayMap = {};
-  getCoreActionRecords().forEach(function(item) {
+  getCoreActionRecords(childId).forEach(function(item) {
     var time = Number(item.recordedAt || 0);
     if (!item.completed || !time) {
       return;
@@ -198,6 +205,14 @@ module.exports = {
   getLatestCoreAction: getLatestCoreAction,
   getContinuousRecordCount: getContinuousRecordCount,
   readRecords: readRecords,
+  clearChildData: function(childId) {
+    var records = readRecords();
+    var remaining = records.filter(function(item) {
+      return String(item.childId || '') !== String(childId);
+    });
+    var removed = records.length - remaining.length;
+    return { success: writeRecords(remaining), removed: removed };
+  },
   saveTonightAction: saveTonightAction,
   updateActionEffect: updateActionEffect
 };

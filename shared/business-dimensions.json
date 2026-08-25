@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "ageSegments": [
+    { "code": "age_0_1", "label": "0-1岁", "minMonths": 0, "maxMonths": 12, "aliases": ["0-1", "0-1岁"] },
+    { "code": "age_1_2", "label": "1-2岁", "minMonths": 12, "maxMonths": 24, "aliases": ["1-2", "1-2岁"] },
+    { "code": "age_2_3", "label": "2-3岁", "minMonths": 24, "maxMonths": 36, "aliases": ["2-3", "2-3岁"] },
+    { "code": "age_3_4", "label": "3-4岁", "minMonths": 36, "maxMonths": 48, "aliases": ["3-4", "3-4岁"] },
+    { "code": "age_4_5", "label": "4-5岁", "minMonths": 48, "maxMonths": 60, "aliases": ["4-5", "4-5岁"] },
+    { "code": "age_5_6", "label": "5-6岁", "minMonths": 60, "maxMonths": 72, "aliases": ["5-6", "5-6岁"] },
+    { "code": "age_6_9", "label": "6-9岁", "minMonths": 72, "maxMonths": 108, "aliases": ["6-9", "6-9岁"] },
+    { "code": "age_9_12", "label": "9-12岁", "minMonths": 108, "maxMonths": 144, "aliases": ["9-12", "9-12岁"] }
+  ],
+  "legacyAgeMappings": {
+    "4-6岁": ["age_4_5", "age_5_6"],
+    "4-6": ["age_4_5", "age_5_6"],
+    "6+": ["age_6_9", "age_9_12"],
+    "6岁以上": ["age_6_9", "age_9_12"]
+  },
+  "abilities": [
+    { "code": "attention", "label": "专注力", "group": "child_development", "aliases": ["专注", "注意力", "任务启动"] },
+    { "code": "sensory_motor", "label": "感觉运动", "group": "child_development", "aliases": ["感统", "感觉统合", "身体控制"] },
+    { "code": "language", "label": "语言表达", "group": "child_development", "aliases": ["语言", "表达", "沟通"] },
+    { "code": "gross_motor", "label": "大运动", "group": "child_development", "aliases": ["运动", "动作协调", "体能"] },
+    { "code": "emotional_regulation", "label": "情绪调节", "group": "child_development", "aliases": ["情绪", "情绪管理", "规则"] },
+    { "code": "social_communication", "label": "社交沟通", "group": "child_development", "aliases": ["社交", "同伴", "交往"] },
+    { "code": "confidence_adaptation", "label": "自信与适应", "group": "child_development", "aliases": ["自信", "适应", "入园"] },
+    { "code": "daily_habits", "label": "生活习惯", "group": "child_development", "aliases": ["习惯", "生活", "自理"] },
+    { "code": "growth_height", "label": "生长与身高", "group": "health_support", "aliases": ["身高", "长高", "生长"] },
+    { "code": "body_safety", "label": "身体安全", "group": "safety_education", "aliases": ["性教育", "身体边界", "自我保护"] }
+  ],
+  "sceneCategories": [
+    { "code": "learning_focus", "label": "学习与专注", "aliases": ["学习", "专注", "任务"] },
+    { "code": "sensory_motor", "label": "感觉与运动", "aliases": ["感统", "运动", "身体"] },
+    { "code": "emotion_rules", "label": "情绪与规则", "aliases": ["情绪", "规则", "脾气"] },
+    { "code": "language_social", "label": "语言与社交", "aliases": ["语言", "表达", "社交"] },
+    { "code": "growth_health", "label": "生长与健康", "aliases": ["身高", "睡眠", "营养"] },
+    { "code": "body_safety", "label": "身体安全", "aliases": ["边界", "保护", "安全教育"] },
+    { "code": "daily_life", "label": "生活场景", "aliases": ["吃饭", "睡觉", "出门", "如厕"] }
+  ],
+  "contentForms": [
+    { "code": "article", "label": "知识文章" },
+    { "code": "task", "label": "家庭训练" },
+    { "code": "scene", "label": "家庭场景" },
+    { "code": "recipe", "label": "营养食谱" },
+    { "code": "assessment", "label": "能力观察" }
+  ]
+}

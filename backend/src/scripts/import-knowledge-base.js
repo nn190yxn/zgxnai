@@ -3,9 +3,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
-
-loadEnv(path.resolve(__dirname, '../../../.env'));
-loadEnv('/home/ubuntu/niuniu-parenting/.env');
+const knowledgeContent = require('../mysql-production/knowledge-content');
 
 async function main() {
   const args = process.argv.slice(2);
@@ -28,14 +26,20 @@ async function main() {
   }
 
   const payload = parseKnowledgeFile(filePath);
-  const normalizedSummary = summarizeKnowledgeItems(payload);
+  const validation = validateKnowledgeItems(payload);
   if (validateOnly) {
     console.log('[knowledge-import] mode=validate-only');
     console.log(`[knowledge-import] file=${filePath}`);
-    console.log(`[knowledge-import] total=${normalizedSummary.total} article=${normalizedSummary.article} task=${normalizedSummary.task} scene=${normalizedSummary.scene} unsupported=${normalizedSummary.unsupported}`);
+    printItemResults(validation.results);
+    console.log(`[knowledge-import] total=${validation.summary.total} valid=${validation.summary.valid} failed=${validation.summary.failed}`);
+    if (validation.summary.failed) {
+      throw new Error(`${validation.summary.failed} 条知识内容校验失败`);
+    }
     return;
   }
 
+  loadEnv(path.resolve(__dirname, '../../../.env'));
+  loadEnv('/home/ubuntu/niuniu-parenting/.env');
   const mysql = requireMysqlPromise();
   const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -53,8 +57,12 @@ async function main() {
     const summary = await importKnowledgeItems(pool, payload, { dryRun });
     console.log(`[knowledge-import] mode=${dryRun ? 'dry-run' : 'apply'}`);
     console.log(`[knowledge-import] file=${filePath}`);
-    console.log(`[knowledge-import] total=${summary.total} article=${summary.article} task=${summary.task} scene=${summary.scene}`);
-    console.log(`[knowledge-import] inserted=${summary.inserted} updated=${summary.updated} skipped=${summary.skipped}`);
+    printItemResults(summary.results);
+    console.log(`[knowledge-import] total=${summary.total} article=${summary.article} task=${summary.task} scene=${summary.scene} assessment=${summary.assessment}`);
+    console.log(`[knowledge-import] inserted=${summary.inserted} updated=${summary.updated} skipped=${summary.skipped} failed=${summary.failed}`);
+    if (summary.failed) {
+      throw new Error(`${summary.failed} 条知识内容导入失败`);
+    }
   } finally {
     await pool.end();
   }
@@ -86,25 +94,29 @@ function parseKnowledgeFile(filePath) {
   return data;
 }
 
-function summarizeKnowledgeItems(items) {
-  const summary = { total: items.length, article: 0, task: 0, scene: 0, unsupported: 0 };
-  for (const rawItem of items) {
-    const type = String(rawItem && rawItem.type || '').trim();
-    if (type === 'article') {
-      summary.article += 1;
-      continue;
-    }
-    if (type === 'task') {
-      summary.task += 1;
-      continue;
-    }
-    if (type === 'scene') {
-      summary.scene += 1;
-      continue;
-    }
-    summary.unsupported += 1;
-  }
-  return summary;
+function validateKnowledgeItems(items) {
+  const summary = { total: items.length, valid: 0, failed: 0 };
+  const results = items.map((rawItem, index) => {
+    const validation = knowledgeContent.validateKnowledgeItem(rawItem);
+    const result = {
+      index,
+      type: validation.item.type || 'unknown',
+      contentId: validation.item.contentId || '',
+      status: validation.valid ? 'valid' : 'failed',
+      message: validation.errors.join('; ')
+    };
+    summary[validation.valid ? 'valid' : 'failed'] += 1;
+    return result;
+  });
+  return { summary, results };
+}
+
+function printItemResults(results) {
+  results.forEach((result) => {
+    const id = result.contentId ? ` content_id=${result.contentId}` : '';
+    const message = result.message ? ` message=${result.message}` : '';
+    console.log(`[knowledge-import:item] index=${result.index} type=${result.type}${id} status=${result.status}${message}`);
+  });
 }
 
 async function ensureKnowledgeTables(pool) {
@@ -204,6 +216,38 @@ async function ensureKnowledgeTables(pool) {
       INDEX idx_parenting_scene_recommendations_key (scene_key)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS knowledge_contents (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      content_type VARCHAR(32) NOT NULL,
+      content_id VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      content LONGTEXT,
+      age_segment_codes JSON NOT NULL,
+      ability_codes JSON NOT NULL,
+      scene_codes JSON NOT NULL,
+      content_form VARCHAR(32) NOT NULL,
+      source_name VARCHAR(255) NOT NULL,
+      source_url TEXT,
+      evidence_level VARCHAR(32) NOT NULL,
+      content_version VARCHAR(64) NOT NULL,
+      review_status VARCHAR(32) NOT NULL,
+      is_published TINYINT NOT NULL DEFAULT 0,
+      training_objective TEXT,
+      duration_minutes INT NOT NULL DEFAULT 0,
+      steps_json JSON NOT NULL,
+      parent_prompt TEXT,
+      observe_signals JSON NOT NULL,
+      safety_notice TEXT,
+      content_hash CHAR(64) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_knowledge_content (content_type, content_id),
+      INDEX idx_knowledge_form_review (content_form, review_status, is_published),
+      INDEX idx_knowledge_version (content_version)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
 }
 
 async function importKnowledgeItems(pool, items, options) {
@@ -212,9 +256,12 @@ async function importKnowledgeItems(pool, items, options) {
     article: 0,
     task: 0,
     scene: 0,
+    assessment: 0,
     inserted: 0,
     updated: 0,
-    skipped: 0
+    skipped: 0,
+    failed: 0,
+    results: []
   };
 
   const connection = await pool.getConnection();
@@ -222,28 +269,33 @@ async function importKnowledgeItems(pool, items, options) {
     if (!options.dryRun) {
       await connection.beginTransaction();
     }
-    for (const rawItem of items) {
-      const item = normalizeBaseItem(rawItem);
-      if (!item.type) {
-        summary.skipped += 1;
+    for (let index = 0; index < items.length; index += 1) {
+      const rawItem = items[index];
+      const validation = knowledgeContent.validateKnowledgeItem(rawItem);
+      const item = validation.item;
+      if (!validation.valid) {
+        summary.failed += 1;
+        summary.results.push({ index, type: item.type || 'unknown', contentId: item.contentId, status: 'failed', message: validation.errors.join('; ') });
         continue;
       }
-      if (item.type === 'article') {
-        summary.article += 1;
-        updateSummary(summary, await upsertArticle(connection, item, options));
-        continue;
+      summary[item.type] += 1;
+      try {
+        if (!options.dryRun) await connection.execute('SAVEPOINT knowledge_content_item');
+        const operation = await upsertUnifiedKnowledgeContent(connection, item, options);
+        if (operation !== 'skipped') {
+          const legacyItem = normalizeBaseItem(rawItem);
+          if (item.type === 'article') await upsertArticle(connection, legacyItem, options);
+          if (item.type === 'task') await upsertTask(connection, legacyItem, options);
+          if (item.type === 'scene') await upsertScene(connection, legacyItem, options);
+        }
+        if (!options.dryRun) await connection.execute('RELEASE SAVEPOINT knowledge_content_item');
+        updateSummary(summary, operation);
+        summary.results.push({ index, type: item.type, contentId: item.contentId, status: operation, message: '' });
+      } catch (error) {
+        if (!options.dryRun) await connection.execute('ROLLBACK TO SAVEPOINT knowledge_content_item');
+        summary.failed += 1;
+        summary.results.push({ index, type: item.type, contentId: item.contentId, status: 'failed', message: formatErrorMessage(error) });
       }
-      if (item.type === 'task') {
-        summary.task += 1;
-        updateSummary(summary, await upsertTask(connection, item, options));
-        continue;
-      }
-      if (item.type === 'scene') {
-        summary.scene += 1;
-        updateSummary(summary, await upsertScene(connection, item, options));
-        continue;
-      }
-      summary.skipped += 1;
     }
     if (options.dryRun) {
       return summary;
@@ -258,6 +310,41 @@ async function importKnowledgeItems(pool, items, options) {
   } finally {
     connection.release();
   }
+}
+
+async function upsertUnifiedKnowledgeContent(connection, item, options) {
+  const contentHash = knowledgeContent.buildContentHash(item);
+  const [rows] = await connection.execute(
+    'SELECT id, content_hash FROM knowledge_contents WHERE content_type = ? AND content_id = ? LIMIT 1',
+    [item.type, item.contentId]
+  );
+  if (rows.length && rows[0].content_hash === contentHash) {
+    return 'skipped';
+  }
+  if (options.dryRun) {
+    return rows.length ? 'updated' : 'inserted';
+  }
+  await connection.execute(
+    `INSERT INTO knowledge_contents
+      (content_type, content_id, title, summary, content, age_segment_codes, ability_codes, scene_codes, content_form, source_name, source_url, evidence_level, content_version, review_status, is_published, training_objective, duration_minutes, steps_json, parent_prompt, observe_signals, safety_notice, content_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       title = VALUES(title), summary = VALUES(summary), content = VALUES(content),
+       age_segment_codes = VALUES(age_segment_codes), ability_codes = VALUES(ability_codes), scene_codes = VALUES(scene_codes),
+       content_form = VALUES(content_form), source_name = VALUES(source_name), source_url = VALUES(source_url),
+       evidence_level = VALUES(evidence_level), content_version = VALUES(content_version), review_status = VALUES(review_status),
+       is_published = VALUES(is_published), training_objective = VALUES(training_objective), duration_minutes = VALUES(duration_minutes),
+       steps_json = VALUES(steps_json), parent_prompt = VALUES(parent_prompt), observe_signals = VALUES(observe_signals),
+       safety_notice = VALUES(safety_notice), content_hash = VALUES(content_hash)`,
+    [
+      item.type, item.contentId, item.title, item.summary, item.content,
+      JSON.stringify(item.ageSegmentCodes), JSON.stringify(item.abilityCodes), JSON.stringify(item.sceneCodes),
+      item.contentForm, item.sourceName, item.sourceUrl, item.evidenceLevel, item.contentVersion, item.reviewStatus,
+      item.isPublished ? 1 : 0, item.trainingObjective, item.durationMinutes, JSON.stringify(item.steps),
+      item.parentPrompt, JSON.stringify(item.observeSignals), item.safetyNotice, contentHash
+    ]
+  );
+  return rows.length ? 'updated' : 'inserted';
 }
 
 function updateSummary(summary, operation) {
@@ -514,7 +601,18 @@ function formatErrorMessage(error) {
   return error.code || error.name || String(error);
 }
 
-main().catch((error) => {
-  console.error('[knowledge-import]', formatErrorMessage(error));
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('[knowledge-import]', formatErrorMessage(error));
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  parseKnowledgeFile,
+  validateKnowledgeItems,
+  ensureKnowledgeTables,
+  importKnowledgeItems,
+  upsertUnifiedKnowledgeContent,
+  formatErrorMessage
+};

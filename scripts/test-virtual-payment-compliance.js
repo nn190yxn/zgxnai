@@ -56,6 +56,8 @@ assert.ok(productionServer.includes('evidence'), 'iOS refund query response shou
 assert.ok(productionServer.includes('function resolveVirtualPayEnv'), 'production backend should resolve virtual payment environment explicitly');
 assert.ok(productionServer.includes("process.env.NODE_ENV === 'production' ? 0 : 1"), 'production backend should default virtual payment to live env for iOS review');
 assert.ok(!productionServer.includes('process.env.WECHAT_VIRTUAL_PAY_ENV || process.env.XPAY_ENV || 1'), 'production backend should avoid sandbox as implicit virtual payment default');
+assert.ok(productionServer.includes("return process.env.NODE_ENV !== 'production';"), 'message push signature should fail closed in production when token is missing');
+assert.ok(productionServer.includes('crypto.randomBytes(8).toString(\'hex\')'), 'virtual payment order numbers should include cryptographic randomness');
 
 assert.ok(paymentService.includes('function isVirtualMembershipPlan'), 'local payment service should identify virtual membership plans');
 assert.ok(paymentService.includes("code: VIRTUAL_PAYMENT_REQUIRED"), 'local payment service should return virtual payment required error');

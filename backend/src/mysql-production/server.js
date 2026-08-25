@@ -10,6 +10,15 @@ const chatContextUtil = require('./chat-context');
 const dailyPlanText = require('./daily-plan-text');
 const developmentZones = require('./development-zones');
 const coreActionAnalytics = require('./core-action-analytics');
+const knowledgeContent = require('./knowledge-content');
+const { runMigrations } = require('./migration-runner');
+const growthTimeline = require('./growth-timeline');
+const abilityTraining = require('./ability-training');
+const { aggregateStageReport } = require('./stage-report');
+const { formatWeeklySummaryForMembership } = require('./report-membership');
+const eventProtocol = require('./event-protocol');
+const { aggregateContentCoverage, aggregateEventQuality, validateAnalyticsQuery } = require('./analytics-quality');
+const { responseMeta, sendSuccess, sendError } = require('./api-response');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -233,6 +242,28 @@ app.use(express.json({
     }
   }
 }));
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (!req.path.startsWith('/api/') || !body || typeof body !== 'object' || Array.isArray(body)) {
+      return originalJson(body);
+    }
+    const normalized = Object.assign({}, body, {
+      meta: Object.assign({}, responseMeta(req), body.meta || {})
+    });
+    if (body.pagination && !normalized.meta.pagination) {
+      normalized.meta.pagination = body.pagination;
+    }
+    if (body.success === false && !body.error) {
+      normalized.error = {
+        code: body.code || 'API_ERROR',
+        message: body.message || '请求失败'
+      };
+    }
+    return originalJson(normalized);
+  };
+  next();
+});
 app.use('/uploads', express.static(UPLOAD_ROOT));
 app.use('/admin-console', express.static(ADMIN_PORTAL_ROOT));
 app.get('/admin-console', adminPortalHandler);
@@ -257,6 +288,7 @@ for (const prefix of API_PREFIXES) {
   app.post(`${prefix}/membership/promo/redeem`, authenticateToken, asyncHandler(promoHandler));
   app.get(`${prefix}/referral/stats`, authenticateToken, asyncHandler(referralStatsHandler));
   app.get(`${prefix}/referral/code`, authenticateToken, asyncHandler(referralCodeHandler));
+  app.get(`${prefix}/recommendations`, authenticateToken, asyncHandler(recommendationsHandler));
   app.post(`${prefix}/payment/create`, authenticateToken, asyncHandler(createPaymentOrderHandler));
   app.post(`${prefix}/payment/virtual-order`, authenticateToken, asyncHandler(virtualOrderHandler));
   app.post(`${prefix}/payment/unified-order`, authenticateToken, asyncHandler(unifiedOrderHandler));
@@ -282,7 +314,18 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/growth-records/summary`, authenticateToken, asyncHandler(growthRecordSummaryHandler));
   app.post(`${prefix}/growth-records/entry`, authenticateToken, asyncHandler(growthRecordEntrySaveHandler));
   app.get(`${prefix}/growth-records/entries`, authenticateToken, asyncHandler(growthRecordEntriesListHandler));
+  app.get(`${prefix}/ability-observations/config`, authenticateToken, asyncHandler(abilityObservationConfigHandler));
+  app.post(`${prefix}/ability-observations/submit`, authenticateToken, asyncHandler(abilityObservationSubmitHandler));
+  app.get(`${prefix}/ability-profiles`, authenticateToken, asyncHandler(abilityProfilesHandler));
+  app.get(`${prefix}/training-plans`, authenticateToken, asyncHandler(trainingPlansHandler));
+  app.post(`${prefix}/training-plans/generate`, authenticateToken, asyncHandler(trainingPlanGenerateHandler));
+  app.get(`${prefix}/training-tasks/:id`, authenticateToken, asyncHandler(trainingTaskHandler));
+  app.post(`${prefix}/training-tasks/:id/complete`, authenticateToken, asyncHandler(trainingTaskCompleteHandler));
+  app.post(`${prefix}/training-feedback`, authenticateToken, asyncHandler(trainingFeedbackHandler));
+  app.get(`${prefix}/training-plans/next`, authenticateToken, asyncHandler(trainingPlanNextHandler));
   app.get(`${prefix}/weekly-summary`, authenticateToken, asyncHandler(weeklySummaryHandler));
+  app.get(`${prefix}/weekly-summary/current`, authenticateToken, asyncHandler(currentWeeklySummaryHandler));
+  app.get(`${prefix}/weekly-summary/history`, authenticateToken, asyncHandler(weeklySummaryHistoryHandler));
   app.get(`${prefix}/search/scenes`, optionalAuthenticateToken, asyncHandler(sceneSearchTagsHandler));
   app.get(`${prefix}/search/solutions`, optionalAuthenticateToken, asyncHandler(sceneSearchSolutionsHandler));
   app.get(`${prefix}/parenting/articles`, optionalAuthenticateToken, asyncHandler(parentingArticlesHandler));
@@ -290,6 +333,8 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/parenting/articles/:id/related`, optionalAuthenticateToken, asyncHandler(parentingRelatedArticlesHandler));
   app.get(`${prefix}/development-zones`, optionalAuthenticateToken, asyncHandler(developmentZonesHandler));
   app.get(`${prefix}/development-zones/:code`, optionalAuthenticateToken, asyncHandler(developmentZoneDetailHandler));
+  app.get(`${prefix}/knowledge/contents`, optionalAuthenticateToken, asyncHandler(knowledgeContentsHandler));
+  app.get(`${prefix}/knowledge/ability-content`, optionalAuthenticateToken, asyncHandler(knowledgeContentsHandler));
   app.post(`${prefix}/parenting/articles/:id/favorite`, authenticateToken, asyncHandler(parentingFavoriteHandler));
   app.get(`${prefix}/parenting/articles/:id/comments`, asyncHandler(parentingCommentsHandler));
   app.post(`${prefix}/parenting/articles/:id/comments`, authenticateToken, asyncHandler(parentingCreateCommentHandler));
@@ -303,6 +348,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/education/knowledge/detail`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeDetailHandler));
   app.post(`${prefix}/education/progress`, authenticateToken, requireActiveMembership, asyncHandler(educationUpdateProgressHandler));
   app.post(`${prefix}/kb/events/track`, authenticateToken, asyncHandler(kbEventTrackHandler));
+  app.post(`${prefix}/kb/events/track/batch`, authenticateToken, asyncHandler(kbEventTrackBatchHandler));
   app.get(`${prefix}/assessments`, authenticateToken, requireActiveMembership, asyncHandler(assessmentsListHandler));
   app.get(`${prefix}/assessments/:code/questions`, authenticateToken, requireActiveMembership, asyncHandler(assessmentQuestionsHandler));
   app.post(`${prefix}/assessments/:code/submit`, authenticateToken, requireActiveMembership, asyncHandler(assessmentSubmitHandler));
@@ -512,6 +558,11 @@ app.get(`${ADMIN_API_PREFIX}/content/ops/articles`, authenticateAdmin, asyncHand
 app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/overview`, authenticateAdmin, asyncHandler(adminAiChatOverviewHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/fallback-queries`, authenticateAdmin, asyncHandler(adminAiChatFallbackQueriesHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/ai-chat/recent`, authenticateAdmin, asyncHandler(adminAiChatRecentHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/growth-loop`, authenticateAdmin, asyncHandler(adminGrowthLoopHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/age-ability`, authenticateAdmin, asyncHandler(adminAgeAbilityHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/membership-conversion`, authenticateAdmin, asyncHandler(adminMembershipConversionHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/event-quality`, authenticateAdmin, validateAdminAnalyticsQuery, asyncHandler(adminEventQualityHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/content-coverage`, authenticateAdmin, validateAdminAnalyticsQuery, asyncHandler(adminContentCoverageHandler));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
@@ -762,6 +813,99 @@ async function requireActiveMembership(req, res, next) {
 
 function paidFeaturePlaceholderHandler(req, res) {
   res.status(404).json({ success: false, message: '接口暂未在生产服务开放', path: req.path });
+}
+
+async function recommendationsHandler(req, res) {
+  const userId = getUserId(req);
+  const requestedChildId = Number(req.query.child_id || req.query.childId || 0);
+  const child = requestedChildId
+    ? await getOwnedChild(userId, requestedChildId)
+    : await getDefaultChildForUser(userId);
+
+  if (requestedChildId && !child) {
+    res.status(403).json({ success: false, message: '无权查看该孩子的推荐内容' });
+    return;
+  }
+
+  const recommendations = [];
+
+  if (child) {
+    const [assessmentRows] = await pool.execute(
+      `SELECT *
+       FROM assessment_records
+       WHERE child_id = ?
+       ORDER BY completed_at DESC, id DESC
+       LIMIT 1`,
+      [child.id]
+    );
+    const latestAssessment = assessmentRows[0];
+    if (latestAssessment) {
+      const [suggestionRows] = await pool.execute(
+        `SELECT title, description, steps, duration, frequency
+         FROM assessment_suggestions
+         WHERE assessment_code = ? AND level = ?
+         ORDER BY id ASC`,
+        [latestAssessment.assessment_code, latestAssessment.overall_level]
+      );
+      if (suggestionRows.length) {
+        recommendations.push({
+          type: 'assessment_based',
+          title: '基于评估结果的个性化建议',
+          items: suggestionRows.map((suggestion) => ({
+            title: suggestion.title,
+            description: suggestion.description,
+            steps: suggestion.steps,
+            duration: suggestion.duration,
+            frequency: suggestion.frequency
+          }))
+        });
+      }
+    }
+
+    const ageGroup = inferAgeRangeFromChild(child) || '3-6岁';
+    const [taskRows] = await pool.execute(
+      `SELECT *
+       FROM reading_tasks
+       WHERE age_range LIKE ?
+       ORDER BY difficulty ASC, id ASC
+       LIMIT 5`,
+      [`%${ageGroup}%`]
+    );
+    if (taskRows.length) {
+      recommendations.push({
+        type: 'age_based',
+        title: '适合当前年龄的任务',
+        items: taskRows.map((task) => ({
+          task_code: task.task_code,
+          title: task.title,
+          duration: task.duration,
+          difficulty: task.difficulty
+        }))
+      });
+    }
+  }
+
+  const [articleRows] = await pool.execute(
+    `SELECT id, title, summary, category
+     FROM articles
+     WHERE is_published = 1
+     ORDER BY read_count DESC, created_at DESC
+     LIMIT 3`
+  );
+  if (articleRows.length) {
+    recommendations.push({
+      type: 'popular',
+      title: '热门育儿文章',
+      items: articleRows.map((article) => ({
+        id: article.id,
+        title: article.title,
+        summary: article.summary,
+        category: article.category
+      }))
+    });
+  }
+
+  res.json({ success: true, data: recommendations });
 }
 
 function adminPortalHandler(req, res) {
@@ -1346,6 +1490,180 @@ function calculateRatio(part, total) {
     return 0;
   }
   return Number(((numerator / denominator) * 100).toFixed(2));
+}
+
+function buildEventDimensionFilters(query, params) {
+  const filters = ['et.created_at >= ?', 'et.created_at < DATE_ADD(?, INTERVAL 1 DAY)'];
+  params.push(query.startDate, query.endDate);
+  const dimensions = [
+    ['age_segment_code', query.age_segment_code || query.ageSegmentCode],
+    ['membership_status', query.membership_status || query.membershipStatus]
+  ];
+  for (const [field, value] of dimensions) {
+    if (value) {
+      filters.push(`JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.${field}')) = ?`);
+      params.push(String(value));
+    }
+  }
+  if (query.ability_code || query.abilityCode) {
+    filters.push(`JSON_UNQUOTE(JSON_EXTRACT(et.event_data, '$.ability_codes')) LIKE ?`);
+    params.push(`%${String(query.ability_code || query.abilityCode).replace(/[%_]/g, '\\$&')}%`);
+  }
+  return filters;
+}
+
+function parseMetricJson(value) {
+  if (value && typeof value === 'object') {
+    return value;
+  }
+  try {
+    return JSON.parse(String(value || '{}'));
+  } catch (error) {
+    return {};
+  }
+}
+
+function parseJsonList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    return Array.isArray(parsed) ? parsed.map((item) => String(item || '').trim()).filter(Boolean) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+async function adminGrowthLoopHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const params = [];
+  const filters = buildEventDimensionFilters(rangeQuery(req.query, range), params);
+  const [rows] = await pool.execute(
+    `SELECT CASE
+       WHEN et.event_type IN ('ability_observation_exposure', 'assessment_start') THEN 'observation'
+       WHEN et.event_type IN ('ability_profile_view', 'ability_observation_complete', 'assessment_complete') THEN 'profile'
+       WHEN et.event_type IN ('training_task_view', 'training_task_complete', 'task_complete') THEN 'training'
+       WHEN et.event_type IN ('training_feedback_submit', 'training_feedback') THEN 'feedback'
+       WHEN et.event_type IN ('stage_report_view', 'weekly_summary_view') THEN 'report'
+       WHEN et.event_type IN ('membership_touchpoint_exposure', 'membership_page_view') THEN 'membership'
+       WHEN et.event_type IN ('payment_order_success', 'payment_success') THEN 'payment'
+     END AS step_key,
+     COUNT(*) AS event_count, COUNT(DISTINCT et.user_id) AS user_count
+     FROM event_tracks et
+     WHERE ${filters.join(' AND ')}
+     GROUP BY step_key
+     ORDER BY FIELD(step_key, 'observation', 'profile', 'training', 'feedback', 'report', 'membership', 'payment')`,
+    params
+  );
+  const items = rows.filter((row) => row.step_key).map((row) => ({
+    step_key: row.step_key,
+    event_count: Number(row.event_count || 0),
+    user_count: Number(row.user_count || 0)
+  }));
+  const base = items[0] ? items[0].user_count : 0;
+  items.forEach((item) => { item.conversion_rate = calculateRatio(item.user_count, base); });
+  res.json({ success: true, data: { range, event_funnel: items, user_funnel: items, cohort_funnel: items.map((item) => Object.assign({}, item, { cohort_conversion_rate: item.conversion_rate })) } });
+}
+
+function rangeQuery(query, range) {
+  return Object.assign({}, query, range);
+}
+
+async function adminAgeAbilityHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const filters = ['stat_date BETWEEN ? AND ?', "aggregate_type = 'growth_dimension'"];
+  const params = [range.startDate, range.endDate];
+  if (req.query.age_segment_code || req.query.ageSegmentCode) { filters.push('age_segment_code = ?'); params.push(String(req.query.age_segment_code || req.query.ageSegmentCode)); }
+  if (req.query.ability_code || req.query.abilityCode) { filters.push('ability_code LIKE ?'); params.push(`%${String(req.query.ability_code || req.query.abilityCode).replace(/[%_]/g, '\\$&')}%`); }
+  if (req.query.membership_status || req.query.membershipStatus) { filters.push('membership_status = ?'); params.push(String(req.query.membership_status || req.query.membershipStatus)); }
+  const [rows] = await pool.execute(
+    `SELECT age_segment_code, ability_code, membership_status, source_key, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.event_count'))) AS event_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.user_count'))) AS user_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.child_count'))) AS child_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.complete_count'))) AS complete_count
+       FROM analytics_daily_aggregates
+      WHERE ${filters.join(' AND ')}
+      GROUP BY age_segment_code, ability_code, membership_status, source_key
+      ORDER BY event_count DESC`,
+    params
+  );
+  const [contentRows] = await pool.execute(
+    `SELECT source_key, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.content_count'))) AS content_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.published_count'))) AS published_count
+       FROM analytics_daily_aggregates
+      WHERE stat_date BETWEEN ? AND ? AND aggregate_type = 'content_quality'
+      GROUP BY source_key`,
+    [range.startDate, range.endDate]
+  );
+  res.json({ success: true, data: { range, items: rows, content_supply: contentRows } });
+}
+
+async function adminMembershipConversionHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const filters = ['stat_date BETWEEN ? AND ?', "aggregate_type = 'membership_attribution'"];
+  const params = [range.startDate, range.endDate];
+  if (req.query.age_segment_code || req.query.ageSegmentCode) { filters.push('age_segment_code = ?'); params.push(String(req.query.age_segment_code || req.query.ageSegmentCode)); }
+  if (req.query.ability_code || req.query.abilityCode) { filters.push('ability_code LIKE ?'); params.push(`%${String(req.query.ability_code || req.query.abilityCode).replace(/[%_]/g, '\\$&')}%`); }
+  if (req.query.membership_status || req.query.membershipStatus) { filters.push('membership_status = ?'); params.push(String(req.query.membership_status || req.query.membershipStatus)); }
+  if (req.query.source || req.query.entry_source) { filters.push('source_key = ?'); params.push(String(req.query.source || req.query.entry_source)); }
+  const [rows] = await pool.execute(
+    `SELECT age_segment_code, ability_code, membership_status, source_key, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.exposure_count'))) AS exposure_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.click_count'))) AS click_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.order_count'))) AS order_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.paid_count'))) AS paid_count, SUM(JSON_UNQUOTE(JSON_EXTRACT(metrics, '$.revenue_amount'))) AS revenue_amount
+       FROM analytics_daily_aggregates
+      WHERE ${filters.join(' AND ')}
+      GROUP BY age_segment_code, ability_code, membership_status, source_key
+      ORDER BY paid_count DESC`,
+    params
+  );
+  const items = rows.map((row) => ({
+    ...row,
+    exposure_to_payment_rate: calculateRatio(row.paid_count, row.exposure_count),
+    click_to_payment_rate: calculateRatio(row.paid_count, row.click_count),
+    trial_to_paid_rate: 0,
+    renewal_rate: 0
+  }));
+  res.json({ success: true, data: { range, items, totals: items.reduce((total, item) => ({
+    exposure_count: total.exposure_count + Number(item.exposure_count || 0),
+    click_count: total.click_count + Number(item.click_count || 0),
+    order_count: total.order_count + Number(item.order_count || 0),
+    paid_count: total.paid_count + Number(item.paid_count || 0),
+    revenue_amount: total.revenue_amount + Number(item.revenue_amount || 0)
+  }), { exposure_count: 0, click_count: 0, order_count: 0, paid_count: 0, revenue_amount: 0 }) } });
+}
+
+async function adminEventQualityHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const params = [];
+  const filters = buildEventDimensionFilters(rangeQuery(req.query, range), params);
+  const [rows] = await pool.execute(
+    `SELECT et.event_id, et.event_type, et.event_data, et.session_id, et.created_at
+       FROM event_tracks et
+      WHERE ${filters.join(' AND ')}
+      ORDER BY et.created_at ASC, et.id ASC`,
+    params
+  );
+  res.json({ success: true, data: { range, ...aggregateEventQuality(rows) } });
+}
+
+async function adminContentCoverageHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(
+    `SELECT content_type, content_id, age_segment_codes, ability_codes, scene_codes, content_form, is_published
+       FROM knowledge_contents
+      WHERE updated_at < DATE_ADD(?, INTERVAL 1 DAY)
+      ORDER BY content_type ASC, content_id ASC`,
+    [range.endDate]
+  );
+  const filters = {
+    age_segment_code: String(req.query.age_segment_code || req.query.ageSegmentCode || '').trim(),
+    ability_code: String(req.query.ability_code || req.query.abilityCode || '').trim(),
+    content_form: String(req.query.content_form || req.query.contentForm || '').trim()
+  };
+  const filteredRows = rows.filter((row) => {
+    const ageCodes = parseJsonList(row.age_segment_codes);
+    const abilityCodes = parseJsonList(row.ability_codes);
+    const contentForm = String(row.content_form || '').trim();
+    return (!filters.age_segment_code || ageCodes.includes(filters.age_segment_code))
+      && (!filters.ability_code || abilityCodes.includes(filters.ability_code))
+      && (!filters.content_form || contentForm === filters.content_form);
+  });
+  res.json({ success: true, data: { range, filters, ...aggregateContentCoverage(filteredRows) } });
 }
 
 async function adminUserTrendsHandler(req, res) {
@@ -2489,6 +2807,19 @@ function parseAdminDateRange(query, defaultDays) {
   return { startDate, endDate, days };
 }
 
+function validateAdminAnalyticsQuery(req, res, next) {
+  const validation = validateAnalyticsQuery(req.query || {});
+  if (!validation.valid && validation.code === 'INVALID_ANALYTICS_DATE') {
+    res.status(400).json({ success: false, code: 'INVALID_ANALYTICS_DATE', message: '分析日期参数必须为YYYY-MM-DD' });
+    return;
+  }
+  if (!validation.valid && validation.code === 'INVALID_ANALYTICS_DAYS') {
+    res.status(400).json({ success: false, code: 'INVALID_ANALYTICS_DAYS', message: '分析天数必须为1到90的整数' });
+    return;
+  }
+  next();
+}
+
 function normalizeDateInput(value) {
   const text = String(value || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
@@ -2809,6 +3140,7 @@ async function recordChatAnalyticsEvent(payload) {
         weak_reference: references.length === 1,
         matched_types: matchedTypes,
         matched_type_text: matchedTypes.join(','),
+        retrieval_path: payload.retrievalPath || '',
         source_titles: references.map((item) => item.title).filter(Boolean).slice(0, 5)
       }
     };
@@ -2913,6 +3245,7 @@ async function chatHandler(req, res) {
     const answer = normalizeChatAnswerOutput(aiResult.success ? aiResult.answer : fallbackAnswer, riskLevel);
     const aiStatus = getAIStatus();
     const fallbackSource = getChatFallbackSource(references);
+    const retrievalPath = getChatRetrievalPath(references);
     loggedAnswerSource = aiResult.success ? 'ai' : fallbackSource;
     const matchedTypes = getChatMatchedTypes(references);
 
@@ -2939,6 +3272,7 @@ async function chatHandler(req, res) {
       answerSummary: answer,
       structured,
       matchedTypes,
+      retrievalPath,
       references,
       durationMs: Date.now() - startedAt
     });
@@ -2949,6 +3283,7 @@ async function chatHandler(req, res) {
         answer,
         sources: references.map((item) => item.title).slice(0, 5),
         matched_types: matchedTypes,
+        retrieval_path: retrievalPath,
         age_group_used: ageGroup || '',
         session_id: sessionId,
         intent,
@@ -3199,10 +3534,22 @@ function getMonthDiff(startDate, endDate) {
 }
 
 function getChatFallbackSource(references) {
-  if (references.some((item) => item.sourceType === 'article' || item.sourceType === 'task' || item.sourceType === 'scene')) {
+  if (references.some((item) => item.knowledgeGoverned && item.retrievalSource === 'formal')) {
+    return 'knowledge_fallback';
+  }
+  if (references.some((item) => !item.knowledgeGoverned && (item.sourceType === 'article' || item.sourceType === 'task' || item.sourceType === 'scene'))) {
     return 'knowledge_fallback';
   }
   return 'seed_knowledge';
+}
+
+function getChatRetrievalPath(references) {
+  const paths = [];
+  if (references.some((item) => item.knowledgeGoverned && item.retrievalSource === 'formal')) paths.push('formal_knowledge');
+  if (references.some((item) => item.knowledgeGoverned && item.retrievalSource === 'local_fallback')) paths.push('local_fallback');
+  if (references.some((item) => !item.knowledgeGoverned && (item.sourceType === 'article' || item.sourceType === 'task' || item.sourceType === 'scene'))) paths.push('legacy_formal');
+  if (references.some((item) => item.sourceType === 'recipe' || item.sourceType === 'assessment')) paths.push('seed_knowledge');
+  return paths.join(',');
 }
 
 function getChatMatchedTypes(references) {
@@ -3854,6 +4201,10 @@ function getChatReferenceScore(reference, chatAnalysis, ageGroup, keywords, core
     score += 10;
   }
 
+  if (reference.sourceType === 'ability_content') {
+    score += reference.retrievalSource === 'formal' ? 40 : 5;
+  }
+
   score += getChatSourceWeight(chatAnalysis, reference);
   return score;
 }
@@ -3892,6 +4243,31 @@ function finalizeChatReferences(references, chatAnalysis, ageGroup, keywords, co
   }
 
   return result;
+}
+
+function recordKnowledgeGap(reason, filters, error) {
+  console.warn('[KnowledgeGap]', JSON.stringify({
+    reason,
+    filters: filters || {},
+    error_code: error && (error.code || error.name) || ''
+  }));
+}
+
+async function collectAbilityContentReferences(keywords, scoreText, ageGroup, coreActionContext) {
+  const result = await knowledgeContent.queryKnowledgeWithFallback(pool, {
+    ageSegmentCodes: knowledgeContent.normalizeAgeCodes(ageGroup),
+    abilityCodes: knowledgeContent.normalizeAbilityCodes(coreActionContext && coreActionContext.abilityTags),
+    keywords,
+    limit: 16
+  }, recordKnowledgeGap);
+  return result.items.map((item) => ({
+    title: item.title,
+    score: scoreText([item.title, item.summary, item.content, item.trainingObjective, item.parentPrompt].join(' ')),
+    content: item.content || item.summary || item.trainingObjective || '',
+    extra: item,
+    sourceType: 'ability_content',
+    retrievalSource: item.retrievalSource
+  })).filter((item) => item.score > 0);
 }
 
 async function collectArticleReferences(keywords, scoreText, intent, ageGroup) {
@@ -4057,6 +4433,13 @@ async function collectChatReferences(chatAnalysis, message, ageGroup, coreAction
   const keywords = appendCoreActionKeywords(extractChatKeywords(message), coreActionContext);
   const scoreText = createChatScoreText(keywords);
   const references = [];
+
+  try {
+    const abilityReferences = await collectAbilityContentReferences(keywords, scoreText, ageGroup, coreActionContext);
+    references.push.apply(references, abilityReferences);
+  } catch (err) {
+    console.error('[Chat] collectAbilityContentReferences failed:', err.message);
+  }
 
   if (chatAnalysis.intent === 'nutrition') {
     for (const recipe of NUTRITION_RECIPES.slice(0, 120)) {
@@ -4712,6 +5095,16 @@ async function membershipInfoHandler(req, res) {
       is_trial_used: !!membership.is_trial_used,
       promo_enabled: !!UNIFIED_PROMO_CODE,
       promo_benefit_text: '兑换码兑换区',
+      payment_available: !!(virtualPayConfig.offerId && virtualPayConfig.appKey),
+      fallback_paths: ['trial', 'promo', 'referral'],
+      entitlements: isActive ? {
+        ability_profile: true,
+        weekly_summary: true,
+        training_plan: true,
+        reassessment: true,
+        ai_training: true,
+        development_topic: true
+      } : {},
       plans
     }
   });
@@ -7020,7 +7413,7 @@ function isVirtualPayConfigured(planCode) {
 }
 
 function buildVirtualPayOutTradeNo() {
-  return `VP${Date.now()}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+  return `VP${Date.now()}${crypto.randomBytes(8).toString('hex')}`;
 }
 
 function hmacSha256Hex(key, value) {
@@ -7037,7 +7430,7 @@ function fenToYuan(priceFen) {
 
 function verifyWechatMessagePushSignature(query) {
   if (!wechatMessagePushConfig.token) {
-    return true;
+    return process.env.NODE_ENV !== 'production';
   }
   const signature = String((query && query.signature) || '');
   const timestamp = String((query && query.timestamp) || '');
@@ -7595,12 +7988,9 @@ async function verifyWechatNotifySignature(headers, rawBody) {
 }
 
 async function bootstrap() {
-  try {
-    await ensureProductionTables();
-    await ensureAdminBootstrapUser();
-  } catch (err) {
-    console.error('[niuniu-backend] MySQL init skipped (DB not available):', err.message);
-  }
+  await runMigrations(pool);
+  await ensureProductionTables();
+  await ensureAdminBootstrapUser();
   await fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
   app.listen(PORT, HOST, () => {
     console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
@@ -7671,6 +8061,11 @@ async function executeIfTableExists(connection, tableName, sql, params) {
   if (await tableExists(connection, tableName)) {
     await connection.execute(sql, params);
   }
+}
+
+async function ensureEventTrackSchema() {
+  await ensureColumnExists('event_tracks', 'event_id', 'VARCHAR(128) DEFAULT NULL');
+  await ensureIndexExists('event_tracks', 'uniq_event_tracks_event_id', 'UNIQUE INDEX uniq_event_tracks_event_id (event_id)');
 }
 
 function getMultipartBoundary(contentType) {
@@ -8280,13 +8675,27 @@ async function ensureProductionTables() {
     CREATE TABLE IF NOT EXISTS event_tracks (
       id BIGINT PRIMARY KEY AUTO_INCREMENT,
       user_id BIGINT NOT NULL,
+      event_id VARCHAR(128) DEFAULT NULL,
       event_type VARCHAR(128) NOT NULL,
       event_data JSON NULL,
       session_id VARCHAR(255) DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_event_tracks_user (user_id),
       INDEX idx_event_tracks_type (event_type),
-      INDEX idx_event_tracks_created (created_at)
+      INDEX idx_event_tracks_created (created_at),
+      UNIQUE KEY uniq_event_tracks_event_id (event_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await ensureEventTrackSchema();
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS event_track_rejections (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      event_type VARCHAR(128) DEFAULT '',
+      reason_code VARCHAR(64) NOT NULL,
+      metadata_size INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_event_track_rejections_created (created_at),
+      INDEX idx_event_track_rejections_reason (reason_code)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
@@ -8310,6 +8719,38 @@ async function ensureProductionTables() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX idx_articles_category (category),
       INDEX idx_articles_published (is_published)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS knowledge_contents (
+      id BIGINT PRIMARY KEY AUTO_INCREMENT,
+      content_type VARCHAR(32) NOT NULL,
+      content_id VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      summary TEXT,
+      content LONGTEXT,
+      age_segment_codes JSON NOT NULL,
+      ability_codes JSON NOT NULL,
+      scene_codes JSON NOT NULL,
+      content_form VARCHAR(32) NOT NULL,
+      source_name VARCHAR(255) NOT NULL,
+      source_url TEXT,
+      evidence_level VARCHAR(32) NOT NULL,
+      content_version VARCHAR(64) NOT NULL,
+      review_status VARCHAR(32) NOT NULL,
+      is_published TINYINT NOT NULL DEFAULT 0,
+      training_objective TEXT,
+      duration_minutes INT NOT NULL DEFAULT 0,
+      steps_json JSON NOT NULL,
+      parent_prompt TEXT,
+      observe_signals JSON NOT NULL,
+      safety_notice TEXT,
+      content_hash CHAR(64) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_knowledge_content (content_type, content_id),
+      INDEX idx_knowledge_form_review (content_form, review_status, is_published),
+      INDEX idx_knowledge_version (content_version)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
   await pool.execute(`
@@ -9842,7 +10283,44 @@ async function getRecentModuleUsage(userId, childId) {
   return usage;
 }
 
-async function getRecommendedReadingTask(childId, ageGroup, subjectCode) {
+function normalizeAbilityKnowledgeTask(item, ageGroup) {
+  return {
+    id: item.contentId,
+    task_code: item.contentId,
+    title: item.title,
+    subject_code: item.abilityCodes[0] || 'ability',
+    age_range: ageGroup || '',
+    difficulty: 1,
+    duration: item.durationMinutes || 5,
+    material: '',
+    objective: item.trainingObjective || item.summary,
+    steps: item.steps,
+    parent_prompt: item.parentPrompt,
+    content: item.content,
+    tips: item.safetyNotice,
+    observe_signals: item.observeSignals,
+    safety_notice: item.safetyNotice,
+    content_version: item.contentVersion,
+    review_status: item.reviewStatus,
+    source_name: item.sourceName,
+    content_source: item.retrievalSource,
+    is_fallback: item.isFallback,
+    status: 'pending',
+    progress: 0
+  };
+}
+
+async function getRecommendedReadingTask(childId, ageGroup, subjectCode, abilityValue) {
+  const governedResult = await knowledgeContent.queryKnowledgeWithFallback(pool, {
+    contentType: 'task',
+    contentForm: 'task',
+    ageSegmentCodes: knowledgeContent.normalizeAgeCodes(ageGroup),
+    abilityCodes: knowledgeContent.normalizeAbilityCodes(abilityValue),
+    limit: 1
+  }, recordKnowledgeGap);
+  if (governedResult.items.length) {
+    return normalizeAbilityKnowledgeTask(governedResult.items[0], ageGroup);
+  }
   const hasAgeGroup = !!ageGroup;
   const likeAge = `%${ageGroup || ''}%`;
   let query = `SELECT t.*, tp.status, tp.progress
@@ -10029,7 +10507,7 @@ async function buildDailyPlanCards(userId, child, planDate) {
   const weakDimension = await getLatestWeakDimension(child.id);
   const planProfile = getDailyPlanProfileByDimension(weakDimension && weakDimension.dimension_name);
   const recentUsage = await getRecentModuleUsage(userId, child.id);
-  const readingTask = await getRecommendedReadingTask(child.id, ageGroup, planProfile.subjectCode);
+  const readingTask = await getRecommendedReadingTask(child.id, ageGroup, planProfile.subjectCode, weakDimension && weakDimension.dimension_name);
   const article = await getRecommendedParentingArticle(ageGroup, planProfile.articleCategory, planProfile.articleKeyword, userId);
   const recipe = getRecommendedNutritionRecipe(ageGroup);
   const developmentPractice = getRecommendedDevelopmentZonePractice(ageGroup, child.id, planDate);
@@ -10200,6 +10678,8 @@ function normalizeDailyPlanRecord(row) {
   };
 }
 
+const normalizeDailyPlanPayload = abilityTraining.normalizeDailyPlanPayload;
+
 async function loadDailyPlanRecords(userId, childId, planDate) {
   const [rows] = await pool.execute(
     `SELECT *
@@ -10290,16 +10770,14 @@ async function dailyPlanHandler(req, res) {
   try {
     child = await resolveDailyPlanChild(userId, childId);
     if (childId && !child) {
-      res.status(403).json({ success: false, message: '无权访问该孩子的计划' });
+      sendError(res, req, 403, 'CHILD_ACCESS_DENIED', '无权访问该孩子的计划');
       return;
     }
 
     if (!child) {
       const noChildCards = buildNoChildDailyPlanCards(planDate);
-      res.json({
-        success: true,
-        data: {
-          date: planDate,
+       sendSuccess(res, req, normalizeDailyPlanPayload({
+           date: planDate,
           child_id: 0,
           child_name: '',
           age_group: '',
@@ -10321,9 +10799,8 @@ async function dailyPlanHandler(req, res) {
             status: 'pending',
             completed: false,
             completedAt: null
-          }))
-        }
-      });
+           }))
+         }, { dataStatus: 'profile_required', message: '完善孩子档案后可生成个性化计划' }));
       return;
     }
 
@@ -10331,10 +10808,8 @@ async function dailyPlanHandler(req, res) {
     if (!ageGroup) {
       const missingAgeCards = dailyPlanText.buildMissingAgeDailyPlanCards(child, planDate);
       const streak = await getUserPlanStreak(userId, child.id);
-      res.json({
-        success: true,
-        data: {
-          date: planDate,
+       sendSuccess(res, req, normalizeDailyPlanPayload({
+           date: planDate,
           child_id: child.id,
           child_name: child.name || '',
           age_group: '',
@@ -10357,9 +10832,8 @@ async function dailyPlanHandler(req, res) {
             status: 'pending',
             completed: false,
             completedAt: null
-          }))
-        }
-      });
+           }))
+         }, { degraded: true, degradationReason: 'child_age_missing', dataStatus: 'profile_incomplete', message: '完善生日后可生成适龄计划' }));
       return;
     }
 
@@ -10370,17 +10844,14 @@ async function dailyPlanHandler(req, res) {
       cards = await loadDailyPlanRecords(userId, child.id, planDate);
     }
     const streak = await getUserPlanStreak(userId, child.id);
-    res.json({
-      success: true,
-      data: {
-        date: planDate,
+     sendSuccess(res, req, normalizeDailyPlanPayload({
+         date: planDate,
         child_id: child.id,
         child_name: child.name || '',
         age_group: ageGroup,
         streak_days: streak.streakDays,
-        cards
-      }
-    });
+         cards
+       }));
   } catch (err) {
     console.error('[daily-plan] failed', {
       userId,
@@ -10389,15 +10860,20 @@ async function dailyPlanHandler(req, res) {
       resolvedChildId: child && child.id,
       message: err && err.message
     });
-    res.json({ success: true, data: buildFallbackDailyPlanResponse(child, planDate) });
+     sendSuccess(res, req, normalizeDailyPlanPayload(buildFallbackDailyPlanResponse(child, planDate), {
+       degraded: true,
+       degradationReason: 'remote_plan_unavailable',
+       dataStatus: 'degraded',
+       message: '已展示本地可执行建议'
+     }));
   }
 }
 
 async function dailyPlanCompleteHandler(req, res) {
   const userId = getUserId(req);
-  const recordId = Number((req.body && req.body.record_id) || 0);
+  const recordId = Number((req.body && (req.body.recordId || req.body.record_id)) || 0);
   if (!recordId) {
-    res.status(400).json({ success: false, message: 'record_id不能为空' });
+    sendError(res, req, 400, 'DAILY_PLAN_RECORD_REQUIRED', 'recordId不能为空');
     return;
   }
   const [rows] = await pool.execute(
@@ -10408,10 +10884,31 @@ async function dailyPlanCompleteHandler(req, res) {
     [recordId, userId]
   );
   if (!rows.length) {
-    res.status(404).json({ success: false, message: '计划卡不存在' });
+    sendError(res, req, 404, 'DAILY_PLAN_NOT_FOUND', '计划卡不存在');
     return;
   }
   const record = rows[0];
+  const recordDate = formatStoredDateValue(record.plan_date);
+  if (recordDate !== getPlanDateValue()) {
+    sendError(res, req, 409, 'DAILY_PLAN_DATE_INVALID', '只能完成当天有效的计划');
+    return;
+  }
+  const [existingCompletions] = await pool.execute(
+    'SELECT completed_at FROM daily_plan_completions WHERE daily_plan_record_id = ? AND user_id = ? LIMIT 1',
+    [record.id, userId]
+  );
+  if (existingCompletions.length) {
+    const completedRecord = normalizeDailyPlanRecord(Object.assign({}, record, {
+      status: 'completed',
+      completed_at: existingCompletions[0].completed_at
+    }));
+    sendSuccess(res, req, Object.assign(completedRecord, {
+      dataStatus: 'ready',
+      empty: false,
+      degraded: false
+    }), { deduplicated: true });
+    return;
+  }
   await pool.execute(
     `INSERT INTO daily_plan_completions (daily_plan_record_id, user_id, child_id, completed_at)
      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
@@ -10424,9 +10921,31 @@ async function dailyPlanCompleteHandler(req, res) {
      WHERE id = ? AND user_id = ?`,
     [record.id, userId]
   );
+  const timelineResult = await growthTimeline.saveTimelineEntry(pool, {
+    childId: record.child_id,
+    entryType: 'training_complete',
+    sourceType: 'training',
+    sourceId: String(record.id),
+    title: record.title || '每日训练完成',
+    summary: record.summary_text || record.action_text || '',
+    metadata: {
+      planId: record.id,
+      planDate: formatStoredDateValue(record.plan_date),
+      planType: record.plan_type || '',
+      targetType: record.target_type || '',
+      targetId: record.target_id || ''
+    },
+    occurredAt: new Date().toISOString(),
+    idempotencyKey: String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `training-complete:${record.id}`)
+  }, { endpoint: 'daily-plan/complete' });
   await deleteWeeklySummaryCache(userId, record.child_id, formatStoredDateValue(record.plan_date));
   const [updatedRows] = await pool.execute('SELECT * FROM daily_plan_records WHERE id = ? LIMIT 1', [record.id]);
-  res.json({ success: true, data: normalizeDailyPlanRecord(updatedRows[0]) });
+  sendSuccess(res, req, Object.assign(normalizeDailyPlanRecord(updatedRows[0]), {
+     timelineEntry: timelineResult.entry,
+     dataStatus: 'ready',
+     empty: false,
+     degraded: false
+  }), { deduplicated: timelineResult.deduplicated });
 }
 
 async function getUserPlanStreak(userId, childId) {
@@ -10486,12 +11005,12 @@ async function dailyPlanStreakHandler(req, res) {
 
 async function dailyPlanGenerateHandler(req, res) {
   const userId = getUserId(req);
-  const childId = Number((req.body && req.body.childId) || 0);
-  const sourceType = String((req.body && req.body.source_type) || '');
-  const sourceTitle = String((req.body && req.body.source_title) || '');
-  const sourceSummary = String((req.body && req.body.source_summary) || '');
+  const childId = Number((req.body && (req.body.childId || req.body.child_id)) || 0);
+  const sourceType = String((req.body && (req.body.sourceType || req.body.source_type)) || '');
+  const sourceTitle = String((req.body && (req.body.sourceTitle || req.body.source_title)) || '');
+  const sourceSummary = String((req.body && (req.body.sourceSummary || req.body.source_summary)) || '');
   if (!sourceType || !childId) {
-    res.status(400).json({ success: false, message: 'source_type和childId不能为空' });
+    sendError(res, req, 400, 'DAILY_PLAN_INPUT_REQUIRED', 'sourceType和childId不能为空');
     return;
   }
   const child = await requireOwnedChildForRead(req, res, childId);
@@ -10538,17 +11057,14 @@ async function dailyPlanGenerateHandler(req, res) {
   }
   const todayCards = await loadDailyPlanRecords(userId, childId, startDate);
   const streak = await getUserPlanStreak(userId, childId);
-  res.json({
-    success: true,
-    data: {
+  sendSuccess(res, req, normalizeDailyPlanPayload({
       date: startDate,
       child_id: childId,
       child_name: child.name || '',
       total_days: cards.length,
       streak_days: streak.streakDays,
       cards: todayCards
-    }
-  });
+    }));
 }
 
 function buildMultiDayPlanCards(child, startDate, sourceType, sourceTitle, sourceSummary) {
@@ -10587,9 +11103,18 @@ async function dailyPlanNextHandler(req, res) {
   const childId = Number(req.query.childId || 0);
   const child = await resolveDailyPlanChild(userId, childId);
   if (!child) {
-    res.json({ success: true, data: null, message: '请先完善孩子档案' });
+    if (childId) {
+      sendError(res, req, 403, 'CHILD_ACCESS_DENIED', '无权访问该孩子的计划');
+      return;
+    }
+    sendSuccess(res, req, normalizeDailyPlanPayload({ childId, card: null }, {
+      empty: true,
+      dataStatus: 'profile_required',
+      message: '请先完善孩子档案'
+    }));
     return;
   }
+  const resolvedChildId = Number(child.id);
   const tomorrow = getPlanDateValue(new Date(Date.now() + 86400000));
   const [rows] = await pool.execute(
     `SELECT *
@@ -10597,20 +11122,24 @@ async function dailyPlanNextHandler(req, res) {
       WHERE user_id = ? AND child_id = ? AND plan_date = ? AND status <> 'completed'
       ORDER BY slot_index ASC, id ASC
       LIMIT 1`,
-    [userId, childId, tomorrow]
+    [userId, resolvedChildId, tomorrow]
   );
   if (!rows.length) {
-    res.json({ success: true, data: null, message: '明天暂无计划' });
+    sendSuccess(res, req, normalizeDailyPlanPayload({ childId: resolvedChildId, childName: child.name || '', planDate: tomorrow, card: null }, {
+      empty: true,
+      dataStatus: 'empty',
+      message: '明天暂无计划'
+    }));
     return;
   }
   const streak = await getUserPlanStreak(userId, childId);
-  res.json({
-    success: true,
-    data: {
+  sendSuccess(res, req, normalizeDailyPlanPayload({
       card: normalizeDailyPlanRecord(rows[0]),
+      childId: resolvedChildId,
+      childName: child.name || '',
+      planDate: tomorrow,
       streak_days: streak.streakDays
-    }
-  });
+    }));
 }
 
 async function deleteWeeklySummaryCache(userId, childId, dateValue) {
@@ -10633,10 +11162,7 @@ async function growthRecordDailyHandler(req, res) {
      LIMIT 1`,
     [userId, childId, recordDate]
   );
-  res.json({
-    success: true,
-    data: rows.length ? normalizeGrowthRecord(rows[0]) : buildDefaultGrowthRecord(recordDate, childId)
-  });
+  sendSuccess(res, req, rows.length ? normalizeGrowthRecord(rows[0]) : buildDefaultGrowthRecord(recordDate, childId));
 }
 
 async function growthRecordUpsertHandler(req, res) {
@@ -10674,11 +11200,29 @@ async function growthRecordUpsertHandler(req, res) {
     ]
   );
   await deleteWeeklySummaryCache(userId, childId, recordDate);
+  await growthTimeline.saveTimelineEntry(pool, {
+    childId,
+    entryType: 'daily_status',
+    sourceType: 'daily_status',
+    sourceId: recordDate,
+    title: '每日成长状态',
+    summary: payload.noteText,
+    metadata: {
+      recordDate,
+      moodStatus: payload.moodStatus,
+      appetiteStatus: payload.appetiteStatus,
+      sleepStatus: payload.sleepStatus,
+      exerciseStatus: payload.exerciseStatus,
+      socialStatus: payload.socialStatus
+    },
+    occurredAt: `${recordDate}T12:00:00.000Z`,
+    idempotencyKey: `daily-status:${childId}:${recordDate}`
+  }, { endpoint: 'growth-records' });
   const [rows] = await pool.execute(
     'SELECT * FROM growth_daily_records WHERE user_id = ? AND child_id = ? AND record_date = ? LIMIT 1',
     [userId, childId, recordDate]
   );
-  res.json({ success: true, data: normalizeGrowthRecord(rows[0]) });
+  sendSuccess(res, req, normalizeGrowthRecord(rows[0]));
 }
 
 async function growthRecordHistoryHandler(req, res) {
@@ -10704,17 +11248,8 @@ async function growthRecordHistoryHandler(req, res) {
     'SELECT COUNT(*) AS total FROM growth_daily_records WHERE user_id = ? AND child_id = ?',
     [userId, childId]
   );
-  res.json({
-    success: true,
-    data: {
-      list: rows.map(normalizeGrowthRecord),
-      pagination: {
-        page,
-        pageSize,
-        total: Number(countRows[0].total || 0)
-      }
-    }
-  });
+  const pagination = { page, pageSize, total: Number(countRows[0].total || 0) };
+  sendSuccess(res, req, { list: rows.map(normalizeGrowthRecord), pagination }, { pagination });
 }
 
 async function growthRecordSummaryHandler(req, res) {
@@ -10743,44 +11278,32 @@ async function growthRecordSummaryHandler(req, res) {
   const overallValues = Object.values(averages).filter(Boolean);
   const overallScore = overallValues.length ? Number((overallValues.reduce((sum, value) => sum + value, 0) / overallValues.length).toFixed(2)) : 0;
   const weakestKey = Object.entries(averages).sort((a, b) => a[1] - b[1])[0] || ['moodStatus', 0];
-  res.json({
-    success: true,
-    data: {
-      childId,
-      periodDays,
-      completedDays: list.length,
-      overallScore,
-      overallLabel: buildGrowthTrendLabel(overallScore),
-      weakestDimension: weakestKey[0],
-      averages,
-      latestRecord: list[list.length - 1] || null
-    }
+  sendSuccess(res, req, {
+    childId,
+    periodDays,
+    completedDays: list.length,
+    overallScore,
+    overallLabel: buildGrowthTrendLabel(overallScore),
+    weakestDimension: weakestKey[0],
+    averages,
+    latestRecord: list[list.length - 1] || null
   });
 }
 
 async function growthRecordEntrySaveHandler(req, res) {
-  const userId = getUserId(req);
   const childId = Number((req.body && req.body.childId) || 0);
-  const sourceType = String((req.body && req.body.source_type) || '').trim().substring(0, 32);
-  const entryType = String((req.body && (req.body.entry_type || req.body.source_type)) || '').trim().substring(0, 32);
-  const title = String((req.body && req.body.title) || '').substring(0, 255);
-  const summary = String((req.body && req.body.summary) || '').substring(0, 2000);
-  const sourceId = String((req.body && req.body.source_id) || '').substring(0, 128);
+  const body = req.body || {};
+  const sourceType = String(body.sourceType || body.source_type || '').trim().substring(0, 64);
+  const entryType = String(body.entryType || body.entry_type || body.source_type || '').trim().substring(0, 64);
+  const title = String(body.title || '').substring(0, 255);
+  const summary = String(body.summary || '').substring(0, 4000);
+  const sourceId = String(body.sourceId || body.source_id || '').substring(0, 128);
   const zoneCode = String((req.body && req.body.zone_code) || '').trim().substring(0, 64);
   const scenarioCode = String((req.body && req.body.scenario_code) || '').trim().substring(0, 64);
   const practiceTitle = String((req.body && req.body.practice_title) || title || '').trim().substring(0, 255);
   const userNote = String((req.body && req.body.user_note) || summary || '').trim().substring(0, 2000);
   if (!entryType || !title || !childId) {
-    res.status(400).json({ success: false, message: 'entry_type、title和childId不能为空' });
-    return;
-  }
-  const validTypes = ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note', 'development_zone'];
-  if (validTypes.indexOf(entryType) === -1) {
-    res.status(400).json({ success: false, message: 'entry_type参数无效' });
-    return;
-  }
-  if (sourceType && sourceType !== entryType) {
-    res.status(400).json({ success: false, message: 'source_type和entry_type需保持一致' });
+    sendError(res, req, 400, 'GROWTH_ENTRY_REQUIRED', 'entryType、title和childId不能为空');
     return;
   }
   if (entryType === 'development_zone') {
@@ -10795,16 +11318,24 @@ async function growthRecordEntrySaveHandler(req, res) {
   if (!child) {
     return;
   }
-  const [result] = await pool.execute(
-    `INSERT INTO growth_record_entries (user_id, child_id, entry_type, title, summary, source_id, source_type, zone_code, scenario_code, practice_title, user_note)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [userId, childId, entryType, title, summary, sourceId, sourceType || entryType, zoneCode, scenarioCode, practiceTitle, userNote]
-  );
-  const [rows] = await pool.execute(
-    'SELECT * FROM growth_record_entries WHERE id = ? LIMIT 1',
-    [result.insertId]
-  );
-  res.json({ success: true, data: normalizeGrowthRecordEntry(rows[0]) });
+  try {
+    const result = await growthTimeline.saveTimelineEntry(pool, Object.assign({}, body, {
+      childId,
+      entryType,
+      sourceType: sourceType || entryType,
+      sourceId,
+      title,
+      summary,
+      metadata: Object.assign({}, body.metadata || {}, { zoneCode, scenarioCode, practiceTitle, userNote })
+    }), { endpoint: 'growth-records/entry' });
+    sendSuccess(res, req, result.entry, { deduplicated: result.deduplicated });
+  } catch (err) {
+    if (err instanceof growthTimeline.GrowthTimelineValidationError) {
+      sendError(res, req, 400, err.code, err.message, { field: err.field });
+      return;
+    }
+    throw err;
+  }
 }
 
 function normalizeGrowthRecordEntry(row) {
@@ -10825,43 +11356,320 @@ function normalizeGrowthRecordEntry(row) {
 }
 
 async function growthRecordEntriesListHandler(req, res) {
-  const userId = getUserId(req);
   const childId = Number(req.query.childId || 0);
-  const entryType = String(req.query.entryType || '');
+  const entryType = String(req.query.entryType || req.query.entry_type || '');
   const page = Math.max(1, Number(req.query.page) || 1);
   const pageSize = Math.min(50, Math.max(1, Number(req.query.pageSize) || 10));
-  const offset = (page - 1) * pageSize;
-  let whereClause = 'WHERE user_id = ?';
-  const params = [userId];
   if (childId) {
     const child = await requireOwnedChildForRead(req, res, childId);
     if (!child) {
       return;
     }
-    whereClause += ' AND child_id = ?';
-    params.push(childId);
   }
-  if (entryType && ['ai_answer', 'assessment_result', 'daily_plan_complete', 'user_note', 'development_zone'].indexOf(entryType) !== -1) {
-    whereClause += ' AND entry_type = ?';
-    params.push(entryType);
+  if (!childId) {
+    sendError(res, req, 400, 'CHILD_ID_REQUIRED', 'childId不能为空');
+    return;
   }
-  const [countRows] = await pool.execute(
-    `SELECT COUNT(*) AS total FROM growth_record_entries ${whereClause}`,
-    params
-  );
-  const total = countRows[0].total;
-  const [rows] = await pool.execute(
-    `SELECT * FROM growth_record_entries ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    params.concat([pageSize, offset])
-  );
-  const list = rows.map(normalizeGrowthRecordEntry);
-  res.json({
-    success: true,
-    data: {
-      list,
-      pagination: { page, pageSize, total }
+  const result = await growthTimeline.listTimelineEntries(pool, { childId, entryType, page, pageSize });
+  sendSuccess(res, req, result, { pagination: result.pagination });
+}
+
+function parseStoredPayload(value, fallback) {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value !== 'string') return value;
+  try { return JSON.parse(value); } catch (err) { return fallback; }
+}
+
+function formatTrainingTask(row) {
+  const assignment = abilityTraining.normalizeTrainingAssignment(row);
+  if (!assignment) {
+    const error = new Error('训练任务归属数据无效');
+    error.code = 'INVALID_TRAINING_ASSIGNMENT';
+    throw error;
+  }
+  return {
+    id: assignment.taskId,
+    planId: assignment.planId,
+    childId: assignment.childId,
+    dayIndex: Number(row.day_index),
+    title: row.title,
+    abilityDomain: assignment.abilityDomain,
+    objective: row.objective,
+    durationMinutes: Number(row.duration_minutes || 0),
+    steps: parseStoredPayload(row.steps, []),
+    parentPrompt: row.parent_prompt || '',
+    observeSignals: parseStoredPayload(row.observe_signals, []),
+    safetyNotice: row.safety_notice || '',
+    contentVersion: Number(row.content_version || 1),
+    status: row.status || 'pending',
+    completed: row.status === 'completed',
+    completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null
+  };
+}
+
+function formatAbilityProfile(row) {
+  return {
+    id: Number(row.id),
+    childId: Number(row.child_id),
+    ageSegment: row.age_segment_code,
+    assessmentVersion: Number(row.assessment_version),
+    abilityDomain: row.ability_domain,
+    dimensionScores: parseStoredPayload(row.dimension_scores, {}),
+    observableSigns: parseStoredPayload(row.observable_signs, []),
+    primaryFocus: row.primary_focus || row.ability_domain,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null
+  };
+}
+
+async function abilityObservationConfigHandler(req, res) {
+  const ageGroup = abilityTraining.normalizeAgeGroup(req.query.ageGroup || req.query.age_group);
+  if (req.query.ageGroup || req.query.age_group) {
+    if (!ageGroup) {
+      sendError(res, req, 400, 'INVALID_AGE_GROUP', '3-6岁观察必须选择有效年龄段');
+      return;
     }
-  });
+  }
+  sendSuccess(res, req, Object.assign({}, abilityTraining.OBSERVATION_CONFIG, {
+    ageGroup: ageGroup || null,
+    ageGroups: abilityTraining.AGE_GROUPS
+  }));
+}
+
+async function abilityObservationSubmitHandler(req, res) {
+  const validation = abilityTraining.validateObservationSubmission(req.body || {});
+  if (!validation.valid) {
+    sendError(res, req, 400, 'INVALID_OBSERVATION', validation.message, { field: validation.field });
+    return;
+  }
+  const child = await requireOwnedChildForRead(req, res, validation.childId);
+  if (!child) return;
+  const providedKey = String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || '').trim();
+  const idempotencyKey = providedKey.slice(0, 128) || `observation:${crypto.createHash('sha256').update(JSON.stringify({ childId: validation.childId, ageGroup: validation.ageGroup, answers: validation.answers })).digest('hex')}`;
+  const [existingRows] = await pool.execute(
+    'SELECT * FROM ability_profiles WHERE child_id = ? AND idempotency_key = ? LIMIT 1',
+    [validation.childId, idempotencyKey]
+  );
+  if (existingRows.length) {
+    sendSuccess(res, req, formatAbilityProfile(existingRows[0]), { deduplicated: true });
+    return;
+  }
+  const profile = abilityTraining.buildAbilityProfile(validation);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [submissionResult] = await connection.execute(
+      `INSERT INTO ability_observation_submissions (child_id, age_segment_code, assessment_version, answers, idempotency_key)
+       VALUES (?, ?, ?, ?, ?)`,
+      [validation.childId, validation.ageGroup, profile.assessmentVersion, JSON.stringify(validation.answers), idempotencyKey]
+    );
+    const [profileResult] = await connection.execute(
+      `INSERT INTO ability_profiles
+       (child_id, age_segment_code, assessment_version, ability_domain, dimension_scores, observable_signs, primary_focus, observation_submission_id, idempotency_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [validation.childId, profile.ageGroup, profile.assessmentVersion, profile.abilityDomain, JSON.stringify(profile.dimensionScores), JSON.stringify(profile.observableSigns), profile.primaryFocus, submissionResult.insertId, idempotencyKey]
+    );
+    await connection.commit();
+    const [rows] = await pool.execute('SELECT * FROM ability_profiles WHERE id = ? LIMIT 1', [profileResult.insertId]);
+    const saved = formatAbilityProfile(rows[0] || Object.assign({}, profile, { id: profileResult.insertId, child_id: validation.childId }));
+    await growthTimeline.saveTimelineEntry(pool, {
+      childId: validation.childId,
+      entryType: 'assessment_result',
+      sourceType: 'ability_observation',
+      sourceId: String(saved.id),
+      title: '完成能力观察',
+      summary: `完成${validation.ageGroup}专注力与感觉运动能力观察`,
+      abilityCodes: [profile.primaryFocus],
+      dimensions: profile.dimensionScores,
+      metadata: { assessmentVersion: profile.assessmentVersion, observableSigns: profile.observableSigns },
+      idempotencyKey: `ability-profile:${idempotencyKey}`
+    }, { endpoint: 'ability-observations/submit' });
+    sendSuccess(res, req, Object.assign({}, saved, {
+      notice: profile.notice,
+      suggestions: profile.suggestions,
+      experiencePlanDays: 3
+    }), { deduplicated: false });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function abilityProfilesHandler(req, res) {
+  const childId = Number(req.query.childId || req.query.child_id || 0);
+  if (!(await requireOwnedChildForRead(req, res, childId))) return;
+  const [rows] = await pool.execute('SELECT * FROM ability_profiles WHERE child_id = ? ORDER BY created_at DESC, id DESC LIMIT 20', [childId]);
+  sendSuccess(res, req, { list: rows.map(formatAbilityProfile) });
+}
+
+async function getLatestAbilityProfile(childId) {
+  const [rows] = await pool.execute('SELECT * FROM ability_profiles WHERE child_id = ? ORDER BY created_at DESC, id DESC LIMIT 1', [childId]);
+  return rows[0] || null;
+}
+
+function getPlanDates(durationDays) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + durationDays - 1);
+  return { start: formatDateValue(start), end: formatDateValue(end) };
+}
+
+async function loadTrainingPlan(planId, childId) {
+  const [planRows] = await pool.execute('SELECT * FROM training_plans WHERE id = ? AND child_id = ? LIMIT 1', [planId, childId]);
+  if (!planRows.length) return null;
+  const [taskRows] = await pool.execute('SELECT * FROM training_tasks WHERE plan_id = ? AND child_id = ? ORDER BY day_index ASC', [planId, childId]);
+  const plan = planRows[0];
+  return {
+    id: Number(plan.id),
+    childId: Number(plan.child_id),
+    abilityProfileId: Number(plan.ability_profile_id),
+    abilityDomain: plan.ability_domain,
+    durationDays: Number(plan.duration_days),
+    contentVersion: Number(plan.content_version || 1),
+    startDate: formatStoredDateValue(plan.start_date),
+    endDate: formatStoredDateValue(plan.end_date),
+    status: plan.status,
+    tasks: taskRows.map(formatTrainingTask)
+  };
+}
+
+async function trainingPlansHandler(req, res) {
+  const childId = Number(req.query.childId || req.query.child_id || 0);
+  if (!(await requireOwnedChildForRead(req, res, childId))) return;
+  const [rows] = await pool.execute('SELECT id FROM training_plans WHERE child_id = ? ORDER BY created_at DESC, id DESC LIMIT 10', [childId]);
+  const list = [];
+  for (const row of rows) list.push(await loadTrainingPlan(row.id, childId));
+  sendSuccess(res, req, { list: list.filter(Boolean) });
+}
+
+async function trainingPlanGenerateHandler(req, res) {
+  const childId = Number(req.body && (req.body.childId || req.body.child_id));
+  if (!(await requireOwnedChildForRead(req, res, childId))) return;
+  const profile = await getLatestAbilityProfile(childId);
+  if (!profile) {
+    sendError(res, req, 400, 'ABILITY_PROFILE_REQUIRED', '请先完成能力观察');
+    return;
+  }
+  const durationDays = Number(req.body.durationDays || req.body.duration_days || 7);
+  if (![3, 7, 30].includes(durationDays)) {
+    sendError(res, req, 400, 'INVALID_PLAN_DURATION', '训练计划周期只能是3、7或30天');
+    return;
+  }
+  const dates = getPlanDates(durationDays);
+  const idempotencyKey = String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `plan:${childId}:${profile.id}:${durationDays}:${dates.start}`).slice(0, 128);
+  const [existingRows] = await pool.execute('SELECT id FROM training_plans WHERE child_id = ? AND idempotency_key = ? LIMIT 1', [childId, idempotencyKey]);
+  if (existingRows.length) {
+    sendSuccess(res, req, await loadTrainingPlan(existingRows[0].id, childId), { deduplicated: true });
+    return;
+  }
+  const tasks = abilityTraining.buildTrainingTasks({ primaryFocus: profile.primary_focus || profile.ability_domain }, durationDays);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [planResult] = await connection.execute(
+      `INSERT INTO training_plans (child_id, ability_profile_id, ability_domain, duration_days, content_version, start_date, end_date, status, idempotency_key)
+       VALUES (?, ?, ?, ?, 1, ?, ?, 'active', ?)`,
+      [childId, profile.id, profile.ability_domain, durationDays, dates.start, dates.end, idempotencyKey]
+    );
+    for (const task of tasks) {
+      await connection.execute(
+        `INSERT INTO training_tasks (plan_id, child_id, day_index, title, ability_domain, objective, duration_minutes, steps, parent_prompt, observe_signals, safety_notice, content_version)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [planResult.insertId, childId, task.dayIndex, task.title, task.domain, task.objective, task.duration, JSON.stringify(task.steps), task.parentPrompt, JSON.stringify(task.observeSignals), task.safetyNotice, task.contentVersion]
+      );
+    }
+    await connection.commit();
+    await growthTimeline.saveTimelineEntry(pool, {
+      childId,
+      entryType: 'user_note',
+      sourceType: 'training',
+      sourceId: String(planResult.insertId),
+      title: `生成${durationDays}天训练计划`,
+      summary: '计划已根据最近一次能力画像生成。',
+      abilityCodes: [profile.ability_domain],
+      metadata: { durationDays, contentVersion: 1 },
+      idempotencyKey: `training-plan:${idempotencyKey}`
+    }, { endpoint: 'training-plans/generate' });
+    sendSuccess(res, req, await loadTrainingPlan(planResult.insertId, childId), { deduplicated: false });
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
+async function trainingTaskHandler(req, res) {
+  const taskId = Number(req.params.id);
+  if (!Number.isSafeInteger(taskId) || taskId <= 0) {
+    sendError(res, req, 400, 'INVALID_TRAINING_TASK', '训练任务编号无效');
+    return;
+  }
+  const [rows] = await pool.execute('SELECT * FROM training_tasks WHERE id = ? LIMIT 1', [taskId]);
+  if (!rows.length) {
+    sendError(res, req, 404, 'TRAINING_TASK_NOT_FOUND', '训练任务不存在');
+    return;
+  }
+  if (!(await requireOwnedChildForRead(req, res, Number(rows[0].child_id)))) return;
+  sendSuccess(res, req, { task: formatTrainingTask(rows[0]) });
+}
+
+async function trainingTaskCompleteHandler(req, res) {
+  const taskId = Number(req.params.id);
+  const [rows] = await pool.execute('SELECT * FROM training_tasks WHERE id = ? LIMIT 1', [taskId]);
+  if (!rows.length) { sendError(res, req, 404, 'TRAINING_TASK_NOT_FOUND', '训练任务不存在'); return; }
+  const task = rows[0];
+  if (!(await requireOwnedChildForRead(req, res, Number(task.child_id)))) return;
+  const [planRows] = await pool.execute('SELECT * FROM training_plans WHERE id = ? AND child_id = ? LIMIT 1', [task.plan_id, task.child_id]);
+  const plan = planRows[0];
+  if (!plan || plan.status !== 'active') { sendError(res, req, 409, 'TRAINING_PLAN_INACTIVE', '训练计划已结束'); return; }
+  if (abilityTraining.isPlanExpired(formatStoredDateValue(plan.end_date))) { sendError(res, req, 409, 'TRAINING_PLAN_EXPIRED', '训练计划已过期'); return; }
+  const key = String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `complete:${task.child_id}:${taskId}`).slice(0, 128);
+  const [existingRows] = await pool.execute('SELECT * FROM training_completions WHERE child_id = ? AND idempotency_key = ? LIMIT 1', [task.child_id, key]);
+  if (existingRows.length) { sendSuccess(res, req, { taskId, completed: true, completedAt: existingRows[0].completed_at }, { deduplicated: true }); return; }
+  await pool.execute('INSERT INTO training_completions (task_id, plan_id, child_id, idempotency_key) VALUES (?, ?, ?, ?)', [taskId, task.plan_id, task.child_id, key]);
+  await pool.execute('UPDATE training_tasks SET status = \'completed\', completed_at = CURRENT_TIMESTAMP WHERE id = ? AND child_id = ?', [taskId, task.child_id]);
+  await growthTimeline.saveTimelineEntry(pool, {
+    childId: Number(task.child_id), entryType: 'training_complete', sourceType: 'training', sourceId: String(taskId), title: task.title, summary: task.objective,
+    abilityCodes: [task.ability_domain], metadata: { planId: task.plan_id, dayIndex: task.day_index }, idempotencyKey: `training-complete:${key}`
+  }, { endpoint: 'training-tasks/complete' });
+  sendSuccess(res, req, { taskId, planId: Number(task.plan_id), completed: true, nextSuggestion: '完成后记下一句孩子的表现，下一次训练会更贴合。' }, { deduplicated: false });
+}
+
+async function trainingFeedbackHandler(req, res) {
+  const taskId = Number(req.body && (req.body.taskId || req.body.task_id));
+  const feedbackKey = abilityTraining.normalizeFeedbackKey(req.body && (req.body.feedbackKey || req.body.feedback_key));
+  if (!taskId || !feedbackKey) { sendError(res, req, 400, 'INVALID_TRAINING_FEEDBACK', 'taskId和有效反馈不能为空'); return; }
+  const [taskRows] = await pool.execute('SELECT * FROM training_tasks WHERE id = ? LIMIT 1', [taskId]);
+  if (!taskRows.length) { sendError(res, req, 404, 'TRAINING_TASK_NOT_FOUND', '训练任务不存在'); return; }
+  const task = taskRows[0];
+  if (!(await requireOwnedChildForRead(req, res, Number(task.child_id)))) return;
+  const key = String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `feedback:${task.child_id}:${taskId}`).slice(0, 128);
+  const [existingRows] = await pool.execute('SELECT * FROM training_feedbacks WHERE child_id = ? AND idempotency_key = ? LIMIT 1', [task.child_id, key]);
+  if (existingRows.length) { sendSuccess(res, req, { id: existingRows[0].id, taskId, feedbackKey: existingRows[0].feedback_key, deduplicated: true }, { deduplicated: true }); return; }
+  const note = String(req.body.note || '').trim().slice(0, 1000);
+  const [result] = await pool.execute(
+    'INSERT INTO training_feedbacks (task_id, plan_id, child_id, status, feedback_key, note, idempotency_key, ability_domain) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [taskId, task.plan_id, task.child_id, task.status === 'completed' ? 'completed' : 'pending', feedbackKey, note, key, task.ability_domain]
+  );
+  await growthTimeline.saveTimelineEntry(pool, {
+    childId: Number(task.child_id), entryType: 'training_feedback', sourceType: 'training', sourceId: String(taskId), title: `训练反馈：${task.title}`, summary: note || feedbackKey,
+    abilityCodes: [task.ability_domain], metadata: { planId: task.plan_id, feedbackKey }, idempotencyKey: `training-feedback:${key}`
+  }, { endpoint: 'training-feedback' });
+  sendSuccess(res, req, { id: result.insertId, taskId, feedbackKey, nextSuggestion: feedbackKey === 'resisted' ? '下次先缩短到两分钟，先让孩子体验完成。' : '下次继续保持短时、具体、可完成。' }, { deduplicated: false });
+}
+
+async function trainingPlanNextHandler(req, res) {
+  const childId = Number(req.query.childId || req.query.child_id || 0);
+  if (!(await requireOwnedChildForRead(req, res, childId))) return;
+  const [rows] = await pool.execute(
+    `SELECT tt.* FROM training_tasks tt JOIN training_plans tp ON tp.id = tt.plan_id
+     WHERE tt.child_id = ? AND tp.status = 'active' AND tp.start_date <= CURDATE() AND tp.end_date >= CURDATE() AND tt.status <> 'completed'
+     ORDER BY tt.day_index ASC, tt.id ASC LIMIT 1`, [childId]
+  );
+  sendSuccess(res, req, { task: rows.length ? formatTrainingTask(rows[0]) : null });
 }
 
 async function getRecentGrowthRecordEntries(userId, childId, limit) {
@@ -10956,6 +11764,16 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
      WHERE child_id = ? AND status = 'completed' AND completed_at BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)`,
     [child.id, weekStart, weekEnd]
   );
+  const [timelineRows] = await pool.execute(
+    `SELECT entry_type AS entryType, dimensions, metadata, occurred_at AS occurredAt
+       FROM growth_timeline_entries
+      WHERE child_id = ?
+        AND occurred_at >= ?
+        AND occurred_at < DATE_ADD(?, INTERVAL 1 DAY)
+      ORDER BY occurred_at ASC, id ASC`,
+    [child.id, weekStart, weekEnd]
+  );
+  const traceableReport = aggregateStageReport(timelineRows);
   const growthList = growthRows.map(normalizeGrowthRecord);
   const prevWeekStart = getRelativeWeekDate(weekStart, -1);
   const prevWeekEnd = getWeekEndDateValue(prevWeekStart);
@@ -10967,7 +11785,9 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     [userId, child.id, prevWeekStart, prevWeekEnd]
   );
   const prevGrowthList = prevGrowthRows.map(normalizeGrowthRecord);
-  const summaryBase = buildDimensionSummaryFromRecords(growthList);
+  const summaryBase = Object.keys(traceableReport.dimensionScores).length
+    ? traceableReport.dimensionScores
+    : buildDimensionSummaryFromRecords(growthList);
   const prevSummaryBase = buildDimensionSummaryFromRecords(prevGrowthList);
   const trendItems = prevGrowthList.length ? buildTrendSummary(summaryBase, prevSummaryBase) : [];
   const weakestDimension = Object.entries(summaryBase).sort((a, b) => a[1] - b[1])[0] || ['moodStatus', 0];
@@ -11003,7 +11823,12 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
     recordDays: growthList.length,
     completedPlanCount: normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].completed_total),
     totalPlanCount: normalizeAggregateNumber(planAggregateRows[0] && planAggregateRows[0].total),
-    completedTaskCount: normalizeAggregateNumber(taskRows[0] && taskRows[0].completed_total),
+     completedTaskCount: traceableReport.completedTaskCount,
+     feedbackCount: traceableReport.feedbackCount,
+     feedbackCounts: traceableReport.feedbackCounts,
+     feedbackTrend: traceableReport.feedbackTrend,
+     observationCount: traceableReport.observationCount,
+     traceableEntryCount: traceableReport.traceableEntryCount,
     developmentZoneSummary,
     dimensionScores: summaryBase,
     weakestDimension: weakestDimension[0],
@@ -11090,23 +11915,6 @@ function buildWeeklyDevelopmentZoneSummary(planRows, entryRows) {
   };
 }
 
-function formatWeeklySummaryForMembership(payload, activeMember) {
-  const data = Object.assign({}, payload || {});
-  const concernsPreview = Array.isArray(data.concernsPreview) ? data.concernsPreview : (Array.isArray(data.concerns) ? data.concerns.slice(0, 1) : []);
-  const concernsFull = Array.isArray(data.concernsFull) ? data.concernsFull : (Array.isArray(data.concerns) ? data.concerns : concernsPreview);
-  const nextActionsPreview = Array.isArray(data.nextActionsPreview) ? data.nextActionsPreview : (Array.isArray(data.nextActions) ? data.nextActions.slice(0, 2) : []);
-  const nextActionsFull = Array.isArray(data.nextActionsFull) ? data.nextActionsFull : (Array.isArray(data.nextActions) ? data.nextActions : nextActionsPreview);
-  const recommendedContentPreview = Array.isArray(data.recommendedContentPreview) ? data.recommendedContentPreview : (Array.isArray(data.recommendedContent) ? data.recommendedContent.slice(0, 1) : []);
-  const recommendedContentPremium = Array.isArray(data.recommendedContentPremium) ? data.recommendedContentPremium : (Array.isArray(data.recommendedContent) ? data.recommendedContent : recommendedContentPreview);
-  return Object.assign({}, data, {
-    concerns: activeMember ? concernsFull : concernsPreview,
-    nextActions: activeMember ? nextActionsFull : nextActionsPreview,
-    recommendedContent: activeMember ? recommendedContentPremium : recommendedContentPreview,
-    premiumUnlocked: !!activeMember,
-    premiumTip: activeMember ? '本周已解锁完整周总结。' : (data.premiumTip || '会员可查看更细的趋势解释、完整下周建议和更多推荐内容。')
-  });
-}
-
 async function weeklySummaryHandler(req, res) {
   const userId = getUserId(req);
   const childId = Number(req.query.childId || 0);
@@ -11136,10 +11944,65 @@ async function weeklySummaryHandler(req, res) {
       `INSERT INTO weekly_growth_summaries (user_id, child_id, week_start, week_end, summary_payload, generated_from)
        VALUES (?, ?, ?, ?, ?, 'server')
        ON DUPLICATE KEY UPDATE week_end = VALUES(week_end), summary_payload = VALUES(summary_payload), generated_from = 'server', updated_at = CURRENT_TIMESTAMP`,
-      [userId, childId, weekStart, payload.weekEnd, JSON.stringify(payload)]
+       [userId, childId, weekStart, payload.weekEnd, JSON.stringify(payload)]
     );
   }
-  res.json({ success: true, data: formatWeeklySummaryForMembership(payload, activeMember) });
+  payload = Object.assign({}, payload, {
+    dataStatus: getWeeklySummaryDataStatus(payload),
+    generationVersion: 1
+  });
+  sendSuccess(res, req, formatWeeklySummaryForMembership(payload, activeMember));
+}
+
+function getWeeklySummaryDataStatus(payload) {
+  if (!payload || !payload.traceableEntryCount) return 'insufficient_data';
+  if (Number(payload.recordDays || 0) >= 4 || Number(payload.completedTaskCount || 0) >= 3) return 'complete';
+  return 'partial';
+}
+
+async function currentWeeklySummaryHandler(req, res) {
+  return weeklySummaryHandler(req, res);
+}
+
+async function weeklySummaryHistoryHandler(req, res) {
+  const userId = getUserId(req);
+  const childId = Number(req.query.childId || req.query.child_id || 0);
+  const child = await requireOwnedChildForRead(req, res, childId);
+  if (!child) return;
+  const activeMember = await isActiveMember(userId);
+  const limit = normalizeBoundedInt(req.query.limit, 12, 1, 30);
+  const [rows] = await pool.execute(
+    `SELECT summary_payload, week_start, week_end, updated_at
+       FROM weekly_growth_summaries
+      WHERE user_id = ? AND child_id = ?
+      ORDER BY week_start DESC
+      LIMIT ${limit}`,
+    [userId, childId]
+  );
+  const list = rows.map((row) => {
+    const payload = safeParseJson(row.summary_payload, {}) || {};
+    const formatted = formatWeeklySummaryForMembership(Object.assign({}, payload, {
+      weekStart: payload.weekStart || formatStoredDateValue(row.week_start),
+      weekEnd: payload.weekEnd || formatStoredDateValue(row.week_end),
+      dataStatus: getWeeklySummaryDataStatus(payload),
+      generationVersion: 1,
+      updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null
+    }), activeMember);
+    return {
+      childId,
+      weekStart: formatted.weekStart,
+      weekEnd: formatted.weekEnd,
+      dataStatus: formatted.dataStatus,
+      generationVersion: formatted.generationVersion,
+      updatedAt: formatted.updatedAt,
+      recordDays: formatted.recordDays || 0,
+      completedTaskCount: formatted.completedTaskCount || 0,
+      overview: formatted.overview || '',
+      highlights: formatted.highlights || [],
+      premiumUnlocked: formatted.premiumUnlocked
+    };
+  });
+  sendSuccess(res, req, { childId, list, hasMore: rows.length === limit });
 }
 
 async function sceneSearchTagsHandler(req, res) {
@@ -11647,11 +12510,20 @@ async function developmentZonesHandler(req, res) {
       selectedAgeGroup: ageGroup
     });
   });
+  const knowledgeResult = await knowledgeContent.queryKnowledgeWithFallback(pool, {
+    contentType: 'scene',
+    ageSegmentCodes: knowledgeContent.normalizeAgeCodes(ageGroup),
+    limit: 20
+  }, recordKnowledgeGap);
   res.json({
     success: true,
     data: {
       ageGroups: developmentZones.getDevelopmentAgeGroups(),
-      list
+      list,
+      relatedContent: knowledgeResult.items,
+      contentSource: knowledgeResult.items.length ? knowledgeResult.source : 'local_fallback',
+      isFallback: knowledgeResult.fallback || !knowledgeResult.items.length,
+      gapReason: knowledgeResult.gapReason
     }
   });
 }
@@ -11667,7 +12539,100 @@ async function developmentZoneDetailHandler(req, res) {
     res.status(404).json({ success: false, message: '专区不存在' });
     return;
   }
-  res.json({ success: true, data: detail });
+  const abilityCodes = getDevelopmentZoneAbilityCodes(req.params.code);
+  const knowledgeResult = await knowledgeContent.queryKnowledgeWithFallback(pool, {
+    ageSegmentCodes: knowledgeContent.normalizeAgeCodes(ageGroup),
+    abilityCodes,
+    limit: 12
+  }, recordKnowledgeGap);
+  res.json({
+    success: true,
+    data: Object.assign({}, detail, {
+      relatedContent: knowledgeResult.items,
+      contentSource: knowledgeResult.items.length ? knowledgeResult.source : 'local_fallback',
+      isFallback: knowledgeResult.fallback || !knowledgeResult.items.length,
+      gapReason: knowledgeResult.gapReason
+    })
+  });
+}
+
+function getDevelopmentZoneAbilityCodes(zoneCode) {
+  const mappings = {
+    language: ['language'],
+    sensory: ['sensory_motor'],
+    focus: ['attention'],
+    gross_motor: ['gross_motor'],
+    emotion: ['emotional_regulation'],
+    social: ['social_communication'],
+    confidence: ['confidence_adaptation'],
+    habits: ['daily_habits']
+  };
+  return mappings[zoneCode] || [];
+}
+
+function splitKnowledgeQueryValue(value) {
+  return String(value || '').split(/[、,，\s]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+async function knowledgeContentsHandler(req, res) {
+  const rawAgeCodes = splitKnowledgeQueryValue(req.query.age_segment_codes || req.query.ageSegmentCodes || req.query.age_group);
+  const rawAbilityCodes = splitKnowledgeQueryValue(req.query.ability_codes || req.query.abilityCodes);
+  const rawSceneCodes = splitKnowledgeQueryValue(req.query.scene_codes || req.query.sceneCodes);
+  const ageSegmentCodes = knowledgeContent.normalizeAgeCodes(rawAgeCodes);
+  const abilityCodes = knowledgeContent.normalizeAbilityCodes(rawAbilityCodes);
+  const sceneCodes = knowledgeContent.normalizeSceneCodes(rawSceneCodes);
+  if (rawAgeCodes.length && !ageSegmentCodes.length) {
+    res.status(400).json({ success: false, message: 'age_segment_codes 参数无效' });
+    return;
+  }
+  if (rawAbilityCodes.length && !abilityCodes.length) {
+    res.status(400).json({ success: false, message: 'ability_codes 参数无效' });
+    return;
+  }
+  if (rawSceneCodes.length && !sceneCodes.length) {
+    res.status(400).json({ success: false, message: 'scene_codes 参数无效' });
+    return;
+  }
+  const contentType = String(req.query.content_type || req.query.contentType || '').trim().toLowerCase();
+  const reviewStatus = String(req.query.review_status || req.query.reviewStatus || 'approved').trim().toLowerCase();
+  const contentForm = knowledgeContent.normalizeContentForm(req.query.content_form || req.query.contentForm, contentType);
+  if (contentType && !knowledgeContent.CONTENT_TYPES.has(contentType)) {
+    res.status(400).json({ success: false, message: 'content_type 参数无效' });
+    return;
+  }
+  if (reviewStatus && !knowledgeContent.REVIEW_STATUSES.has(reviewStatus)) {
+    res.status(400).json({ success: false, message: 'review_status 参数无效' });
+    return;
+  }
+  if ((req.query.content_form || req.query.contentForm) && !contentForm) {
+    res.status(400).json({ success: false, message: 'content_form 参数无效' });
+    return;
+  }
+  const limit = normalizeBoundedInt(req.query.page_size || req.query.limit, 20, 1, 50);
+  const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
+  const result = await knowledgeContent.queryKnowledgeWithFallback(pool, {
+    ageSegmentCodes,
+    abilityCodes,
+    sceneCodes,
+    contentType,
+    contentForm,
+    reviewStatus,
+    keywords: splitKnowledgeQueryValue(req.query.keyword || req.query.q),
+    publishedOnly: req.query.is_published === '0' ? false : true,
+    limit,
+    offset: (page - 1) * limit
+  }, recordKnowledgeGap);
+  res.json({
+    success: true,
+    data: result.items,
+    pagination: { page, page_size: limit, count: result.items.length },
+    meta: {
+      source: result.source,
+      fallback: result.fallback,
+      gap_reason: result.gapReason,
+      schema_version: 1
+    }
+  });
 }
 
 async function parentingFavoriteHandler(req, res) {
@@ -12010,6 +12975,15 @@ async function accountDeletionHandler(req, res) {
       await connection.execute('DELETE FROM task_progress WHERE child_id = ?', [child.id]);
     }
 
+    if (children.length) {
+      const childPlaceholders = children.map(() => '?').join(', ');
+      await executeIfTableExists(
+        connection,
+        'growth_timeline_entries',
+        `DELETE FROM growth_timeline_entries WHERE child_id IN (${childPlaceholders})`,
+        children.map((child) => child.id)
+      );
+    }
     await connection.execute('DELETE FROM children WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'daily_plan_completions', 'DELETE FROM daily_plan_completions WHERE user_id = ?', [userId]);
     await executeIfTableExists(connection, 'daily_plan_records', 'DELETE FROM daily_plan_records WHERE user_id = ?', [userId]);
@@ -12127,42 +13101,68 @@ async function educationUpdateProgressHandler(req, res) {
 }
 
 async function kbEventTrackHandler(req, res) {
-  const eventType = String((req.body && req.body.event_type) || '').trim();
-  if (!eventType) {
-    res.status(400).json({ success: false, message: 'event_type不能为空' });
+  try {
+    const result = await insertTrackedEvent(pool, req.user.userId, req.body || {});
+    res.json({ success: true, data: result });
+  } catch (error) {
+    await recordEventRejection(req.body, error);
+    res.status(error.code === 'EVENT_TYPE_REQUIRED' || error.code === 'EVENT_META_TOO_LARGE' ? 400 : 422)
+      .json({ success: false, code: error.code || 'EVENT_INVALID', message: error.message });
+  }
+}
+
+async function kbEventTrackBatchHandler(req, res) {
+  const events = req.body && (req.body.events || req.body.items);
+  if (!Array.isArray(events) || events.length === 0 || events.length > eventProtocol.MAX_BATCH_SIZE) {
+    res.status(400).json({ success: false, code: 'EVENT_BATCH_INVALID', message: `events数量必须为1-${eventProtocol.MAX_BATCH_SIZE}` });
     return;
   }
 
-  const payload = {
-    module_key: req.body.module_key || null,
-    page_key: req.body.page_key || null,
-    scene_key: req.body.scene_key || null,
-    age_segment_key: req.body.age_segment_key || (req.body.event_meta && req.body.event_meta.age_segment_key) || null,
-    age_segment_label: req.body.age_segment_label || (req.body.event_meta && req.body.event_meta.age_segment_label) || null,
-    category_key: req.body.category_key || (req.body.event_meta && req.body.event_meta.category_key) || null,
-    category_label: req.body.category_label || (req.body.event_meta && req.body.event_meta.category_label) || null,
-    pain_point_key: req.body.pain_point_key || (req.body.event_meta && req.body.event_meta.pain_point_key) || null,
-    pain_point_title: req.body.pain_point_title || (req.body.event_meta && req.body.event_meta.pain_point_title) || null,
-    ability_tags: req.body.ability_tags || (req.body.event_meta && req.body.event_meta.ability_tags) || null,
-    content_type: req.body.content_type || null,
-    content_id: req.body.content_id || null,
-    child_id: req.body.child_id || null,
-    task_id: req.body.task_id || null,
-    path_id: req.body.path_id || null,
-    share_source: req.body.share_source || null,
-    day_index: req.body.day_index || null,
-    score: req.body.score || null,
-    duration_sec: req.body.duration_sec || null,
-    has_recording: !!req.body.has_recording,
-    event_meta: req.body.event_meta || {}
-  };
+  const connection = await pool.getConnection();
+  const results = [];
+  try {
+    await connection.beginTransaction();
+    for (const event of events) {
+      try {
+        results.push(await insertTrackedEvent(connection, req.user.userId, event));
+      } catch (error) {
+        await recordEventRejection(event, error);
+        error.batchIndex = results.length;
+        throw error;
+      }
+    }
+    await connection.commit();
+    res.json({ success: true, data: { items: results, accepted: results.length, deduplicated: results.filter((item) => item.deduplicated).length } });
+  } catch (error) {
+    await connection.rollback();
+    res.status(error.code === 'EVENT_TYPE_REQUIRED' ? 400 : 422).json({ success: false, code: error.code || 'EVENT_BATCH_INVALID', message: error.message, index: error.batchIndex });
+  } finally {
+    connection.release();
+  }
+}
 
-  const [result] = await pool.execute(
-    'INSERT INTO event_tracks (user_id, event_type, event_data, session_id) VALUES (?, ?, ?, ?)',
-    [req.user.userId, eventType, JSON.stringify(payload), req.headers.authorization || 'authenticated']
+async function insertTrackedEvent(executor, userId, rawEvent) {
+  const event = eventProtocol.normalizeEvent(rawEvent, { childId: rawEvent && (rawEvent.child_id || rawEvent.childId) });
+  const [result] = await executor.execute(
+    `INSERT INTO event_tracks (user_id, event_id, event_type, event_data, session_id, created_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+    [userId, event.eventId, event.eventType, JSON.stringify(event.eventData), event.clientSessionId || '']
   );
+  const deduplicated = Number(result.affectedRows || 0) === 0;
+  return { id: result.insertId, event_id: event.eventId, event_type: event.eventType, deduplicated };
+}
 
-  res.json({ success: true, data: { id: result.insertId } });
+async function recordEventRejection(rawEvent, error) {
+  try {
+    const eventMeta = rawEvent && (rawEvent.event_meta || rawEvent.eventMeta);
+    await pool.execute(
+      'INSERT INTO event_track_rejections (event_type, reason_code, metadata_size, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+      [String((rawEvent && (rawEvent.event_type || rawEvent.eventType)) || '').slice(0, 128), String(error.code || 'EVENT_INVALID').slice(0, 64), Buffer.byteLength(JSON.stringify(eventMeta || {}), 'utf8')]
+    );
+  } catch (recordError) {
+    console.warn('[event-track] rejection record failed:', recordError.message);
+  }
 }
 
 async function assessmentsListHandler(req, res) {
@@ -12307,6 +13307,33 @@ async function assessmentSubmitHandler(req, res) {
     res.status(403).json({ success: false, message: '无权提交该孩子的评估记录' });
     return;
   }
+  const idempotencyKey = String(req.body.idempotencyKey || req.body.idempotency_key || '').trim().slice(0, 128);
+  if (idempotencyKey) {
+    const [existingTimelineRows] = await pool.execute(
+      'SELECT source_id FROM growth_timeline_entries WHERE child_id = ? AND idempotency_key = ? LIMIT 1',
+      [childId, idempotencyKey]
+    );
+    const existingRecordId = existingTimelineRows[0] && Number(existingTimelineRows[0].source_id || 0);
+    if (existingRecordId) {
+      const [existingRecordRows] = await pool.execute(
+        'SELECT * FROM assessment_records WHERE id = ? AND child_id = ? LIMIT 1',
+        [existingRecordId, childId]
+      );
+      if (existingRecordRows.length) {
+        const existingRecord = await buildAssessmentRecord(existingRecordRows[0]);
+        sendSuccess(res, req, Object.assign({}, existingRecord, {
+          record_id: existingRecord.id,
+          id: existingRecord.id,
+          assessment_code: existingRecord.assessment_code,
+          assessment_type: existingRecord.assessment_code,
+          assessment_name: existingRecord.assessment_name,
+          overall_score: existingRecord.total_score,
+          overall_level_text: normalizeLevelText(existingRecord.overall_level)
+        }), { deduplicated: true });
+        return;
+      }
+    }
+  }
   let totalScore = 0;
   const grouped = new Map();
   for (const answer of answers) {
@@ -12339,6 +13366,16 @@ async function assessmentSubmitHandler(req, res) {
       );
     }
     await connection.commit();
+    await growthTimeline.saveTimelineEntry(pool, {
+      childId,
+      entryType: 'assessment_result',
+      sourceType: 'assessment',
+      sourceId: String(result.insertId),
+      title: meta.name,
+      summary: `完成${meta.name}`,
+      metadata: { assessmentCode: code, ageGroup: req.body.age_group || '', percentage, overallLevel: level },
+      idempotencyKey: idempotencyKey || `assessment:${childId}:${result.insertId}`
+    }, { endpoint: 'assessments/submit' });
     const [interpretationRows] = await pool.execute(
       `SELECT * FROM assessment_interpretations
        WHERE assessment_code = ? AND ? BETWEEN score_min AND score_max`,
@@ -12347,9 +13384,7 @@ async function assessmentSubmitHandler(req, res) {
     const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [code, level]);
     const ageGroup = req.body.age_group || inferAgeRangeFromChild(child) || '3-4岁';
     const reportData = buildAssessmentReportData(interpretationRows, suggestionRows, ageGroup);
-    res.json({
-      success: true,
-      data: {
+    sendSuccess(res, req, {
         record_id: result.insertId,
         id: result.insertId,
         assessment_code: code,
@@ -12365,8 +13400,7 @@ async function assessmentSubmitHandler(req, res) {
         report_data: reportData,
         interpretations: interpretationRows,
         suggestions: suggestionRows
-      }
-    });
+      }, { deduplicated: false });
   } catch (err) {
     await connection.rollback();
     throw err;

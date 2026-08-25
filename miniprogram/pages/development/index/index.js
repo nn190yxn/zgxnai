@@ -1,24 +1,64 @@
+const app = getApp();
 const developmentZones = require('../../../utils/development-zones.js');
 
 Page({
   data: {
-    zones: []
+    zones: [],
+    featuredZones: [],
+    loading: false,
+    contentSource: 'local_fallback',
+    isFallback: true,
+    loadError: ''
   },
 
   onLoad() {
+    var localCards = this.buildZoneCards();
     this.setData({
-      zones: this.buildZoneCards()
+      zones: localCards,
+      featuredZones: localCards.filter(function(item) { return item.isPrimary; })
+    });
+    this.loadZones();
+  },
+
+  loadZones() {
+    var that = this;
+    this.setData({ loading: true, loadError: '' });
+    if (!app || typeof app.request !== 'function') {
+      this.setData({ loading: false });
+      return Promise.resolve(this.data.zones);
+    }
+    return app.request({ url: '/development-zones', method: 'GET' }).then(function(data) {
+      var list = data && Array.isArray(data.list) ? data.list : [];
+      if (list.length) {
+        var cards = that.buildZoneCards(list);
+        that.setData({
+          zones: cards,
+          featuredZones: cards.filter(function(item) { return item.isPrimary; }),
+          contentSource: data.contentSource || 'server',
+          isFallback: !!data.isFallback
+        });
+      }
+      return data;
+    }).catch(function(err) {
+      that.setData({ loadError: app.getApiErrorMessage ? app.getApiErrorMessage(err, '专区内容暂时使用本地版本') : '专区内容暂时使用本地版本' });
+      return null;
+    }).finally(function() {
+      that.setData({ loading: false });
     });
   },
 
-  buildZoneCards() {
-    return developmentZones.getDevelopmentZones().map(function(zone) {
+  buildZoneCards(zones) {
+    var source = Array.isArray(zones) ? zones : developmentZones.getDevelopmentZones();
+    var primaryCodes = ['focus', 'sensory'];
+    return source.map(function(zone) {
       return {
         code: zone.code,
         title: zone.title,
         subtitle: zone.subtitle,
         actionText: zone.actionText,
         scenarioCount: (zone.scenarios || []).length,
+        isPrimary: primaryCodes.indexOf(zone.code) >= 0,
+        isPremiumTopic: ['growth_management', 'body_safety'].indexOf(zone.code) >= 0,
         color: zone.theme && zone.theme.color ? zone.theme.color : '#FF6B35',
         tint: zone.theme && zone.theme.tint ? zone.theme.tint : '#FFF3EC'
       };

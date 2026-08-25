@@ -13,6 +13,8 @@
     "pages/assessment/do/do",
     "pages/assessment/result/result",
     "pages/assessment/history/history",
+    "pages/training/index/index",
+    "pages/training/detail/detail",
     "pages/nutrition/nutrition",
     "pages/nutrition/recipe-list/recipe-list",
     "pages/nutrition/recipe-detail/recipe-detail",
@@ -31,6 +33,7 @@
     "pages/growth-record/index",
     "pages/growth-record/history/index",
     "pages/weekly-summary/index",
+    "pages/weekly-summary/history/index",
     "pages/share/preview/preview",
     "pages/membership/index"
   ],

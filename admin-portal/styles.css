@@ -91,6 +91,186 @@ body {
   gap: 22px;
 }
 
+.analytics-filter-panel,
+.analytics-modules-panel {
+  padding: 24px;
+}
+
+.analytics-filter-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr)) auto auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.analytics-filter-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.analytics-filter-form label span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+select {
+  border: 1px solid rgba(61, 42, 24, 0.16);
+  background: rgba(255, 255, 255, 0.84);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: var(--ink);
+}
+
+.admin-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-module {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.admin-module-wide {
+  grid-column: span 2;
+}
+
+.module-heading,
+.module-total-row,
+.source-row,
+.governance-gap,
+.quality-metrics,
+.governance-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.module-heading {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.module-heading h4 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.module-updated,
+.module-status {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.module-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin-top: 12px;
+}
+
+.module-status-success { color: var(--teal); }
+.module-status-loading { color: var(--gold); }
+.module-status-error { color: var(--brand-deep); }
+
+.module-metrics,
+.quality-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.module-metric,
+.quality-metrics div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(182, 84, 47, 0.08);
+}
+
+.module-metric span,
+.quality-metrics span,
+.module-metric small,
+.quality-metrics strong {
+  font-size: 12px;
+}
+
+.module-metric strong,
+.quality-metrics strong {
+  font-size: 20px;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.matrix-cell {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(47, 122, 120, 0.08);
+}
+
+.matrix-cell span,
+.matrix-cell small,
+.matrix-compact,
+.unknown-values,
+.governance-summary,
+.source-row {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.matrix-bar,
+.matrix-bar i {
+  height: 6px;
+  border-radius: 999px;
+}
+
+.matrix-bar { background: rgba(47, 122, 120, 0.16); }
+.matrix-bar i { display: block; background: var(--teal); }
+
+.governance-summary {
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.governance-summary span,
+.matrix-compact span,
+.unknown-values span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(198, 147, 47, 0.12);
+}
+
+.governance-list,
+.source-list {
+  display: grid;
+  gap: 8px;
+}
+
+.governance-gap,
+.source-row {
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.governance-gap.is-high strong { color: var(--brand-deep); }
+.matrix-compact,
+.unknown-values { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.module-total-row { justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+.module-total-row strong { color: var(--brand-deep); }
+
 .panel {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -987,6 +1167,8 @@ td {
 @media (max-width: 1180px) {
   .shell,
   .analytics-grid,
+  .analytics-filter-form,
+  .admin-analytics-grid,
   .hero,
   .stats-grid,
   .priority-grid,
@@ -1012,6 +1194,10 @@ td {
   .insight-panel-wide {
     grid-column: span 1;
   }
+
+  .admin-module-wide {
+    grid-column: span 1;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1032,5 +1218,18 @@ td {
 
   .login-actions {
     display: grid;
+  }
+
+  .analytics-filter-panel,
+  .analytics-modules-panel {
+    padding: 18px;
+  }
+
+  .module-total-row,
+  .source-row,
+  .governance-gap {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 }

@@ -1,4 +1,6 @@
 var app = getApp();
+var crossPageStorage = require('../../utils/cross-page-storage.js');
+var growthShare = require('../../utils/growth-share.js');
 
 Page({
   data: {
@@ -80,6 +82,12 @@ Page({
       completedPlanCount: Number(summary.completedPlanCount || 0),
       totalPlanCount: Number(summary.totalPlanCount || 0),
       completedTaskCount: Number(summary.completedTaskCount || 0),
+      feedbackCount: Number(summary.feedbackCount || 0),
+      feedbackTrend: Array.isArray(summary.feedbackTrend) ? summary.feedbackTrend : [],
+      observationCount: Number(summary.observationCount || 0),
+      dataStatus: summary.dataStatus || 'insufficient_data',
+      generationVersion: Number(summary.generationVersion || 1),
+      updatedAt: summary.updatedAt || '',
       premiumUnlocked: !!summary.premiumUnlocked,
       premiumTip: summary.premiumTip || '开通后可以看到更细的变化趋势和下周陪娃建议。',
       ageGroup: summary.ageGroup || '',
@@ -91,7 +99,8 @@ Page({
   getPendingCoreWeeklySummary: function(options) {
     var opts = options || {};
     try {
-      var pending = wx.getStorageSync('pendingCoreWeeklySummary') || null;
+      var envelope = crossPageStorage.read('pendingCoreWeeklySummary', this.data.childId);
+      var pending = envelope ? envelope.payload : null;
       if (!pending || pending.source !== 'core_action') {
         return null;
       }
@@ -99,7 +108,7 @@ Page({
         return null;
       }
       if (opts.consume) {
-        wx.removeStorageSync('pendingCoreWeeklySummary');
+        crossPageStorage.consume('pendingCoreWeeklySummary', this.data.childId);
       }
       return pending;
     } catch (err) {
@@ -125,8 +134,10 @@ Page({
         child_id: this.data.childId,
         event_meta: {
           source: source || 'api',
-          premium_unlocked: !!summary.premiumUnlocked,
-          record_days: Number(summary.recordDays || 0)
+           premium_unlocked: !!summary.premiumUnlocked,
+           record_days: Number(summary.recordDays || 0),
+           data_status: summary.dataStatus || 'insufficient_data',
+           generation_version: Number(summary.generationVersion || 1)
         }
       });
     }
@@ -186,6 +197,15 @@ Page({
       if (data) {
         that.clearPendingCoreWeeklySummary();
         that.applySummary(data, 'api');
+        if (app.trackKbEvent) {
+          app.trackKbEvent({
+            event_type: 'stage_report_generated',
+            module_key: 'weekly_summary',
+            page_key: 'weekly_summary_index',
+            child_id: that.data.childId,
+            event_meta: { status: 'success', data_status: data.dataStatus || 'unknown' }
+          });
+        }
         return;
       }
       that.applySummary(that.getPendingCoreWeeklySummary({ consume: true }), 'core_action_fallback');
@@ -199,6 +219,15 @@ Page({
         summary: null,
         errorMessage: app.getApiErrorMessage(err, '每周总结没加载出来')
       });
+      if (app.trackKbEvent) {
+        app.trackKbEvent({
+          event_type: 'stage_report_generation_failed',
+          module_key: 'weekly_summary',
+          page_key: 'weekly_summary_index',
+          child_id: that.data.childId,
+          event_meta: { message: String(err && err.message || 'request_failed').slice(0, 100) }
+        });
+      }
     }).finally(function() {
       that.setData({ loading: false });
     });
@@ -230,8 +259,54 @@ Page({
         child_id: this.data.childId,
         event_meta: { action: 'open_membership' }
       });
+      app.trackKbEvent({
+        event_type: 'stage_report_membership_click',
+        module_key: 'weekly_summary',
+        page_key: 'weekly_summary_index',
+        child_id: this.data.childId,
+        event_meta: { premium_unlocked: !!(this.data.summary && this.data.summary.premiumUnlocked) }
+      });
     }
-    wx.navigateTo({ url: '/pages/membership/index' });
+    wx.navigateTo({ url: app.buildMembershipEntryUrl ? app.buildMembershipEntryUrl('stage_report', { childId: this.data.childId, reportId: this.data.summary && this.data.summary.weekStart }) : '/pages/membership/index' });
+  },
+
+  goToHistory: function() {
+    if (app.trackKbEvent) {
+      app.trackKbEvent({
+        event_type: 'stage_report_complete_read',
+        module_key: 'weekly_summary',
+        page_key: 'weekly_summary_index',
+        child_id: this.data.childId,
+        event_meta: { action: 'open_history' }
+      });
+    }
+    wx.navigateTo({ url: '/pages/weekly-summary/history/index?childId=' + this.data.childId });
+  },
+
+  onShareAppMessage: function() {
+    var summary = this.data.summary || {};
+    growthShare.saveGrowthShareDraft(crossPageStorage, {
+      type: 'stage_report',
+      source: 'stage_report',
+      childId: this.data.childId,
+      title: '阶段成长报告',
+      metrics: { completed: summary.completedTaskCount || 0, total: summary.totalPlanCount || 0, streakDays: summary.recordDays || 0 },
+      overview: summary.overview || ''
+    });
+    if (app.trackKbEvent) {
+      app.trackKbEvent({
+        event_type: 'stage_report_share',
+        module_key: 'weekly_summary',
+        page_key: 'weekly_summary_index',
+        child_id: this.data.childId,
+        event_meta: { premium_unlocked: !!(this.data.summary && this.data.summary.premiumUnlocked), share_type: 'stage_report' }
+      });
+    }
+    return {
+      title: (this.data.summary && this.data.summary.overview) || '看看孩子这周的成长记录',
+      path: '/pages/weekly-summary/index?childId=' + this.data.childId,
+      imageUrl: '/images/default-article.png'
+    };
   },
 
   goToChildSetup: function() {

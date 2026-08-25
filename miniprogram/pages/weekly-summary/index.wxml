@@ -32,6 +32,7 @@
     <text class="summary-range">{{summary.weekStart}} - {{summary.weekEnd}}</text>
     <view class="summary-badge-row">
       <text class="summary-badge {{summary.premiumUnlocked ? 'summary-badge-active' : ''}}">{{summary.premiumUnlocked ? '完整成长内容' : '基础成长内容'}}</text>
+      <text class="summary-badge summary-badge-soft">{{summary.dataStatus === 'complete' ? '周期数据完整' : summary.dataStatus === 'partial' ? '周期数据持续补充中' : '记录积累中'}}</text>
       <text class="summary-badge summary-badge-soft" wx:if="{{summary.ageGroup}}">{{summary.ageGroup}}</text>
       <text class="summary-badge summary-badge-soft" wx:if="{{summary.weakestDimensionLabel}}">重点关注 {{summary.weakestDimensionLabel}}</text>
     </view>
@@ -42,6 +43,8 @@
     <text class="section-title">记录概况</text>
     <text class="summary-copy">本周记录 {{summary.recordDays}} 天，完成今日计划 {{summary.completedPlanCount}} / {{summary.totalPlanCount}} 次。</text>
     <text class="summary-copy">能力练习完成 {{summary.completedTaskCount}} 次。</text>
+    <text class="summary-copy">本周完成 {{summary.observationCount}} 次能力观察，收到 {{summary.feedbackCount}} 条训练反馈。</text>
+    <view class="secondary-btn" bindtap="goToHistory">查看历史报告</view>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary}}">
@@ -80,6 +83,11 @@
       <text class="trend-dir {{item.direction === 'up' ? 'trend-up' : item.direction === 'down' ? 'trend-down' : 'trend-stable'}}">{{item.direction === 'up' ? '↑' : item.direction === 'down' ? '↓' : '→'}}</text>
       <text class="summary-copy trend-copy">{{item.detail}}</text>
     </view>
+  </view>
+
+  <view class="summary-card" wx:if="{{currentChild && summary && summary.feedbackTrend.length}}">
+    <text class="section-title">训练反馈趋势</text>
+    <text class="summary-copy" wx:for="{{summary.feedbackTrend}}" wx:key="key">{{item.label}} {{item.count}}次</text>
   </view>
 
   <view class="summary-card" wx:if="{{currentChild && summary && summary.premiumUnlocked}}">

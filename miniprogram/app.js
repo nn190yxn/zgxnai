@@ -8,6 +8,8 @@ var childProfileUtil = require('./utils/child-profile.js');
 var diagnostics = require('./utils/diagnostics.js');
 var requestUtil = require('./utils/request.js');
 var childContextUtil = require('./utils/child-context.js');
+var membershipStateUtil = require('./utils/membership-state.js');
+var trainingSync = require('./utils/training-sync.js');
 
 App({
   globalData: {
@@ -30,6 +32,9 @@ App({
     // 用户信息
     userInfo: null,
     isLoggedIn: false,
+    membershipState: null,
+    membershipStateUpdatedAt: 0,
+    membershipStatePromise: null,
 
     // 孩子档案（兼容旧版单孩子）
     childProfile: null,
@@ -95,6 +100,7 @@ App({
     this.initApiBaseUrl();
     this.preloadRuntimeConfig();
     diagnostics.installNativeApiDiagnostics(this);
+    this.initNetworkStatus();
     authUtil.checkLoginStatus(this);
     childProfileUtil.loadChildProfile(this);
     childProfileUtil.loadChildrenData(this);
@@ -139,6 +145,7 @@ onError: function(error) {
 
   onShow: function(options) {
     this.captureInviteCode(options);
+    this.retryPendingTrainingRecords();
   },
 
   preloadRuntimeConfig: function() {
@@ -281,6 +288,28 @@ onError: function(error) {
 
   getRuntimeConfig: function() {
     return appConfig.getRuntimeConfig(this);
+  },
+
+  getMembershipState: function(options) {
+    return membershipStateUtil.refreshMembership(this, options);
+  },
+
+  refreshMembershipState: function() {
+    return membershipStateUtil.refreshMembership(this, { force: true });
+  },
+
+  hasMembershipEntitlement: function(key) {
+    return membershipStateUtil.hasEntitlement(this.globalData.membershipState, key);
+  },
+
+  buildMembershipEntryUrl: function(source, payload) {
+    return membershipStateUtil.buildMembershipEntryUrl(source, payload);
+  },
+
+  retryPendingTrainingRecords: function() {
+    var child = this.getCurrentChild && this.getCurrentChild();
+    if (!child || !child.id) return Promise.resolve({ synced: 0, failed: 0, pending: 0 });
+    return trainingSync.retryPending(this, child.id);
   },
 
   isFeatureEnabled: function(featureName) {
@@ -851,8 +880,18 @@ onError: function(error) {
       return Promise.resolve({ skipped: true, reason: 'no_token' });
     }
     var currentChild = that.getCurrentChild();
+    var clientSessionId = wx.getStorageSync('analyticsClientSessionId');
+    if (!clientSessionId) {
+      clientSessionId = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+      wx.setStorageSync('analyticsClientSessionId', clientSessionId);
+    }
+    var membershipState = that.globalData.membershipState || {};
     var body = {
       event_type: payload.event_type,
+      event_id: payload.event_id || ('evt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12)),
+      client_session_id: payload.client_session_id || clientSessionId,
+      action_id: payload.action_id || payload.actionId || null,
+      schema_version: 1,
       module_key: payload.module_key,
       page_key: payload.page_key,
       scene_key: payload.scene_key,
@@ -863,6 +902,16 @@ onError: function(error) {
       child_id: payload.child_id || (currentChild ? currentChild.id : undefined),
       task_id: payload.task_id,
       path_id: payload.path_id,
+      age_segment_code: payload.age_segment_code || payload.ageSegmentCode || (currentChild && that.getAgeSegment ? that.getAgeSegment(currentChild) : null),
+      ability_codes: payload.ability_codes || payload.abilityCodes || null,
+      plan_id: payload.plan_id || payload.planId || null,
+      source_module: payload.source_module || payload.module_key || null,
+      source_page: payload.source_page || payload.page_key || null,
+      source_content_type: payload.source_content_type || payload.content_type || null,
+      source_content_id: payload.source_content_id || payload.content_id || null,
+      membership_status: payload.membership_status || membershipState.status || (membershipState.is_active ? 'active' : 'free'),
+      membership_entry_source: payload.membership_entry_source || payload.entry_source || null,
+      occurred_at: payload.occurred_at || new Date().toISOString(),
       share_source: payload.share_source,
       day_index: payload.day_index,
       score: payload.score,

@@ -4,6 +4,8 @@ const { ENABLE_VIRTUAL_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
 
 Page({
   data: {
+    entrySource: '',
+    entryContext: {},
     // 会员信息
     membershipInfo: {
       status: 'free',
@@ -37,9 +39,12 @@ Page({
     promoEnabled: false,
     promoBenefitText: '兑换码兑换区',
     premiumFeatures: [
-      { key: 'weekly_summary', title: '宝贝每周成长总结', desc: '持续查看记录趋势、计划完成度和下周重点' },
-      { key: 'scene_search', title: '育儿场景内容', desc: '把“发脾气、挑食、睡前拖延”直接变成可参考的方法' },
-      { key: 'daily_guidance', title: '每日成长陪伴', desc: '把观察、练习、营养和方法连成每天能用的内容' }
+      { key: 'ability_profile', title: '完整能力画像', desc: '查看观察依据、重点方向和阶段变化' },
+      { key: 'weekly_summary', title: '完整阶段报告', desc: '持续查看趋势、重点观察和下一阶段建议' },
+      { key: 'training_plan', title: '持续训练计划', desc: '继续执行 7 天计划，按孩子状态调整每天练习' },
+      { key: 'reassessment', title: '阶段复测', desc: '用同一套观察方向回看孩子的变化' },
+      { key: 'ai_training', title: '训练问答', desc: '围绕当天练习询问具体陪练方法' },
+      { key: 'development_topic', title: '发展专题内容', desc: '查看生长管理和身体安全等专题支持' }
     ],
     displayFeatures: [],
     
@@ -56,8 +61,12 @@ Page({
     return !!(app.globalData.isLoggedIn && wx.getStorageSync('token'));
   },
 
-  onLoad() {
+  onLoad(options) {
     this._redeemSuccessTimer = null;
+    this.setData({
+      entrySource: (options && options.source) || '',
+      entryContext: options || {}
+    });
     this.syncPaymentStatus();
     this.setData({
       displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
@@ -79,7 +88,7 @@ Page({
 
   onShow() {
     this.syncPaymentStatus();
-    this.loadMembershipInfo();
+    this.loadMembershipInfo(true);
     this.loadReferralStats();
     this.trackMembershipEvent('membership_center_view');
   },
@@ -118,7 +127,8 @@ Page({
       page_key: 'membership_index',
       event_meta: Object.assign({
         is_active: !!(this.data.membershipInfo && this.data.membershipInfo.is_active),
-        membership_type: (this.data.membershipInfo && this.data.membershipInfo.membership_type) || 'free'
+        membership_type: (this.data.membershipInfo && this.data.membershipInfo.membership_type) || 'free',
+        membership_entry_source: this.data.entrySource || 'membership_center'
       }, extraMeta || {})
     });
   },
@@ -134,7 +144,7 @@ Page({
   },
 
   // 加载会员信息
-  loadMembershipInfo() {
+  loadMembershipInfo(force) {
     if (!this.isLoggedIn()) {
       this.setData({
         membershipInfo: {
@@ -150,10 +160,10 @@ Page({
       });
       return Promise.resolve(null);
     }
-    app.request({
-      url: '/membership/info',
-      method: 'GET'
-    }).then(data => {
+    var loader = app.getMembershipState
+      ? app.getMembershipState({ force: !!force })
+      : app.request({ url: '/membership/info', method: 'GET' });
+    return loader.then(data => {
       var daysLeft = (data && data.days_left) || 0;
       var isActive = !!(data && data.is_active);
       var showExpiryRecall = isActive && daysLeft > 0 && daysLeft <= 7;
@@ -162,10 +172,12 @@ Page({
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
         promoBenefitText: data.promo_benefit_text || '兑换码兑换区',
+        showPayment: data.payment_available !== undefined ? !!data.payment_available : this.data.showPayment,
         displayFeatures: this.buildDisplayFeatures(data),
         showExpiryRecall: showExpiryRecall,
         expiryRecallLevel: expiryRecallLevel
       });
+      return data;
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);
       this.setData({
@@ -174,6 +186,7 @@ Page({
       if (app.globalData.isDebug) {
         console.error('获取会员信息失败', err);
       }
+      return null;
     });
   },
 
@@ -210,7 +223,7 @@ Page({
       if (data.activated !== false) {
         this.trackMembershipEvent('membership_trial_activate');
         wx.showToast({ title: '试用已开启', icon: 'success' });
-        this.loadMembershipInfo();
+        this.loadMembershipInfo(true);
       } else if (data.reason === 'active_membership_exists') {
         wx.showToast({ title: '当前成长服务有效期内无需试用', icon: 'none' });
       } else {
@@ -235,6 +248,15 @@ Page({
     if (!this.data.showPayment) {
       wx.showToast({ title: '当前无法发起购买，请稍后再试', icon: 'none' });
     }
+  },
+
+  openFallbackPath(e) {
+    var path = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.path : '';
+    if (path === 'referral') {
+      this.shareInvite();
+      return;
+    }
+    this.activateTrial();
   },
 
   paySelectedPlan() {
@@ -344,7 +366,7 @@ Page({
         method: 'GET'
       }).then(function(orderInfo) {
         if (orderInfo && orderInfo.status === 'paid') {
-          return that.loadMembershipInfo().then(function() {
+          return that.loadMembershipInfo(true).then(function() {
             return true;
           });
         }
@@ -403,7 +425,7 @@ Page({
       this.trackMembershipEvent('membership_promo_redeem', { code_type: 'unified' });
       this.setData({ promoCode: '' });
       wx.showToast({ title: '兑换成功', icon: 'success' });
-      this.loadMembershipInfo();
+      this.loadMembershipInfo(true);
       if (data && data.message) {
         this.clearRedeemSuccessTimer();
         this._redeemSuccessTimer = setTimeout(() => {

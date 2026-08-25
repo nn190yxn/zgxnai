@@ -124,6 +124,6 @@ assert.ok(nutrition.includes('empty-wrap'), 'nutrition should include empty stat
 assert.ok(textbook.includes('reading-empty-section'), 'reading practice should include empty state');
 
 const weeklySummaryJs = read('miniprogram/pages/weekly-summary/index.js');
-assert.ok(weeklySummaryJs.includes("wx.removeStorageSync('pendingCoreWeeklySummary')"), 'weekly summary should clear consumed core fallback summary');
+assert.ok(weeklySummaryJs.includes("crossPageStorage.consume('pendingCoreWeeklySummary'"), 'weekly summary should clear consumed core fallback summary');
 
 console.log('Miniprogram core UI structure tests passed.');

@@ -95,6 +95,144 @@
   color: #D85C26;
 }
 
+.core-status-card {
+  margin-top: 18rpx;
+  padding: 24rpx 24rpx 22rpx;
+  border-radius: 22rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.08);
+}
+
+.core-status-header,
+.core-today-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.core-status-eyebrow,
+.core-today-eyebrow {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: #B06B4C;
+  font-weight: 800;
+}
+
+.core-status-title,
+.core-today-title {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  line-height: 1.45;
+  color: #2F241F;
+  font-weight: 850;
+}
+
+.core-status-progress,
+.core-today-count {
+  flex: 0 0 auto;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #FFF2E8;
+  color: #D85C26;
+  font-size: 22rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.core-status-desc {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #7A6660;
+}
+
+.core-boundary-card {
+  margin-top: 14rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 18rpx;
+  background: #FFF8E8;
+  border: 1rpx solid #F2D9A6;
+}
+
+.core-boundary-title,
+.core-boundary-text {
+  display: block;
+}
+
+.core-boundary-title {
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: #8A5A1F;
+  font-weight: 800;
+}
+
+.core-boundary-text {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+  color: #7A6660;
+}
+
+.core-today-card {
+  margin-top: 16rpx;
+  padding: 24rpx;
+  border-radius: 22rpx;
+  background: #2F5A4A;
+  box-shadow: 0 10rpx 28rpx rgba(47, 90, 74, 0.14);
+}
+
+.core-today-eyebrow {
+  color: #CBE8D9;
+}
+
+.core-today-title {
+  color: #FFFFFF;
+}
+
+.core-today-count {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+.core-today-task {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.core-today-task-title,
+.core-today-task-desc,
+.core-today-task-action {
+  display: block;
+}
+
+.core-today-task-title {
+  font-size: 29rpx;
+  line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 850;
+}
+
+.core-today-task-desc {
+  margin-top: 8rpx;
+  font-size: 23rpx;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.core-today-task-action {
+  margin-top: 14rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #FFE7B8;
+  font-weight: 800;
+}
+
 .core-scenes {
   margin-top: 26rpx;
 }

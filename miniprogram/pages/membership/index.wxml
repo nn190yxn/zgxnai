@@ -32,8 +32,12 @@
       <view class="notice-icon">VIP</view>
       <text class="notice-title">成长服务暂时先开放试用</text>
       <text class="notice-desc">{{paymentNotice}}</text>
-      <text class="notice-desc">现在可以先用注册赠送、试用资格和邀请奖励</text>
-  </view>
+       <text class="notice-desc">现在可以先用注册赠送、试用资格和邀请奖励</text>
+       <view class="action-row">
+         <button class="btn-primary" bindtap="activateTrial" wx:if="{{!membershipInfo.is_trial_used && !membershipInfo.is_active}}">领取体验服务</button>
+         <button class="btn-share" data-path="referral" bindtap="openFallbackPath">使用邀请奖励</button>
+       </view>
+   </view>
 
   <!-- 成长服务方案 -->
   <view class="plans-section" wx:if="{{showMembership}}">

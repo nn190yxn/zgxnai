@@ -18,6 +18,9 @@ function initNetworkStatus(app) {
     wx.onNetworkStatusChange(function(res) {
       that.globalData.isOnline = !!res.isConnected;
       that.globalData.networkType = res.networkType || (res.isConnected ? 'unknown' : 'none');
+      if (res.isConnected && typeof that.retryPendingTrainingRecords === 'function') {
+        that.retryPendingTrainingRecords();
+      }
       if (!res.isConnected) {
         wx.showToast({
           title: '当前无网络，请连接后重试',

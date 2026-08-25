@@ -1,5 +1,7 @@
 const app = getApp();
 const developmentZones = require('../../../utils/development-zones.js');
+const crossPageStorage = require('../../../utils/cross-page-storage.js');
+const growthShare = require('../../../utils/growth-share.js');
 
 Page({
   data: {
@@ -15,7 +17,11 @@ Page({
     currentChild: null,
     ageStatusText: '',
     agePrompt: '先选孩子年龄，内容会更贴近。',
-    loadError: ''
+    loadError: '',
+    contentSource: 'local_fallback',
+    isFallback: true,
+    relatedContent: [],
+    professionalBoundary: ''
   },
 
   onLoad(options) {
@@ -48,6 +54,36 @@ Page({
     });
     wx.setNavigationBarTitle({ title: zone.title });
     this.refreshCurrentChild();
+    this.loadRemoteZone();
+  },
+
+  loadRemoteZone() {
+    var that = this;
+    if (!app || typeof app.request !== 'function' || !this.data.zoneCode) return Promise.resolve(null);
+    var query = this.data.selectedAgeGroup ? '?age_group=' + encodeURIComponent(this.data.selectedAgeGroup) : '';
+    return app.request({ url: '/development-zones/' + encodeURIComponent(this.data.zoneCode) + query, method: 'GET' }).then(function(data) {
+      if (!data) return data;
+      var remoteZone = Object.assign({}, that.data.zone || {}, data);
+      that.setData({
+        zone: remoteZone,
+        relatedContent: Array.isArray(data.relatedContent) ? data.relatedContent : [],
+        contentSource: data.contentSource || 'server',
+        isFallback: !!data.isFallback,
+        professionalBoundary: that.getProfessionalBoundary(remoteZone.code)
+      });
+      that.applyAgeGroup(that.data.selectedAgeGroup, that.data.currentChild);
+      return data;
+    }).catch(function() {
+      that.setData({ isFallback: true, contentSource: 'local_fallback' });
+      return null;
+    });
+  },
+
+  getProfessionalBoundary(zoneCode) {
+    if (zoneCode === 'habits' || zoneCode === 'emotion') {
+      return '家庭练习用于观察和支持日常表现。持续影响吃饭、睡眠、上学或情绪安全时，请联系儿科或儿童发展专业人员。';
+    }
+    return '内容用于家庭观察和日常练习，家长按孩子当下状态调整节奏。出现持续疼痛、受伤风险或明显安全隐患时，请及时寻求专业帮助。';
   },
 
   refreshCurrentChild() {
@@ -58,7 +94,13 @@ Page({
 
   applyAgeGroup(ageGroup, child) {
     var validAgeGroup = developmentZones.isDevelopmentAgeGroup(ageGroup) ? ageGroup : '';
-    var scenarios = validAgeGroup ? developmentZones.getDevelopmentScenarios(this.data.zoneCode, validAgeGroup) : [];
+    var localScenarios = validAgeGroup ? developmentZones.getDevelopmentScenarios(this.data.zoneCode, validAgeGroup) : [];
+    var remoteScenarios = this.data.contentSource === 'server' && this.data.zone && Array.isArray(this.data.zone.scenarios)
+      ? this.data.zone.scenarios.filter(function(item) {
+        return !validAgeGroup || !Array.isArray(item.ageGroups) || item.ageGroups.indexOf(validAgeGroup) >= 0;
+      })
+      : [];
+    var scenarios = remoteScenarios.length ? remoteScenarios : localScenarios;
     this.setData({
       currentChild: child || null,
       selectedAgeGroup: validAgeGroup,
@@ -67,7 +109,8 @@ Page({
       scenarioGroups: this.buildScenarioGroups(scenarios),
       selectedScenarioCode: '',
       selectedScenario: null,
-      activePractice: null
+      activePractice: null,
+      professionalBoundary: this.getProfessionalBoundary(this.data.zoneCode)
     });
   },
 
@@ -191,7 +234,10 @@ Page({
     var question = scenario && scenario.chatQuestion
       ? scenario.chatQuestion
       : (zone.title ? '孩子在' + zone.title + '方面需要怎么陪？' : '孩子发展练习怎么做？');
-    wx.setStorageSync('pendingChatQuestion', question);
+    crossPageStorage.save('pendingChatQuestion', question, {
+      childId: this.data.currentChild && this.data.currentChild.id,
+      source: 'development_detail'
+    });
     wx.switchTab({
       url: '/pages/chat/chat',
       fail: function() {
@@ -205,7 +251,10 @@ Page({
     var question = zone.title
       ? '孩子在' + zone.title + '方面需要怎么陪？'
       : '孩子发展练习怎么做？';
-    wx.setStorageSync('pendingChatQuestion', question);
+    crossPageStorage.save('pendingChatQuestion', question, {
+      childId: this.data.currentChild && this.data.currentChild.id,
+      source: 'development_detail'
+    });
     wx.switchTab({
       url: '/pages/chat/chat',
       fail: function() {
@@ -251,13 +300,38 @@ Page({
     if (this.data.selectedScenarioCode) {
       query += '&scenario=' + encodeURIComponent(this.data.selectedScenarioCode);
     }
-    wx.setStorageSync('pendingGrowthRecordNote', this.buildGrowthRecordContext());
-    wx.setStorageSync('pendingGrowthRecordSource', this.buildGrowthRecordSource());
+    crossPageStorage.save('pendingGrowthRecordNote', this.buildGrowthRecordContext(), {
+      childId: this.data.currentChild && this.data.currentChild.id,
+      source: 'development_detail'
+    });
+    crossPageStorage.save('pendingGrowthRecordSource', this.buildGrowthRecordSource(), {
+      childId: this.data.currentChild && this.data.currentChild.id,
+      source: 'development_detail'
+    });
     wx.navigateTo({
       url: '/pages/growth-record/index' + query,
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
+  },
+
+  onShareAppMessage() {
+    var scenario = this.data.selectedScenario || {};
+    growthShare.saveGrowthShareDraft(crossPageStorage, {
+      type: 'development_practice',
+      source: 'development_zone',
+      childId: this.data.currentChild && this.data.currentChild.id,
+      title: scenario.title || (this.data.zone && this.data.zone.title) || '专区练习',
+      durationMinutes: scenario.durationMinutes || 5
+    });
+    if (app.trackKbEvent) {
+      app.trackKbEvent({ event_type: 'development_share', module_key: 'development_zone', page_key: 'development_detail', child_id: this.data.currentChild && this.data.currentChild.id });
+    }
+    return {
+      title: scenario.title || '今天和孩子做一个小练习',
+      path: '/pages/share/preview/preview?shareType=development_practice',
+      imageUrl: '/images/default-article.png'
+    };
   }
 });

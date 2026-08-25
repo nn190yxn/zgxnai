@@ -119,6 +119,10 @@ describe('会员制度测试', () => {
     });
 
     it('微信支付统一下单配置缺失时应返回业务错误', async () => {
+      db.prepare(`
+        INSERT INTO payment_orders (user_id, plan_code, order_no, amount, status, auto_renew)
+        VALUES (1, 'trial', 'NN_TEST_ORDER', 0, 'pending', 0)
+      `).run();
       const res = await request(app)
         .post('/api/v1/payment/unified-order')
         .set('Authorization', 'Bearer ' + testToken)

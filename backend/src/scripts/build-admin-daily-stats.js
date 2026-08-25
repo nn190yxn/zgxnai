@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 let mysql = null;
-
-loadEnv(path.resolve(__dirname, '../../../.env'));
-loadEnv('/home/ubuntu/niuniu-parenting/.env');
+const { aggregateContentCoverage, aggregateEventQuality } = require('../mysql-production/analytics-quality');
 
 async function main() {
+  loadEnv(path.resolve(__dirname, '../../../.env'));
+  loadEnv('/home/ubuntu/niuniu-parenting/.env');
   mysql = mysql || require('mysql2/promise');
   const statDate = String(process.argv[2] || '').trim() || formatDate(new Date(Date.now() - 86400000));
   const pool = mysql.createPool({
@@ -19,13 +19,22 @@ async function main() {
     queueLimit: 0
   });
 
+  const connection = await pool.getConnection();
   try {
-    await upsertDailyUserStats(pool, statDate);
-    await upsertDailyRevenueStats(pool, statDate);
-    await rebuildDailyFeatureStats(pool, statDate);
-    await rebuildDailyContentStats(pool, statDate);
+    await connection.beginTransaction();
+    await upsertDailyUserStats(connection, statDate);
+    await upsertDailyRevenueStats(connection, statDate);
+    await rebuildDailyFeatureStats(connection, statDate);
+    await rebuildDailyContentStats(connection, statDate);
+    await rebuildDailyFunnelStats(connection, statDate);
+    await rebuildAnalyticsAggregates(connection, statDate);
+    await connection.commit();
     console.log(`Admin daily stats updated for ${statDate}`);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
   } finally {
+    connection.release();
     await pool.end();
   }
 }
@@ -36,15 +45,17 @@ async function upsertDailyUserStats(pool, statDate) {
        (SELECT COUNT(*) FROM users WHERE DATE(created_at) = ?) AS new_users,
        (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ?) AS active_users,
        (SELECT COUNT(DISTINCT et.user_id)
-          FROM event_tracks et
-          INNER JOIN user_memberships um ON um.user_id = et.user_id
-         WHERE DATE(et.created_at) = ?
-           AND um.current_end_date IS NOT NULL
-           AND um.current_end_date >= NOW()) AS paid_active_users,
-       (SELECT COUNT(*) FROM user_memberships WHERE is_trial_used = 1 AND DATE(updated_at) = ?) AS trial_users,
-       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ? AND (event_type IN ('ai_chat_submit', 'ai_chat_response_success', 'ai_chat_response_fallback', 'ai_chat_reply', 'article_ai_followup') OR event_type LIKE 'ai_chat_%')) AS ai_users,
-       (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE DATE(created_at) = ? AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete')) AS content_users`,
-    [statDate, statDate, statDate, statDate, statDate, statDate]
+           FROM event_tracks et
+           INNER JOIN user_memberships um ON um.user_id = et.user_id
+          WHERE et.created_at >= ? AND et.created_at < DATE_ADD(?, INTERVAL 1 DAY)
+            AND um.status = 'active'
+            AND um.current_end_date IS NOT NULL
+            AND um.current_end_date >= DATE_ADD(?, INTERVAL 1 DAY)) AS paid_active_users,
+        (SELECT COUNT(*) FROM user_memberships
+          WHERE is_trial_used = 1 AND updated_at >= ? AND updated_at < DATE_ADD(?, INTERVAL 1 DAY)) AS trial_users,
+        (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND (event_type IN ('ai_chat_submit', 'ai_chat_response_success', 'ai_chat_response_fallback', 'ai_chat_reply', 'article_ai_followup') OR event_type LIKE 'ai_chat_%')) AS ai_users,
+        (SELECT COUNT(DISTINCT user_id) FROM event_tracks WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND event_type IN ('article_detail_view', 'knowledge_detail_view', 'recipe_detail_view', 'task_start', 'task_complete', 'training_task_complete')) AS content_users`,
+     [statDate, statDate, statDate, statDate, statDate, statDate, statDate, statDate, statDate, statDate, statDate, statDate]
   );
 
   const stats = userRows[0] || {};
@@ -72,10 +83,10 @@ async function upsertDailyRevenueStats(pool, statDate) {
        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) AS revenue_amount,
        SUM(CASE WHEN status = 'paid' AND plan_code = 'month' THEN 1 ELSE 0 END) AS month_membership_count,
        SUM(CASE WHEN status = 'paid' AND plan_code = 'quarter' THEN 1 ELSE 0 END) AS quarter_membership_count,
-       SUM(CASE WHEN status = 'paid' AND plan_code = 'year' THEN 1 ELSE 0 END) AS year_membership_count
-     FROM payment_orders
-     WHERE DATE(COALESCE(paid_at, created_at)) = ?`,
-    [statDate]
+      SUM(CASE WHEN status = 'paid' AND plan_code = 'year' THEN 1 ELSE 0 END) AS year_membership_count
+      FROM payment_orders
+      WHERE COALESCE(paid_at, created_at) >= ? AND COALESCE(paid_at, created_at) < DATE_ADD(?, INTERVAL 1 DAY)`,
+     [statDate, statDate]
   );
 
   const [newPaidRows] = await pool.execute(
@@ -86,8 +97,8 @@ async function upsertDailyRevenueStats(pool, statDate) {
           WHERE status = 'paid'
           GROUP BY user_id
        ) t
-      WHERE first_paid_date = ?`,
-    [statDate]
+       WHERE first_paid_date = ?`,
+     [statDate]
   );
 
   const stats = revenueRows[0] || {};
@@ -141,11 +152,11 @@ async function rebuildDailyFeatureStats(pool, statDate) {
                 CASE WHEN event_type IN ('membership_page_view', 'membership_center_view', 'membership_touchpoint_exposure') THEN 1 ELSE 0 END AS paywall_visit_count,
                 CASE WHEN event_type IN ('payment_order_success', 'membership_payment_success') THEN 1 ELSE 0 END AS membership_conversion_count
            FROM event_tracks
-          WHERE DATE(created_at) = ?
+           WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
        ) t
       WHERE feature_key <> 'unclassified'
       GROUP BY feature_key`,
-    [statDate, statDate]
+     [statDate, statDate, statDate]
   );
 }
 
@@ -184,11 +195,129 @@ async function rebuildDailyContentStats(pool, statDate) {
             LEFT JOIN reading_tasks rt
               ON ${buildContentTypeSql('et.event_data', 'et.event_type')} = 'reading_task'
              AND ${buildNumericContentIdSql('et.event_data')} = rt.id
-          WHERE DATE(et.created_at) = ?
+           WHERE et.created_at >= ? AND et.created_at < DATE_ADD(?, INTERVAL 1 DAY)
        ) source
       WHERE source.content_type <> '' AND source.content_id <> ''
       GROUP BY source.content_type, source.content_id`,
+     [statDate, statDate, statDate]
+  );
+}
+
+const GROWTH_FUNNEL_STEPS = Object.freeze([
+  ['observation', ['ability_observation_exposure', 'assessment_start']],
+  ['profile', ['ability_profile_view', 'ability_observation_complete', 'assessment_complete']],
+  ['training', ['training_task_view', 'training_task_complete', 'task_complete']],
+  ['feedback', ['training_feedback_submit', 'training_feedback']],
+  ['report', ['stage_report_view', 'weekly_summary_view']],
+  ['membership', ['membership_touchpoint_exposure', 'membership_page_view']],
+  ['payment', ['payment_order_success', 'payment_success']]
+]);
+
+async function rebuildDailyFunnelStats(pool, statDate) {
+  await pool.execute('DELETE FROM admin_daily_funnel_stats WHERE stat_date = ?', [statDate]);
+  for (const [stepKey, eventTypes] of GROWTH_FUNNEL_STEPS) {
+    const placeholders = eventTypes.map(() => '?').join(', ');
+    const [rows] = await pool.execute(
+      `SELECT COUNT(*) AS event_count, COUNT(DISTINCT user_id) AS user_count
+         FROM event_tracks
+        WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+          AND event_type IN (${placeholders})`,
+      [statDate, statDate].concat(eventTypes)
+    );
+    const row = rows[0] || {};
+    await pool.execute(
+      `INSERT INTO admin_daily_funnel_stats
+        (stat_date, funnel_key, step_key, user_count, event_count, conversion_rate)
+       VALUES (?, 'growth_loop', ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE user_count = VALUES(user_count), event_count = VALUES(event_count), conversion_rate = VALUES(conversion_rate)`,
+      [statDate, stepKey, Number(row.user_count || 0), Number(row.event_count || 0), 0]
+    );
+  }
+  const [funnelRows] = await pool.execute(
+    `SELECT id, user_count
+       FROM admin_daily_funnel_stats
+      WHERE stat_date = ? AND funnel_key = 'growth_loop'
+      ORDER BY FIELD(step_key, 'observation', 'profile', 'training', 'feedback', 'report', 'membership', 'payment')`,
+    [statDate]
+  );
+  const base = Number(funnelRows[0] && funnelRows[0].user_count || 0);
+  for (const row of funnelRows) {
+    await pool.execute('UPDATE admin_daily_funnel_stats SET conversion_rate = ? WHERE id = ?', [base ? Number(((Number(row.user_count || 0) / base) * 100).toFixed(4)) : 0, row.id]);
+  }
+}
+
+async function rebuildAnalyticsAggregates(pool, statDate) {
+  await pool.execute('DELETE FROM analytics_daily_aggregates WHERE stat_date = ?', [statDate]);
+  await pool.execute(
+    `INSERT INTO analytics_daily_aggregates
+      (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version)
+     SELECT ?, 'growth_dimension',
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_segment_code')), ''), NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_segment_key')), ''), 'unknown'),
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.ability_code')), ''), NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.ability_codes')), ''), 'unknown'),
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.membership_status')), ''), 'free'),
+       event_type,
+       JSON_OBJECT('event_count', COUNT(*), 'user_count', COUNT(DISTINCT user_id), 'child_count', COUNT(DISTINCT NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.child_id')), '')), 'complete_count', SUM(CASE WHEN event_type LIKE '%_complete' OR event_type IN ('payment_order_success', 'payment_success') THEN 1 ELSE 0 END)),
+       1
+       FROM event_tracks
+      WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+      GROUP BY age_segment_code, ability_code, membership_status, source_key`,
+    [statDate, statDate, statDate]
+  );
+  await pool.execute(
+    `INSERT INTO analytics_daily_aggregates
+      (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version)
+     SELECT ?, 'membership_attribution',
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.age_segment_code')), ''), 'unknown'),
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.ability_code')), ''), NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.ability_codes')), ''), 'unknown'),
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.membership_status')), ''), 'free'),
+       COALESCE(NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.membership_entry_source')), ''), NULLIF(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.source_module')), ''), 'unknown'),
+       JSON_OBJECT('exposure_count', SUM(CASE WHEN event_type IN ('membership_touchpoint_exposure', 'membership_page_view') THEN 1 ELSE 0 END), 'click_count', SUM(CASE WHEN event_type IN ('membership_touchpoint_click', 'membership_plan_select') THEN 1 ELSE 0 END), 'order_count', SUM(CASE WHEN event_type IN ('payment_order_create', 'payment_create') THEN 1 ELSE 0 END), 'paid_count', SUM(CASE WHEN event_type IN ('payment_order_success', 'payment_success') THEN 1 ELSE 0 END), 'revenue_amount', 0),
+       1
+       FROM event_tracks
+      WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+      GROUP BY age_segment_code, ability_code, membership_status, source_key`,
+    [statDate, statDate, statDate]
+  );
+  await pool.execute(
+    `INSERT INTO analytics_daily_aggregates
+      (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version)
+     SELECT ?, 'content_quality', '', '', review_status,
+       content_type,
+       JSON_OBJECT('content_count', COUNT(*), 'metadata_complete_count', SUM(CASE WHEN JSON_LENGTH(age_segment_codes) > 0 AND JSON_LENGTH(ability_codes) > 0 AND source_name <> '' THEN 1 ELSE 0 END), 'published_count', SUM(CASE WHEN is_published = 1 THEN 1 ELSE 0 END)),
+       1
+       FROM knowledge_contents
+      GROUP BY review_status, content_type`,
+     [statDate]
+  );
+
+  const [eventRows] = await pool.execute(
+    `SELECT event_id, event_type, event_data, session_id, created_at
+       FROM event_tracks
+      WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)`,
     [statDate, statDate]
+  );
+  const eventQuality = aggregateEventQuality(eventRows);
+  await pool.execute(
+    `INSERT INTO analytics_daily_aggregates
+      (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version)
+     VALUES (?, 'event_quality', '', '', '', '', ?, 1)
+     ON DUPLICATE KEY UPDATE metrics = VALUES(metrics), aggregate_version = VALUES(aggregate_version)`,
+    [statDate, JSON.stringify(eventQuality)]
+  );
+
+  const [contentRows] = await pool.execute(
+    `SELECT age_segment_codes, ability_codes, scene_codes, content_form, is_published
+       FROM knowledge_contents
+      WHERE updated_at < DATE_ADD(?, INTERVAL 1 DAY)`,
+    [statDate]
+  );
+  const contentCoverage = aggregateContentCoverage(contentRows);
+  await pool.execute(
+    `INSERT INTO analytics_daily_aggregates
+      (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version)
+     VALUES (?, 'content_coverage', '', '', '', '', ?, 1)
+     ON DUPLICATE KEY UPDATE metrics = VALUES(metrics), aggregate_version = VALUES(aggregate_version)`,
+    [statDate, JSON.stringify(contentCoverage)]
   );
 }
 

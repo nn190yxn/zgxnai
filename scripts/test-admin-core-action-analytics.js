@@ -28,6 +28,7 @@ assert.ok(featureSql.includes("event_type LIKE 'ai_chat_%' OR event_type = 'arti
 assert.ok(featureSql.includes("JSON_EXTRACT(event_data, '$.module_key')"), 'module key should be honored');
 
 const serverSource = read('backend/src/mysql-production/server.js');
+const eventProtocolSource = read('backend/src/mysql-production/event-protocol.js');
 const appSource = read('miniprogram/app.js');
 const runtimeRouteSource = read('backend/src/routes/runtime.js');
 const adminPortalSource = read('admin-portal/app.js');
@@ -35,7 +36,7 @@ const adminPortalHtml = read('admin-portal/index.html');
 assert.ok(appSource.includes('scene_key: payload.scene_key'), 'miniprogram event tracker should send top-level scene key');
 assert.ok(appSource.includes('category_key: payload.category_key'), 'miniprogram event tracker should send top-level category key');
 assert.ok(appSource.includes('category_label: payload.category_label'), 'miniprogram event tracker should send top-level category label');
-assert.ok(serverSource.includes('scene_key: req.body.scene_key || null'), 'backend event tracker should persist top-level scene key');
+assert.ok(eventProtocolSource.includes('scene_key: normalizeText(source.scene_key || source.sceneKey'), 'backend event protocol should persist top-level scene key');
 assert.ok(runtimeRouteSource.includes("scene_search_enabled: parseRuntimeBooleanEnv('RUNTIME_SCENE_SEARCH_ENABLED', true)"), 'standalone runtime route should expose scene search flag');
 assert.ok(runtimeRouteSource.includes("growth_record_enabled: parseRuntimeBooleanEnv('RUNTIME_GROWTH_RECORD_ENABLED', true)"), 'standalone runtime route should expose growth record flag');
 assert.ok(runtimeRouteSource.includes("weekly_summary_enabled: parseRuntimeBooleanEnv('RUNTIME_WEEKLY_SUMMARY_ENABLED', true)"), 'standalone runtime route should expose weekly summary flag');
@@ -51,12 +52,11 @@ assert.ok(serverSource.includes("JSON_EXTRACT(event_data, '$.event_meta.category
 assert.ok(serverSource.includes("GROUP BY event_type, category_key, category_label"), 'core funnel SQL should group by category dimension');
 assert.ok(serverSource.includes('pain_point_items: painPointItems'), 'core funnel should expose pain point items');
 assert.ok(serverSource.includes('ability_items: abilityItems'), 'core funnel should expose ability dimension items');
-assert.ok(serverSource.includes('age_segment_key: req.body.age_segment_key'), 'backend event tracker should persist age segment key');
-assert.ok(serverSource.includes('category_key: req.body.category_key'), 'backend event tracker should persist category key');
-assert.ok(serverSource.includes('category_label: req.body.category_label'), 'backend event tracker should persist category label');
-assert.ok(serverSource.includes('req.body.event_meta.category_key'), 'backend event tracker should read category key from event meta');
-assert.ok(serverSource.includes('req.body.event_meta.category_label'), 'backend event tracker should read category label from event meta');
-assert.ok(serverSource.includes('ability_tags: req.body.ability_tags'), 'backend event tracker should persist ability tags');
+assert.ok(eventProtocolSource.includes('age_segment_key: normalizeText(source.age_segment_key || source.ageSegmentKey'), 'backend event protocol should persist age segment key');
+assert.ok(eventProtocolSource.includes('category_key: normalizeText(source.category_key || source.categoryKey'), 'backend event protocol should persist category key');
+assert.ok(eventProtocolSource.includes('category_label: normalizeText(source.category_label || source.categoryLabel'), 'backend event protocol should persist category label');
+assert.ok(eventProtocolSource.includes('event_meta: eventMeta'), 'backend event protocol should preserve sanitized event meta');
+assert.ok(eventProtocolSource.includes('ability_tags: Array.isArray(source.ability_tags || source.abilityTags)'), 'backend event protocol should persist ability tags');
 assert.ok(serverSource.includes("age_first_core_enabled: parseRuntimeBooleanEnv('RUNTIME_AGE_FIRST_CORE_ENABLED', false)"), 'production runtime handler should expose age-first core flag');
 assert.ok(serverSource.includes('age_first_core_enabled: runtimeFlags.age_first_core_enabled'), 'production runtime response should include age-first core flag');
 assert.ok(adminPortalHtml.includes('coreActionAgeSegmentFunnel'), 'admin portal should render age segment funnel container');

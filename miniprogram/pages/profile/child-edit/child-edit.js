@@ -1,5 +1,7 @@
 // 孩子档案编辑页面
 var app = getApp();
+var coreActionStorage = require('../../../utils/core-action-storage.js');
+var crossPageStorage = require('../../../utils/cross-page-storage.js');
 
 Page({
   data: {
@@ -566,6 +568,17 @@ Page({
   // 执行删除
   doDelete: function() {
     var that = this;
+    var childId = that.data.childId;
+    function clearLocalChildData() {
+      coreActionStorage.clearChildData(childId);
+      crossPageStorage.clearChildData(childId);
+      var records = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
+      records = records.filter(function(record) {
+        return String(record.childId || '') !== String(childId);
+      });
+      wx.setStorageSync('assessmentRecords', records);
+      wx.setStorageSync('assessmentHistory', records);
+    }
     wx.showLoading({ title: '删除中...' });
 
     if (app.shouldUseMockFallback()) {
@@ -576,6 +589,7 @@ Page({
       if (localChildren.length > 0 && !localChildren.some(function(child) { return child.isDefault; })) {
         localChildren[0].isDefault = true;
       }
+      clearLocalChildData();
       wx.setStorageSync('childrenList', localChildren);
       app.globalData.childrenList = localChildren;
       var localDefault = localChildren.find(function(child) { return child.isDefault; }) || localChildren[0] || null;
@@ -595,6 +609,7 @@ Page({
       method: 'DELETE'
     }).then(function(res) {
       wx.hideLoading();
+      clearLocalChildData();
 
       // 更新本地缓存
       var childrenList = wx.getStorageSync('childrenList') || [];

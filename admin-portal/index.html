@@ -55,6 +55,62 @@
           </form>
         </section>
 
+        <section class="panel analytics-filter-panel" aria-labelledby="analyticsFilterTitle">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">统一口径</p>
+              <h3 id="analyticsFilterTitle">业务分析筛选</h3>
+            </div>
+            <span id="analyticsFilterHint" class="panel-note">筛选会同步到所有分析请求</span>
+          </div>
+          <form id="analyticsFilterForm" class="analytics-filter-form">
+            <label><span>开始日期</span><input id="analyticsStartDate" type="date" /></label>
+            <label><span>结束日期</span><input id="analyticsEndDate" type="date" /></label>
+            <label><span>年龄段</span><select id="analyticsAgeSegment"><option value="">全部年龄段</option><option value="age_3_4">3-4岁</option><option value="age_4_5">4-5岁</option><option value="age_5_6">5-6岁</option><option value="unknown">待补充</option></select></label>
+            <label><span>能力方向</span><select id="analyticsAbility"><option value="">全部能力</option><option value="attention">专注力</option><option value="sensory_motor">感觉运动</option><option value="growth">生长管理</option><option value="safety">身体安全</option></select></label>
+            <label><span>会员状态</span><select id="analyticsMembership"><option value="">全部会员状态</option><option value="free">免费</option><option value="trial">试用</option><option value="active">有效会员</option><option value="expired">已到期</option></select></label>
+            <button type="submit">应用筛选</button>
+            <button id="resetAnalyticsFilter" type="button" class="ghost">重置</button>
+          </form>
+        </section>
+
+        <section class="panel analytics-modules-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">儿童发展会员</p>
+              <h3>运营闭环分析</h3>
+            </div>
+            <span class="panel-note">每个模块独立加载，局部失败不影响其他视图</span>
+          </div>
+          <div class="admin-analytics-grid">
+            <article class="admin-module" data-module="growthLoop">
+              <div class="module-heading"><h4>成长闭环</h4><span id="growthLoopUpdated" class="module-updated">未更新</span></div>
+              <div id="growthLoopView" class="module-content"></div>
+              <div id="growthLoopStatus" class="module-status"></div>
+            </article>
+            <article class="admin-module" data-module="ageAbility">
+              <div class="module-heading"><h4>年龄能力矩阵</h4><span id="ageAbilityUpdated" class="module-updated">未更新</span></div>
+              <div id="ageAbilityView" class="module-content"></div>
+              <div id="ageAbilityStatus" class="module-status"></div>
+            </article>
+            <article class="admin-module admin-module-wide" data-module="contentGovernance">
+              <div class="module-heading"><h4>知识内容治理</h4><span id="contentGovernanceUpdated" class="module-updated">未更新</span></div>
+              <div id="contentGovernanceView" class="module-content"></div>
+              <div id="contentGovernanceStatus" class="module-status"></div>
+            </article>
+            <article class="admin-module" data-module="membershipConversion">
+              <div class="module-heading"><h4>会员来源与续费</h4><span id="membershipConversionUpdated" class="module-updated">未更新</span></div>
+              <div id="membershipConversionView" class="module-content"></div>
+              <div id="membershipConversionStatus" class="module-status"></div>
+            </article>
+            <article class="admin-module" data-module="eventQuality">
+              <div class="module-heading"><h4>事件数据质量</h4><span id="eventQualityUpdated" class="module-updated">未更新</span></div>
+              <div id="eventQualityView" class="module-content"></div>
+              <div id="eventQualityStatus" class="module-status"></div>
+            </article>
+          </div>
+        </section>
+
         <section class="stats-grid" id="statsGrid">
           <article class="panel stat-card accent-a">
             <span>总用户数</span>

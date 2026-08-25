@@ -106,7 +106,7 @@
         <text class="section-title">接下来可以怎么做</text>
       </view>
       <view class="suggestions-list">
-        <view class="suggestion-item" wx:for="{{suggestions}}" wx:key="title">
+        <view class="suggestion-item" wx:for="{{suggestions}}" wx:key="title" data-index="{{index}}" bindtap="trackSuggestionClick">
           <view class="suggestion-icon">{{index + 1}}</view>
           <view class="suggestion-content">
             <text class="suggestion-title">{{item.title}}</text>
@@ -159,6 +159,14 @@
     <view class="bottom-buttons">
       <view class="btn-secondary" bindtap="goBack">返回</view>
       <view class="btn-primary" bindtap="redoAssessment">重新作答</view>
+    </view>
+
+    <view class="section experience-plan-section">
+      <view class="membership-cta-card">
+        <text class="cta-title">把观察变成3天小练习</text>
+        <text class="cta-desc">每天5-8分钟，记录一次具体表现。</text>
+        <view class="cta-btn" bindtap="startExperiencePlan">{{trainingPlanLoading ? '正在生成...' : '开始3天体验'}}</view>
+      </view>
     </view>
 
     <!-- 底部提示 -->

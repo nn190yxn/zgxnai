@@ -11,7 +11,15 @@ const state = {
   segmentFilters: {
     expiringOnly: false,
     highActivityOnly: false
-  }
+  },
+  analyticsFilters: {
+    startDate: '',
+    endDate: '',
+    ageSegmentCode: '',
+    abilityCode: '',
+    membershipStatus: ''
+  },
+  analyticsModules: {}
 };
 
 const authStateText = document.getElementById('authStateText');
@@ -350,12 +358,87 @@ const demoSnapshot = {
       { created_at: '2026-06-20 11:28:00', query_text: '最近总是睡前哭闹不肯洗漱', answer_summary: '先把洗漱变成固定顺序，用预告和选择降低睡前对抗。', intent: 'parenting', sub_intent: 'sleep_bedtime', answer_source: 'knowledge_fallback', fallback_reason: 'AI_NOT_CONFIGURED', matched_type_text: 'scene,tip', structured_available: true, reference_count: 2 },
       { created_at: '2026-06-20 11:20:00', query_text: '我家孩子怎么总是不吃青菜', answer_summary: '先保留孩子愿意吃的熟悉食物，再少量加入一种蔬菜连续尝试。', intent: 'nutrition', sub_intent: 'nutrition_picky_eating', answer_source: 'ai', fallback_reason: '', matched_type_text: 'article,tip', structured_available: true, reference_count: 4 }
     ]
+  },
+  growthLoop: {
+    event_funnel: [
+      { step_key: 'observation', event_count: 480, user_count: 326 },
+      { step_key: 'profile', event_count: 312, user_count: 248 },
+      { step_key: 'training', event_count: 760, user_count: 214 },
+      { step_key: 'feedback', event_count: 184, user_count: 156 },
+      { step_key: 'report', event_count: 96, user_count: 82 },
+      { step_key: 'membership', event_count: 64, user_count: 51 },
+      { step_key: 'payment', event_count: 32, user_count: 27 }
+    ],
+    range: { startDate: '2026-08-08', endDate: '2026-08-21' }
+  },
+  ageAbility: {
+    items: [
+      { age_segment_code: 'age_3_4', ability_code: 'attention', event_count: 220, user_count: 142, child_count: 118, complete_count: 86 },
+      { age_segment_code: 'age_3_4', ability_code: 'sensory_motor', event_count: 164, user_count: 98, child_count: 82, complete_count: 62 },
+      { age_segment_code: 'age_4_5', ability_code: 'attention', event_count: 304, user_count: 186, child_count: 152, complete_count: 124 },
+      { age_segment_code: 'age_4_5', ability_code: 'sensory_motor', event_count: 246, user_count: 152, child_count: 128, complete_count: 104 },
+      { age_segment_code: 'age_5_6', ability_code: 'attention', event_count: 188, user_count: 116, child_count: 94, complete_count: 78 }
+    ],
+    content_supply: [
+      { source_key: 'attention', content_count: 28, published_count: 24 },
+      { source_key: 'sensory_motor', content_count: 21, published_count: 17 }
+    ]
+  },
+  contentGovernance: {
+    coverage_matrix: [
+      { age_segment_code: 'age_3_4', ability_code: 'attention', content_count: 12, published_count: 10 },
+      { age_segment_code: 'age_3_4', ability_code: 'sensory_motor', content_count: 8, published_count: 7 },
+      { age_segment_code: 'age_4_5', ability_code: 'attention', content_count: 18, published_count: 16 },
+      { age_segment_code: 'age_5_6', ability_code: 'sensory_motor', content_count: 3, published_count: 1 }
+    ],
+    gaps: [
+      { title: '5-6岁感觉运动', reason: '正式内容不足', severity: 'high' },
+      { title: '3-4岁身体安全', reason: '缺少来源与证据等级', severity: 'medium' }
+    ],
+    quality: { zero_consumption: 6, low_completion: 9, missing_source: 4, low_evidence: 7 }
+  },
+  membershipConversion: {
+    totals: { exposure_count: 1240, click_count: 486, order_count: 142, paid_count: 96, revenue_amount: 12860 },
+    items: [
+      { source_key: 'observation_result', exposure_count: 520, click_count: 218, order_count: 68, paid_count: 48, revenue_amount: 6360, trial_to_paid_rate: 32.4, renewal_rate: 68.2 },
+      { source_key: 'stage_report', exposure_count: 384, click_count: 146, order_count: 44, paid_count: 29, revenue_amount: 4100, trial_to_paid_rate: 28.1, renewal_rate: 61.4 },
+      { source_key: 'training_complete', exposure_count: 336, click_count: 122, order_count: 30, paid_count: 19, revenue_amount: 2400, trial_to_paid_rate: 24.7, renewal_rate: 54.8 }
+    ]
+  },
+  eventQuality: {
+    field_completeness: 94.2,
+    unknown_code_rate: 2.8,
+    duplicate_rate: 1.4,
+    late_event_rate: 3.6,
+    missing_child_rate: 4.1,
+    unknown_values: [{ field: 'ability_codes', value: 'attention_focus', count: 18 }, { field: 'age_segment_code', value: '3-5', count: 11 }]
   }
 };
 
 apiBaseText.textContent = API_BASE;
+initializeAnalyticsFilters();
 updateAuthState();
 syncSegmentFilterButtons();
+
+document.getElementById('analyticsFilterForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  readAnalyticsFilters();
+  if (!state.token) {
+    renderDashboard(demoSnapshot);
+    setHint('演示数据已按当前筛选口径展示，登录后可读取真实分析数据。', 'status-success');
+    return;
+  }
+  await loadDashboard();
+});
+
+document.getElementById('resetAnalyticsFilter').addEventListener('click', async () => {
+  initializeAnalyticsFilters(true);
+  if (!state.token) {
+    renderDashboard(demoSnapshot);
+    return;
+  }
+  await loadDashboard();
+});
 
 document.getElementById('segmentExpiringFilter').addEventListener('click', () => {
   state.segmentFilters.expiringOnly = !state.segmentFilters.expiringOnly;
@@ -507,23 +590,25 @@ async function loadDashboard() {
     throw error;
   }
 
+  const query = buildAnalyticsQuery();
   const [overview, userTrends, revenueTrends, featureRanking, contentRanking, coreActionFunnel, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent] = await Promise.all([
-    safeRequest('/dashboard/overview', { users: {}, memberships: {}, revenue: {}, family: {}, operations: {}, membership_structure: [], child_age_distribution: [], child_gender_distribution: [], conversion_funnel: [], membership_lifecycle: {}, age_feature_preferences: [], feature_conversion: [], user_segments: [] }),
-    safeRequest('/analytics/users/trends?days=14', { items: [] }),
-    safeRequest('/analytics/revenue/trends?days=14', { items: [] }),
-    safeRequest('/analytics/features/ranking?days=14&limit=8', { items: [] }),
-    safeRequest('/analytics/content/ranking?days=14&limit=8', { items: [] }),
-    safeRequest('/analytics/core-action/funnel?days=14', { items: [] }),
-    safeRequest('/insights/weekly?days=7', { cards: [] }),
+    safeRequest(`/dashboard/overview${query}`, { users: {}, memberships: {}, revenue: {}, family: {}, operations: {}, membership_structure: [], child_age_distribution: [], child_gender_distribution: [], conversion_funnel: [], membership_lifecycle: {}, age_feature_preferences: [], feature_conversion: [], user_segments: [] }),
+    safeRequest(`/analytics/users/trends${query}`, { items: [] }),
+    safeRequest(`/analytics/revenue/trends${query}`, { items: [] }),
+    safeRequest(`/analytics/features/ranking${query}&limit=8`, { items: [] }),
+    safeRequest(`/analytics/content/ranking${query}&limit=8`, { items: [] }),
+    safeRequest(`/analytics/core-action/funnel${query}`, { items: [] }),
+    safeRequest(`/insights/weekly${query}`, { cards: [] }),
     safeRequest('/content/ops/overview', {}),
     safeRequest('/content/ops/tips?limit=8', { items: [] }),
     safeRequest('/content/ops/articles?limit=8', { items: [] }),
-    safeRequest('/analytics/ai-chat/overview?days=14', {}),
-    safeRequest('/analytics/ai-chat/fallback-queries?days=14&limit=8', { items: [] }),
-    safeRequest('/analytics/ai-chat/recent?days=7', { items: [] })
+    safeRequest(`/analytics/ai-chat/overview${query}`, {}),
+    safeRequest(`/analytics/ai-chat/fallback-queries${query}&limit=8`, { items: [] }),
+    safeRequest(`/analytics/ai-chat/recent${query}`, { items: [] })
   ]);
 
   renderDashboard({ me, overview, userTrends, revenueTrends, featureRanking, contentRanking, coreActionFunnel, weeklyInsights, contentOpsOverview, tipsOps, articleForms, aiChatOverview, aiFallbackQueries, aiRecent });
+  await loadAnalyticsModules();
 }
 
 function renderDashboard(snapshot) {
@@ -578,7 +663,99 @@ function renderDashboard(snapshot) {
     score: formatNumber(item.view_count),
     meta: `${item.content_type_label || formatContentTypeLabel(item.content_type)} / 完成 ${formatNumber(item.completion_count)} / 收藏 ${formatNumber(item.favorite_count)}`
   }));
+  ['growthLoop', 'ageAbility', 'contentGovernance', 'membershipConversion', 'eventQuality'].forEach((key) => {
+    if (snapshot[key]) {
+      state.analyticsModules[key] = { data: snapshot[key], updatedAt: new Date(), error: null };
+      renderAnalyticsModule(key, snapshot[key]);
+    }
+  });
 }
+
+async function loadAnalyticsModules() {
+  const query = buildAnalyticsQuery();
+  const modules = [
+    ['growthLoop', `/analytics/growth-loop${query}`, { event_funnel: [] }],
+    ['ageAbility', `/analytics/age-ability${query}`, { items: [], content_supply: [] }],
+    ['contentGovernance', `/analytics/content-coverage${query}`, { coverage_matrix: [], gaps: [], quality: {} }],
+    ['membershipConversion', `/analytics/membership-conversion${query}`, { items: [], totals: {} }],
+    ['eventQuality', `/analytics/event-quality${query}`, { field_completeness: 0, unknown_values: [] }]
+  ];
+  await Promise.all(modules.map(async ([key, path, fallback]) => {
+    setModuleLoading(key);
+    try {
+      const data = await request(path);
+      state.analyticsModules[key] = { data, updatedAt: new Date(), error: null };
+      renderAnalyticsModule(key, data);
+    } catch (error) {
+      state.analyticsModules[key] = { data: fallback, updatedAt: state.analyticsModules[key] && state.analyticsModules[key].updatedAt, error };
+      renderAnalyticsModule(key, fallback);
+      setModuleError(key, error);
+    }
+  }));
+}
+
+function renderAnalyticsModule(key, data) {
+  const snapshotData = key === 'growthLoop' ? data : data;
+  const container = document.getElementById(`${key}View`);
+  if (!container) return;
+  if (key === 'growthLoop') renderGrowthLoop(container, snapshotData);
+  if (key === 'ageAbility') renderAgeAbility(container, snapshotData);
+  if (key === 'contentGovernance') renderContentGovernance(container, snapshotData);
+  if (key === 'membershipConversion') renderMembershipConversion(container, snapshotData);
+  if (key === 'eventQuality') renderEventQuality(container, snapshotData);
+  const module = state.analyticsModules[key];
+  setText(`${key}Updated`, module && module.updatedAt ? `更新 ${formatDateTime(module.updatedAt)}` : '未更新');
+  if (!module || !module.error) setModuleStatus(key, '数据已加载', 'success');
+}
+
+function renderGrowthLoop(container, data) {
+  const items = data.event_funnel || [];
+  if (!items.length) return renderModuleEmpty(container, '当前区间暂无成长闭环数据。');
+  const base = Number(items[0].user_count || 0);
+  container.innerHTML = `<div class="module-metrics">${items.map((item) => `<div class="module-metric"><span>${escapeHtml(formatAnalyticsStep(item.step_key))}</span><strong>${formatNumber(item.user_count)}</strong><small>${formatNumber(item.event_count)} 事件 / ${formatPercent(calculatePercentage(item.user_count, base))}</small></div>`).join('')}</div>`;
+}
+
+function renderAgeAbility(container, data) {
+  const items = data.items || [];
+  if (!items.length) return renderModuleEmpty(container, '当前区间暂无年龄能力数据。');
+  const max = Math.max(...items.map((item) => Number(item.complete_count || 0)), 1);
+  container.innerHTML = `<div class="matrix-grid">${items.map((item) => `<div class="matrix-cell"><span>${escapeHtml(formatAgeLabel(item.age_segment_code))}</span><strong>${escapeHtml(formatAbilityLabel(item.ability_code))}</strong><div class="matrix-bar"><i style="width:${Math.max(4, Number(item.complete_count || 0) / max * 100)}%"></i></div><small>观察 ${formatNumber(item.user_count)} / 完成 ${formatNumber(item.complete_count)}</small></div>`).join('')}</div>`;
+}
+
+function renderContentGovernance(container, data) {
+  const matrix = data.coverage_matrix || data.items || [];
+  const gaps = data.gaps || data.gap_list || [];
+  const quality = data.quality || {};
+  if (!matrix.length && !gaps.length && !Object.keys(quality).length) return renderModuleEmpty(container, '当前暂无知识治理数据。');
+  container.innerHTML = `<div class="governance-summary"><span>零消费 ${formatNumber(quality.zero_consumption)}</span><span>低完成 ${formatNumber(quality.low_completion)}</span><span>缺来源 ${formatNumber(quality.missing_source)}</span><span>低证据 ${formatNumber(quality.low_evidence)}</span></div><div class="governance-list">${gaps.slice(0, 6).map((item) => `<div class="governance-gap ${item.severity === 'high' ? 'is-high' : ''}"><strong>${escapeHtml(item.title || item.label || '-')}</strong><span>${escapeHtml(item.reason || '存在覆盖缺口')}</span></div>`).join('')}</div><div class="matrix-compact">${matrix.slice(0, 8).map((item) => `<span>${escapeHtml(formatAgeLabel(item.age_segment_code))} · ${escapeHtml(formatAbilityLabel(item.ability_code))} ${formatNumber(item.published_count || item.content_count)}</span>`).join('')}</div>`;
+}
+
+function renderMembershipConversion(container, data) {
+  const totals = data.totals || {};
+  const items = data.items || [];
+  if (!items.length && !Number(totals.exposure_count || 0)) return renderModuleEmpty(container, '当前区间暂无会员来源数据。');
+  container.innerHTML = `<div class="module-total-row"><span>曝光 ${formatNumber(totals.exposure_count)}</span><span>点击 ${formatNumber(totals.click_count)}</span><span>支付 ${formatNumber(totals.paid_count)}</span><strong>${formatCurrency(totals.revenue_amount)}</strong></div><div class="source-list">${items.slice(0, 6).map((item) => `<div class="source-row"><strong>${escapeHtml(formatEntrySource(item.source_key))}</strong><span>支付 ${formatPercent(calculatePercentage(item.paid_count, item.exposure_count))}</span><span>试用转正式 ${formatPercent(item.trial_to_paid_rate)}</span><span>续费 ${formatPercent(item.renewal_rate)}</span></div>`).join('')}</div>`;
+}
+
+function renderEventQuality(container, data) {
+  const metrics = [['公共字段完整率', data.field_completeness], ['未知代码率', data.unknown_code_rate], ['重复事件率', data.duplicate_rate], ['迟到事件率', data.late_event_rate], ['无孩子标识', data.missing_child_rate]];
+  if (!metrics.some(([, value]) => Number(value || 0) > 0) && !(data.unknown_values || []).length) return renderModuleEmpty(container, '当前区间暂无事件质量数据。');
+  container.innerHTML = `<div class="quality-metrics">${metrics.map(([label, value]) => `<div><span>${label}</span><strong>${formatPercent(value)}</strong></div>`).join('')}</div><div class="unknown-values">${(data.unknown_values || []).slice(0, 4).map((item) => `<span>${escapeHtml(item.field)}=${escapeHtml(item.value)} (${formatNumber(item.count)})</span>`).join('')}</div>`;
+}
+
+function renderModuleEmpty(container, message) { container.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`; }
+function setModuleLoading(key) { setModuleStatus(key, '正在加载...', 'loading'); }
+function setModuleStatus(key, message, tone) { const node = document.getElementById(`${key}Status`); if (node) node.innerHTML = `<span class="module-status-${tone}">${escapeHtml(message)}</span>`; }
+function setModuleError(key, error) { const node = document.getElementById(`${key}Status`); if (!node) return; node.innerHTML = `<span class="module-status-error">模块加载失败：${escapeHtml(error.message || '请求失败')}</span><button type="button" class="ghost filter-chip module-retry">重试</button>`; node.querySelector('button').addEventListener('click', loadAnalyticsModules); }
+function initializeAnalyticsFilters(reset) { const end = new Date(); const start = new Date(end.getTime() - 13 * 86400000); if (reset || !state.analyticsFilters.startDate) state.analyticsFilters.startDate = formatDateInput(start); if (reset || !state.analyticsFilters.endDate) state.analyticsFilters.endDate = formatDateInput(end); if (reset) { state.analyticsFilters.ageSegmentCode = ''; state.analyticsFilters.abilityCode = ''; state.analyticsFilters.membershipStatus = ''; } document.getElementById('analyticsStartDate').value = state.analyticsFilters.startDate; document.getElementById('analyticsEndDate').value = state.analyticsFilters.endDate; document.getElementById('analyticsAgeSegment').value = state.analyticsFilters.ageSegmentCode; document.getElementById('analyticsAbility').value = state.analyticsFilters.abilityCode; document.getElementById('analyticsMembership').value = state.analyticsFilters.membershipStatus; }
+function readAnalyticsFilters() { state.analyticsFilters.startDate = document.getElementById('analyticsStartDate').value; state.analyticsFilters.endDate = document.getElementById('analyticsEndDate').value; state.analyticsFilters.ageSegmentCode = document.getElementById('analyticsAgeSegment').value; state.analyticsFilters.abilityCode = document.getElementById('analyticsAbility').value; state.analyticsFilters.membershipStatus = document.getElementById('analyticsMembership').value; }
+function buildAnalyticsQuery() { const filters = state.analyticsFilters; const params = new URLSearchParams({ start_date: filters.startDate, end_date: filters.endDate }); if (filters.ageSegmentCode) params.set('age_segment_code', filters.ageSegmentCode); if (filters.abilityCode) params.set('ability_code', filters.abilityCode); if (filters.membershipStatus) params.set('membership_status', filters.membershipStatus); return `?${params.toString()}`; }
+function formatDateInput(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+function calculatePercentage(part, total) { return total ? Number((Number(part || 0) / Number(total) * 100).toFixed(2)) : 0; }
+function formatAnalyticsStep(value) { return ({ observation: '能力观察', profile: '能力画像', training: '训练完成', feedback: '家长反馈', report: '阶段报告', membership: '会员承接', payment: '支付成功' })[value] || value || '未知阶段'; }
+function formatAgeLabel(value) { return ({ age_3_4: '3-4岁', age_4_5: '4-5岁', age_5_6: '5-6岁', unknown: '待补充' })[value] || value || '未知年龄'; }
+function formatAbilityLabel(value) { return ({ attention: '专注力', sensory_motor: '感觉运动', growth: '生长管理', safety: '身体安全' })[value] || value || '未知能力'; }
+function formatEntrySource(value) { return ({ observation_result: '观察结果', stage_report: '阶段报告', training_complete: '训练完成' })[value] || value || '未知来源'; }
 
 async function request(path, options = {}) {
   const headers = {

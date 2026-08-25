@@ -1,4 +1,5 @@
 var app = getApp();
+var crossPageStorage = require('../../utils/cross-page-storage.js');
 
 function getToday() {
   var date = new Date();
@@ -104,10 +105,9 @@ Page({
 
   applySourceContext: function(options) {
     var source = String((options && options.source) || '').trim();
-    var pendingSource = wx.getStorageSync('pendingGrowthRecordSource') || null;
-    if (pendingSource) {
-      wx.removeStorageSync('pendingGrowthRecordSource');
-    }
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var pendingSourceEnvelope = crossPageStorage.consume('pendingGrowthRecordSource', currentChild && currentChild.id);
+    var pendingSource = pendingSourceEnvelope ? pendingSourceEnvelope.payload : null;
     if (pendingSource && (pendingSource.sourceType === 'development_zone' || pendingSource.sourceType === 'core_action')) {
       this.setData({ sourceContext: pendingSource });
       return;
@@ -156,10 +156,8 @@ Page({
     if (!this.data.currentChild || !this.data.currentChild.id) {
       return;
     }
-    var pendingNote = String(wx.getStorageSync('pendingGrowthRecordNote') || '').trim();
-    if (pendingNote) {
-      wx.removeStorageSync('pendingGrowthRecordNote');
-    }
+    var pendingNoteEnvelope = crossPageStorage.consume('pendingGrowthRecordNote', this.data.currentChild && this.data.currentChild.id);
+    var pendingNote = String(pendingNoteEnvelope ? pendingNoteEnvelope.payload : '').trim();
     this.setData({ loading: true });
     app.ensureLogin().then(function() {
       return app.request({

@@ -16,6 +16,36 @@
       </view>
     </view>
 
+    <view class="core-status-card">
+      <view class="core-status-header">
+        <view>
+      <text class="core-status-eyebrow">孩子的表现档案</text>
+          <text class="core-status-title">{{growthStatus.currentFocus}}</text>
+        </view>
+        <text class="core-status-progress">{{dailyPlanCompletedCount}}/{{dailyPlanCards.length || 0}} 项</text>
+      </view>
+      <text class="core-status-desc">{{growthStatus.todaySuggestion}}</text>
+    </view>
+    <view class="core-boundary-card">
+      <text class="core-boundary-title">健康边界提示</text>
+      <text class="core-boundary-text">这里记录的是家庭中可观察的表现和支持方向，不能替代专业评估或诊断；持续担忧时请咨询儿科医生或相关专业人员。</text>
+    </view>
+
+    <view class="core-today-card" wx:if="{{dailyPlanCards.length}}">
+      <view class="core-today-header">
+        <view>
+        <text class="core-today-eyebrow">今天的训练方向</text>
+          <text class="core-today-title">完成一个短训练，看见一次具体表现</text>
+        </view>
+        <text class="core-today-count">{{dailyPlanCompletedCount}}/{{dailyPlanCards.length}}</text>
+      </view>
+      <view class="core-today-task" bindtap="onDailyPlanTap" data-index="0">
+        <text class="core-today-task-title">{{dailyPlanCards[0].title}}</text>
+        <text class="core-today-task-desc">{{dailyPlanCards[0].reason}}</text>
+        <text class="core-today-task-action">{{dailyPlanCards[0].actionText}}</text>
+      </view>
+    </view>
+
     <view class="core-scenes">
       <view class="core-scenes-header">
         <text class="core-scenes-title" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">按年龄找孩子问题</text>
@@ -265,8 +295,8 @@
 
   <view class="core-tools" wx:if="{{coreRefactorEnabled}}">
     <view class="core-tools-header">
-      <text class="core-tools-title">更多工具</text>
-      <text class="core-tools-subtitle">先看懂卡点，再按需要进入深度功能</text>
+      <text class="core-tools-title">核心入口</text>
+      <text class="core-tools-subtitle">观察表现、安排训练、查看报告和进入发展专题</text>
     </view>
     <view class="core-tool-grid">
       <view
@@ -278,6 +308,24 @@
       >
         <text class="core-tool-title">{{item.title}}</text>
         <text class="core-tool-desc">{{item.desc}}</text>
+      </view>
+    </view>
+    <view class="core-tools core-auxiliary-tools">
+      <view class="core-tools-header">
+        <text class="core-tools-title">辅助支持</text>
+        <text class="core-tools-subtitle">AI、文章、营养和家庭场景内容用于补充当天的支持</text>
+      </view>
+      <view class="core-tool-grid">
+        <view
+          class="core-tool-item"
+          wx:for="{{coreAuxiliaryTools}}"
+          wx:key="key"
+          data-action="{{item.action}}"
+          bindtap="onCoreToolTap"
+        >
+          <text class="core-tool-title">{{item.title}}</text>
+          <text class="core-tool-desc">{{item.desc}}</text>
+        </view>
       </view>
     </view>
   </view>

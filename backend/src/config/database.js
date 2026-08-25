@@ -1194,6 +1194,46 @@ function seedData() {
 
   }
 
+  const nutritionKnowledgeCount = db.prepare("SELECT COUNT(*) AS count FROM knowledge_base WHERE category = 'nutrition'").get().count;
+  if (nutritionKnowledgeCount === 0) {
+    db.prepare(`
+      INSERT INTO knowledge_base (category, sub_category, title, content, tags, age_range, source, evidence_level)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'nutrition',
+      'family_recipe',
+      '儿童营养早餐搭配',
+      '营养早餐可以由主食、蛋白质食物和蔬果组成。可按孩子的过敏情况、咀嚼能力和家庭饮食习惯调整食材。',
+      '营养,早餐,家庭食谱',
+      '3-6岁',
+      '中国居民膳食指南',
+      'A'
+    );
+  }
+
+  const parentingArticleCount = db.prepare('SELECT COUNT(*) AS count FROM articles').get().count;
+  if (parentingArticleCount === 0) {
+    const articleSeeds = require('../data/articleSeeds');
+    const insertArticle = db.prepare(`
+      INSERT INTO articles (title, summary, content, category, sub_category, age_group, tags, author, evidence_level, cover)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const article of articleSeeds) {
+      insertArticle.run(
+        article.title,
+        article.summary,
+        article.content,
+        article.category,
+        article.sub_category,
+        article.age_group,
+        article.tags,
+        article.author,
+        article.evidence_level,
+        article.cover || null
+      );
+    }
+  }
+
   // 加载外部补充数据文件
   loadExternalSeedData();
 

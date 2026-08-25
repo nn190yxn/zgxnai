@@ -1,5 +1,6 @@
 // 小牛聊天页面
 var app = getApp();
+var crossPageStorage = require('../../utils/cross-page-storage.js');
 var msgIdCounter = 0;
 var speechPlugin = null;
 var recordRecognitionManager = null;
@@ -58,7 +59,9 @@ Page({
     this.syncFeatureFlags();
     this.initVoiceRecognition();
     var self = this;
-    var saved = wx.getStorageSync('chatMessages');
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var savedEnvelope = crossPageStorage.read('chatMessages', currentChild && currentChild.id);
+    var saved = savedEnvelope ? savedEnvelope.payload : null;
     if (saved && saved.length > 0) {
       saved.forEach(function(msg) {
         if (msg.role !== 'user' && msg.content && !msg.markdownNodes) {
@@ -78,15 +81,16 @@ Page({
   },
 
   applyPendingQuestion: function() {
-    var question = String(wx.getStorageSync('pendingChatQuestion') || '').trim();
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var questionEnvelope = crossPageStorage.consume('pendingChatQuestion', currentChild && currentChild.id);
+    var question = String(questionEnvelope ? questionEnvelope.payload : '').trim();
     if (!question) {
-      question = this.buildPendingCoreActionQuestion(wx.getStorageSync('pendingCoreActionContext'));
+      var contextEnvelope = crossPageStorage.consume('pendingCoreActionContext', currentChild && currentChild.id);
+      question = this.buildPendingCoreActionQuestion(contextEnvelope ? contextEnvelope.payload : null);
     }
     if (!question) {
       return;
     }
-    wx.removeStorageSync('pendingChatQuestion');
-    wx.removeStorageSync('pendingCoreActionContext');
     this.setData({ inputValue: question });
     wx.showToast({ title: '已带入问题，可直接发送', icon: 'none' });
   },
@@ -219,7 +223,11 @@ Page({
       messages = messages.slice(messages.length - MAX_MESSAGES);
       this.setData({ messages: messages });
     }
-    wx.setStorageSync('chatMessages', messages);
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    crossPageStorage.save('chatMessages', messages, {
+      childId: currentChild && currentChild.id,
+      source: 'chat_history'
+    });
   },
 
   // 输入内容变化

@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="summary-card" wx:if="{{loading}}">
+    <text class="summary-copy">正在加载历史报告...</text>
+  </view>
+  <view class="summary-card" wx:elif="{{errorMessage}}">
+    <text class="summary-title">历史报告暂时没加载出来</text>
+    <text class="summary-copy">{{errorMessage}}</text>
+    <view class="primary-btn" bindtap="retryLoad">重新加载</view>
+  </view>
+  <view class="summary-card" wx:elif="{{!list.length}}">
+    <text class="summary-title">还没有历史报告</text>
+    <text class="summary-copy">持续记录和训练后，阶段报告会保留在这里。</text>
+  </view>
+  <view class="summary-card report-item" wx:for="{{list}}" wx:key="weekStart">
+    <text class="summary-title">{{item.weekStart}} - {{item.weekEnd}}</text>
+    <text class="summary-copy">{{item.dataStatus === 'complete' ? '周期数据完整' : item.dataStatus === 'partial' ? '周期数据持续补充中' : '记录积累中'}}</text>
+    <text class="summary-copy">记录 {{item.recordDays}} 天，完成能力练习 {{item.completedTaskCount}} 次。</text>
+    <text class="summary-copy">{{item.overview}}</text>
+  </view>
+</view>

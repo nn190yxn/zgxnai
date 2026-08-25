@@ -5,6 +5,8 @@ var getAssessmentMetaList = assessmentUtils.getAssessmentMetaList;
 var getChildAgeYears = assessmentUtils.getChildAgeYears;
 var getDefaultAgeGroup = assessmentUtils.getDefaultAgeGroup;
 var normalizeAssessmentCode = assessmentUtils.normalizeAssessmentCode;
+var crossPageStorage = require('../../../utils/cross-page-storage.js');
+var ASSESSMENT_VERSION = 'v1';
 
 function normalizeAssessmentQuestions(questions) {
   return (questions || []).map(function(rawQuestion, questionIndex) {
@@ -427,9 +429,11 @@ loadQuestionsFromServer: function(code) {
   // 加载保存的进度
   loadSavedProgress: function() {
     var that = this;
-    var progress = wx.getStorageSync('assessmentProgress');
+    var childId = that.data.currentChild && that.data.currentChild.id;
+    var envelope = crossPageStorage.read('assessmentProgress', childId);
+    var progress = envelope ? envelope.payload : null;
 
-    if (progress && progress.assessmentCode === that.data.assessmentCode) {
+    if (progress && progress.assessmentCode === that.data.assessmentCode && progress.assessmentVersion === ASSESSMENT_VERSION) {
       var questions = that.data.questions;
       var answers = progress.answers || [];
       var currentIndex = progress.currentIndex || 0;
@@ -596,6 +600,8 @@ loadQuestionsFromServer: function(code) {
     var that = this;
     var progress = {
       assessmentCode: that.data.assessmentCode,
+      assessmentVersion: ASSESSMENT_VERSION,
+      childId: that.data.currentChild && that.data.currentChild.id ? String(that.data.currentChild.id) : null,
       currentIndex: that.data.currentIndex,
       answers: that.data.answers,
       ageGroup: that.getAssessmentAgeGroup(),
@@ -603,7 +609,10 @@ loadQuestionsFromServer: function(code) {
       savedAt: Date.now()
     };
 
-    wx.setStorageSync('assessmentProgress', progress);
+    crossPageStorage.save('assessmentProgress', progress, {
+      childId: that.data.currentChild && that.data.currentChild.id,
+      source: 'assessment_do'
+    });
   },
 
   // 提交结果
@@ -630,6 +639,10 @@ loadQuestionsFromServer: function(code) {
       age_group: that.getAssessmentAgeGroup(),
       answers: that.buildSubmitAnswers()
     };
+
+    if (app.trackKbEvent) {
+      app.trackKbEvent({ event_type: 'ability_observation_submit', action_id: 'observation:' + (submitData.child_id || 'guest') + ':' + that.data.assessmentCode, ability_codes: normalizeAssessmentCode(that.data.assessmentCode) === 'sensory' ? ['sensory_motor'] : ['attention'], source_module: 'ability_observation', source_page: 'assessment_do', source_content_type: 'assessment', source_content_id: that.data.assessmentCode, event_meta: { answer_count: submitData.answers.length } });
+    }
 
     // 尝试提交到服务器
     app.request({
@@ -663,9 +676,24 @@ loadQuestionsFromServer: function(code) {
       var serverResult = that.normalizeServerResult(res);
       that.saveResultLocally(serverResult);
 
+      // Save the formal 3-6 ability profile alongside the legacy assessment record.
+      if (['focus', 'sensory'].indexOf(normalizeAssessmentCode(that.data.assessmentCode)) >= 0) {
+        app.request({
+          url: '/ability-observations/submit',
+          method: 'POST',
+          data: that.buildAbilityObservationPayload()
+        }).then(function(profile) {
+          if (app.trackKbEvent) {
+            app.trackKbEvent({ event_type: 'ability_observation_complete', action_id: 'observation:' + (submitData.child_id || 'guest') + ':' + that.data.assessmentCode, ability_codes: profile && profile.primaryFocus ? [profile.primaryFocus] : null, source_module: 'ability_observation', source_page: 'assessment_do', source_content_type: 'ability_profile', source_content_id: profile && profile.id, event_meta: { assessment_version: profile && profile.assessmentVersion, degraded: false } });
+          }
+        }).catch(function() {
+          return null;
+        });
+      }
+
       // 跳转到结果页面
-      wx.redirectTo({
-        url: '/pages/assessment/result/result?recordId=' + serverResult.recordId,
+        wx.redirectTo({
+          url: '/pages/assessment/result/result?recordId=' + serverResult.recordId + '&childId=' + (serverResult.childId || ''),
         fail: function() {
           wx.showToast({ title: '结果页没打开，请再试一次', icon: 'none' });
         }
@@ -686,6 +714,7 @@ loadQuestionsFromServer: function(code) {
         score: localResult.totalScore / localResult.maxScore,
         event_meta: { type: 'assessment', source: 'local' }
       });
+      app.trackKbEvent({ event_type: 'ability_observation_complete', action_id: 'observation:' + (submitData.child_id || 'guest') + ':' + that.data.assessmentCode, ability_codes: normalizeAssessmentCode(that.data.assessmentCode) === 'sensory' ? ['sensory_motor'] : ['attention'], source_module: 'ability_observation', source_page: 'assessment_do', source_content_type: 'ability_profile', source_content_id: localResult.recordId, event_meta: { degraded: true, source: 'local' } });
 
       // 保存结果到本地
       that.saveResultLocally(localResult);
@@ -695,13 +724,26 @@ loadQuestionsFromServer: function(code) {
 
       // 跳转到结果页面
       wx.redirectTo({
-        url: '/pages/assessment/result/result?recordId=' + localResult.recordId + '&local=1',
+          url: '/pages/assessment/result/result?recordId=' + localResult.recordId + '&local=1&childId=' + (localResult.childId || ''),
         fail: function() {
           wx.showToast({ title: '结果页没打开，请再试一次', icon: 'none' });
         }
       });
     });
     });
+  },
+
+  buildAbilityObservationPayload: function() {
+    var abilityQuestionIds = ['attention_start', 'attention_sustain', 'instruction_follow', 'body_control', 'hand_eye', 'movement_adjust'];
+    var answers = this.buildSubmitAnswers().slice(0, abilityQuestionIds.length).map(function(item, index) {
+      return { questionId: abilityQuestionIds[index], value: Number(item.value) };
+    });
+    return {
+      childId: this.data.currentChild && this.data.currentChild.id,
+      ageGroup: this.getAssessmentAgeGroup(),
+      answers: answers,
+      idempotencyKey: 'ability:' + ((this.data.currentChild && this.data.currentChild.id) || '') + ':' + normalizeAssessmentCode(this.data.assessmentCode) + ':' + this.data.startTime
+    };
   },
 
   normalizeServerResult: function(res) {

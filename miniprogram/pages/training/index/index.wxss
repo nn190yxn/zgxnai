@@ -1,0 +1,9 @@
+.training-page { padding-bottom: 60rpx; }
+.today-card, .empty-card, .plan-item { margin: 24rpx 32rpx; padding: 32rpx; border-radius: 24rpx; background: #fffaf5; }
+.eyebrow, .task-meta { display: block; color: #9d8172; font-size: 24rpx; }
+.task-title { display: block; margin: 14rpx 0; color: #392a25; font-size: 38rpx; font-weight: 600; }
+.task-objective { display: block; color: #66534a; font-size: 28rpx; line-height: 1.6; }
+.section-title { margin: 36rpx 32rpx 16rpx; color: #392a25; font-size: 30rpx; font-weight: 600; }
+.plan-actions { display: flex; gap: 12rpx; padding: 0 32rpx; }
+.plan-actions button { flex: 1; margin: 0; color: #fff; background: #d46c4b; font-size: 25rpx; }
+.plan-item { display: flex; justify-content: space-between; color: #66534a; font-size: 25rpx; }

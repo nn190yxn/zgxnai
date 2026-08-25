@@ -2,7 +2,18 @@
   <view class="header">
     <text class="eyebrow">3-6 岁发展专区</text>
     <text class="title">先选发展方向，再看具体场景</text>
-    <text class="subtitle">语言发育、感统支持、专注力、大运动练习、情绪管理、社交能力、自信与适应、生活习惯，按孩子当前表现进入。</text>
+    <text class="subtitle">先从专注力和感觉运动开始，再按需要查看其他发展方向。生长管理和身体安全专题提供连续的家庭支持。</text>
+    <text class="source-tip" wx:if="{{isFallback}}">当前使用本地内容，联网后会优先更新正式内容。</text>
+  </view>
+
+  <view class="featured-row" wx:if="{{featuredZones.length}}">
+    <text class="featured-label">先从这两个方向开始</text>
+    <view class="featured-list">
+      <view class="featured-item" wx:for="{{featuredZones}}" wx:key="code" data-zone="{{item.code}}" bindtap="openZone">
+        <text class="featured-title">{{item.title}}</text>
+        <text class="featured-action">{{item.actionText}}</text>
+      </view>
+    </view>
   </view>
 
   <view class="zone-grid">
@@ -11,6 +22,8 @@
         <text class="zone-title">{{item.title}}</text>
         <text class="zone-arrow">></text>
       </view>
+      <text class="zone-badge" wx:if="{{item.isPrimary}}">首要方向</text>
+      <text class="zone-badge zone-badge-premium" wx:elif="{{item.isPremiumTopic}}">会员专题</text>
       <text class="zone-subtitle">{{item.subtitle}}</text>
       <view class="zone-meta-row">
         <text class="zone-meta">{{item.scenarioCount}} 个场景</text>

@@ -1,5 +1,14 @@
 // 能力成长页面逻辑
 var app = getApp();
+var crossPageStorage = require('../../utils/cross-page-storage.js');
+
+function saveReadingShareDraft(draft) {
+  var child = app.getCurrentChild ? app.getCurrentChild() : null;
+  crossPageStorage.save('readingShareDraft', draft, {
+    childId: child && child.id,
+    source: draft && draft.source ? draft.source : 'textbook_share'
+  });
+}
 
 Page({
   data: {
@@ -1073,7 +1082,7 @@ Page({
     }
 
     // 预埋分享卡草稿数据（第4阶段用于生成卡片）
-    wx.setStorageSync('readingShareDraft', {
+    saveReadingShareDraft({
       type: 'task_checkin',
       title: e.currentTarget.dataset.title || '每日练习',
       summary: '我完成了今天的10分钟练习，欢迎一起坚持！',
@@ -1122,7 +1131,7 @@ Page({
   shareWeeklyReport: function() {
     var report = this.data.readingWeeklyReport || {};
     var text = '本周每日练习 ' + (report.completed || 0) + '/' + (report.total || 0) + '，完成率 ' + (report.completionRate || 0) + '%，连续坚持 ' + (report.streakDays || 0) + ' 天。';
-    wx.setStorageSync('readingShareDraft', {
+    saveReadingShareDraft({
       type: 'weekly_report',
       title: '本周练习成果卡',
       summary: text,
@@ -1176,7 +1185,9 @@ Page({
   },
 
   copyShareTemplate: function() {
-    var draft = wx.getStorageSync('readingShareDraft') || {};
+    var child = app.getCurrentChild ? app.getCurrentChild() : null;
+    var draftEnvelope = crossPageStorage.read('readingShareDraft', child && child.id);
+    var draft = (draftEnvelope && draftEnvelope.payload) || {};
     var text = app.buildShareTemplate(draft);
     wx.setClipboardData({
       data: text,

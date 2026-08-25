@@ -1,5 +1,6 @@
 // 成长观察页面逻辑
 var app = getApp();
+var crossPageStorage = require('../../utils/cross-page-storage.js');
 var assessmentUtils = require('../../utils/assessment.js');
 var getAssessmentMetaList = assessmentUtils.getAssessmentMetaList;
 var getChildAgeYears = assessmentUtils.getChildAgeYears;
@@ -50,6 +51,10 @@ Page({
 
   bootstrap: function() {
     var that = this;
+    if (!that._abilityExposureTracked && app.trackKbEvent) {
+      that._abilityExposureTracked = true;
+      app.trackKbEvent({ event_type: 'ability_observation_exposure', action_id: 'observation:' + Date.now(), ability_codes: ['attention', 'sensory_motor'], source_module: 'ability_observation', source_page: 'assessment_index' });
+    }
     that.loadCurrentChild();
     that.applyAgeFilter();
     that.loadAssessmentListFromServer();
@@ -198,7 +203,9 @@ Page({
   // 检查是否有未完成的答题进度
   checkPendingProgress: function() {
     var that = this;
-    var progress = wx.getStorageSync('assessmentProgress');
+    var currentChildId = that.data.currentChild && that.data.currentChild.id;
+    var envelope = crossPageStorage.read('assessmentProgress', currentChildId);
+    var progress = envelope ? envelope.payload : null;
 
     if (progress && progress.answers && progress.answers.length > 0) {
       var assessment = that.data.assessmentList.find(function(item) {
@@ -298,6 +305,10 @@ Page({
 
     if (!assessment) {
       return;
+    }
+
+    if (app.trackKbEvent) {
+      app.trackKbEvent({ event_type: 'ability_observation_start', action_id: 'observation:' + ((that.data.currentChild && that.data.currentChild.id) || 'guest') + ':' + assessment.code, ability_codes: assessment.code === 'sensory' ? ['sensory_motor'] : ['attention'], source_module: 'ability_observation', source_page: 'assessment_index', source_content_type: 'assessment', source_content_id: assessment.code });
     }
 
     that.closeModal();

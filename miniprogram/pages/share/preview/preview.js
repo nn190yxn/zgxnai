@@ -1,4 +1,6 @@
 var app = getApp();
+var crossPageStorage = require('../../../utils/cross-page-storage.js');
+var growthShare = require('../../../utils/growth-share.js');
 
 Page({
   data: {
@@ -51,7 +53,10 @@ Page({
   },
 
   loadDraft: function() {
-    var draft = wx.getStorageSync('readingShareDraft') || this.data.draft;
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    var draftEnvelope = crossPageStorage.read('growthShareDraft', currentChild && currentChild.id)
+      || crossPageStorage.read('readingShareDraft', currentChild && currentChild.id);
+    var draft = growthShare.normalizeGrowthShareDraft((draftEnvelope && draftEnvelope.payload) || this.data.draft);
     var card = this.buildMarketingCard(draft);
     var text = card.copyText;
     var lastShareSource = wx.getStorageSync('lastShareSource') || {};
@@ -90,7 +95,33 @@ Page({
     var completionRate = metrics.completionRate || 0;
     var streakDays = metrics.streakDays || 0;
     var recordingCount = metrics.recordingCount || 0;
-    var isWeekly = data.type === 'weekly_report';
+    var isWeekly = data.type === 'weekly_report' || data.type === 'weekly_streak' || data.type === 'stage_report';
+
+    if (data.type === 'ability_profile') {
+      return {
+        badge: '能力观察',
+        headline: '先看见孩子当前的成长方向',
+        subline: '从可观察表现开始，找到今天能做的一小步',
+        heroMetric: data.ability || '成长方向',
+        heroLabel: '当前关注方向',
+        chips: [],
+        cta: '一起看看成长方向',
+        copyText: '我在用小牛育儿记录孩子的成长表现，从今天的一小步开始持续观察。'
+      };
+    }
+
+    if (data.type === 'development_practice') {
+      return {
+        badge: '发展专区练习',
+        headline: data.title || '今天完成一个家庭小练习',
+        subline: '把一次练习记下来，变化会更容易看见',
+        heroMetric: data.durationMinutes ? data.durationMinutes + '分钟' : '+1',
+        heroLabel: '今日练习',
+        chips: [],
+        cta: '一起做一个小练习',
+        copyText: '今天和孩子完成了一个家庭小练习，把具体变化记录下来，慢慢看见成长。'
+      };
+    }
 
     if (data.type === 'app_intro' || data.type === 'home_intro') {
       return {
