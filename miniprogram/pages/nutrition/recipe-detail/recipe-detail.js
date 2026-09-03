@@ -1,5 +1,6 @@
 // 食谱详情页面逻辑
 var app = getApp();
+var contentSource = require('../../../utils/content-source.js');
 
 Page({
   data: {
@@ -276,35 +277,20 @@ Page({
       return;
     }
 
-    app.request({
-      url: '/nutrition/recipes/' + that.data.recipeId,
-      method: 'GET',
-      data: that.data.selectedAgeGroup ? { age_group: that.data.selectedAgeGroup } : {},
-      timeout: 30000
-    }).then(function(recipe) {
+    contentSource.readPublishedOrLegacy(app, 'nutrition_recipe', that.data.recipeId, '/nutrition/recipes/' + that.data.recipeId, that.getLocalRecipeDetail(that.data.recipeId)).then(function(result) {
+      var recipe = result.item;
       recipe = that.normalizeRecipeForDisplay(recipe || {});
       wx.setStorageSync('nutritionRecipeSnapshot:' + that.data.recipeId, recipe);
       that.setData({
         recipe: recipe,
         isFavorite: recipe.isFavorite,
         imageLoaded: false,
-        offlineFallback: false
+        offlineFallback: !!result.fallback
       });
       app.trackKbEvent(that.buildRecipeTrackPayload({
         event_type: 'recipe_detail_view'
       }));
     }).catch(function(err) {
-      if (!app.shouldUseMockFallback()) {
-        if (!silent) {
-          app.showApiError('这道食谱没加载出来，请再试一次');
-          that.setData({
-            recipe: null,
-            isFavorite: false,
-            offlineFallback: false
-          });
-        }
-        return;
-      }
       var recipe = that.normalizeRecipeForDisplay(that.getLocalRecipeDetail(that.data.recipeId));
       that.setData({
         recipe: recipe,

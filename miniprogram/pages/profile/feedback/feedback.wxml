@@ -37,6 +37,8 @@
     <view class="history-item" wx:for="{{history}}" wx:key="id">
       <view class="history-type">{{item.type_text || '问题反馈'}}</view>
       <view class="history-content">{{item.content}}</view>
+      <view class="history-status">处理状态：{{item.public_status || item.status || '待处理'}}</view>
+      <view class="history-progress" wx:if="{{item.public_progress}}">最近进展：{{item.public_progress}}</view>
       <view class="history-time">{{item.created_at || ''}}</view>
     </view>
   </view>

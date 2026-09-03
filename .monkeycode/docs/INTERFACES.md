@@ -102,6 +102,7 @@
 | GET | `/analytics/membership-conversion` | 会员入口曝光、点击、订单、支付和收入归因 |
 | GET | `/analytics/event-quality` | 字段覆盖、未知值、重复、迟到和缺孩子标识 |
 | GET | `/analytics/content-coverage` | 年龄与能力内容覆盖矩阵和缺口 |
+| GET | `/analytics/operations-quality` | 内容发布、媒体和客服工单质量指标 |
 | GET | `/insights/weekly` | 周运营洞察 |
 | GET | `/segments/:segmentKey/users` | 用户分层明细 |
 | GET | `/content/ops/overview` | 内容运营概览 |
@@ -113,7 +114,75 @@
 | GET | `/analytics/ai-chat/fallback-queries` | AI 降级问题列表 |
 | GET | `/analytics/ai-chat/recent` | 最近 AI 问答记录 |
 
+### 内容与媒体
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| POST | `/media` | 上传并登记 Base64 媒体资产 |
+| GET | `/media` | 查询媒体资产列表 |
+| GET | `/media/:id/references` | 查询媒体引用关系 |
+| POST | `/media/:id/references` | 创建或更新媒体引用 |
+| PUT | `/media/:id/status` | 更新媒体状态和替代文本 |
+| POST | `/articles` | 创建文章草稿并生成内容版本 |
+| PUT | `/articles/:id` | 更新文章草稿并生成新版本 |
+| GET | `/articles` | 查询文章运营列表 |
+| POST | `/pain-points` | 创建成长痛点主数据 |
+| PUT | `/pain-points/:key` | 更新成长痛点并生成新版本 |
+
+### 内容发布
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| POST | `/content/:type/:id/submit-review` | 提交当前版本审核 |
+| POST | `/content/:type/:id/approve` | 审核通过当前版本 |
+| POST | `/content/:type/:id/publish` | 立即发布审核通过版本 |
+| POST | `/content/:type/:id/schedule` | 创建定时发布任务 |
+| POST | `/content/:type/:id/offline` | 下线已发布版本 |
+| POST | `/content/:type/:id/restore` | 从当前历史版本创建新的草稿版本 |
+
+`type` 当前支持文章和成长痛点等内容类型。状态变更受发布状态机和角色权限共同约束；定时任务由 `backend/src/scripts/publish-due-content.js` 执行。
+
+### 客服工单
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/support/tickets` | 查询工单列表，联系方式按权限脱敏 |
+| PUT | `/support/tickets/:id` | 更新状态、优先级、负责人和公开进展 |
+| POST | `/support/tickets/:id/callbacks` | 记录电话或其他方式的回访结果 |
+
+小程序侧的 `GET /feedback/history` 使用用户 JWT，只返回当前用户工单的状态和公开进展。后台客服写操作会同步生成工单事件和管理员审计记录。
+
+### 会员配置与用户运营
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/membership/config` | 查询当前会员展示配置版本 |
+| GET | `/membership/config/versions` | 查询会员配置历史版本 |
+| POST | `/membership/config/preview` | 归一化并预览会员配置 |
+| POST | `/membership/config` | 保存会员配置草稿 |
+| POST | `/membership/config/submit-review` | 提交会员配置审核 |
+| POST | `/membership/config/approve` | 审核通过会员配置 |
+| POST | `/membership/config/publish` | 发布会员配置 |
+| POST | `/membership/config/offline` | 下线当前会员配置 |
+| POST | `/membership/config/restore` | 从历史版本创建新的草稿 |
+| GET | `/users/operations` | 查询用户活跃、会员和服务记录摘要 |
+| GET | `/users/:id/service-records` | 查询指定用户的服务记录 |
+
+会员配置实体固定为 `membership_config/default`，状态沿用通用内容版本状态机。配置展示只影响入口文案、权益和套餐排序；支付和权益业务接口保持既有契约。用户运营接口默认脱敏手机号，只有具备 `user:contact` 或 `ticket:contact` 字段权限的角色可以读取完整联系方式。
+
+### 成长痛点公共接口
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/pain-points` | 按分类查询正式成长痛点 |
+| GET | `/pain-points/:key` | 查询指定稳定键的成长痛点详情 |
+| GET | `/content/:type/:id` | 查询指定内容已发布版本 |
+
+成长痛点返回 `pain_point_key`、分类、短标题、描述、可观察表现、可能原因、今日行动、家长提示和观察信号。公共内容接口会过滤未审核、未发布或尚未到发布时间的版本。
+
 新增分析接口统一支持 `start_date`、`end_date`、`age_segment_code`、`ability_code`、`membership_status`；日期格式为 `YYYY-MM-DD`。事件质量与内容覆盖接口还接受 `days`，范围为 1-90。会员转化接口额外接受 `source` 或 `entry_source`，内容覆盖额外接受 `content_form`。
+
+`/analytics/operations-quality` 返回 `content_operations` 和 `support_operations` 两组聚合数据，包含发布数量、审核耗时、媒体失败、版本恢复、待处理工单、处理时长、回访完成率和关闭结果。没有统计数据的日期区间仍返回成功响应和零值字段。
 
 ## 响应结构
 

@@ -1,0 +1,7 @@
+<view class="media-gallery" wx:if="{{items.length}}">
+  <view class="media-item" wx:for="{{items}}" wx:key="index" wx:for-item="media" data-index="{{index}}" bindtap="preview">
+    <image wx:if="{{media.url && !failed[index]}}" src="{{media.url}}" mode="widthFix" binderror="onError" />
+    <view wx:else class="media-fallback">{{media.alt || media.caption || '图片暂时不可用'}}</view>
+    <text wx:if="{{media.caption}}" class="media-caption">{{media.caption}}</text>
+  </view>
+</view>

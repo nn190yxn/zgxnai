@@ -5,6 +5,7 @@ const {
   EVENT_COMMON_FIELDS,
   validateAnalyticsQuery
 } = require('../src/mysql-production/analytics-quality');
+const { aggregateOperationsMetrics, aggregateSupportMetrics, safeObject } = require('../src/mysql-production/operations-analytics');
 
 describe('后台日统计 SQL 边界', () => {
   it('保留日期格式化的自然日边界', () => {
@@ -83,5 +84,18 @@ describe('后台日统计 SQL 边界', () => {
     expect(validateAnalyticsQuery({ start_date: '2026-08-01', end_date: '2026-08-21', days: '21' })).toEqual({ valid: true });
     expect(validateAnalyticsQuery({ start_date: '2026/08/01' })).toEqual({ valid: false, code: 'INVALID_ANALYTICS_DATE' });
     expect(validateAnalyticsQuery({ days: '91' })).toEqual({ valid: false, code: 'INVALID_ANALYTICS_DAYS' });
+  });
+
+  it('聚合发布、媒体和版本恢复指标，并为无数据区间返回零值', () => {
+    const metrics = aggregateOperationsMetrics({ versions: [{ created_at: '2026-09-02T01:00:00Z', publish_status: 'published' }], reviews: [], media: [{ created_at: '2026-09-02T01:00:00Z', status: 'failed' }], usage: [{ created_at: '2026-09-02T02:00:00Z' }], restores: [{ created_at: '2026-09-02T03:00:00Z' }] }, { startDate: '2026-09-02', endDate: '2026-09-02' });
+    expect(metrics).toMatchObject({ content_created_count: 1, published_count: 1, content_usage_count: 1, media_failure_count: 1, version_restore_count: 1 });
+    expect(aggregateOperationsMetrics({}, { startDate: '2026-09-01', endDate: '2026-09-01' }).published_count).toBe(0);
+  });
+
+  it('聚合工单处理、回访和关闭结果，并兼容历史缺失字段', () => {
+    const metrics = aggregateSupportMetrics({ tickets: [{ status: 'pending', created_at: '2026-09-02T01:00:00Z' }], events: [{ event_type: 'callback', callback_result: 'resolved', created_at: '2026-09-02T02:00:00Z' }, { event_type: 'closed', created_at: '2026-09-02T03:00:00Z' }] }, { startDate: '2026-09-02', endDate: '2026-09-02' });
+    expect(metrics).toMatchObject({ pending_count: 1, callback_count: 1, callback_completion_rate: 100, closed_count: 1 });
+    expect(metrics.close_outcomes).toEqual({ resolved: 1 });
+    expect(safeObject({ phone: '13800000000', nested: { api_key: 'hidden' }, visible: 1 })).toEqual({ nested: {}, visible: 1 });
   });
 });

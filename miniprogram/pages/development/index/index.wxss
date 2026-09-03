@@ -214,3 +214,12 @@
   line-height: 1.7;
   color: #7A6660;
 }
+.pain-point-card { background: #fff; border-radius: 20rpx; padding: 28rpx; margin: 24rpx 0; }
+.filter-row { display: flex; gap: 12rpx; flex-wrap: wrap; margin: 18rpx 0; }
+.filter-chip { padding: 12rpx 18rpx; border-radius: 999rpx; background: #f2f7f7; color: #64747b; font-size: 24rpx; }
+.filter-chip-active { background: #e5f7f3; color: #168c7c; }
+.pain-point-item { min-height: 88rpx; padding: 20rpx 0; border-top: 1rpx solid #e5ecee; }
+.pain-point-title, .pain-point-desc, .pain-point-link { display: block; }
+.pain-point-title { color: #243238; font-weight: 600; }
+.pain-point-desc { color: #64747b; font-size: 24rpx; margin-top: 8rpx; }
+.pain-point-link { color: #168c7c; font-size: 23rpx; margin-top: 10rpx; }

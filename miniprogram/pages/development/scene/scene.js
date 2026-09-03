@@ -131,7 +131,7 @@ Page({
       childId: getApp().getCurrentChild && getApp().getCurrentChild() ? getApp().getCurrentChild().id : null,
       source: 'development_scene'
     });
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
@@ -148,7 +148,7 @@ Page({
       childId: getApp().getCurrentChild && getApp().getCurrentChild() ? getApp().getCurrentChild().id : null,
       source: 'development_scene'
     });
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

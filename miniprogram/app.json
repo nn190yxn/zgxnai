@@ -57,8 +57,14 @@
         "selectedIconPath": "images/tab-home-active.png"
       },
       {
-        "pagePath": "pages/chat/chat",
-        "text": "小牛问答",
+        "pagePath": "pages/development/index/index",
+        "text": "功能",
+        "iconPath": "images/tab-chat.png",
+        "selectedIconPath": "images/tab-chat-active.png"
+      },
+      {
+        "pagePath": "pages/growth-record/index",
+        "text": "成长",
         "iconPath": "images/tab-chat.png",
         "selectedIconPath": "images/tab-chat-active.png"
       },

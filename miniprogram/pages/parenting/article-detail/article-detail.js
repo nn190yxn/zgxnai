@@ -1,6 +1,7 @@
 // 文章详情页面逻辑
 var app = getApp();
 var encouragementUtils = require('../../../utils/encouragement.js');
+var contentSource = require('../../../utils/content-source.js');
 
 Page({
   data: {
@@ -336,16 +337,15 @@ Page({
       return;
     }
 
-    app.request({
-      url: '/parenting/articles/' + that.data.articleId,
-      method: 'GET'
-    }).then(function(article) {
+    contentSource.readPublishedOrLegacy(app, 'article', that.data.articleId, '/parenting/articles/' + that.data.articleId, null).then(function(result) {
+      var article = result.item;
+      if (!article) throw new Error('article unavailable');
       article = that.normalizeArticleForDisplay(article);
       that.setData({
         article: article,
         contentBlocks: that.parseArticleContent(article.content),
         isFavorite: article.isFavorite,
-        offlineFallback: false
+        offlineFallback: result.source === 'local_fallback'
       });
       wx.setNavigationBarTitle({
         title: article.title || '文章详情'
@@ -353,16 +353,7 @@ Page({
       app.trackKbEvent(that.buildArticleTrackPayload({
         event_type: 'article_detail_view'
       }));
-    }).catch(function(err) {
-      if (!app.shouldUseMockFallback()) {
-        app.showApiError('这篇锦囊没加载出来，请再试一次');
-        that.setData({
-          article: null,
-          isFavorite: false,
-          offlineFallback: false
-        });
-        return;
-      }
+    }).catch(function() {
       var article = that.normalizeArticleForDisplay(that.getLocalArticleDetail(that.data.articleId));
       that.setData({
         article: article,
@@ -373,6 +364,7 @@ Page({
       wx.setNavigationBarTitle({
         title: article.title || '文章详情'
       });
+      wx.showToast({ title: '暂时使用本地文章', icon: 'none' });
     }).finally(function() {
       that.setData({
         loading: false
@@ -669,7 +661,7 @@ Page({
       event_type: 'article_ai_followup',
       event_meta: { action: 'ask_ai_steps' }
     }));
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

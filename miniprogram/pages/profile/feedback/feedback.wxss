@@ -130,6 +130,18 @@
   margin-bottom: 10rpx;
 }
 
+.history-status,
+.history-progress {
+  font-size: 22rpx;
+  color: #4a8f86;
+  line-height: 1.5;
+  margin-bottom: 6rpx;
+}
+
+.history-progress {
+  color: #777;
+}
+
 .history-time {
   font-size: 20rpx;
   color: #BBB;

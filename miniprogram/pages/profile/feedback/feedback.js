@@ -48,7 +48,10 @@ Page({
       data: {
         type: this.data.types[this.data.typeIndex],
         content: content,
-        contact: this.data.contact.trim()
+        contact: this.data.contact.trim(),
+        child_id: app.getCurrentChild && app.getCurrentChild() ? app.getCurrentChild().id : null,
+        source_page: 'profile_feedback',
+        channel: 'feedback'
       }
     }).then(function () {
       wx.showToast({ title: '感谢反馈！', icon: 'success' });
@@ -70,15 +73,21 @@ Page({
 
   loadHistory: function () {
     var that = this;
-    if (!app.globalData.isLoggedIn) return;
+    var cacheKey = 'feedbackHistory';
+    if (!app.globalData.isLoggedIn) {
+      that.setData({ history: wx.getStorageSync(cacheKey) || [] });
+      return;
+    }
 
     app.request({
-      url: '/feedback',
+      url: '/feedback/history',
       method: 'GET'
     }).then(function (data) {
-      that.setData({ history: (data && data.list) || [] });
+      var history = (data && data.list) || [];
+      wx.setStorageSync(cacheKey, history);
+      that.setData({ history: history });
     }).catch(function () {
-      // history load is optional, skip silently
+      that.setData({ history: wx.getStorageSync(cacheKey) || [] });
     });
   }
 });

@@ -2,6 +2,7 @@ const app = getApp();
 const developmentZones = require('../../../utils/development-zones.js');
 const crossPageStorage = require('../../../utils/cross-page-storage.js');
 const growthShare = require('../../../utils/growth-share.js');
+const painPointApi = require('../../../utils/pain-points.js');
 
 Page({
   data: {
@@ -25,7 +26,34 @@ Page({
   },
 
   onLoad(options) {
+    if (options && options.painPointKey) {
+      this.loadPainPoint(decodeURIComponent(String(options.painPointKey)));
+      return;
+    }
     this.loadZone(options && options.zone ? String(options.zone) : '');
+  },
+
+  loadPainPoint: function(key) {
+    var that = this;
+    return painPointApi.readDetail(app, key).then(function(result) {
+      var point = result.item;
+      if (!point) { that.setData({ loadError: '这个成长痛点暂时没有内容' }); return result; }
+      var action = point.todayAction || {};
+      var scenario = {
+        code: point.key, title: point.title, symptomText: point.description,
+        parentCheck: (point.observableSigns || []).join('、') || '观察孩子在家庭场景中的具体表现。',
+        todayAction: action.title || action.action || '先做一个 3 分钟小练习',
+        parentScript: point.parentPrompt || '我先陪你做一小步，做完我们再看下一步。',
+        observeSignal: (point.observeSignals || []).join('、'),
+        developmentalFocus: (point.possibleReasons || []).join('、'),
+        practicePrinciples: [], difficultySteps: action.steps || [], progressSignals: point.observeSignals || [],
+        adjustmentSignals: [], commonPitfalls: [], safetyBoundary: '', media: point.media || []
+      };
+      var zone = { code: point.key, title: point.categoryLabel || '成长痛点', subtitle: point.description, actionText: '今天做一步', theme: { color: '#2AAE9B' }, scenarios: [scenario], sevenDayPlan: [] };
+      that.setData({ zoneCode: zone.code, zone: zone, scenarios: [scenario], scenarioGroups: that.buildScenarioGroups([scenario]), selectedAgeGroup: '当前孩子', selectedScenarioCode: scenario.code, selectedScenario: scenario, activePractice: that.buildActivePractice(scenario), contentSource: result.source, isFallback: result.fallback, professionalBoundary: that.getProfessionalBoundary(zone.code) });
+      wx.setNavigationBarTitle({ title: scenario.title });
+      return result;
+    });
   },
 
   onShow() {
@@ -238,7 +266,7 @@ Page({
       childId: this.data.currentChild && this.data.currentChild.id,
       source: 'development_detail'
     });
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
@@ -255,7 +283,7 @@ Page({
       childId: this.data.currentChild && this.data.currentChild.id,
       source: 'development_detail'
     });
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

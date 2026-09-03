@@ -193,11 +193,11 @@ const demoSnapshot = {
         key: 'content_low_completion',
         title: '高浏览低完成内容',
         priority: 'medium',
-        summary: '近一周有 928 位内容用户，内容相关事件 1586 次，其中 1218 次带有可分析明细。',
+        summary: '近一周有 928 位用户使用内容，产生 1586 次使用记录，其中 1218 次记录信息完整。',
         metric: '76.80%',
         metric_label: '内容埋点明细覆盖率',
         recommendation: '优先补齐内容浏览与完成埋点中的 content_type 和 content_id，随后继续观察具体内容完成率。',
-        evidence: '当前仍有 368 次内容事件缺少明细。缺失最多的是 task_complete(196)、knowledge_detail_view(118)、retell_complete(54)。'
+        evidence: '当前仍有 368 次内容使用记录缺少详细信息，主要集中在任务完成、知识详情查看和复述完成。'
       },
       {
         key: 'membership_recall',
@@ -417,6 +417,94 @@ const demoSnapshot = {
 
 apiBaseText.textContent = API_BASE;
 initializeAnalyticsFilters();
+
+window.AdminPortal = { request, escapeHtml, state };
+
+const articleDraftForm = document.getElementById('articleDraftForm');
+const articleDraftStatus = document.getElementById('articleDraftStatus');
+const ticketQueue = document.getElementById('ticketQueue');
+const loadTicketsButton = document.getElementById('loadTicketsButton');
+const membershipConfigForm = document.getElementById('membershipConfigForm');
+const membershipConfigInput = document.getElementById('membershipConfigInput');
+const membershipConfigStatus = document.getElementById('membershipConfigStatus');
+const membershipConfigPreview = document.getElementById('membershipConfigPreview');
+const membershipConfigVersions = document.getElementById('membershipConfigVersions');
+const operationsUsersList = document.getElementById('operationsUsersList');
+const operationsUsersStatus = document.getElementById('operationsUsersStatus');
+
+function showMembershipConfig(config) {
+  membershipConfigInput.value = JSON.stringify({ entry: config.entry, benefits: config.benefits, plans: config.plans }, null, 2);
+}
+
+async function loadMembershipConfig() {
+  const payload = await loadOperationResource('/membership/config');
+  showMembershipConfig(payload.data);
+  membershipConfigStatus.textContent = `当前页面记录 v${payload.data.version} · ${payload.data.publish_status}`;
+  const versions = await loadOperationResource('/membership/config/versions');
+  membershipConfigVersions.innerHTML = (versions.list || []).map((item) => `<div class="ranking-item"><strong>第 ${item.version} 次修改</strong><span>${escapeHtml(item.review_status)} · ${escapeHtml(item.publish_status)}</span><button type="button" class="ghost restore-membership-version" data-version="${item.version}">恢复这次修改</button></div>`).join('');
+  membershipConfigVersions.querySelectorAll('.restore-membership-version').forEach((button) => button.addEventListener('click', () => membershipConfigAction('/membership/config/restore', { version: Number(button.dataset.version) })));
+}
+
+async function membershipConfigAction(path, body) {
+  try {
+    await loadOperationResource(path, { method: 'POST', body: JSON.stringify(body || {}) });
+    membershipConfigStatus.textContent = '会员页面操作已完成';
+    await loadMembershipConfig();
+  } catch (error) { membershipConfigStatus.textContent = error.message; }
+}
+
+if (membershipConfigForm) membershipConfigForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  try {
+    const config = JSON.parse(membershipConfigInput.value);
+    await loadOperationResource('/membership/config', { method: 'POST', body: JSON.stringify(config) });
+    membershipConfigStatus.textContent = '会员页面草稿已保存';
+    await loadMembershipConfig();
+  } catch (error) { membershipConfigStatus.textContent = error.message || '配置 JSON 无效'; }
+});
+const previewMembershipConfigButton = document.getElementById('previewMembershipConfigButton');
+if (previewMembershipConfigButton) previewMembershipConfigButton.addEventListener('click', async () => {
+  try {
+    const result = await loadOperationResource('/membership/config/preview', { method: 'POST', body: membershipConfigInput.value });
+    membershipConfigPreview.innerHTML = `<div class="ranking-item"><strong>${escapeHtml(result.data.entry.title)}</strong><span>${escapeHtml(result.data.entry.subtitle)}</span><small>${result.data.plans.length} 个套餐 / ${result.data.benefits.length} 项权益</small></div>`;
+  } catch (error) { membershipConfigStatus.textContent = error.message || '配置 JSON 无效'; }
+});
+[['submitMembershipReviewButton', '/membership/config/submit-review'], ['approveMembershipButton', '/membership/config/approve'], ['publishMembershipButton', '/membership/config/publish'], ['offlineMembershipButton', '/membership/config/offline']].forEach(([id, path]) => {
+  const button = document.getElementById(id);
+  if (button) button.addEventListener('click', () => membershipConfigAction(path));
+});
+
+const loadOperationsUsersButton = document.getElementById('loadOperationsUsersButton');
+if (loadOperationsUsersButton) loadOperationsUsersButton.addEventListener('click', async () => {
+  operationsUsersStatus.textContent = '正在加载待跟进用户...';
+  try {
+    const payload = await loadOperationResource('/users/operations?limit=20');
+    operationsUsersList.innerHTML = (payload.data.items || []).map((item) => `<div class="ranking-item"><strong>${escapeHtml(item.nickname)}</strong><span>${escapeHtml(item.membership_status)} · ${escapeHtml(item.activity_status)}</span><small>最近使用：${escapeHtml(formatDateTime(item.last_active_at) || '-')} · 联系记录：${item.service_record_count}</small></div>`).join('') || '<p class="hint">暂无待跟进用户</p>';
+    operationsUsersStatus.textContent = '待跟进用户已更新';
+  } catch (error) { operationsUsersStatus.textContent = error.message; }
+});
+
+async function loadOperationResource(path, options) {
+  const response = await fetch(`${API_BASE}${path}`, Object.assign({ headers: { Authorization: `Bearer ${state.token}`, 'Content-Type': 'application/json' } }, options || {}));
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.message || '请求失败');
+  return payload;
+}
+
+if (articleDraftForm) articleDraftForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  try {
+    const payload = await loadOperationResource('/articles', { method: 'POST', body: JSON.stringify({ title: document.getElementById('articleTitleInput').value, summary: document.getElementById('articleSummaryInput').value, content: document.getElementById('articleContentInput').value }) });
+    articleDraftStatus.textContent = payload.success ? '草稿已保存' : '保存失败';
+  } catch (error) { articleDraftStatus.textContent = error.message; }
+});
+
+if (loadTicketsButton) loadTicketsButton.addEventListener('click', async () => {
+  try {
+    const payload = await loadOperationResource('/support/tickets?status=pending');
+    ticketQueue.innerHTML = (payload.list || []).map((item) => `<div class="ranking-item"><strong>#${escapeHtml(item.id)} ${escapeHtml(item.type)}</strong><span>${escapeHtml(item.status)} · ${escapeHtml(item.contact || '联系方式已隐藏')}</span><small>${escapeHtml(item.content)}</small></div>`).join('') || '<p class="hint">暂无待处理反馈</p>';
+  } catch (error) { ticketQueue.textContent = error.message; }
+});
 updateAuthState();
 syncSegmentFilterButtons();
 
@@ -579,6 +667,8 @@ if (state.token) {
   });
 }
 
+if (window.AdminOperations) window.AdminOperations.init();
+
 async function loadDashboard() {
   let me;
   try {
@@ -663,7 +753,7 @@ function renderDashboard(snapshot) {
     score: formatNumber(item.view_count),
     meta: `${item.content_type_label || formatContentTypeLabel(item.content_type)} / 完成 ${formatNumber(item.completion_count)} / 收藏 ${formatNumber(item.favorite_count)}`
   }));
-  ['growthLoop', 'ageAbility', 'contentGovernance', 'membershipConversion', 'eventQuality'].forEach((key) => {
+  ['growthLoop', 'ageAbility', 'contentGovernance', 'membershipConversion', 'eventQuality', 'operationsQuality'].forEach((key) => {
     if (snapshot[key]) {
       state.analyticsModules[key] = { data: snapshot[key], updatedAt: new Date(), error: null };
       renderAnalyticsModule(key, snapshot[key]);
@@ -678,7 +768,8 @@ async function loadAnalyticsModules() {
     ['ageAbility', `/analytics/age-ability${query}`, { items: [], content_supply: [] }],
     ['contentGovernance', `/analytics/content-coverage${query}`, { coverage_matrix: [], gaps: [], quality: {} }],
     ['membershipConversion', `/analytics/membership-conversion${query}`, { items: [], totals: {} }],
-    ['eventQuality', `/analytics/event-quality${query}`, { field_completeness: 0, unknown_values: [] }]
+    ['eventQuality', `/analytics/event-quality${query}`, { field_completeness: 0, unknown_values: [] }],
+    ['operationsQuality', `/analytics/operations-quality${query}`, { content_operations: {}, support_operations: {} }]
   ];
   await Promise.all(modules.map(async ([key, path, fallback]) => {
     setModuleLoading(key);
@@ -703,6 +794,7 @@ function renderAnalyticsModule(key, data) {
   if (key === 'contentGovernance') renderContentGovernance(container, snapshotData);
   if (key === 'membershipConversion') renderMembershipConversion(container, snapshotData);
   if (key === 'eventQuality') renderEventQuality(container, snapshotData);
+  if (key === 'operationsQuality') renderOperationsQuality(container, snapshotData);
   const module = state.analyticsModules[key];
   setText(`${key}Updated`, module && module.updatedAt ? `更新 ${formatDateTime(module.updatedAt)}` : '未更新');
   if (!module || !module.error) setModuleStatus(key, '数据已加载', 'success');
@@ -710,9 +802,9 @@ function renderAnalyticsModule(key, data) {
 
 function renderGrowthLoop(container, data) {
   const items = data.event_funnel || [];
-  if (!items.length) return renderModuleEmpty(container, '当前区间暂无成长闭环数据。');
+  if (!items.length) return renderModuleEmpty(container, '当前区间暂无用户使用路径数据。');
   const base = Number(items[0].user_count || 0);
-  container.innerHTML = `<div class="module-metrics">${items.map((item) => `<div class="module-metric"><span>${escapeHtml(formatAnalyticsStep(item.step_key))}</span><strong>${formatNumber(item.user_count)}</strong><small>${formatNumber(item.event_count)} 事件 / ${formatPercent(calculatePercentage(item.user_count, base))}</small></div>`).join('')}</div>`;
+  container.innerHTML = `<div class="module-metrics">${items.map((item) => `<div class="module-metric"><span>${escapeHtml(formatAnalyticsStep(item.step_key))}</span><strong>${formatNumber(item.user_count)}</strong><small>${formatNumber(item.event_count)} 次使用 / ${formatPercent(calculatePercentage(item.user_count, base))}</small></div>`).join('')}</div>`;
 }
 
 function renderAgeAbility(container, data) {
@@ -726,8 +818,8 @@ function renderContentGovernance(container, data) {
   const matrix = data.coverage_matrix || data.items || [];
   const gaps = data.gaps || data.gap_list || [];
   const quality = data.quality || {};
-  if (!matrix.length && !gaps.length && !Object.keys(quality).length) return renderModuleEmpty(container, '当前暂无知识治理数据。');
-  container.innerHTML = `<div class="governance-summary"><span>零消费 ${formatNumber(quality.zero_consumption)}</span><span>低完成 ${formatNumber(quality.low_completion)}</span><span>缺来源 ${formatNumber(quality.missing_source)}</span><span>低证据 ${formatNumber(quality.low_evidence)}</span></div><div class="governance-list">${gaps.slice(0, 6).map((item) => `<div class="governance-gap ${item.severity === 'high' ? 'is-high' : ''}"><strong>${escapeHtml(item.title || item.label || '-')}</strong><span>${escapeHtml(item.reason || '存在覆盖缺口')}</span></div>`).join('')}</div><div class="matrix-compact">${matrix.slice(0, 8).map((item) => `<span>${escapeHtml(formatAgeLabel(item.age_segment_code))} · ${escapeHtml(formatAbilityLabel(item.ability_code))} ${formatNumber(item.published_count || item.content_count)}</span>`).join('')}</div>`;
+  if (!matrix.length && !gaps.length && !Object.keys(quality).length) return renderModuleEmpty(container, '当前暂无内容供给数据。');
+  container.innerHTML = `<div class="governance-summary"><span>没人使用 ${formatNumber(quality.zero_consumption)}</span><span>完成较少 ${formatNumber(quality.low_completion)}</span><span>缺少来源 ${formatNumber(quality.missing_source)}</span><span>依据较少 ${formatNumber(quality.low_evidence)}</span></div><div class="governance-list">${gaps.slice(0, 6).map((item) => `<div class="governance-gap ${item.severity === 'high' ? 'is-high' : ''}"><strong>${escapeHtml(item.title || item.label || '-')}</strong><span>${escapeHtml(item.reason || '这里需要补充内容')}</span></div>`).join('')}</div><div class="matrix-compact">${matrix.slice(0, 8).map((item) => `<span>${escapeHtml(formatAgeLabel(item.age_segment_code))} · ${escapeHtml(formatAbilityLabel(item.ability_code))} ${formatNumber(item.published_count || item.content_count)} 条</span>`).join('')}</div>`;
 }
 
 function renderMembershipConversion(container, data) {
@@ -738,9 +830,17 @@ function renderMembershipConversion(container, data) {
 }
 
 function renderEventQuality(container, data) {
-  const metrics = [['公共字段完整率', data.field_completeness], ['未知代码率', data.unknown_code_rate], ['重复事件率', data.duplicate_rate], ['迟到事件率', data.late_event_rate], ['无孩子标识', data.missing_child_rate]];
-  if (!metrics.some(([, value]) => Number(value || 0) > 0) && !(data.unknown_values || []).length) return renderModuleEmpty(container, '当前区间暂无事件质量数据。');
+  const metrics = [['信息完整率', data.field_completeness], ['无法识别的记录', data.unknown_code_rate], ['重复记录', data.duplicate_rate], ['延迟记录', data.late_event_rate], ['缺少孩子信息', data.missing_child_rate]];
+  if (!metrics.some(([, value]) => Number(value || 0) > 0) && !(data.unknown_values || []).length) return renderModuleEmpty(container, '当前区间暂无数据采集情况。');
   container.innerHTML = `<div class="quality-metrics">${metrics.map(([label, value]) => `<div><span>${label}</span><strong>${formatPercent(value)}</strong></div>`).join('')}</div><div class="unknown-values">${(data.unknown_values || []).slice(0, 4).map((item) => `<span>${escapeHtml(item.field)}=${escapeHtml(item.value)} (${formatNumber(item.count)})</span>`).join('')}</div>`;
+}
+
+function renderOperationsQuality(container, data) {
+  const content = data.content_operations || {};
+  const support = data.support_operations || {};
+  const metrics = [['已上线内容', content.published_count], ['平均审核时间', `${formatNumber(content.average_review_hours)} 小时`], ['内容使用次数', content.content_usage_count], ['媒体加载失败', content.media_failure_count], ['找回旧内容', content.version_restore_count], ['待处理反馈', support.pending_count], ['平均处理时间', `${formatNumber(support.average_processing_hours)} 小时`], ['回访完成率', formatPercent(support.callback_completion_rate)], ['已完成反馈', support.closed_count]];
+  if (!metrics.some(([, value]) => Number(value) > 0)) return renderModuleEmpty(container, '当前区间暂无内容和家长服务数据。');
+  container.innerHTML = `<div class="quality-metrics">${metrics.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value || 0))}</strong></div>`).join('')}</div>`;
 }
 
 function renderModuleEmpty(container, message) { container.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`; }
@@ -776,7 +876,7 @@ async function request(path, options = {}) {
     error.code = payload.code || '';
     throw error;
   }
-  return payload.data;
+  return payload.data === undefined ? payload : payload.data;
 }
 
 async function safeRequest(path, fallback) {
@@ -1001,7 +1101,7 @@ function renderConversionFunnel(items) {
   const container = document.getElementById('conversionFunnel');
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前暂无转化漏斗数据。</div>';
+    container.innerHTML = '<div class="empty-state">当前暂无会员转化数据。</div>';
     return;
   }
   items.forEach((item) => {
@@ -1031,22 +1131,22 @@ function renderCoreActionFunnel(data) {
   renderCoreActionDimensionFunnel('coreActionAgeSegmentFunnel', (data && data.age_segment_items) || [], {
     titleField: 'age_segment_label',
     keyField: 'age_segment_key',
-    emptyMessage: '当前暂无按年龄段拆分的第一动作漏斗。'
+    emptyMessage: '当前暂无按年龄段查看的首次行动数据。'
   });
   renderCoreActionDimensionFunnel('coreActionCategoryFunnel', (data && data.category_items) || [], {
     titleField: 'category_label',
     keyField: 'category_key',
-    emptyMessage: '当前暂无按类别拆分的第一动作漏斗。'
+    emptyMessage: '当前暂无按问题类别查看的首次行动数据。'
   });
   renderCoreActionDimensionFunnel('coreActionPainPointFunnel', (data && data.pain_point_items) || [], {
     titleField: 'pain_point_title',
     keyField: 'pain_point_key',
-    emptyMessage: '当前暂无按痛点拆分的第一动作漏斗。'
+    emptyMessage: '当前暂无按成长痛点查看的首次行动数据。'
   });
   renderCoreActionDimensionFunnel('coreActionAbilityFunnel', (data && data.ability_items) || [], {
     titleField: 'ability_label',
     keyField: 'ability_tag',
-    emptyMessage: '当前暂无按能力标签拆分的第一动作漏斗。'
+    emptyMessage: '当前暂无按能力方向查看的首次行动数据。'
   });
 }
 
@@ -1057,7 +1157,7 @@ function renderCoreActionSceneFunnel(items) {
   }
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前暂无按场景拆分的第一动作漏斗。</div>';
+    container.innerHTML = '<div class="empty-state">当前暂无按生活场景查看的首次行动数据。</div>';
     return;
   }
   items.forEach((item) => {
@@ -1141,7 +1241,7 @@ function renderAgeFeaturePreferences(groups) {
   const container = document.getElementById('ageFeaturePreferences');
   container.innerHTML = '';
   if (!groups || !groups.length) {
-    container.innerHTML = '<div class="empty-state">当前暂无年龄段功能偏好数据。</div>';
+    container.innerHTML = '<div class="empty-state">当前暂无不同年龄的常用功能数据。</div>';
     return;
   }
   groups.forEach((group) => {
@@ -1153,7 +1253,7 @@ function renderAgeFeaturePreferences(groups) {
           <span class="distribution-name">${escapeHtml(item.feature_label || item.feature_key || '-')}</span>
           <strong>${escapeHtml(formatNumber(item.user_count))}</strong>
         </div>
-        <span class="distribution-meta">事件 ${escapeHtml(formatNumber(item.event_count))}</span>
+        <span class="distribution-meta">使用 ${escapeHtml(formatNumber(item.event_count))} 次</span>
       </div>
     `).join('');
     node.innerHTML = `
@@ -1207,8 +1307,8 @@ function renderUserSegments(items) {
   const container = document.getElementById('userSegments');
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前暂无用户分层数据。</div>';
-    renderSegmentUsersPanel(null, [], '当前暂无可展示的分层明细。');
+    container.innerHTML = '<div class="empty-state">当前暂无用户跟进数据。</div>';
+    renderSegmentUsersPanel(null, [], '当前暂无可展示的用户名单。');
     return;
   }
   const defaultSegmentKey = state.activeSegmentKey && items.some((item) => item.key === state.activeSegmentKey)
@@ -1246,10 +1346,10 @@ async function loadSegmentUsers(segment) {
     return;
   }
   if (!state.token) {
-    renderSegmentUsersPanel(segment, [], '当前为演示外的未登录状态，登录后可查看真实分层名单。');
+    renderSegmentUsersPanel(segment, [], '登录后可查看真实用户名单。');
     return;
   }
-  renderSegmentUsersPanel(segment, [], '正在加载分层用户名单...');
+  renderSegmentUsersPanel(segment, [], '正在加载用户名单...');
   try {
     const query = new URLSearchParams({ limit: '20' });
     if (state.segmentFilters.expiringOnly) {
@@ -1262,7 +1362,7 @@ async function loadSegmentUsers(segment) {
     state.segmentUsersByKey[cacheKey] = data;
     renderSegmentUsersPanel(data.segment || segment, data.items || []);
   } catch (error) {
-    renderSegmentUsersPanel(segment, [], error.message || '分层名单加载失败');
+    renderSegmentUsersPanel(segment, [], error.message || '用户名单加载失败');
   }
 }
 
@@ -1293,11 +1393,11 @@ function syncSegmentFilterButtons() {
 
 function exportCurrentSegmentUsers() {
   if (!state.activeSegmentMeta || !state.currentSegmentUsers.length) {
-    setHint('当前没有可导出的分层名单。', 'status-error');
+    setHint('当前没有可导出的用户名单。', 'status-error');
     return;
   }
   const rows = [
-    ['分层', '昵称', '手机号', '孩子', '年龄段', '会员类型', '累计支付', '支付单数', '最近活跃', '近14天活跃事件', '会员到期', '自动续费', '触达优先级', '建议动作']
+    ['用户类型', '昵称', '手机号', '孩子', '年龄段', '会员类型', '累计支付', '支付单数', '最近使用', '近14天使用次数', '会员到期', '自动续费', '联系优先级', '建议动作']
   ];
   state.currentSegmentUsers.forEach((item) => {
     rows.push([
@@ -1327,7 +1427,7 @@ function exportCurrentSegmentUsers() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  setHint('当前分层名单已导出为 CSV。', 'status-success');
+  setHint('当前用户名单已导出为 CSV。', 'status-success');
 }
 
 function buildSegmentExportFileName() {
@@ -1362,7 +1462,7 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
   const meta = document.getElementById('segmentUsersMeta');
   const container = document.getElementById('segmentUsersList');
   state.currentSegmentUsers = Array.isArray(items) ? items : [];
-  title.textContent = segment ? `${segment.label || segment.key}名单` : '分层用户名单';
+  title.textContent = segment ? `${segment.label || segment.key}用户` : '待跟进用户';
 
   // 汇总统计
   const totalCount = state.currentSegmentUsers.length;
@@ -1371,14 +1471,14 @@ function renderSegmentUsersPanel(segment, items, emptyMessage) {
   const withPhoneCount = state.currentSegmentUsers.filter((u) => u.phone).length;
   meta.innerHTML = segment
     ? `<span>${escapeHtml(segment.description || '')}</span>`
-    : '选择一个分层查看最近 20 个用户';
+    : '选择一类用户查看名单';
   meta.innerHTML += totalCount > 0
     ? `<span class="segment-summary-stats">当前 ${totalCount} 人 | 累计支付 ¥${formatNumber(totalAmount)} | 高优先 ${highCount} 人 | 有手机号 ${withPhoneCount} 人</span>`
     : '';
 
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage || '当前分层暂无用户样本。')}</div>`;
+    container.innerHTML = `<div class="empty-state">${escapeHtml(emptyMessage || '当前这类用户暂时没有名单。')}</div>`;
     return;
   }
 
@@ -1483,7 +1583,7 @@ function renderTrendLine(containerId, items, valueKey, tone) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
   if (!items || !items.length) {
-    container.innerHTML = '<div class="empty-state">当前区间暂无聚合数据。请稍后刷新或重新生成运营统计。</div>';
+    container.innerHTML = '<div class="empty-state">当前区间暂无运营数据，请稍后刷新。</div>';
     return;
   }
   const values = items.map((item) => Number(item[valueKey] || 0));
@@ -1649,7 +1749,7 @@ function renderContentOpsOverview(data) {
       value: formatNumber(coreGapToTarget) + ' 条',
       meta: coreGapToTarget > 0
         ? '优先覆盖吃饭、睡觉、情绪、阅读、专注、如厕、入园等高频场景的 2-6 岁年龄段。'
-        : '核心场景已达标，可继续推进全量内容治理。'
+        : '核心场景已达标，可以继续补充更多内容。'
     },
     {
       label: '高价值待整理',
@@ -1661,7 +1761,7 @@ function renderContentOpsOverview(data) {
     {
       label: '全量整理率',
       value: formatPercent(tips.structured_ready_rate),
-      meta: `${formatNumber(readyTips)} / ${formatNumber(totalTips)} 条已整理好，作为长期内容治理指标。`
+      meta: `${formatNumber(readyTips)} / ${formatNumber(totalTips)} 条已整理好，可继续补充长期内容。`
     },
     {
       label: '文章分类进度',

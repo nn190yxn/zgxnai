@@ -30,6 +30,9 @@ var ENV_CONFIG = {
     enableAgeFirstCore: true,
     coreRefactorRolloutPercent: 100,
     coreRefactorUserWhitelist: []
+    ,enableServerContentRead: false
+    ,enableMiniprogramRemoteContent: false
+    ,enableAdminContentWrite: false
   },
   production: {
     apiBaseUrl: 'https://api.woyai.cn/api/v1',
@@ -57,6 +60,9 @@ var ENV_CONFIG = {
     enableAgeFirstCore: false,
     coreRefactorRolloutPercent: 0,
     coreRefactorUserWhitelist: []
+    ,enableServerContentRead: false
+    ,enableMiniprogramRemoteContent: false
+    ,enableAdminContentWrite: false
   }
 };
 

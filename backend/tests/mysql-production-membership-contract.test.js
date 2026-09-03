@@ -41,17 +41,18 @@ describe('生产会员与推荐接口契约', () => {
     expect(serverSource).toContain("app.get(`${prefix}/education/knowledge/detail`, authenticateToken, requireActiveMembership, asyncHandler(educationKnowledgeDetailHandler));");
   });
 
-  it('数据库初始化失败时阻止生产服务监听端口', () => {
+  it('数据库初始化失败时进入安全模式并保留核心服务', () => {
     const bootstrapStart = serverSource.indexOf('async function bootstrap()');
     const bootstrapEnd = serverSource.indexOf('async function ensureAdminBootstrapUser()', bootstrapStart);
     const bootstrapSource = serverSource.slice(bootstrapStart, bootstrapEnd);
 
-    expect(bootstrapSource).toContain('await runMigrations(pool);');
-    expect(bootstrapSource).toContain('await ensureProductionTables();');
-    expect(bootstrapSource).toContain('await ensureAdminBootstrapUser();');
+    expect(bootstrapSource).toContain("await runStartupStep('migrations', () => runMigrations(pool));");
+    expect(bootstrapSource).toContain("await runStartupStep('legacy_schema', () => ensureProductionTables());");
+    expect(bootstrapSource).toContain("await runStartupStep('admin_bootstrap', () => ensureAdminBootstrapUser());");
+    expect(bootstrapSource).toContain('safe_mode=${startupState.safeMode}');
     expect(bootstrapSource).not.toContain('MySQL init skipped');
-    expect(serverSource).toContain("bootstrap().catch((err) => {");
-    expect(serverSource).toContain('process.exit(1);');
+    expect(serverSource).toContain('bootstrap().catch(async (err) => {');
+    expect(serverSource).toContain("event: 'startup_unhandled_failure'");
   });
 
   it('事件埋点表使用 MySQL 8.0 兼容的幂等列与索引初始化', () => {

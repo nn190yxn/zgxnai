@@ -25,6 +25,13 @@
 
 ## 条目
 
+[后端 Jest 环境限制]
+- Date: 2026-09-02
+- Context: Agent 在执行小程序核心体验接入后的完整验证时发现
+- Category: 环境配置
+- Instructions:
+  - `backend` 目录的 `npm test -- --runInBand` 当前因环境缺少 `jest` 而无法启动，错误为 `sh: 1: jest: not found`。
+
 [生产 API 域名与小程序配置]
 - Date: 2026-06-09
 - Category: 环境配置

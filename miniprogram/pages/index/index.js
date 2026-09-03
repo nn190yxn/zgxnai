@@ -1124,7 +1124,7 @@ Page({
       childId: currentChild && currentChild.id,
       source: 'home_core_action_result'
     });
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
@@ -2386,7 +2386,7 @@ Page({
     if (!this.ensureFeatureEnabled('aiChat', '小牛问答还在准备中')) {
       return;
     }
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/chat/chat',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

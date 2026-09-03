@@ -1,5 +1,6 @@
 const app = getApp();
 const developmentZones = require('../../../utils/development-zones.js');
+const painPoints = require('../../../utils/pain-points.js');
 
 Page({
   data: {
@@ -8,7 +9,10 @@ Page({
     loading: false,
     contentSource: 'local_fallback',
     isFallback: true,
-    loadError: ''
+    loadError: '',
+    painPoints: [],
+    painPointSource: 'local_fallback',
+    painPointCategory: ''
   },
 
   onLoad() {
@@ -18,6 +22,30 @@ Page({
       featuredZones: localCards.filter(function(item) { return item.isPrimary; })
     });
     this.loadZones();
+    this.loadPainPoints();
+  },
+
+  loadPainPoints: function() {
+    var that = this;
+    return painPoints.readList(app, {}).then(function(result) {
+      that.setData({ painPoints: result.list, painPointSource: result.source });
+      return result;
+    });
+  },
+
+  selectPainPointCategory: function(e) {
+    this.setData({ painPointCategory: e.currentTarget.dataset.category || '' });
+  },
+
+  visiblePainPoints: function() {
+    var category = this.data.painPointCategory;
+    return (this.data.painPoints || []).filter(function(item) { return !category || item.category === category || item.categoryKey === category; });
+  },
+
+  openPainPoint: function(e) {
+    var key = e.currentTarget.dataset.key || '';
+    if (!key) return;
+    wx.navigateTo({ url: '/pages/development/detail/detail?painPointKey=' + encodeURIComponent(key) });
   },
 
   loadZones() {

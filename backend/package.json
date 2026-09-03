@@ -32,6 +32,8 @@
     "prepare:knowledge:raw-text": "node src/scripts/prepare-raw-text-knowledge.js",
     "normalize:imported-knowledge": "node src/scripts/normalize-imported-knowledge.js",
     "import:knowledge": "node src/scripts/import-knowledge-base.js",
+    "import:pain-points": "node src/scripts/import-pain-points.js",
+    "publish:due-content": "node src/scripts/publish-due-content.js",
     "backup": "node src/scripts/backup.js",
     "restore": "node src/scripts/restore.js",
     "start:mysql": "node src/mysql-production/server.js",

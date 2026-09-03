@@ -29,6 +29,9 @@ function normalizeRuntimeConfig(payload) {
     sceneSearchEnabled: data.scene_search_enabled !== undefined ? !!data.scene_search_enabled : true,
     coreRefactorEnabled: coreRefactorEnabled,
     ageFirstCoreEnabled: ageFirstCoreEnabled,
+    serverContentReadEnabled: data.server_content_read_enabled !== undefined ? !!data.server_content_read_enabled : envConfig.enableServerContentRead === true,
+    miniprogramRemoteContentEnabled: data.miniprogram_remote_content_enabled !== undefined ? !!data.miniprogram_remote_content_enabled : envConfig.enableMiniprogramRemoteContent === true,
+    adminContentWriteEnabled: data.admin_content_write_enabled !== undefined ? !!data.admin_content_write_enabled : envConfig.enableAdminContentWrite === true,
     coreRefactorRolloutPercent: Math.max(0, Math.min(100, isNaN(rolloutPercent) ? 0 : rolloutPercent)),
     coreRefactorUserWhitelist: normalizeStringList(whitelistSource),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
@@ -138,6 +141,9 @@ function isFeatureEnabled(app, featureName) {
   if (featureName === 'ageFirstCore') {
     return !!config.ageFirstCoreEnabled;
   }
+  if (featureName === 'serverContentRead') return !!config.serverContentReadEnabled;
+  if (featureName === 'miniprogramRemoteContent') return !!config.miniprogramRemoteContentEnabled;
+  if (featureName === 'adminContentWrite') return !!config.adminContentWriteEnabled;
   return true;
 }
 

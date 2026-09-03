@@ -244,9 +244,9 @@ Page({
         });
       }
     }).catch(function() {
-      if (currentPage === 1 && app.shouldUseMockFallback()) {
+      if (currentPage === 1) {
         that.setData({
-          articleList: that.getLocalArticles(),
+          articleList: that.getLocalArticles().map(function(item) { return that.normalizeArticleCard(item); }),
           hasMore: false,
           page: 2
         });

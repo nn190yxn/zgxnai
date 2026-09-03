@@ -7,6 +7,7 @@
   </view>
 
   <block wx:if="{{zone}}">
+    <media-gallery items="{{selectedScenario.media}}" />
     <view class="section-card age-card">
       <view class="section-head">
         <text class="section-title">先选年龄段</text>

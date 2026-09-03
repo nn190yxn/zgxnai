@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 let mysql = null;
 const { aggregateContentCoverage, aggregateEventQuality } = require('../mysql-production/analytics-quality');
+const { aggregateOperationsMetrics, aggregateSupportMetrics } = require('../mysql-production/operations-analytics');
 
 async function main() {
   loadEnv(path.resolve(__dirname, '../../../.env'));
@@ -28,6 +29,7 @@ async function main() {
     await rebuildDailyContentStats(connection, statDate);
     await rebuildDailyFunnelStats(connection, statDate);
     await rebuildAnalyticsAggregates(connection, statDate);
+    await rebuildOperationsQualityStats(connection, statDate);
     await connection.commit();
     console.log(`Admin daily stats updated for ${statDate}`);
   } catch (error) {
@@ -36,6 +38,23 @@ async function main() {
   } finally {
     connection.release();
     await pool.end();
+  }
+}
+
+async function rebuildOperationsQualityStats(pool, statDate) {
+  const [versions] = await pool.execute('SELECT created_at, publish_status, published_at FROM content_versions WHERE created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate]);
+  const [reviews] = await pool.execute('SELECT r.created_at, r.decision, v.created_at AS submitted_at, r.created_at AS reviewed_at FROM content_reviews r LEFT JOIN content_versions v ON v.id = r.content_version_id WHERE r.created_at >= ? AND r.created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
+  const [media] = await pool.execute('SELECT status, created_at, updated_at FROM media_assets WHERE updated_at >= ? AND updated_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
+  const [usage] = await pool.execute(`SELECT created_at, event_type FROM event_tracks WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND (event_type LIKE '%content%' OR event_type LIKE 'article_%' OR event_type LIKE 'knowledge_%' OR event_type LIKE 'task_%' OR event_type LIKE 'recipe_%')`, [statDate, statDate]);
+  const [restores] = await pool.execute(`SELECT created_at FROM admin_audit_logs WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND action_type LIKE '%restore%'`, [statDate, statDate]);
+  const [tickets] = await pool.execute('SELECT status, created_at, updated_at FROM support_tickets WHERE created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate]);
+  const [ticketEvents] = await pool.execute('SELECT event_type, callback_method, callback_result, created_at FROM support_ticket_events WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
+  const aggregates = [
+    ['operations_quality', aggregateOperationsMetrics({ versions, reviews, media, usage, restores }, { startDate: statDate, endDate: statDate })],
+    ['support_quality', aggregateSupportMetrics({ tickets, events: ticketEvents }, { startDate: statDate, endDate: statDate })]
+  ];
+  for (const [aggregateType, metrics] of aggregates) {
+    await pool.execute(`INSERT INTO analytics_daily_aggregates (stat_date, aggregate_type, age_segment_code, ability_code, membership_status, source_key, metrics, aggregate_version) VALUES (?, ?, '', '', '', '', ?, 1) ON DUPLICATE KEY UPDATE metrics = VALUES(metrics), aggregate_version = VALUES(aggregate_version)`, [statDate, aggregateType, JSON.stringify(metrics)]);
   }
 }
 
@@ -418,5 +437,6 @@ module.exports = {
   buildContentTypeSql,
   buildFeatureKeySql,
   buildNumericContentIdSql,
-  formatDate
+  formatDate,
+  rebuildOperationsQualityStats
 };

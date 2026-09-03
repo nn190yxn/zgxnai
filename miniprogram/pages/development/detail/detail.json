@@ -1,5 +1,5 @@
 {
   "navigationBarTitleText": "发展专区",
   "backgroundColor": "#FAF6F3",
-  "usingComponents": {}
+  "usingComponents": { "media-gallery": "/components/media-gallery/media-gallery" }
 }

@@ -91,6 +91,29 @@ body {
   gap: 22px;
 }
 
+.operations-workbench { padding: 24px; }
+.operations-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.operations-nav a { color: var(--brand-deep); background: rgba(182, 84, 47, .08); border-radius: 999px; padding: 10px 15px; text-decoration: none; }
+.operations-modules { display: grid; gap: 16px; }
+.operation-module { border: 1px solid var(--line); border-radius: 18px; padding: 18px; background: rgba(255,255,255,.58); scroll-margin-top: 18px; }
+.operation-module-body { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(280px, 1.3fr); gap: 16px; }
+.operation-list { display: grid; gap: 8px; align-content: start; }
+.operation-row { display: flex; justify-content: space-between; gap: 12px; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 12px; cursor: pointer; }
+.operation-row span, .permission-badge, .operation-module-status, .editor-state { color: var(--muted); font-size: 12px; }
+.operation-editor { display: grid; gap: 10px; padding: 16px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
+.operation-editor label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+.operation-editor input, .operation-editor textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: inherit; }
+.operation-editor textarea { min-height: 72px; resize: vertical; }
+.editor-heading, .editor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.editor-heading { justify-content: space-between; }
+.editor-heading h4 { margin: 0; }
+.editor-preview-panel { padding: 14px; border-radius: 10px; background: #f7f9fa; line-height: 1.7; }
+.editor-preview-panel img { display: block; max-width: 180px; max-height: 120px; margin-top: 10px; object-fit: cover; }
+.operation-status-loading { color: var(--gold); }
+.operation-status-success { color: var(--teal); }
+.operation-status-error { color: var(--brand-deep); }
+.operation-module-status { display: flex; align-items: center; gap: 10px; min-height: 28px; margin-top: 10px; }
+
 .analytics-filter-panel,
 .analytics-modules-panel {
   padding: 24px;
@@ -1233,3 +1256,10 @@ td {
     gap: 5px;
   }
 }
+ .operations-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+ .operation-form { display: grid; gap: 12px; padding: 20px; border: 1px solid rgba(30, 65, 78, .12); border-radius: 16px; background: #fff; }
+ .operation-form input, .operation-form textarea { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #d9e2e5; border-radius: 10px; font: inherit; }
+ .operation-form textarea { min-height: 90px; resize: vertical; }
+ .operation-form button { justify-self: start; }
+ .ranking-item small { display: block; margin-top: 6px; color: #65747a; }
+ @media (max-width: 800px) { .operations-grid { grid-template-columns: 1fr; } }

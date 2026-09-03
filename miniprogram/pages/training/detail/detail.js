@@ -1,5 +1,6 @@
 var app = getApp();
 var trainingSync = require('../../../utils/training-sync.js');
+var contentSource = require('../../../utils/content-source.js');
 
 Page({
   data: { task: null, selectedFeedback: '', note: '', loading: true, submitting: false, syncStatus: 'synced', syncMessage: '', nextSuggestion: '', feedbackOptions: [{ key: 'smooth', label: '完成顺利' }, { key: 'reminder_needed', label: '需要提醒' }, { key: 'left_early', label: '中途离开' }, { key: 'resisted', label: '孩子有些抗拒' }, { key: 'incomplete', label: '今天未完成' }] },
@@ -31,8 +32,12 @@ Page({
     var child = app.getCurrentChild && app.getCurrentChild();
     if (!child || !child.id) { that.setData({ loading: false }); return; }
     var url = that.taskId ? '/training-tasks/' + that.taskId : '/training-plans/next?childId=' + child.id;
-    app.request({ url: url, method: 'GET' }).then(function(res) {
-      var task = (res.data || res).task;
+    var request = that.taskId
+      ? contentSource.readPublishedOrLegacy(app, 'training_task', that.taskId, url, null).then(function(result) { return result.item; })
+      : app.request({ url: url, method: 'GET' });
+    request.then(function(res) {
+      var payload = res.data || res;
+      var task = payload.task || payload;
       that.setData({ task: task, loading: false });
       that.refreshSyncStatus();
       if (!that._startedTracked) {

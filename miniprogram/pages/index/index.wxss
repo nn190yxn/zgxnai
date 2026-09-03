@@ -2,7 +2,7 @@
 
 .page {
   min-height: 100vh;
-  background: #FAF6F3;
+  background: #F7F9FA;
   padding-bottom: 40rpx;
 }
 
@@ -10,14 +10,14 @@
   min-height: 100vh;
   padding: 120rpx 48rpx;
   box-sizing: border-box;
-  background: #FAF6F3;
+  background: #F7F9FA;
 }
 
 .safe-title {
   display: block;
   font-size: 44rpx;
   font-weight: 800;
-  color: #1B2A1B;
+  color: #243238;
   line-height: 1.45;
 }
 
@@ -25,7 +25,7 @@
   display: block;
   margin-top: 28rpx;
   font-size: 30rpx;
-  color: #FF6B35;
+  color: #2AAE9B;
   font-weight: 700;
 }
 
@@ -40,22 +40,23 @@
 /* 核心重构首屏 */
 .core-hero {
   padding: 32rpx 32rpx 28rpx;
-  background: #F7EFE8;
+  background: #F7F9FA;
 }
 
 .core-hero-content {
   padding: 34rpx 30rpx 30rpx;
   border-radius: 28rpx;
-  background: #2F241F;
-  box-shadow: 0 16rpx 38rpx rgba(70, 42, 28, 0.16);
+  background: #EAF9F6;
+  border: 1rpx solid #D5F0EB;
+  box-shadow: 0 10rpx 28rpx rgba(42, 174, 155, 0.08);
 }
 
 .core-brand {
   display: inline-block;
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
-  background: rgba(255, 244, 234, 0.14);
-  color: #FFE7D2;
+  background: #D4F2EC;
+  color: #287F74;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 700;
@@ -67,7 +68,7 @@
   font-size: 46rpx;
   line-height: 1.28;
   font-weight: 900;
-  color: #FFFFFF;
+  color: #243238;
 }
 
 .core-desc {
@@ -75,14 +76,14 @@
   margin-top: 18rpx;
   font-size: 27rpx;
   line-height: 1.65;
-  color: rgba(255, 246, 238, 0.88);
+  color: #64747B;
 }
 
 .core-primary-action {
   margin-top: 30rpx;
   min-height: 92rpx;
   border-radius: 20rpx;
-  background: #FFFFFF;
+  background: #2AAE9B;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +93,7 @@
   font-size: 29rpx;
   line-height: 1.45;
   font-weight: 900;
-  color: #D85C26;
+  color: #FFFFFF;
 }
 
 .core-status-card {
@@ -181,28 +182,30 @@
   margin-top: 16rpx;
   padding: 24rpx;
   border-radius: 22rpx;
-  background: #2F5A4A;
-  box-shadow: 0 10rpx 28rpx rgba(47, 90, 74, 0.14);
+  background: #FFFFFF;
+  border: 1rpx solid #DCEEEE;
+  box-shadow: 0 10rpx 28rpx rgba(35, 62, 70, 0.06);
 }
 
 .core-today-eyebrow {
-  color: #CBE8D9;
+  color: #2AAE9B;
 }
 
 .core-today-title {
-  color: #FFFFFF;
+  color: #243238;
 }
 
 .core-today-count {
-  background: rgba(255, 255, 255, 0.14);
-  color: #FFFFFF;
+  background: #EAF9F6;
+  color: #287F74;
 }
 
 .core-today-task {
   margin-top: 20rpx;
   padding: 20rpx;
   border-radius: 18rpx;
-  background: rgba(255, 255, 255, 0.12);
+  background: #F7F9FA;
+  border: 1rpx solid #E5ECEE;
 }
 
 .core-today-task-title,
@@ -214,7 +217,7 @@
 .core-today-task-title {
   font-size: 29rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #243238;
   font-weight: 850;
 }
 
@@ -1060,15 +1063,16 @@
   margin: 0 32rpx 24rpx;
   padding: 24rpx 22rpx;
   border-radius: 20rpx;
-  background: #2F241F;
-  box-shadow: 0 12rpx 30rpx rgba(47, 36, 31, 0.12);
+  background: #FFFFFF;
+  border: 1rpx solid #DCEEEE;
+  box-shadow: 0 8rpx 22rpx rgba(35, 62, 70, 0.06);
 }
 
 .core-membership-eyebrow {
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #FFD7B5;
+  color: #2AAE9B;
   font-weight: 850;
 }
 
@@ -1077,7 +1081,7 @@
   margin-top: 8rpx;
   font-size: 31rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #243238;
   font-weight: 900;
 }
 
@@ -1086,7 +1090,7 @@
   margin-top: 10rpx;
   font-size: 24rpx;
   line-height: 1.65;
-  color: rgba(255, 250, 244, 0.86);
+  color: #64747B;
 }
 
 .core-membership-action {
@@ -1094,13 +1098,13 @@
   margin-top: 16rpx;
   font-size: 25rpx;
   line-height: 1.45;
-  color: #FFD7B5;
+  color: #287F74;
   font-weight: 900;
 }
 
 .core-tools {
   padding: 4rpx 32rpx 28rpx;
-  background: #FAF6F3;
+  background: #F7F9FA;
 }
 
 .core-tools-header {
@@ -1111,7 +1115,7 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #243238;
   font-weight: 850;
 }
 
@@ -1120,7 +1124,7 @@
   margin-top: 6rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #64747B;
 }
 
 .core-tool-grid {
@@ -1134,7 +1138,8 @@
   padding: 18rpx 12rpx;
   border-radius: 18rpx;
   background: #FFFFFF;
-  box-shadow: 0 6rpx 18rpx rgba(93, 62, 45, 0.06);
+  border: 1rpx solid #E5ECEE;
+  box-shadow: 0 6rpx 18rpx rgba(35, 62, 70, 0.04);
   box-sizing: border-box;
   min-width: 0;
 }
@@ -1144,7 +1149,7 @@
   text-align: center;
   font-size: 24rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #243238;
   font-weight: 850;
   word-break: break-word;
 }
@@ -1155,7 +1160,7 @@
   text-align: center;
   font-size: 20rpx;
   line-height: 1.45;
-  color: #8F756C;
+  color: #64747B;
   word-break: break-word;
 }
 
@@ -1195,8 +1200,8 @@
 
 /* Hero区域 */
 .hero {
-  background: linear-gradient(145deg, #E85A29, #FF6B35 40%, #FF7E4B);
-  padding: 24rpx 0 12rpx;
+  background: #FFFFFF;
+  padding: 20rpx 0 12rpx;
   position: relative;
   overflow: hidden;
 }
@@ -1208,14 +1213,16 @@
   right: -60rpx;
   width: 240rpx;
   height: 240rpx;
-  background: rgba(255,255,255,0.08);
+  background: #EAF9F6;
   border-radius: 50%;
 }
 
 .hero-content {
   margin: 0 32rpx;
-  min-height: 248rpx;
-  padding: 36rpx 0;
+  min-height: 220rpx;
+  padding: 30rpx 26rpx;
+  border-radius: 24rpx;
+  background: #EAF9F6;
   position: relative;
   z-index: 2;
 }
@@ -1226,8 +1233,8 @@
   height: 330rpx;
   margin: 8rpx 32rpx 24rpx;
   border-radius: 28rpx;
-  background: #FFF7EA;
-  box-shadow: 0 16rpx 36rpx rgba(120, 54, 18, 0.18);
+  background: #F1FBFA;
+  box-shadow: 0 10rpx 28rpx rgba(42, 174, 155, 0.10);
   position: relative;
   z-index: 2;
 }
@@ -1237,7 +1244,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FFF7EA 0%, #FFE7D6 58%, #FFF1E6 100%);
+  background: #F1FBFA;
 }
 
 .hero-emoji {
@@ -1249,7 +1256,7 @@
   font-size: 34rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #8A3412;
+  color: #287F74;
   text-align: center;
 }
 
@@ -1259,16 +1266,16 @@
   text-align: center;
   font-size: 24rpx;
   line-height: 1.6;
-  color: #9A5B3B;
+  color: #64747B;
 }
 
 .hero-badge {
   display: inline-block;
-  background: rgba(255,255,255,0.2);
+  background: #D4F2EC;
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
   font-size: 22rpx;
-  color: #fff;
+  color: #287F74;
   margin-bottom: 20rpx;
 }
 
@@ -1276,14 +1283,14 @@
   display: block;
   font-size: 48rpx;
   font-weight: 900;
-  color: #fff;
+  color: #243238;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
 
 .hero-desc {
   font-size: 26rpx;
-  color: rgba(255,255,255,0.9);
+  color: #64747B;
   line-height: 1.5;
 }
 
@@ -1304,14 +1311,14 @@
 }
 
 .hero-btn-primary {
-  background: #fff;
-  color: #FF6B35;
+  background: #2AAE9B;
+  color: #fff;
 }
 
 .hero-btn-secondary {
-  background: rgba(255,255,255,0.22);
-  color: #fff;
-  border: 2rpx solid rgba(255,255,255,0.4);
+  background: #FFFFFF;
+  color: #287F74;
+  border: 2rpx solid #BFE8E1;
 }
 
 /* 区块 */
@@ -1340,14 +1347,14 @@
 
 .status-title {
   font-size: 30rpx;
-  color: #1B2A1B;
+  color: #243238;
   font-weight: 600;
   line-height: 1.45;
 }
 
 .status-rate {
   font-size: 34rpx;
-  color: #FF6B35;
+  color: #2AAE9B;
   font-weight: 700;
 }
 
@@ -1366,14 +1373,15 @@
 .daily-action-card {
   padding: 30rpx;
   border-radius: 28rpx;
-  background: linear-gradient(135deg, #2F241F 0%, #5B3829 100%);
-  box-shadow: 0 14rpx 34rpx rgba(91, 56, 41, 0.18);
+  background: #FFFFFF;
+  border: 1rpx solid #DCEEEE;
+  box-shadow: 0 10rpx 28rpx rgba(35, 62, 70, 0.06);
 }
 
 .daily-action-eyebrow {
   display: block;
   font-size: 22rpx;
-  color: rgba(255, 236, 220, 0.78);
+  color: #2AAE9B;
   font-weight: 700;
   margin-bottom: 12rpx;
 }
@@ -1382,7 +1390,7 @@
   display: block;
   font-size: 36rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #243238;
   font-weight: 900;
 }
 
@@ -1391,7 +1399,7 @@
   margin-top: 14rpx;
   font-size: 25rpx;
   line-height: 1.7;
-  color: rgba(255, 250, 244, 0.86);
+  color: #64747B;
 }
 
 .daily-action-buttons {
@@ -1411,12 +1419,13 @@
 }
 
 .daily-action-primary {
-  background: #FFFFFF;
-  color: #D85C26;
+  background: #2AAE9B;
+  color: #FFFFFF;
 }
 
 .daily-action-secondary {
-  background: rgba(255, 255, 255, 0.14);
+  background: #EAF9F6;
+  color: #287F74;
   color: #FFFFFF;
   border: 2rpx solid rgba(255, 255, 255, 0.3);
 }
@@ -1630,14 +1639,34 @@
   font-size: 27rpx;
   line-height: 1.45;
   font-weight: 800;
-  color: #2F241F;
+  color: #243238;
 }
+
+.feature-module-card .module-icon {
+  display: flex;
+  width: 64rpx;
+  height: 64rpx;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  border-radius: 18rpx;
+  font-size: 38rpx;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.module-icon-assessment { background: #EAF9F6; color: #2AAE9B; }
+.module-icon-training { background: #EEF5FF; color: #5B8DE3; }
+.module-icon-nutrition { background: #FFF7E5; color: #D99A27; }
+.module-icon-parenting { background: #F3EEFF; color: #8A6BD6; }
+.module-icon-chat { background: #EAF4FF; color: #4E9AD6; }
+.module-icon-record { background: #F0F6ED; color: #6A9A5B; }
 
 .feature-module-card .module-desc {
   display: block;
   font-size: 22rpx;
   line-height: 1.65;
-  color: #7A6660;
+  color: #64747B;
   overflow-wrap: break-word;
 }
 

@@ -16,9 +16,13 @@ const growthTimeline = require('./growth-timeline');
 const abilityTraining = require('./ability-training');
 const { aggregateStageReport } = require('./stage-report');
 const { formatWeeklySummaryForMembership } = require('./report-membership');
+const { mergeMembershipDisplayConfig, parsePayload } = require('./membership-operations');
 const eventProtocol = require('./event-protocol');
 const { aggregateContentCoverage, aggregateEventQuality, validateAnalyticsQuery } = require('./analytics-quality');
+const { safeObject } = require('./operations-analytics');
 const { responseMeta, sendSuccess, sendError } = require('./api-response');
+const { registerPlatformRoutes, registerPublicRoutes } = require('./platform-routes');
+const releaseProtection = require('./release-protection');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -67,6 +71,8 @@ const NUTRITION_RECIPES = RAW_NUTRITION_RECIPES
 const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
 const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars');
 const ADMIN_PORTAL_ROOT = path.resolve(__dirname, '../../../admin-portal');
+const RELEASE_FLAGS = releaseProtection.getReleaseFlags();
+let startupState = { safeMode: false, migrationFailed: false, alerts: [] };
 
 if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET is required in production');
@@ -447,10 +453,26 @@ async function feedbackSubmitHandler(req, res) {
   const validTypes = ['功能异常/Bug', '体验建议', '内容问题', '其他'];
   const finalType = validTypes.includes(type) ? type : '其他';
 
-  await pool.execute(
-    'INSERT INTO feedbacks (user_id, type, content, contact) VALUES (?, ?, ?, ?)',
-    [userId, finalType, content, contact]
-  );
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [feedbackResult] = await connection.execute(
+      'INSERT INTO feedbacks (user_id, type, content, contact) VALUES (?, ?, ?, ?)',
+      [userId, finalType, content, contact]
+    );
+    await connection.execute(
+      `INSERT INTO support_tickets
+       (feedback_id, user_id, child_id, type, content, contact, source_page, channel)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [feedbackResult.insertId, userId, Number(req.body && (req.body.child_id || req.body.childId)) || null, finalType, content, contact, String(req.body && (req.body.source_page || req.body.sourcePage) || '').slice(0, 128), String(req.body && req.body.channel || 'feedback').slice(0, 32)]
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 
   res.json({ success: true, message: '感谢你的反馈！' });
 }
@@ -458,7 +480,11 @@ async function feedbackSubmitHandler(req, res) {
 async function feedbackListHandler(req, res) {
   const userId = req.user.id;
   const [rows] = await pool.execute(
-    'SELECT id, type, content, status, created_at FROM feedbacks WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+    `SELECT f.id, f.type, f.content, f.status, f.created_at,
+            t.status AS ticket_status, t.public_progress
+       FROM feedbacks f
+       LEFT JOIN support_tickets t ON t.feedback_id = f.id
+      WHERE f.user_id = ? ORDER BY f.created_at DESC LIMIT 20`,
     [userId]
   );
 
@@ -466,6 +492,8 @@ async function feedbackListHandler(req, res) {
     ...row,
     created_at: formatDateValue(row.created_at),
     type_text: row.type || '其他',
+    public_status: row.ticket_status || row.status || 'pending',
+    public_progress: row.public_progress || '',
     content: row.content.length > 200 ? row.content.substring(0, 200) + '...' : row.content
   }));
 
@@ -563,6 +591,19 @@ app.get(`${ADMIN_API_PREFIX}/analytics/age-ability`, authenticateAdmin, asyncHan
 app.get(`${ADMIN_API_PREFIX}/analytics/membership-conversion`, authenticateAdmin, asyncHandler(adminMembershipConversionHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/event-quality`, authenticateAdmin, validateAdminAnalyticsQuery, asyncHandler(adminEventQualityHandler));
 app.get(`${ADMIN_API_PREFIX}/analytics/content-coverage`, authenticateAdmin, validateAdminAnalyticsQuery, asyncHandler(adminContentCoverageHandler));
+app.get(`${ADMIN_API_PREFIX}/analytics/operations-quality`, authenticateAdmin, validateAdminAnalyticsQuery, asyncHandler(adminOperationsQualityHandler));
+
+API_PREFIXES.forEach((prefix) => {
+  registerPublicRoutes(app, { prefix, pool, authenticateToken, releaseFlags: RELEASE_FLAGS });
+});
+  registerPlatformRoutes(app, {
+    prefix: ADMIN_API_PREFIX,
+    pool,
+    uploadRoot: UPLOAD_ROOT,
+    cdnPrefix: process.env.MEDIA_CDN_PREFIX || '',
+    authenticateAdmin,
+    releaseFlags: RELEASE_FLAGS
+  });
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
@@ -573,9 +614,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: err.message || '服务异常' });
 });
 
-bootstrap().catch((err) => {
-  console.error('[niuniu-backend] bootstrap failed:', err.message);
-  process.exit(1);
+bootstrap().catch(async (err) => {
+  startupState.safeMode = true;
+  await releaseProtection.recordAlert({ event: 'startup_unhandled_failure', code: releaseProtection.safeError(err).code });
+  console.error('[niuniu-backend] bootstrap entered safe mode');
 });
 
 function loadEnv(envPath) {
@@ -650,7 +692,8 @@ function getRuntimeFeatureFlags(aiStatus) {
     core_refactor_user_whitelist: parseRuntimeListEnv('RUNTIME_CORE_REFACTOR_USER_WHITELIST'),
     multimodal_enabled: parseRuntimeBooleanEnv('RUNTIME_MULTIMODAL_ENABLED', false),
     payment_enabled: parseRuntimeBooleanEnv('RUNTIME_PAYMENT_ENABLED', virtualPayEnabled),
-    ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false)
+    ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false),
+    ...releaseProtection.getPublicFlags()
   };
 }
 
@@ -675,6 +718,10 @@ function runtimeConfigHandler(req, res) {
     multimodal_enabled: runtimeFlags.multimodal_enabled,
     payment_enabled: runtimeFlags.payment_enabled,
     ai_mock_fallback: runtimeFlags.ai_mock_fallback,
+    server_content_read_enabled: runtimeFlags.server_content_read_enabled,
+    miniprogram_remote_content_enabled: runtimeFlags.miniprogram_remote_content_enabled,
+    admin_content_write_enabled: runtimeFlags.admin_content_write_enabled,
+    startup_safe_mode: startupState.safeMode,
     ai_service_ready: aiStatus.configured,
     ai_provider: aiStatus.provider,
     ai_model: aiStatus.model,
@@ -1664,6 +1711,22 @@ async function adminContentCoverageHandler(req, res) {
       && (!filters.content_form || contentForm === filters.content_form);
   });
   res.json({ success: true, data: { range, filters, ...aggregateContentCoverage(filteredRows) } });
+}
+
+async function adminOperationsQualityHandler(req, res) {
+  const range = parseAdminDateRange(req.query, 14);
+  const [rows] = await pool.execute(`SELECT aggregate_type, metrics FROM analytics_daily_aggregates WHERE stat_date BETWEEN ? AND ? AND aggregate_type IN ('operations_quality', 'support_quality')`, [range.startDate, range.endDate]);
+  const data = { range, content_operations: {}, support_operations: {}, filters: { age_segment_code: req.query.age_segment_code || req.query.ageSegmentCode || '', ability_code: req.query.ability_code || req.query.abilityCode || '', membership_status: req.query.membership_status || req.query.membershipStatus || '' } };
+  rows.forEach((row) => {
+    const target = row.aggregate_type === 'support_quality' ? data.support_operations : data.content_operations;
+    const metrics = safeObject(parseMetricJson(row.metrics));
+    Object.keys(metrics).forEach((key) => {
+      if (key === 'close_outcomes') target[key] = Object.assign(target[key] || {}, metrics[key]);
+      else if (typeof metrics[key] === 'number') target[key] = Number(target[key] || 0) + metrics[key];
+      else if (target[key] === undefined) target[key] = metrics[key];
+    });
+  });
+  return res.json({ success: true, data });
 }
 
 async function adminUserTrendsHandler(req, res) {
@@ -5081,6 +5144,8 @@ async function getAvailableReferralRewardDays(connection, inviterId) {
 async function membershipInfoHandler(req, res) {
   const membership = await getMembership(req.user.userId);
   const [plans] = await pool.execute('SELECT * FROM plans WHERE is_active = 1 ORDER BY sort_order');
+  const [configRows] = await pool.execute("SELECT payload FROM content_versions WHERE content_type = 'membership_config' AND content_id = 'default' AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY version DESC LIMIT 1");
+  const display = mergeMembershipDisplayConfig(configRows[0] ? parsePayload(configRows[0].payload) : null, plans);
   const now = Date.now();
   const endTime = membership.current_end_date ? new Date(membership.current_end_date).getTime() : 0;
   const isActive = membership.status === 'active' && endTime > now;
@@ -5094,7 +5159,7 @@ async function membershipInfoHandler(req, res) {
       current_end_date: isActive && membership.current_end_date ? new Date(membership.current_end_date).toISOString() : null,
       is_trial_used: !!membership.is_trial_used,
       promo_enabled: !!UNIFIED_PROMO_CODE,
-      promo_benefit_text: '兑换码兑换区',
+       promo_benefit_text: display.entry.subtitle,
       payment_available: !!(virtualPayConfig.offerId && virtualPayConfig.appKey),
       fallback_paths: ['trial', 'promo', 'referral'],
       entitlements: isActive ? {
@@ -5105,7 +5170,9 @@ async function membershipInfoHandler(req, res) {
         ai_training: true,
         development_topic: true
       } : {},
-      plans
+       plans: display.plans,
+       membership_entry: display.entry,
+       benefits: display.benefits
     }
   });
 }
@@ -7988,13 +8055,26 @@ async function verifyWechatNotifySignature(headers, rawBody) {
 }
 
 async function bootstrap() {
-  await runMigrations(pool);
-  await ensureProductionTables();
-  await ensureAdminBootstrapUser();
-  await fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
+  await runStartupStep('migrations', () => runMigrations(pool));
+  await runStartupStep('legacy_schema', () => ensureProductionTables());
+  await runStartupStep('admin_bootstrap', () => ensureAdminBootstrapUser());
+  await runStartupStep('upload_directory', () => fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true }));
   app.listen(PORT, HOST, () => {
-    console.log(`[niuniu-backend] listening on http://${HOST}:${PORT}`);
+    console.log(`[niuniu-backend] listening on http://${HOST}:${PORT} safe_mode=${startupState.safeMode}`);
   });
+}
+
+async function runStartupStep(name, task) {
+  try {
+    return await task();
+  } catch (error) {
+    startupState.safeMode = true;
+    if (name === 'migrations') startupState.migrationFailed = true;
+    const alert = await releaseProtection.recordAlert({ event: `startup_${name}_failed`, code: releaseProtection.safeError(error).code });
+    startupState.alerts.push(alert.event);
+    console.warn(`[niuniu-backend] ${name} failed; service continues in safe mode`);
+    return null;
+  }
 }
 
 async function ensureAdminBootstrapUser() {
@@ -12377,6 +12457,23 @@ async function normalizeArticle(row, userId) {
   };
 }
 
+async function resolvePublishedArticle(row) {
+  const [versionRows] = await pool.execute(
+    `SELECT payload FROM content_versions
+      WHERE content_type = 'article' AND content_id = ?
+        AND review_status = 'approved' AND publish_status = 'published'
+        AND (published_at IS NULL OR published_at <= NOW())
+      ORDER BY version DESC LIMIT 1`,
+    [String(row.id)]
+  );
+  if (!versionRows.length) return row;
+  try {
+    return Object.assign({}, row, JSON.parse(versionRows[0].payload));
+  } catch (error) {
+    return row;
+  }
+}
+
 function buildKeyPointsFromContent(content) {
   return String(content || '')
     .split(/\n+/)
@@ -12447,7 +12544,7 @@ async function parentingArticlesHandler(req, res) {
   }
   const data = [];
   for (const row of cachedPayload.rows) {
-    data.push(await normalizeArticle(row, getUserId(req)));
+    data.push(await normalizeArticle(await resolvePublishedArticle(row), getUserId(req)));
   }
   const total = cachedPayload.total;
   res.json({
@@ -12472,7 +12569,7 @@ async function parentingArticleDetailHandler(req, res) {
     return;
   }
   await pool.execute('UPDATE articles SET read_count = read_count + 1 WHERE id = ?', [req.params.id]);
-  res.json({ success: true, data: await normalizeArticle(rows[0], getUserId(req)) });
+  res.json({ success: true, data: await normalizeArticle(await resolvePublishedArticle(rows[0]), getUserId(req)) });
 }
 
 async function parentingRelatedArticlesHandler(req, res) {

@@ -13,6 +13,12 @@ describe('运营后台分析接口契约', () => {
     expect(serverSource).toContain("/analytics/membership-conversion");
   });
 
+  it('注册发布与客服质量分析接口', () => {
+    expect(serverSource).toContain('/analytics/operations-quality');
+    expect(serverSource).toContain('content_operations');
+    expect(serverSource).toContain('support_operations');
+  });
+
   it('分析接口支持统一日期、年龄、能力和会员筛选字段', () => {
     expect(serverSource).toContain('startDate');
     expect(serverSource).toContain('endDate');

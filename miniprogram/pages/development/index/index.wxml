@@ -32,6 +32,27 @@
     </view>
   </view>
 
+  <view class="pain-point-card">
+    <view class="section-head">
+      <text class="featured-label">从具体表现开始</text>
+      <text class="source-tip">{{painPointSource === 'server' ? '正式内容' : '当前使用本地备用内容'}}</text>
+    </view>
+    <view class="filter-row">
+      <view class="filter-chip {{!painPointCategory ? 'filter-chip-active' : ''}}" data-category="" bindtap="selectPainPointCategory">全部</view>
+      <view class="filter-chip" data-category="attention_learning" bindtap="selectPainPointCategory">做事与学习</view>
+      <view class="filter-chip" data-category="emotion_rules" bindtap="selectPainPointCategory">情绪与配合</view>
+      <view class="filter-chip" data-category="social_expression" bindtap="selectPainPointCategory">说话与相处</view>
+    </view>
+    <view class="pain-point-list">
+      <view class="pain-point-item" wx:for="{{painPoints}}" wx:key="key" wx:if="{{!painPointCategory || item.category === painPointCategory || item.categoryKey === painPointCategory}}" data-key="{{item.key}}" bindtap="openPainPoint">
+        <text class="pain-point-title">{{item.title}}</text>
+        <text class="pain-point-desc">{{item.description}}</text>
+        <text class="pain-point-link">看原因、今天做和记录变化 ></text>
+      </view>
+    </view>
+    <view class="empty-card" wx:if="{{!painPoints.length}}">暂时没有可展示的成长痛点，先问小牛获得支持。</view>
+  </view>
+
   <view class="guide-card">
     <text class="guide-title">进入后怎么看</text>
     <text class="guide-desc">先选孩子年龄段，再从场景分类里挑最像的一项，最后看今天能做的小练习。</text>

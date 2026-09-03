@@ -15,12 +15,12 @@
         <div>
           <p class="eyebrow">小牛育儿</p>
           <h1>运营后台</h1>
-          <p class="sidebar-copy">面向小牛育儿独立经营数据，当前同时覆盖经营驾驶舱、内容结构化运营和 AI 问答质检。</p>
+          <p class="sidebar-copy">帮助运营团队看清用户需求、内容供给、会员转化和家长服务进展。</p>
         </div>
         <div class="sidebar-meta">
           <div>
-            <span>接口前缀</span>
-            <strong id="apiBaseText">/admin-api/v1</strong>
+               <span>数据连接</span>
+               <strong id="apiBaseText">后台服务</strong>
           </div>
           <div>
             <span>当前状态</span>
@@ -33,8 +33,8 @@
         <section class="panel hero">
           <div>
               <p class="eyebrow">经营后台</p>
-              <h2>小牛育儿经营与内容运营后台</h2>
-              <p class="hero-copy">当前页面直接对接后台认证、经营概览、内容结构化列表和 AI 问答质检接口，便于同一入口完成数据巡检与内容复核。</p>
+              <h2>小牛育儿运营总览</h2>
+              <p class="hero-copy">从用户使用、内容上新、会员转化和家长反馈四个方向，安排每天的运营工作。</p>
           </div>
           <form id="loginForm" class="login-form">
             <label>
@@ -51,17 +51,17 @@
               <button id="demoButton" type="button" class="ghost alt">查看演示</button>
               <button id="changePasswordButton" type="button" class="ghost accent">修改密码</button>
             </div>
-            <p id="loginHint" class="hint">登录后自动拉取总览、会员结构、家庭画像、用户趋势、收入趋势和排行。当前环境缺少真实后台时，可先查看演示数据。</p>
+             <p id="loginHint" class="hint">登录后查看用户增长、会员转化、内容表现和家长服务数据。暂时无法连接数据时，可先查看演示数据。</p>
           </form>
         </section>
 
         <section class="panel analytics-filter-panel" aria-labelledby="analyticsFilterTitle">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">统一口径</p>
-              <h3 id="analyticsFilterTitle">业务分析筛选</h3>
+              <p class="eyebrow">查看范围</p>
+              <h3 id="analyticsFilterTitle">选择要看的用户和日期</h3>
             </div>
-            <span id="analyticsFilterHint" class="panel-note">筛选会同步到所有分析请求</span>
+             <span id="analyticsFilterHint" class="panel-note">下面的看板会按这些条件更新</span>
           </div>
           <form id="analyticsFilterForm" class="analytics-filter-form">
             <label><span>开始日期</span><input id="analyticsStartDate" type="date" /></label>
@@ -74,39 +74,53 @@
           </form>
         </section>
 
+        <section class="panel operations-workbench" aria-labelledby="operationsWorkbenchTitle">
+          <div class="panel-header">
+            <div><p class="eyebrow">运营平台</p><h3 id="operationsWorkbenchTitle">内容与服务工作台</h3></div>
+           <span class="panel-note">各项工作分开加载，某一项出问题不会影响其他内容</span>
+          </div>
+          <nav id="operationsNav" class="operations-nav" aria-label="运营模块导航"></nav>
+          <div id="operationsModules" class="operations-modules"></div>
+        </section>
+
         <section class="panel analytics-modules-panel">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">儿童发展会员</p>
-              <h3>运营闭环分析</h3>
+              <p class="eyebrow">经营判断</p>
+              <h3>用户从使用到付费</h3>
             </div>
-            <span class="panel-note">每个模块独立加载，局部失败不影响其他视图</span>
+             <span class="panel-note">各项工作分开加载，某一项出问题不会影响其他页面</span>
           </div>
           <div class="admin-analytics-grid">
-            <article class="admin-module" data-module="growthLoop">
-              <div class="module-heading"><h4>成长闭环</h4><span id="growthLoopUpdated" class="module-updated">未更新</span></div>
+               <article class="admin-module" data-module="growthLoop">
+               <div class="module-heading"><h4>用户使用路径</h4><span id="growthLoopUpdated" class="module-updated">未更新</span></div>
               <div id="growthLoopView" class="module-content"></div>
               <div id="growthLoopStatus" class="module-status"></div>
             </article>
-            <article class="admin-module" data-module="ageAbility">
-              <div class="module-heading"><h4>年龄能力矩阵</h4><span id="ageAbilityUpdated" class="module-updated">未更新</span></div>
+               <article class="admin-module" data-module="ageAbility">
+               <div class="module-heading"><h4>不同年龄的需求</h4><span id="ageAbilityUpdated" class="module-updated">未更新</span></div>
               <div id="ageAbilityView" class="module-content"></div>
               <div id="ageAbilityStatus" class="module-status"></div>
             </article>
-            <article class="admin-module admin-module-wide" data-module="contentGovernance">
-              <div class="module-heading"><h4>知识内容治理</h4><span id="contentGovernanceUpdated" class="module-updated">未更新</span></div>
+               <article class="admin-module admin-module-wide" data-module="contentGovernance">
+               <div class="module-heading"><h4>内容供给检查</h4><span id="contentGovernanceUpdated" class="module-updated">未更新</span></div>
               <div id="contentGovernanceView" class="module-content"></div>
               <div id="contentGovernanceStatus" class="module-status"></div>
             </article>
-            <article class="admin-module" data-module="membershipConversion">
-              <div class="module-heading"><h4>会员来源与续费</h4><span id="membershipConversionUpdated" class="module-updated">未更新</span></div>
+               <article class="admin-module" data-module="membershipConversion">
+               <div class="module-heading"><h4>会员转化与续费</h4><span id="membershipConversionUpdated" class="module-updated">未更新</span></div>
               <div id="membershipConversionView" class="module-content"></div>
               <div id="membershipConversionStatus" class="module-status"></div>
             </article>
-            <article class="admin-module" data-module="eventQuality">
-              <div class="module-heading"><h4>事件数据质量</h4><span id="eventQualityUpdated" class="module-updated">未更新</span></div>
+               <article class="admin-module" data-module="eventQuality">
+               <div class="module-heading"><h4>数据采集健康度</h4><span id="eventQualityUpdated" class="module-updated">未更新</span></div>
               <div id="eventQualityView" class="module-content"></div>
               <div id="eventQualityStatus" class="module-status"></div>
+            </article>
+            <article class="admin-module admin-module-wide" data-module="operationsQuality">
+              <div class="module-heading"><h4>发布与客服质量</h4><span id="operationsQualityUpdated" class="module-updated">未更新</span></div>
+              <div id="operationsQualityView" class="module-content"></div>
+              <div id="operationsQualityStatus" class="module-status"></div>
             </article>
           </div>
         </section>
@@ -229,8 +243,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">孩子</p>
-                <h3>孩子画像</h3>
+              <p class="eyebrow">家庭情况</p>
+              <h3>孩子年龄分布</h3>
               </div>
               <span class="panel-note">年龄段与家庭渗透</span>
             </div>
@@ -250,8 +264,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">转化漏斗</p>
-                <h3>经营转化漏斗</h3>
+              <p class="eyebrow">会员转化</p>
+              <h3>注册到付费</h3>
               </div>
               <span class="panel-note">注册到支付的近30天转化</span>
             </div>
@@ -261,28 +275,28 @@
           <article class="panel insight-panel insight-panel-wide">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">核心链路</p>
-                <h3>第一动作漏斗</h3>
+              <p class="eyebrow">首次使用</p>
+              <h3>第一次行动完成率</h3>
               </div>
-              <span class="panel-note">最近 14 天首页到记录闭环</span>
+               <span class="panel-note">最近 14 天用户从首页到完成记录的使用路径</span>
             </div>
             <div id="coreActionFunnel" class="mini-stats core-action-funnel"></div>
             <div id="coreActionSceneFunnel" class="scene-funnel-list"></div>
             <div class="core-action-dimensions">
               <div>
-                <h4>年龄段漏斗</h4>
+                  <h4>按年龄看</h4>
                 <div id="coreActionAgeSegmentFunnel" class="dimension-funnel-list"></div>
               </div>
               <div>
-                <h4>类别漏斗</h4>
+                  <h4>按问题类别看</h4>
                 <div id="coreActionCategoryFunnel" class="dimension-funnel-list"></div>
               </div>
               <div>
-                <h4>痛点漏斗</h4>
+                  <h4>按成长痛点看</h4>
                 <div id="coreActionPainPointFunnel" class="dimension-funnel-list"></div>
               </div>
               <div>
-                <h4>能力维度</h4>
+                  <h4>按能力方向看</h4>
                 <div id="coreActionAbilityFunnel" class="dimension-funnel-list"></div>
               </div>
             </div>
@@ -291,8 +305,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">生命周期</p>
-                <h3>会员生命周期</h3>
+              <p class="eyebrow">会员维护</p>
+              <h3>续费和到期提醒</h3>
               </div>
               <span class="panel-note">续费与到期风险</span>
             </div>
@@ -302,8 +316,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">交叉分析</p>
-                <h3>年龄段功能偏好</h3>
+              <p class="eyebrow">用户偏好</p>
+              <h3>不同年龄常用功能</h3>
               </div>
               <span class="panel-note">按孩子年龄段看近30天重点功能</span>
             </div>
@@ -313,8 +327,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">功能转化</p>
-                <h3>功能带动支付</h3>
+              <p class="eyebrow">会员转化</p>
+              <h3>哪些功能带来付费</h3>
               </div>
               <span class="panel-note">近30天功能触达用户中的支付转化</span>
             </div>
@@ -324,8 +338,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">用户分层</p>
-                <h3>用户分层运营</h3>
+              <p class="eyebrow">用户跟进</p>
+              <h3>今天优先联系谁</h3>
               </div>
               <span class="panel-note">按经营价值与流失风险划分</span>
             </div>
@@ -333,16 +347,16 @@
             <div class="segment-detail-panel">
               <div class="panel-header compact">
                 <div>
-                  <h4 id="segmentUsersTitle">分层用户名单</h4>
+                   <h4 id="segmentUsersTitle">待跟进用户</h4>
                 </div>
                 <div class="segment-detail-actions">
-                  <span id="segmentUsersMeta" class="panel-note">选择一个分层查看最近 20 个用户</span>
-                  <button id="segmentExportButton" type="button" class="ghost filter-chip">导出当前名单</button>
+                   <span id="segmentUsersMeta" class="panel-note">选择一类用户查看名单</span>
+                   <button id="segmentExportButton" type="button" class="ghost filter-chip">导出名单</button>
                 </div>
               </div>
               <div class="segment-filter-bar">
-                <button id="segmentExpiringFilter" type="button" class="ghost filter-chip">仅看近到期</button>
-                <button id="segmentHighActivityFilter" type="button" class="ghost filter-chip">仅看高活跃</button>
+                 <button id="segmentExpiringFilter" type="button" class="ghost filter-chip">只看即将到期</button>
+                 <button id="segmentHighActivityFilter" type="button" class="ghost filter-chip">只看最近常用</button>
               </div>
               <div id="segmentUsersList" class="segment-user-list"></div>
             </div>
@@ -351,8 +365,8 @@
           <article class="panel insight-panel insight-panel-wide">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">内容运营</p>
-                <h3>内容运营概览</h3>
+              <p class="eyebrow">内容工作</p>
+              <h3>内容供给总览</h3>
               </div>
               <span class="panel-note">聚焦育儿锦囊结构化与文章形态分类</span>
             </div>
@@ -363,8 +377,8 @@
           <article class="panel ranking-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">锦囊巡检</p>
-                <h3>结构化锦囊巡检</h3>
+              <p class="eyebrow">内容检查</p>
+              <h3>育儿锦囊检查</h3>
               </div>
               <span class="panel-note">按结构化优先级与更新时间排序</span>
             </div>
@@ -374,8 +388,8 @@
           <article class="panel ranking-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">文章形态</p>
-                <h3>文章形态巡检</h3>
+              <p class="eyebrow">内容检查</p>
+              <h3>文章内容检查</h3>
               </div>
               <span class="panel-note">用于复核 theory / method / both</span>
             </div>
@@ -385,8 +399,8 @@
           <article class="panel insight-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">AI 质检</p>
-                <h3>AI 问答质检</h3>
+              <p class="eyebrow">问答服务</p>
+              <h3>家长问答服务质量</h3>
               </div>
               <span class="panel-note">聚焦 structured、零引用和 AI 可用性</span>
             </div>
@@ -396,8 +410,8 @@
           <article class="panel ranking-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">覆盖缺口</p>
-                <h3>高频低命中问题</h3>
+              <p class="eyebrow">内容补充</p>
+              <h3>家长还没被解决的问题</h3>
               </div>
               <span class="panel-note">优先指导下一批知识补充</span>
             </div>
@@ -407,13 +421,58 @@
           <article class="panel chart-panel insight-panel-wide">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">问答样本</p>
-                <h3>最近问答样本</h3>
+              <p class="eyebrow">服务记录</p>
+              <h3>最近家长提问</h3>
               </div>
               <span class="panel-note">用于快速判断回退链路与结构化是否生效</span>
             </div>
             <div id="aiRecentTable" class="table-wrap"></div>
           </article>
+        </section>
+
+        <section class="panel operations-panel" aria-labelledby="operationsTitle">
+             <div class="panel-header">
+             <div><p class="eyebrow">日常工作</p><h3 id="operationsTitle">内容和家长服务</h3></div>
+             <span class="panel-note">上新内容、维护会员、跟进用户和处理反馈</span>
+          </div>
+          <div class="operations-grid">
+            <form id="articleDraftForm" class="operation-form">
+               <h4>新建一篇文章</h4>
+              <input id="articleTitleInput" placeholder="文章标题" required />
+              <textarea id="articleSummaryInput" placeholder="文章摘要"></textarea>
+              <textarea id="articleContentInput" placeholder="正文（支持基础富文本）" required></textarea>
+              <button type="submit">保存草稿</button>
+              <p id="articleDraftStatus" class="hint"></p>
+            </form>
+            <div class="operation-form">
+               <h4>待处理家长反馈</h4>
+               <button id="loadTicketsButton" type="button">查看待处理反馈</button>
+              <div id="ticketQueue" class="ranking-list"></div>
+            </div>
+            <form id="membershipConfigForm" class="operation-form">
+               <h4>会员页面配置</h4>
+               <textarea id="membershipConfigInput" placeholder="填写会员页面上的介绍、权益和套餐顺序"></textarea>
+              <div class="login-actions">
+                 <button id="previewMembershipConfigButton" type="button" class="ghost">预览页面</button>
+                 <button type="submit">保存页面草稿</button>
+              </div>
+              <p id="membershipConfigStatus" class="hint"></p>
+              <div id="membershipConfigPreview" class="ranking-list"></div>
+              <div id="membershipConfigVersions" class="ranking-list"></div>
+              <div class="login-actions">
+                 <button id="submitMembershipReviewButton" type="button" class="ghost">送审</button>
+                 <button id="approveMembershipButton" type="button" class="ghost">审核通过</button>
+                 <button id="publishMembershipButton" type="button">上线页面</button>
+                 <button id="offlineMembershipButton" type="button" class="ghost">暂时下线</button>
+              </div>
+            </form>
+            <div class="operation-form">
+               <h4>用户跟进名单</h4>
+               <button id="loadOperationsUsersButton" type="button">查看需要跟进的用户</button>
+              <div id="operationsUsersStatus" class="hint"></div>
+              <div id="operationsUsersList" class="ranking-list"></div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
@@ -448,6 +507,7 @@
       </div>
     </div>
 
+    <script src="./modules/operations.js"></script>
     <script src="./app.js?v=20260626-retention-diagnosis"></script>
   </body>
   </html>
