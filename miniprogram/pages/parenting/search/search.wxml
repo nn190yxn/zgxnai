@@ -3,7 +3,7 @@
   <view class="search-bar">
     <view class="search-input-wrap">
       <text class="back-btn" bindtap="onBackTap">‹</text>
-      <text class="search-icon">🔍</text>
+      <text class="search-icon">搜索</text>
       <input
         class="search-input"
         placeholder="搜问题场景、方法和文章"
@@ -23,7 +23,7 @@
     </view>
 
     <view class="empty-wrap" wx:elif="{{!loading && !sceneSolutions.length && !searchResults.length}}">
-      <text class="empty-icon">🔍</text>
+      <text class="empty-icon">搜索</text>
       <text class="empty-text">还没有找到直接匹配的内容</text>
       <text class="empty-desc">换个更具体的场景试试，比如“睡前拖延”</text>
     </view>
@@ -67,7 +67,7 @@
             </view>
           </view>
           <view class="favorite-btn {{item.isFavorite ? 'active' : ''}}" catchtap="onFavoriteTap" data-id="{{item.id}}" data-index="{{index}}">
-            <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+            <text class="favorite-icon">{{item.isFavorite ? '已收藏' : '收藏'}}</text>
           </view>
         </view>
       </view>

@@ -19,7 +19,7 @@
   width: 60rpx;
   height: 60rpx;
   border: 4rpx solid #E8E8E8;
-  border-top-color: #FF6B35;
+  border-top-color: #2F9D8E;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -48,7 +48,7 @@
   left: 0;
   right: 0;
   height: 200rpx;
-  background: linear-gradient(145deg, #E85A29, #FF6B35 40%, #FF7E4B);
+  background: #E8F5F1;
 }
 
 .header-content {
@@ -282,7 +282,7 @@
 .suggestion-icon {
   width: 48rpx;
   height: 48rpx;
-  background: linear-gradient(135deg, #FF6B35, #FF7E4B);
+  background: #2F9D8E;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -354,7 +354,7 @@
 
 .plan-duration {
   font-size: 22rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   background: #FFF3ED;
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
@@ -368,7 +368,7 @@
 
 .plan-action {
   font-size: 24rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   font-weight: 500;
 }
 
@@ -411,9 +411,9 @@
   line-height: 1.45;
   text-align: center;
   font-size: 30rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   background: #fff;
-  border: 2rpx solid #FF6B35;
+  border: 2rpx solid #2F9D8E;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;
@@ -427,7 +427,7 @@
   font-size: 30rpx;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #FF6B35, #FF7E4B);
+  background: #2F9D8E;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;
@@ -482,7 +482,7 @@
 }
 
 .membership-cta-card {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #2F9D8E;
   border-radius: 20rpx;
   padding: 32rpx;
   text-align: center;
@@ -507,7 +507,7 @@
 .cta-btn {
   display: inline-block;
   background: #fff;
-  color: #667eea;
+  color: #2F9D8E;
   font-size: 26rpx;
   font-weight: 600;
   padding: 12rpx 40rpx;

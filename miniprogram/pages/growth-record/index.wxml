@@ -6,13 +6,37 @@
 
   <block wx:else>
     <view class="hero-card">
-      <text class="hero-title">{{currentChild.name}} 的成长记录</text>
+      <text class="hero-title">记录 {{currentChild.name}} 今天的变化</text>
+      <text class="helper-copy">选好今天的状态，补充一句观察，之后更容易看见变化。</text>
       <picker mode="date" value="{{recordDate}}" bindchange="onDateChange">
         <view class="date-chip">{{recordDate}}</view>
       </picker>
     </view>
 
-    <view class="section-card" wx:for="{{sections}}" wx:key="field">
+    <view class="growth-overview">
+      <view class="growth-overview-card" bindtap="goToDevelopment">
+        <text class="growth-overview-kicker">行动进度</text>
+        <text class="growth-overview-title">{{sourceContext ? '记录这次尝试' : '选择今天的一步行动'}}</text>
+        <text class="growth-overview-link">去功能页 ></text>
+      </view>
+      <view class="growth-overview-card" bindtap="focusObservation">
+        <text class="growth-overview-kicker">观察记录</text>
+        <text class="growth-overview-title">补充今天五项状态</text>
+        <text class="growth-overview-link">开始记录 ></text>
+      </view>
+      <view class="growth-overview-card" bindtap="goToWeeklySummary">
+        <text class="growth-overview-kicker">周总结</text>
+        <text class="growth-overview-title">看看本周行动与变化</text>
+        <text class="growth-overview-link">查看总结 ></text>
+      </view>
+      <view class="growth-overview-card" bindtap="goToHistory">
+        <text class="growth-overview-kicker">阶段变化</text>
+        <text class="growth-overview-title">回看不同日期的记录</text>
+        <text class="growth-overview-link">查看历史 ></text>
+      </view>
+    </view>
+
+    <view id="observation-form" class="section-card" wx:for="{{sections}}" wx:key="field">
       <text class="section-title">{{item.title}}</text>
       <view class="option-list">
         <view
@@ -34,16 +58,11 @@
       <textarea class="note-box" maxlength="500" placeholder="例如：午睡偏短，晚饭时情绪有点急，散步后稳定很多。" value="{{form.noteText}}" bindinput="onNoteInput"></textarea>
     </view>
 
+    <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存成长记录'}}</view>
+
     <view class="action-row">
       <view class="secondary-btn" bindtap="goToHistory">查看历史记录</view>
       <view class="secondary-btn" bindtap="goToWeeklySummary">查看成长总结</view>
     </view>
-
-    <view class="section-card">
-      <text class="section-title">记录建议</text>
-      <text class="helper-copy">睡前花 30 秒记一下，一周后更容易看出孩子哪里变好了。</text>
-    </view>
-
-    <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存成长记录'}}</view>
   </block>
 </view>

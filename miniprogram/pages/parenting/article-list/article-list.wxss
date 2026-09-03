@@ -92,17 +92,17 @@
 }
 
 .filter-item.active {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #fff;
 }
 
 .filter-item.age-item {
   background: #FFF8E1;
-  color: #FF8F00;
+  color: #E9895B;
 }
 
 .filter-item.age-item.active {
-  background: #FF8F00;
+  background: #E9895B;
   color: #fff;
 }
 
@@ -288,7 +288,7 @@
   width: 32rpx;
   height: 32rpx;
   border: 3rpx solid #eee;
-  border-top-color: #FF6B35;
+  border-top-color: #2F9D8E;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

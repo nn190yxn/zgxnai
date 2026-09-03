@@ -59,12 +59,12 @@
 
 .tag-primary {
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 .tag-accent {
   background: #FFF8E1;
-  color: #FF8F00;
+  color: #E9895B;
 }
 
 .tag-muted {
@@ -338,9 +338,9 @@
 .copy-btn {
   font-size: 26rpx;
   line-height: 1.45;
-  color: #FF6B35;
+  color: #2F9D8E;
   padding: 8rpx 20rpx;
-  border: 1rpx solid #FF6B35;
+  border: 1rpx solid #2F9D8E;
   border-radius: 24rpx;
 }
 
@@ -366,7 +366,7 @@
   height: 40rpx;
   line-height: 40rpx;
   text-align: center;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #fff;
   border-radius: 50%;
   font-size: 24rpx;
@@ -449,7 +449,7 @@
 .practice-section {
   margin: 20rpx 0;
   padding: 32rpx;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+  background: #FFFFFF;
   border-top: 1rpx solid #FAD7C5;
   border-bottom: 1rpx solid #FAD7C5;
 }
@@ -457,7 +457,7 @@
 .practice-eyebrow {
   display: block;
   font-size: 22rpx;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 800;
   margin-bottom: 10rpx;
   line-height: 1.45;
@@ -496,13 +496,13 @@
 }
 
 .practice-btn.primary {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
 }
 
 .practice-btn.secondary {
   background: #FFFFFF;
-  color: #D85C26;
+  color: #2F8175;
   border: 2rpx solid #FFD6C2;
 }
 

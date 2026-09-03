@@ -17,7 +17,7 @@
         <!-- 头像 -->
         <view class="child-avatar">
           <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" class="avatar-img" binderror="onAvatarError" data-id="{{item.id}}"></image>
-          <text wx:else class="avatar-text">{{item.gender === 'male' ? '👦' : item.gender === 'female' ? '👧' : '👶'}}</text>
+          <text wx:else class="avatar-text">{{item.gender === 'male' ? '男孩' : item.gender === 'female' ? '女孩' : '孩子'}}</text>
         </view>
 
         <!-- 信息 -->
@@ -48,7 +48,7 @@
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && children.length === 0}}">
-    <text class="empty-icon">👶</text>
+    <text class="empty-icon">孩子</text>
     <text class="empty-title">还没有添加孩子档案</text>
     <text class="empty-desc">填好年龄和基本情况，建议会更贴合你家孩子</text>
     <button class="add-btn-primary" bindtap="addChild">添加孩子</button>

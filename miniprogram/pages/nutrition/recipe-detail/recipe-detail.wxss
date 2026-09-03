@@ -48,7 +48,7 @@
 }
 
 .recipe-visual {
-  background: linear-gradient(135deg, #FFF3ED 0%, #FFF8E1 56%, #E8F5E9 100%);
+  background: #F0F3EE;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -216,7 +216,7 @@
   font-size: 24rpx;
   line-height: 1.45;
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 /* 基本信息 */
@@ -225,7 +225,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20rpx;
   padding: 24rpx;
-  background: linear-gradient(180deg, #FFF9F5 0%, #FFFFFF 100%);
+  background: #FFFFFF;
   border: 1rpx solid #F9E3D6;
   border-radius: 24rpx;
 }
@@ -288,7 +288,7 @@
 .section-action {
   font-size: 26rpx;
   line-height: 1.45;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 /* 营养分析卡片 */
@@ -304,7 +304,7 @@
   align-items: flex-start;
   padding: 22rpx 24rpx;
   margin-bottom: 20rpx;
-  background: linear-gradient(135deg, #FFF6E8 0%, #FFFDF7 100%);
+  background: #F7F7F2;
   border-radius: 20rpx;
 }
 
@@ -343,12 +343,12 @@
 
 .nutrition-bar {
   height: 100%;
-  background: linear-gradient(90deg, #FF8F5A, #FF7E4B);
+  background: #2F9D8E;
   border-radius: 8rpx;
 }
 
 .nutrition-bar.carbs {
-  background: linear-gradient(90deg, #FFB74D, #FF9800);
+  background: #C58A52;
 }
 
 .nutrition-bar.fat {

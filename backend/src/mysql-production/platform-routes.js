@@ -33,6 +33,7 @@ function registerPlatformRoutes(app, options) {
   app.use(`${prefix}/articles`, contentWriteGate(releaseFlags));
   app.use(`${prefix}/pain-points`, contentWriteGate(releaseFlags));
   app.use(`${prefix}/content`, contentWriteGate(releaseFlags));
+  app.use(`${prefix}/banners`, contentWriteGate(releaseFlags));
 
   app.post(`${prefix}/media`, permission('media:write'), async (req, res, next) => {
     let connection;
@@ -69,6 +70,10 @@ function registerPlatformRoutes(app, options) {
   app.post(`${prefix}/pain-points`, permission('pain_point:write'), painPointWrite(pool, 'create'));
   app.put(`${prefix}/pain-points/:key`, permission('pain_point:write'), painPointWrite(pool, 'update'));
 
+  app.get(`${prefix}/banners`, permission('banner:read'), bannerList(pool));
+  app.post(`${prefix}/banners`, permission('banner:write'), bannerWrite(pool, 'create'));
+  app.put(`${prefix}/banners/:id`, permission('banner:write'), bannerWrite(pool, 'update'));
+
   app.get(`${prefix}/membership/config`, permission('membership:read'), membershipConfigRead(pool));
   app.get(`${prefix}/membership/config/versions`, permission('membership:read'), membershipConfigVersions(pool));
   app.post(`${prefix}/membership/config/preview`, permission('membership:read'), (req, res) => res.json({ success: true, data: membership.normalizeMembershipConfig(req.body) }));
@@ -86,6 +91,10 @@ function registerPlatformRoutes(app, options) {
     try { res.json({ success: true, data: { user_id: Number(req.params.id), items: await users.listServiceRecords(pool, req.params.id) } }); } catch (error) { next(error); }
   });
 
+  ['submit-review', 'approve', 'publish', 'schedule', 'offline', 'restore'].forEach((action) => {
+    const statusPermission = action === 'submit-review' ? 'content:submit_review' : `content:${action}`;
+    app.post(`${prefix}/content/home_banner/:id/${action}`, permission(statusPermission), contentAction(pool, action === 'submit-review' ? 'pending_review' : action === 'approve' ? 'approved' : action === 'publish' ? 'published' : action === 'schedule' ? 'scheduled' : action === 'offline' ? 'offline' : 'draft'));
+  });
   app.post(`${prefix}/content/:type/:id/submit-review`, permission('content:submit_review'), contentAction(pool, 'pending_review'));
   app.post(`${prefix}/content/:type/:id/approve`, permission('content:approve'), contentAction(pool, 'approved'));
   app.post(`${prefix}/content/:type/:id/publish`, permission('content:publish'), contentAction(pool, 'published'));
@@ -228,6 +237,21 @@ function registerPublicRoutes(app, options) {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
     try { const [rows] = await pool.execute(`SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY version DESC LIMIT 1`, [req.params.type, req.params.id]); if (!rows.length) return res.status(404).json({ success: false, message: '内容暂不可用' }); res.json({ success: true, data: JSON.parse(rows[0].payload), meta: { version: rows[0].version, published_at: rows[0].published_at } }); } catch (error) { next(error); }
   });
+  app.get(`${prefix}/home/banners`, async (req, res, next) => {
+    if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
+    try {
+      const [rows] = await pool.execute(`SELECT payload, version, published_at FROM content_versions WHERE content_type = 'home_banner' AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY JSON_EXTRACT(payload, '$.sort_order') ASC, version DESC`);
+      const seen = new Set();
+      const list = rows.map((row) => {
+        const payload = parseJsonObject(row.payload);
+        const id = String(payload.banner_id || '');
+        if (!id || seen.has(id) || Number(payload.enabled) !== 1 || !isBannerActive(payload)) return null;
+        seen.add(id);
+        return { ...payload, version: row.version, published_at: row.published_at };
+      }).filter(Boolean);
+      res.json({ success: true, list });
+    } catch (error) { next(error); }
+  });
   app.get(`${prefix}/feedback/history`, authenticateToken, async (req, res, next) => {
     try { const [rows] = await pool.execute('SELECT id, type, content, status, public_progress, created_at FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]); res.json({ success: true, list: rows.map(tickets.publicTicket) }); } catch (error) { next(error); }
   });
@@ -261,31 +285,90 @@ function articleWriteHandler(pool, mode) {
   };
 }
 
+const BANNER_ACTIONS = ['assessment', 'chat', 'task', 'weekly_report', 'development_zones', 'parenting', 'nutrition', 'textbook'];
+const BANNER_FIELDS = ['banner_id', 'title', 'description', 'cta', 'action', 'image_url', 'mobile_image_url', 'sort_order', 'enabled', 'start_at', 'end_at', 'alt_text'];
+
+function normalizeBanner(input, fallbackId) {
+  const body = input || {};
+  const bannerId = String(body.banner_id || fallbackId || '').trim().slice(0, 128);
+  if (!bannerId || !String(body.title || '').trim()) throw Object.assign(new Error('Banner 标识和标题不能为空'), { statusCode: 400 });
+  if (!BANNER_ACTIONS.includes(String(body.action || ''))) throw Object.assign(new Error('Banner 跳转类型无效'), { statusCode: 400 });
+  const result = {};
+  BANNER_FIELDS.forEach((field) => { result[field] = field === 'sort_order' ? Math.max(0, Number(body[field] || 0)) : field === 'enabled' ? (body[field] === true || body[field] === 1 || body[field] === '1' ? 1 : 0) : cleanPlainText(body[field]).slice(0, 500); });
+  result.banner_id = bannerId;
+  return result;
+}
+
+function bannerList(pool) {
+  return async (req, res, next) => {
+    try {
+      const [rows] = await pool.execute(`SELECT cv.content_id, cv.payload, cv.version, cv.review_status, cv.publish_status, cv.published_at, cv.created_at, job.scheduled_at FROM content_versions cv LEFT JOIN (SELECT version_id, MAX(scheduled_at) AS scheduled_at FROM content_publish_jobs GROUP BY version_id) job ON job.version_id = cv.id WHERE cv.content_type = 'home_banner' ORDER BY cv.content_id, cv.version DESC`);
+      const seen = new Set();
+      const list = rows.map((row) => { if (seen.has(row.content_id)) return null; seen.add(row.content_id); return { content_id: row.content_id, ...parseJsonObject(row.payload), version: row.version, review_status: row.review_status, publish_status: row.publish_status, scheduled_at: row.scheduled_at, published_at: row.published_at }; }).filter(Boolean);
+      res.json({ success: true, list });
+    } catch (error) { next(error); }
+  };
+}
+
+function bannerWrite(pool, mode) {
+  return async (req, res, next) => {
+    let connection;
+    try {
+      const banner = normalizeBanner(req.body, mode === 'update' ? req.params.id : null);
+      connection = await pool.getConnection();
+      const version = await access.withAudit(connection, auditRequest(req, `banner.${mode}`, 'home_banner', banner.banner_id, null, banner), async () => {
+        const [versions] = await connection.execute('SELECT COALESCE(MAX(version), 0) AS max_version FROM content_versions WHERE content_type = ? AND content_id = ?', ['home_banner', banner.banner_id]);
+        const nextVersion = Number(versions[0].max_version || 0) + 1;
+        await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) VALUES (?, ?, ?, ?, ?)', ['home_banner', banner.banner_id, nextVersion, JSON.stringify(banner), req.admin.adminUserId]);
+        return nextVersion;
+      });
+      res.status(mode === 'create' ? 201 : 200).json({ success: true, data: { content_id: banner.banner_id, ...banner, version, review_status: 'draft', publish_status: 'draft' } });
+    } catch (error) { next(error); } finally { if (connection) connection.release(); }
+  };
+}
+
+function parseJsonObject(value) { if (value && typeof value === 'object') return value; try { return value ? JSON.parse(value) : {}; } catch (error) { return {}; } }
+function cleanPlainText(value) { return String(value == null ? '' : value).replace(/<[^>]*>/g, '').replace(/[\u0000-\u001f\u007f]/g, '').trim(); }
+function isBannerActive(payload) { const now = Date.now(); const start = payload.start_at ? Date.parse(payload.start_at) : NaN; const end = payload.end_at ? Date.parse(payload.end_at) : NaN; return (!Number.isNaN(start) ? start <= now : true) && (!Number.isNaN(end) ? end >= now : true); }
+
 function contentAction(pool, targetStatus) {
   return async (req, res, next) => {
     let connection;
     try {
+      const contentType = req.params.type || (req.path.includes('/content/home_banner/') ? 'home_banner' : '');
+      const isRestore = targetStatus === 'draft' && req.path.endsWith('/restore');
+      const requestedVersion = isRestore ? Number(req.body && req.body.version) : null;
+      if (!contentType) return res.status(400).json({ success: false, message: '内容类型不能为空' });
+      if (isRestore && (!Number.isInteger(requestedVersion) || requestedVersion < 1)) return res.status(400).json({ success: false, message: '历史版本号无效' });
       connection = await pool.getConnection();
       await connection.beginTransaction();
-      const [rows] = await connection.execute('SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? ORDER BY version DESC LIMIT 1 FOR UPDATE', [req.params.type, req.params.id]);
+      const [rows] = await connection.execute('SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? ORDER BY version DESC LIMIT 1 FOR UPDATE', [contentType, req.params.id]);
       if (!rows.length) { await connection.rollback(); return res.status(404).json({ success: false, message: '内容版本不存在' }); }
       const current = rows[0];
       const from = current.publish_status;
-      if (targetStatus === 'draft' && req.path.endsWith('/restore')) {
-        const version = current.version + 1;
-        await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) SELECT content_type, content_id, ?, payload, ? FROM content_versions WHERE id = ?', [version, req.admin.adminUserId, current.id]);
+      let restoredVersion = null;
+      let restoredId = null;
+      if (isRestore) {
+        const [sourceRows] = await connection.execute('SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? AND version = ? LIMIT 1 FOR UPDATE', [contentType, req.params.id, requestedVersion]);
+        if (!sourceRows.length) { await connection.rollback(); return res.status(404).json({ success: false, message: '历史版本不存在' }); }
+        const source = sourceRows[0];
+        restoredVersion = Number(current.version) + 1;
+        const [insert] = await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) SELECT content_type, content_id, ?, payload, ? FROM content_versions WHERE id = ?', [restoredVersion, req.admin.adminUserId, source.id]);
+        restoredId = insert.insertId;
       } else {
         publishing.assertTransition(from, targetStatus);
         await connection.execute('UPDATE content_versions SET review_status = ?, publish_status = ? WHERE id = ?', [targetStatus === 'approved' ? 'approved' : current.review_status, targetStatus, current.id]);
         if (targetStatus === 'pending_review' || targetStatus === 'approved' || targetStatus === 'rejected') await connection.execute('INSERT INTO content_reviews (content_version_id, reviewer_id, decision, comment) VALUES (?, ?, ?, ?)', [current.id, req.admin.adminUserId, targetStatus, String(req.body && (req.body.comment || req.body.reason) || '').slice(0, 2000)]);
-        if (targetStatus === 'scheduled') await connection.execute('INSERT INTO content_publish_jobs (content_type, content_id, version_id, scheduled_at) VALUES (?, ?, ?, ?)', [req.params.type, req.params.id, current.id, req.body && req.body.scheduled_at ? new Date(req.body.scheduled_at) : new Date()]);
+        if (targetStatus === 'scheduled') await connection.execute('INSERT INTO content_publish_jobs (content_type, content_id, version_id, scheduled_at) VALUES (?, ?, ?, ?)', [contentType, req.params.id, current.id, req.body && req.body.scheduled_at ? new Date(req.body.scheduled_at) : new Date()]);
         if (targetStatus === 'published') await connection.execute('UPDATE content_versions SET published_at = NOW() WHERE id = ?', [current.id]);
-        if (req.params.type === 'article' && targetStatus === 'published') await connection.execute('UPDATE articles SET is_published = 1 WHERE id = ?', [req.params.id]);
-        if (req.params.type === 'article' && targetStatus === 'offline') await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [req.params.id]);
+        if (contentType === 'article' && targetStatus === 'published') await connection.execute('UPDATE articles SET is_published = 1 WHERE id = ?', [req.params.id]);
+        if (contentType === 'article' && targetStatus === 'offline') await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [req.params.id]);
       }
-      await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, before_payload, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, `content.${targetStatus}`, req.params.type, req.params.id, JSON.stringify({ status: from }), JSON.stringify({ status: targetStatus }), req.ip]);
+      const actionName = isRestore ? 'restore' : targetStatus;
+      const afterPayload = isRestore ? { status: targetStatus, version: restoredVersion, restored_from: requestedVersion } : { status: targetStatus };
+      await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, before_payload, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, `content.${actionName}`, contentType, req.params.id, JSON.stringify({ status: from }), JSON.stringify(afterPayload), req.ip]);
       await connection.commit().catch(() => {});
-      res.json({ success: true, data: { id: current.id, status: targetStatus } });
+      res.json({ success: true, data: { id: isRestore ? restoredId : current.id, status: targetStatus, ...(isRestore ? { version: restoredVersion, restored_from: requestedVersion } : {}) } });
     } catch (error) { if (connection) await connection.rollback().catch(() => {}); next(error); } finally { if (connection) connection.release(); }
   };
 }
@@ -296,4 +379,4 @@ function formatPainPoint(row) { return { ...row, observable_signs: parseJson(row
 function parseJson(value) { if (Array.isArray(value) || (value && typeof value === 'object')) return value; try { return value ? JSON.parse(value) : []; } catch (error) { return []; } }
 function boundedLimit(value) { const number = Number(value); return Number.isInteger(number) ? Math.min(100, Math.max(1, number)) : 20; }
 
-module.exports = { registerPlatformRoutes, registerPublicRoutes, cleanRichText, permission, boundedLimit, formatPainPoint, normalizePainPoint, contentWriteGate };
+module.exports = { registerPlatformRoutes, registerPublicRoutes, cleanRichText, cleanPlainText, permission, boundedLimit, formatPainPoint, normalizePainPoint, contentWriteGate, contentAction };

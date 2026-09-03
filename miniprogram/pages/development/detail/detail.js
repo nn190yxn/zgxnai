@@ -324,10 +324,6 @@ Page({
       wx.showToast({ title: '先选一个表现', icon: 'none' });
       return;
     }
-    var query = '?source=development_zone&zone=' + encodeURIComponent(this.data.zoneCode || '');
-    if (this.data.selectedScenarioCode) {
-      query += '&scenario=' + encodeURIComponent(this.data.selectedScenarioCode);
-    }
     crossPageStorage.save('pendingGrowthRecordNote', this.buildGrowthRecordContext(), {
       childId: this.data.currentChild && this.data.currentChild.id,
       source: 'development_detail'
@@ -336,8 +332,8 @@ Page({
       childId: this.data.currentChild && this.data.currentChild.id,
       source: 'development_detail'
     });
-    wx.navigateTo({
-      url: '/pages/growth-record/index' + query,
+    wx.switchTab({
+      url: '/pages/growth-record/index',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }

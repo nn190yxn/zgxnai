@@ -6,7 +6,9 @@
 
 .header {
   padding: 56rpx 32rpx 28rpx;
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
 }
 
 .title,
@@ -42,7 +44,7 @@
   display: block;
   font-size: 42rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #283936;
   font-weight: 800;
 }
 
@@ -51,7 +53,7 @@
   margin-top: 12rpx;
   font-size: 26rpx;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.9);
+  color: #657773;
 }
 
 .action-text {
@@ -119,7 +121,7 @@
 }
 
 .age-tab-active {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
 }
 
@@ -139,7 +141,7 @@
 
 .profile-tip-link {
   flex-shrink: 0;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 800;
 }
 
@@ -218,7 +220,7 @@
   margin-top: 14rpx;
   font-size: 23rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 800;
 }
 
@@ -231,7 +233,7 @@
   padding: 20rpx 12rpx;
   border-radius: 18rpx;
   text-align: center;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 25rpx;
   line-height: 1.45;
@@ -243,7 +245,7 @@
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
   background: #FFF0E8;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -276,7 +278,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 800;
 }
 
@@ -293,7 +295,7 @@
   padding: 18rpx 20rpx;
   border-radius: 18rpx;
   text-align: center;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 25rpx;
   line-height: 1.45;
@@ -317,7 +319,7 @@
 
 .plan-day {
   width: 96rpx;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   line-height: 1.5;
   font-weight: 800;
@@ -346,14 +348,14 @@
   border-radius: 18rpx;
   text-align: center;
   background: #FFF0E8;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 25rpx;
   line-height: 1.45;
   font-weight: 800;
 }
 
 .related-btn-primary {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
 }
 

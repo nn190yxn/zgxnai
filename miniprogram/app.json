@@ -39,14 +39,14 @@
   ],
   "window": {
     "navigationBarTitleText": "小牛育儿",
-    "navigationBarBackgroundColor": "#FF6B35",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#F5F5F5",
+    "navigationBarBackgroundColor": "#F7F7F2",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F7F7F2",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#A08C86",
-    "selectedColor": "#FF6B35",
+    "color": "#8A9A95",
+    "selectedColor": "#2F9D8E",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
     "list": [

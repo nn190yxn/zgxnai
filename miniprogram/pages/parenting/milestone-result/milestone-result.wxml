@@ -24,7 +24,7 @@
   </view>
 
   <view class="empty-state" wx:if="{{history.length === 0}}">
-    <text class="empty-icon">📋</text>
+    <text class="empty-icon">记录</text>
     <text class="empty-text">还没有观察记录</text>
     <text class="empty-hint">做完一次里程碑观察，这里会留好记录</text>
   </view>

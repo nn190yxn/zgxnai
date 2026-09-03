@@ -37,11 +37,11 @@
       </view>
       <view class="header-actions">
         <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
-          <text class="action-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+          <text class="action-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
           <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
         </view>
         <button class="action-btn share-btn" open-type="share">
-          <text class="action-icon">📤</text>
+          <text class="action-icon">分享</text>
           <text class="action-text">分享</text>
         </button>
       </view>
@@ -71,17 +71,17 @@
           <text class="info-value">{{recipe.cookTime || '30分钟'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-icon">🔥</text>
+          <text class="info-icon">热量</text>
         <text class="info-label">能量参考</text>
           <text class="info-value">{{recipe.calories || '200卡'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-icon">📊</text>
+          <text class="info-icon">难度</text>
           <text class="info-label">难度</text>
           <text class="info-value">{{recipe.difficulty || '简单'}}</text>
         </view>
         <view class="info-item">
-          <text class="info-icon">👶</text>
+          <text class="info-icon">年龄</text>
           <text class="info-label">适合年龄</text>
           <text class="info-value">{{recipe.ageRange || '1-3岁'}}</text>
         </view>
@@ -96,7 +96,7 @@
 
       <!-- 营养亮点 -->
       <view class="nutrition-highlight" wx:if="{{recipe.nutrition.highlight}}">
-        <text class="highlight-icon">💡</text>
+        <text class="highlight-icon">提示</text>
         <text class="highlight-text">{{recipe.nutrition.highlight}}</text>
       </view>
 
@@ -244,11 +244,11 @@
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
       <view class="bar-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
-        <text class="bar-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+        <text class="bar-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
         <text class="bar-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
       </view>
       <button class="bar-btn share-btn" open-type="share">
-        <text class="bar-icon">📤</text>
+        <text class="bar-icon">分享</text>
         <text class="bar-text">分享</text>
       </button>
     </view>
@@ -259,7 +259,7 @@
 
   <!-- 空状态 -->
   <view class="empty-wrap" wx:else>
-    <text class="empty-icon">🍽️</text>
+    <text class="empty-icon">食谱</text>
     <text class="empty-text">这道食谱暂时看不了</text>
   </view>
 </view>

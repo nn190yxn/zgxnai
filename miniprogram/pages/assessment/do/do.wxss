@@ -27,7 +27,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #FF6B35, #FF8F5A);
+  background: #2F9D8E;
   border-radius: 6rpx;
   transition: width 0.3s ease;
 }
@@ -46,7 +46,7 @@
 
 .time-text {
   font-size: 26rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   font-weight: 600;
 }
 
@@ -71,7 +71,7 @@
 
 .question-number {
   font-size: 28rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   font-weight: 600;
 }
 
@@ -125,7 +125,7 @@
 
 .option-item.selected {
   background: #FFF3ED;
-  border-color: #FF6B35;
+  border-color: #2F9D8E;
 }
 
 .option-radio {
@@ -142,13 +142,13 @@
 }
 
 .option-item.selected .option-radio {
-  border-color: #FF6B35;
+  border-color: #2F9D8E;
 }
 
 .radio-inner {
   width: 24rpx;
   height: 24rpx;
-  background: #FF6B35;
+  background: #2F9D8E;
   border-radius: 50%;
 }
 
@@ -172,7 +172,7 @@
 }
 
 .option-item.selected .option-text {
-  color: #FF6B35;
+  color: #2F9D8E;
   font-weight: 500;
 }
 
@@ -209,17 +209,17 @@
 
 .nav-dot.answered {
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 .nav-dot.current {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #fff;
   font-weight: 600;
 }
 
 .nav-dot.current.answered {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #fff;
 }
 
@@ -267,8 +267,8 @@
 .prev-btn {
   flex: 1;
   background: #fff;
-  border: 2rpx solid #FF6B35;
-  color: #FF6B35;
+  border: 2rpx solid #2F9D8E;
+  color: #2F9D8E;
   gap: 8rpx;
 }
 
@@ -279,7 +279,7 @@
 
 .next-btn {
   flex: 1.5;
-  background: linear-gradient(135deg, #FF6B35, #FF7E4B);
+  background: #2F9D8E;
   color: #fff;
   gap: 8rpx;
 }

@@ -139,18 +139,18 @@
     <!-- 底部操作 -->
     <view class="bottom-actions">
       <view class="action-btn share-btn" bindtap="shareReport">
-        <text class="btn-icon">📤</text>
+        <text class="btn-icon">分享</text>
         <text class="btn-text">分享结果</text>
       </view>
       <view class="action-btn save-btn" bindtap="saveToAlbum">
-        <text class="btn-icon">📷</text>
+        <text class="btn-icon">保存</text>
         <text class="btn-text">保存图片</text>
       </view>
       <view class="action-btn save-btn" bindtap="saveAssessmentToGrowthRecord">
         <text class="btn-text">记到成长记录</text>
       </view>
       <view class="action-btn history-btn" bindtap="goToHistory">
-        <text class="btn-icon">📋</text>
+        <text class="btn-icon">记录</text>
         <text class="btn-text">历史记录</text>
       </view>
     </view>

@@ -5,8 +5,11 @@
 }
 
 .header {
-  padding: 56rpx 32rpx 30rpx;
-  background: linear-gradient(135deg, #3A2A22 0%, #6A412F 100%);
+  margin: 24rpx 32rpx 0;
+  padding: 40rpx 32rpx 30rpx;
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
 }
 
 .eyebrow,
@@ -28,7 +31,7 @@
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.16);
-  color: #FFE8D6;
+  color: #2F8175;
   font-size: 23rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -39,7 +42,7 @@
   margin-top: 20rpx;
   font-size: 40rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #283936;
   font-weight: 900;
 }
 
@@ -48,14 +51,60 @@
   margin-top: 14rpx;
   font-size: 25rpx;
   line-height: 1.7;
-  color: rgba(255, 250, 244, 0.86);
+  color: #657773;
 }
 
 .source-tip {
   display: block;
   margin-top: 14rpx;
   font-size: 21rpx;
-  color: rgba(255, 250, 244, 0.72);
+  color: #82918D;
+}
+
+.scene-section {
+  margin: 26rpx 32rpx 0;
+}
+
+.scene-section-desc {
+  display: block;
+  margin-top: 8rpx;
+  color: #7A8984;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.family-scene-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.family-scene-item {
+  min-height: 156rpx;
+  padding: 22rpx;
+  border: 1rpx solid #E8EEEA;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+
+.family-scene-title,
+.family-scene-desc {
+  display: block;
+}
+
+.family-scene-title {
+  color: #24332F;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.family-scene-desc {
+  margin-top: 8rpx;
+  color: #6C7A75;
+  font-size: 23rpx;
+  line-height: 1.5;
 }
 
 .zone-grid {
@@ -138,7 +187,7 @@
 }
 
 .zone-arrow {
-  color: #D85C26;
+  color: #2F8175;
   font-size: 25rpx;
   line-height: 1.45;
   font-weight: 900;
@@ -188,7 +237,7 @@
 }
 
 .zone-action {
-  color: #D85C26;
+  color: #2F8175;
 }
 
 .guide-card {

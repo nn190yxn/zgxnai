@@ -1,67 +1,121 @@
 <view class="page">
   <view wx:if="{{startupSafeMode}}" class="safe-mode">
     <text class="safe-title">小牛育儿</text>
-    <text class="safe-desc">安全启动模式已开启</text>
-    <text class="safe-note">如果这一页能显示，说明项目编译和首页渲染正常，剩余 timeout 来自某个后续原生能力或页面逻辑。</text>
+    <text class="safe-desc">今日内容正在准备</text>
+    <text class="safe-note">请稍候片刻，内容准备好后会自动显示。</text>
   </view>
 
-  <block wx:if="{{!startupSafeMode}}">
-  <view class="core-hero" wx:if="{{coreRefactorEnabled}}">
-    <view class="core-hero-content">
-      <text class="core-brand">小牛育儿</text>
-      <text class="core-title">{{homePrimaryCard.title}}</text>
-      <text class="core-desc">{{homePrimaryCard.desc}}</text>
-      <view class="core-primary-action" bindtap="onHomePrimaryActionTap">
-        <text class="core-primary-action-text">{{homePrimaryCard.cta}}</text>
+  <block wx:else>
+    <view class="home-banner-section">
+      <swiper class="home-banner" indicator-dots="true" autoplay="true" interval="4500" duration="500" circular="true">
+        <swiper-item wx:for="{{bannerList}}" wx:key="action">
+          <view class="home-banner-card" data-action="{{item.action}}" bindtap="onTapBannerCta">
+            <image wx:if="{{item.image_url && !item.imageFailed}}" class="home-banner-image" src="{{item.image_url}}" mode="aspectFill" data-index="{{index}}" binderror="onBannerImageError" lazy-load="true" alt="{{item.alt_text || item.title}}" />
+            <view wx:else class="home-banner-copy">
+            <text class="home-banner-kicker">小牛育儿</text>
+            <text class="home-banner-title">{{item.title}}</text>
+            <text class="home-banner-desc">{{item.desc}}</text>
+            <text class="home-banner-cta">{{item.cta}} ></text>
+            </view>
+          </view>
+        </swiper-item>
+      </swiper>
+    </view>
+
+    <view class="home-feature-section">
+      <view class="home-section-heading">
+        <text class="home-section-title">常用功能</text>
+        <text class="home-section-subtitle">按需要选择，清楚看一项、做好一件事</text>
+      </view>
+      <view class="home-feature-grid">
+        <view class="home-feature-item" wx:for="{{coreSupportTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
+          <view class="home-feature-icon"><text>{{item.title}}</text></view>
+          <text class="home-feature-title">{{item.title}}</text>
+          <text class="home-feature-desc">{{item.desc}}</text>
+        </view>
+      </view>
+      <view class="home-feature-grid home-feature-grid-secondary">
+        <view class="home-feature-item" wx:for="{{coreAuxiliaryTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
+          <view class="home-feature-icon"><text>{{item.title}}</text></view>
+          <text class="home-feature-title">{{item.title}}</text>
+          <text class="home-feature-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="home-topic-section" wx:if="{{developmentZones.length}}">
+      <view class="home-section-heading">
+        <text class="home-section-title">重点专题</text>
+        <text class="home-section-subtitle">从一个具体场景开始，找到适合家庭的支持</text>
+      </view>
+      <view class="home-topic-list">
+        <view class="home-topic-card" wx:for="{{developmentZones}}" wx:key="code" data-zone="{{item.code}}" bindtap="goToAllDevelopmentZones">
+          <text class="home-topic-title">{{item.title}}</text>
+          <text class="home-topic-desc">{{item.subtitle}}</text>
+          <text class="home-topic-link">查看专题 ></text>
+        </view>
+      </view>
+    </view>
+
+    <view class="home-legacy-compat" hidden="true">
+    <view class="core-hero" wx:if="{{coreRefactorEnabled}}">
+      <view class="core-hero-content">
+        <text class="core-brand">小牛育儿</text>
+        <text class="core-status-eyebrow">孩子的成长观察</text>
+        <text class="core-title">{{homePrimaryCard.title}}</text>
+        <text class="core-desc">{{homePrimaryCard.desc}}</text>
+        <view class="core-primary-action" bindtap="onHomePrimaryActionTap">
+          <text class="core-primary-action-text">{{homePrimaryCard.cta}}</text>
+        </view>
       </view>
     </view>
 
     <view class="core-status-card">
       <view class="core-status-header">
         <view>
-      <text class="core-status-eyebrow">孩子的表现档案</text>
+          <text class="core-status-eyebrow">当前关注点</text>
           <text class="core-status-title">{{growthStatus.currentFocus}}</text>
         </view>
         <text class="core-status-progress">{{dailyPlanCompletedCount}}/{{dailyPlanCards.length || 0}} 项</text>
       </view>
       <text class="core-status-desc">{{growthStatus.todaySuggestion}}</text>
     </view>
-    <view class="core-boundary-card">
-      <text class="core-boundary-title">健康边界提示</text>
-      <text class="core-boundary-text">这里记录的是家庭中可观察的表现和支持方向，不能替代专业评估或诊断；持续担忧时请咨询儿科医生或相关专业人员。</text>
+
+    <view wx:if="{{showLegacyHomeSections}}" class="legacy-home-sections">
+      <text class="legacy-home-sections-text">更多家庭内容</text>
     </view>
 
-    <view class="core-today-card" wx:if="{{dailyPlanCards.length}}">
+    <view class="core-today-card">
       <view class="core-today-header">
         <view>
-        <text class="core-today-eyebrow">今天的训练方向</text>
-          <text class="core-today-title">完成一个短训练，看见一次具体表现</text>
+          <text class="core-today-eyebrow">今天的主行动</text>
+          <text class="core-today-title">完成一个短行动，留下一个观察</text>
         </view>
-        <text class="core-today-count">{{dailyPlanCompletedCount}}/{{dailyPlanCards.length}}</text>
+        <text class="core-today-count">{{dailyPlanCompletedCount}}/{{dailyPlanCards.length || 0}}</text>
       </view>
-      <view class="core-today-task" bindtap="onDailyPlanTap" data-index="0">
+      <view wx:if="{{dailyPlanLoading}}" class="plan-loading-card">
+        <text class="plan-loading-title">正在找今天适合做的事</text>
+        <text class="plan-loading-desc">会优先看孩子的年龄和档案。</text>
+      </view>
+      <view wx:elif="{{dailyPlanCards.length}}" class="core-today-task" bindtap="onDailyPlanTap" data-index="0">
         <text class="core-today-task-title">{{dailyPlanCards[0].title}}</text>
         <text class="core-today-task-desc">{{dailyPlanCards[0].reason}}</text>
         <text class="core-today-task-action">{{dailyPlanCards[0].actionText}}</text>
+      </view>
+      <view wx:else class="plan-empty-card" bindtap="goToTodayTask">
+        <text class="plan-empty-title">{{todayTask.title}}</text>
+        <text class="plan-empty-desc">{{dailyPlanEmptyText || todayTask.duration}}</text>
       </view>
     </view>
 
     <view class="core-scenes">
       <view class="core-scenes-header">
-        <text class="core-scenes-title" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">按年龄找孩子问题</text>
-        <text class="core-scenes-title" wx:else>先选家里正在发生的场景</text>
-        <text class="core-scenes-subtitle" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable}}">覆盖学习专注、情绪规则、运动体能、社交表达</text>
-        <text class="core-scenes-subtitle" wx:else>小牛先判断场景，再确认年龄和表现</text>
+        <text class="core-scenes-title">按场景找问题</text>
+        <text class="core-scenes-subtitle">从写作业、吃饭、睡前和亲子共读等日常表现开始</text>
+        <text class="core-scenes-note">也可以按年龄找孩子问题：学习专注、情绪规则、运动体能、社交表达</text>
       </view>
-
-      <view class="core-scene-grid" wx:if="{{(!ageFirstCoreEnabled || !ageFirstCoreAvailable) && coreRefactorState.stage === 'scene_select'}}">
-        <view
-          class="core-scene-item {{coreRefactorState.activeScene === item.key ? 'core-scene-item-active' : ''}}"
-          wx:for="{{coreScenes}}"
-          wx:key="key"
-          data-scene-key="{{item.key}}"
-          bindtap="onCoreSceneTap"
-        >
+      <view class="core-scene-grid" wx:if="{{coreRefactorState.stage === 'scene_select' || coreRefactorState.stage === 'idle'}}">
+        <view class="core-scene-item {{coreRefactorState.activeScene === item.key ? 'core-scene-item-active' : ''}}" wx:for="{{coreScenes}}" wx:key="key" data-scene-key="{{item.key}}" bindtap="onCoreSceneTap">
           <text class="core-scene-name">{{item.label}}</text>
           <text class="core-scene-desc">{{item.description}}</text>
         </view>
@@ -71,16 +125,10 @@
         <view class="core-age-header">
           <text class="core-age-title">孩子现在几岁？</text>
           <text class="core-age-subtitle" wx:if="{{coreRefactorState.profileAgeGroup}}">已按 {{coreRefactorState.profileAgeGroup.childName}} 的档案先选 {{coreRefactorState.profileAgeGroup.label}}</text>
-          <text class="core-age-subtitle" wx:else>没有完整档案也可以先选年龄继续</text>
+          <text class="core-age-subtitle" wx:else>选择年龄，看到更贴合的成长表现</text>
         </view>
         <view class="core-age-options">
-          <view
-            class="core-age-option {{coreRefactorState.selectedAgeSegment && coreRefactorState.selectedAgeSegment.key === item.key ? 'core-age-option-active' : ''}}"
-            wx:for="{{coreRefactorState.ageSegments}}"
-            wx:key="key"
-            data-segment-key="{{item.key}}"
-            bindtap="onCoreAgeSegmentTap"
-          >
+          <view class="core-age-option {{coreRefactorState.selectedAgeSegment && coreRefactorState.selectedAgeSegment.key === item.key ? 'core-age-option-active' : ''}}" wx:for="{{coreRefactorState.ageSegments}}" wx:key="key" data-segment-key="{{item.key}}" bindtap="onCoreAgeSegmentTap">
             <text class="core-age-option-text">{{item.label}}</text>
           </view>
         </view>
@@ -95,47 +143,26 @@
           <text class="core-age-subtitle">同一个场景，不同年龄的第一步会不一样</text>
         </view>
         <view class="core-age-options">
-          <view
-            class="core-age-option {{coreRefactorState.selectedAgeGroup === item.key ? 'core-age-option-active' : ''}}"
-            wx:for="{{coreRefactorState.ageOptions}}"
-            wx:key="key"
-            data-age-key="{{item.key}}"
-            bindtap="onCoreAgeTap"
-          >
+          <view class="core-age-option {{coreRefactorState.selectedAgeGroup === item.key ? 'core-age-option-active' : ''}}" wx:for="{{coreRefactorState.ageOptions}}" wx:key="key" data-age-key="{{item.key}}" bindtap="onCoreAgeTap">
             <text class="core-age-option-text">{{item.label}}</text>
           </view>
         </view>
       </view>
 
-      <view class="core-age-summary" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment}}">
-        <text class="core-age-summary-title">{{coreRefactorState.selectedAgeSegment.title}}</text>
-        <text class="core-age-summary-desc">{{coreRefactorState.selectedAgeSegment.parentSummary || coreRefactorState.selectedAgeSegment.subtitle}}</text>
-        <view class="core-focus-tags" wx:if="{{coreRefactorState.focusAreas && coreRefactorState.focusAreas.length > 0}}">
-          <text class="core-focus-tag" wx:for="{{coreRefactorState.focusAreas}}" wx:key="*this">{{item}}</text>
-        </view>
-      </view>
-
-      <view class="core-pain-panel" wx:if="{{ageFirstCoreEnabled && ageFirstCoreAvailable && coreRefactorState.selectedAgeSegment && (coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'pain_point_select')}}">
+      <view class="core-pain-panel" wx:if="{{coreRefactorState.selectedAgeSegment && (coreRefactorState.stage === 'age_select' || coreRefactorState.stage === 'pain_point_select')}}">
         <view class="core-pain-header">
-          <text class="core-pain-title">{{coreRefactorState.selectedAgeSegment.label}}常见成长问题</text>
-          <text class="core-pain-subtitle" wx:if="{{!coreRefactorState.showAllPainPoints}}">先选一个最像孩子今天表现的问题，小牛育儿给今晚做法</text>
-          <text class="core-pain-subtitle" wx:else>按学习、情绪、运动、社交 4 类查看完整情况</text>
+          <text class="core-pain-title">当前最像哪种表现？</text>
+          <text class="core-pain-subtitle">选一个最像孩子今天状态的问题，小牛给你今晚做法</text>
         </view>
         <view class="core-pain-list" wx:if="{{!coreRefactorState.showAllPainPoints}}">
-          <view
-            class="core-pain-item {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}"
-            wx:for="{{coreRefactorState.featuredPainPoints}}"
-            wx:key="key"
-            data-pain-point-key="{{item.key}}"
-            bindtap="onCorePainPointTap"
-          >
+          <view class="core-pain-item {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}" wx:for="{{coreRefactorState.featuredPainPoints}}" wx:key="key" data-pain-point-key="{{item.key}}" bindtap="onCorePainPointTap">
             <text class="core-pain-name">{{item.title}}</text>
             <text class="core-pain-desc">{{item.description}}</text>
             <view class="core-pain-signs" wx:if="{{item.observableSigns && item.observableSigns.length > 0}}">
               <text class="core-pain-sign" wx:for="{{item.observableSigns}}" wx:for-item="sign" wx:key="*this">{{sign}}</text>
             </view>
             <view class="core-ability-tags" wx:if="{{item.abilityTags && item.abilityTags.length > 0}}">
-              <text class="core-ability-tag" wx:for="{{item.abilityTags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+              <text class="core-ability-tag" wx:for="{{item.abilityTags}}" wx:key="*this">{{item}}</text>
             </view>
           </view>
         </view>
@@ -146,25 +173,15 @@
               <text class="core-pain-category-desc">{{category.description}}</text>
             </view>
             <view class="core-pain-list core-pain-list-compact">
-              <view
-                class="core-pain-item core-pain-item-compact {{coreRefactorState.selectedPainPoint && coreRefactorState.selectedPainPoint.key === item.key ? 'core-pain-item-active' : ''}}"
-                wx:for="{{category.painPoints}}"
-                wx:key="key"
-                data-pain-point-key="{{item.key}}"
-                bindtap="onCorePainPointTap"
-              >
-                <view class="core-pain-name-row">
-                  <text class="core-pain-name">{{item.title}}</text>
-                  <text class="core-pain-category-tag">{{item.categoryLabel}}</text>
-                </view>
+              <view class="core-pain-item core-pain-item-compact" wx:for="{{category.painPoints}}" wx:key="key" data-pain-point-key="{{item.key}}" bindtap="onCorePainPointTap">
+                <text class="core-pain-name">{{item.title}}</text>
                 <text class="core-pain-desc">{{item.description}}</text>
               </view>
             </view>
           </view>
         </view>
         <view class="core-pain-more" wx:if="{{coreRefactorState.painPoints && coreRefactorState.painPoints.length > coreRefactorState.featuredPainPoints.length}}" bindtap="onToggleCorePainPointList">
-          <text class="core-pain-more-text" wx:if="{{!coreRefactorState.showAllPainPoints}}">查看更多情况（{{coreRefactorState.painPoints.length}}个）</text>
-          <text class="core-pain-more-text" wx:else>收起，只看高频 5 个</text>
+          <text class="core-pain-more-text">{{coreRefactorState.showAllPainPoints ? '收起表现' : '查看更多表现'}}</text>
         </view>
       </view>
 
@@ -174,13 +191,7 @@
           <text class="core-symptom-subtitle">选最像今天家里发生的那个表现</text>
         </view>
         <view class="core-symptom-list">
-          <view
-            class="core-symptom-item {{coreRefactorState.selectedSymptomKey === item.key ? 'core-symptom-item-active' : ''}}"
-            wx:for="{{coreRefactorState.selectedScene.symptoms}}"
-            wx:key="key"
-            data-symptom-key="{{item.key}}"
-            bindtap="onCoreSymptomTap"
-          >
+          <view class="core-symptom-item {{coreRefactorState.selectedSymptomKey === item.key ? 'core-symptom-item-active' : ''}}" wx:for="{{coreRefactorState.selectedScene.symptoms}}" wx:key="key" data-symptom-key="{{item.key}}" bindtap="onCoreSymptomTap">
             <text class="core-symptom-name">{{item.label}}</text>
           </view>
         </view>
@@ -188,25 +199,18 @@
 
       <view class="core-result-card" wx:if="{{coreRefactorState.stage === 'bottleneck_result' && coreRefactorState.currentBottleneck}}">
         <view class="core-result-header">
-          <text class="core-result-eyebrow">卡点判断</text>
-          <text class="core-result-context" wx:if="{{coreRefactorState.currentBottleneck.ageSegmentLabel || coreRefactorState.currentBottleneck.painPointTitle}}">{{coreRefactorState.currentBottleneck.ageSegmentLabel}} · {{coreRefactorState.currentBottleneck.painPointTitle}}</text>
+          <text class="core-result-eyebrow">今晚可以先做</text>
           <text class="core-result-title">{{coreRefactorState.currentBottleneck.bottleneckTitle}}</text>
           <text class="core-result-desc">{{coreRefactorState.currentBottleneck.bottleneckText}}</text>
         </view>
-
         <view class="core-result-observe" wx:if="{{coreRefactorState.observableSigns && coreRefactorState.observableSigns.length > 0}}">
           <text class="core-result-observe-title">你可能看到</text>
-          <view class="core-result-observe-list">
-            <text class="core-result-observe-item" wx:for="{{coreRefactorState.observableSigns}}" wx:key="*this">{{item}}</text>
-          </view>
+          <text class="core-result-observe-item" wx:for="{{coreRefactorState.observableSigns}}" wx:key="*this">{{item}}</text>
         </view>
-
         <view class="core-ability-tags core-result-abilities" wx:if="{{coreRefactorState.abilityTags && coreRefactorState.abilityTags.length > 0}}">
           <text class="core-ability-tag" wx:for="{{coreRefactorState.abilityTags}}" wx:key="*this">{{item}}</text>
         </view>
-
         <view class="core-action-box">
-          <text class="core-action-eyebrow">今晚第一步</text>
           <text class="core-action-title">{{coreRefactorState.currentBottleneck.actionTitle}}</text>
           <view class="core-action-steps">
             <view class="core-action-step" wx:for="{{coreRefactorState.currentBottleneck.actionSteps}}" wx:key="index">
@@ -215,346 +219,77 @@
             </view>
           </view>
         </view>
-
         <view class="core-result-actions">
-          <view class="core-result-primary" bindtap="onCoreTryTonightTap">
-            <text class="core-result-primary-text">我今晚试试</text>
-          </view>
-          <view class="core-result-secondary" bindtap="onCoreAskDetailTap">
-            <text class="core-result-secondary-text">继续问细节</text>
-          </view>
+          <view class="core-result-primary" bindtap="onCoreTryTonightTap"><text class="core-result-primary-text">我今晚试试</text></view>
+          <view class="core-result-secondary" bindtap="onCoreAskDetailTap"><text class="core-result-secondary-text">继续问细节</text></view>
         </view>
-        <view class="core-result-tertiary" bindtap="onSaveCoreActionToGrowthRecordTap">
-          <text class="core-result-tertiary-text">记到成长记录</text>
-        </view>
-
-        <view class="core-result-support" wx:if="{{coreRefactorState.resultSupportItems && coreRefactorState.resultSupportItems.length > 0}}">
-          <text class="core-result-support-title">继续深入</text>
-          <view class="core-result-support-grid">
-            <view
-              class="core-result-support-item"
-              wx:for="{{coreRefactorState.resultSupportItems}}"
-              wx:key="key"
-              data-action="{{item.action}}"
-              bindtap="onCoreResultSupportTap"
-            >
-              <text class="core-result-support-item-title">{{item.title}}</text>
-              <text class="core-result-support-item-desc">{{item.desc}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="core-effect-panel" wx:if="{{coreRefactorState.stage === 'effect_record' && coreRefactorState.currentBottleneck}}">
-        <view class="core-effect-header">
-          <text class="core-effect-eyebrow">效果记录</text>
-          <text class="core-effect-title">昨晚这一步效果怎么样？</text>
-          <text class="core-effect-desc">{{coreRefactorState.currentBottleneck.actionTitle}}</text>
-        </view>
-        <view class="core-effect-options">
-          <view
-            class="core-effect-option"
-            wx:for="{{coreRefactorState.effectOptions}}"
-            wx:key="key"
-            data-effect-key="{{item.key}}"
-            bindtap="onCoreEffectTap"
-          >
-            <text class="core-effect-option-text">{{item.label}}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="core-next-panel" wx:if="{{coreRefactorState.stage === 'effect_recorded' && coreRefactorState.nextActionSuggestion}}">
-        <view class="core-next-header">
-          <text class="core-next-eyebrow">下一步建议</text>
-          <text class="core-next-title">{{coreRefactorState.nextActionSuggestion.actionTitle}}</text>
-          <text class="core-next-desc">{{coreRefactorState.nextActionSuggestion.nextActionDesc}}</text>
-        </view>
-        <view class="core-next-steps">
-          <view class="core-next-step" wx:for="{{coreRefactorState.nextActionSuggestion.actionSteps}}" wx:key="index">
-            <text class="core-next-step-index">{{index + 1}}</text>
-            <text class="core-next-step-text">{{item}}</text>
-          </view>
-        </view>
-        <view class="core-next-save" bindtap="onSaveNextCoreActionTap">
-          <text class="core-next-save-text">保存为今晚小任务</text>
-        </view>
-        <view class="core-next-record" bindtap="onSaveCoreActionToGrowthRecordTap">
-          <text class="core-next-record-text">记到成长记录</text>
-        </view>
+        <view class="core-result-tertiary" bindtap="onSaveCoreActionToGrowthRecordTap"><text class="core-result-tertiary-text">记到成长记录</text></view>
       </view>
     </view>
-  </view>
 
-  <view class="core-membership" wx:if="{{coreRefactorEnabled && membershipTouchpointVisible}}" bindtap="goToMembership">
-    <text class="core-membership-eyebrow">连续陪伴</text>
-    <text class="core-membership-title">{{membershipTouchpointTitle}}</text>
-    <text class="core-membership-desc">{{membershipTouchpointDesc}}</text>
-    <text class="core-membership-action">{{membershipTouchpointCta}}</text>
-  </view>
-
-  <view class="core-tools" wx:if="{{coreRefactorEnabled}}">
-    <view class="core-tools-header">
-      <text class="core-tools-title">核心入口</text>
-      <text class="core-tools-subtitle">观察表现、安排训练、查看报告和进入发展专题</text>
-    </view>
-    <view class="core-tool-grid">
-      <view
-        class="core-tool-item"
-        wx:for="{{coreSupportTools}}"
-        wx:key="key"
-        data-action="{{item.action}}"
-        bindtap="onCoreToolTap"
-      >
-        <text class="core-tool-title">{{item.title}}</text>
-        <text class="core-tool-desc">{{item.desc}}</text>
+    <view class="section development-zone-section">
+      <view class="section-header">
+        <view>
+          <text class="section-title">3-6 岁发展专区</text>
+          <text class="section-subtitle development-zone-subtitle">语言、感统、专注力、大运动、情绪社交，每天一个小动作。</text>
+        </view>
+        <text class="section-header-link" bindtap="goToAllDevelopmentZones">进入专区</text>
+      </view>
+      <view class="development-zone-entry" bindtap="goToAllDevelopmentZones">
+        <text class="development-zone-entry-title">8 个发展方向，一次看清</text>
+        <text class="development-zone-entry-desc">按年龄进入语言发育、感统支持、专注力、大运动、情绪管理、社交能力、自信与适应、生活习惯，选择最像孩子当前表现的场景。</text>
+        <view class="development-zone-tags">
+          <text class="development-zone-tag">先选年龄</text>
+          <text class="development-zone-tag">再选场景</text>
+          <text class="development-zone-tag">每天 3 分钟</text>
+        </view>
+        <text class="development-zone-entry-action">进入 3-6 岁专区 ></text>
       </view>
     </view>
-    <view class="core-tools core-auxiliary-tools">
+
+    <view class="core-tools" wx:if="{{coreRefactorEnabled}}">
       <view class="core-tools-header">
-        <text class="core-tools-title">辅助支持</text>
-        <text class="core-tools-subtitle">AI、文章、营养和家庭场景内容用于补充当天的支持</text>
+        <text class="core-tools-title">成长记录与辅助入口</text>
+        <text class="core-tools-subtitle">记录今天的变化，也可以从内容和问答里继续找办法</text>
       </view>
       <view class="core-tool-grid">
-        <view
-          class="core-tool-item"
-          wx:for="{{coreAuxiliaryTools}}"
-          wx:key="key"
-          data-action="{{item.action}}"
-          bindtap="onCoreToolTap"
-        >
+        <view class="core-tool-item" wx:for="{{coreSupportTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
+          <text class="core-tool-title">{{item.title}}</text>
+          <text class="core-tool-desc">{{item.desc}}</text>
+        </view>
+      </view>
+
+      <view class="core-effect-panel" wx:if="{{coreRefactorState.stage === 'effect_record' && coreRefactorState.currentAction}}">
+        <view class="core-effect-header">
+          <text class="core-effect-title">试过以后，孩子是什么反应？</text>
+          <text class="core-effect-subtitle">选一个最接近的情况，帮小牛给出下一步建议</text>
+        </view>
+        <view class="core-effect-list">
+          <view class="core-effect-item" wx:for="{{coreRefactorState.effectOptions}}" wx:key="key" data-effect-key="{{item.key}}" bindtap="onCoreEffectTap">
+            <text class="core-effect-item-text">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="core-tool-grid core-auxiliary-tools">
+        <view class="core-tool-item" wx:for="{{coreAuxiliaryTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
           <text class="core-tool-title">{{item.title}}</text>
           <text class="core-tool-desc">{{item.desc}}</text>
         </view>
       </view>
     </view>
-  </view>
 
-  <block wx:if="{{showLegacyHomeSections}}">
-  <view class="hero">
-    <view class="hero-content">
-      <text class="hero-badge">小牛育儿</text>
-      <text class="hero-title">{{bannerList[0].title}}</text>
-      <text class="hero-desc">{{bannerList[0].desc}}</text>
-      <view class="hero-actions">
-        <view class="hero-btn hero-btn-primary" data-action="{{bannerList[0].action}}" bindtap="onTapBannerCta">{{bannerList[0].cta}}</view>
-        <view wx:if="{{featureFlags.aiChatEnabled}}" class="hero-btn hero-btn-secondary" bindtap="goToChat">问问小牛</view>
-        <view wx:else class="hero-btn hero-btn-secondary">小牛问答维护中</view>
-      </view>
-    </view>
-    <view class="hero-image hero-image-placeholder">
-      <text class="hero-emoji">🌱</text>
-      <text class="hero-image-title">每天三分钟，育儿有方法，成长看得见</text>
-      <text class="hero-image-desc">少一点猜测，多一点办法。</text>
-    </view>
-  </view>
-
-  <view class="section status-section">
-    <view class="status-card">
-      <view class="status-row">
-        <text class="status-title">今日成长重点</text>
-        <text class="status-rate">3分钟</text>
-      </view>
-      <text class="status-item">当前重点：{{growthStatus.currentFocus}}</text>
-      <text class="status-item">今日建议：{{growthStatus.todaySuggestion}}</text>
-    </view>
-  </view>
-
-  <view class="section daily-action-section">
-    <view class="daily-action-card">
-      <text class="daily-action-eyebrow">今晚就能用</text>
-      <text class="daily-action-title">孩子有状况，马上问小牛</text>
-      <text class="daily-action-desc">选一个场景，小牛给你具体步骤。</text>
-      <view class="daily-action-buttons">
-        <view class="daily-action-primary" bindtap="goToParenting">去育儿知识</view>
-        <view class="daily-action-secondary" bindtap="goToTodayTask">做今天第一步</view>
-      </view>
-    </view>
-  </view>
-
-  <view class="section touchpoint-section" wx:if="{{operationTouchpoint.key}}">
-    <view class="touchpoint-card" bindtap="onOperationTouchpointTap">
-      <view class="touchpoint-top">
-        <text class="touchpoint-eyebrow">给你留了一个入口</text>
-        <text class="touchpoint-arrow">></text>
-      </view>
-      <text class="touchpoint-title">{{operationTouchpoint.title}}</text>
-      <text class="touchpoint-desc">{{operationTouchpoint.desc}}</text>
-      <view class="touchpoint-cta">
-        <text class="touchpoint-cta-text">{{operationTouchpoint.cta}}</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="section development-zone-section">
-    <view class="section-header">
-      <view>
-        <text class="section-title">3-6 岁发展专区</text>
-        <text class="section-subtitle development-zone-subtitle">语言、感统、专注力、大运动、情绪社交，每天一个小动作。</text>
-      </view>
-      <text class="section-header-link" bindtap="goToAllDevelopmentZones">进入专区</text>
+    <view class="core-membership" wx:if="{{coreRefactorEnabled && membershipTouchpointVisible}}" bindtap="goToMembership">
+      <text class="core-membership-eyebrow">连续陪伴</text>
+      <text class="core-membership-title">{{membershipTouchpointTitle}}</text>
+      <text class="core-membership-desc">{{membershipTouchpointDesc}}</text>
+      <text class="core-membership-action">{{membershipTouchpointCta}}</text>
     </view>
 
-    <view class="development-zone-entry" bindtap="goToAllDevelopmentZones">
-      <text class="development-zone-entry-title">8 个发展方向，一次看清</text>
-      <text class="development-zone-entry-desc">按年龄进入语言发育、感统支持、专注力、大运动、情绪管理、社交能力、自信与适应、生活习惯，选择最像孩子当前表现的场景。</text>
-      <view class="development-zone-tags">
-        <text class="development-zone-tag">先选年龄</text>
-        <text class="development-zone-tag">再选场景</text>
-        <text class="development-zone-tag">每天 3 分钟</text>
-      </view>
-      <text class="development-zone-entry-action">进入 3-6 岁专区 ></text>
+    <view class="tips-card">
+      <text class="tips-title">温馨提示</text>
+      <text class="tips-content">本服务内容仅供家庭教育参考，不能替代专业评估或诊断。如对孩子发育有明显担忧，建议咨询医生或相关专业人员。</text>
     </view>
-  </view>
-
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">功能板块</text>
-      <text class="section-subtitle feature-module-subtitle">按需求选择：观察状态、做练习、查方法、问小牛、记成长。</text>
     </view>
-
-    <view class="module-grid feature-module-grid">
-       <view wx:if="{{featureFlags.assessmentsEnabled}}" class="module-card feature-module-card" bindtap="goToAssessment">
-         <text class="module-icon module-icon-assessment">◎</text>
-        <text class="module-name">成长观察测评</text>
-        <text class="module-desc">测一测孩子最近的情绪、睡眠、饮食和社交状态。</text>
-      </view>
-       <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToAssessment">
-         <text class="module-icon module-icon-assessment">◎</text>
-        <text class="module-name">成长观察测评</text>
-        <text class="module-desc">还在准备中</text>
-      </view>
-
-       <view wx:if="{{featureFlags.educationEnabled}}" class="module-card feature-module-card" bindtap="goToTextbook">
-         <text class="module-icon module-icon-training">✓</text>
-        <text class="module-name">每日能力练习</text>
-        <text class="module-desc">按年龄做语言、阅读、专注和表达小练习。</text>
-      </view>
-       <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToTextbook">
-         <text class="module-icon module-icon-training">✓</text>
-        <text class="module-name">每日能力练习</text>
-        <text class="module-desc">还在准备中</text>
-      </view>
-
-       <view class="module-card feature-module-card" bindtap="goToNutrition">
-         <text class="module-icon module-icon-nutrition">＋</text>
-        <text class="module-name">营养食谱建议</text>
-        <text class="module-desc">看一日搭配、挑食应对和适龄家常做法。</text>
-      </view>
-
-       <view wx:if="{{featureFlags.parentingEnabled}}" class="module-card feature-module-card" bindtap="goToParenting">
-         <text class="module-icon module-icon-parenting">⌂</text>
-        <text class="module-name">场景育儿方法</text>
-        <text class="module-desc">按吃饭、睡前、情绪、出门等问题找步骤。</text>
-      </view>
-       <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToParenting">
-         <text class="module-icon module-icon-parenting">⌂</text>
-        <text class="module-name">场景育儿方法</text>
-        <text class="module-desc">还在准备中</text>
-      </view>
-
-       <view wx:if="{{featureFlags.aiChatEnabled}}" class="module-card feature-module-card" bindtap="goToChat">
-         <text class="module-icon module-icon-chat">?</text>
-        <text class="module-name">小牛即时问答</text>
-        <text class="module-desc">临时拿不准时，直接描述孩子情况拿建议。</text>
-      </view>
-       <view wx:else class="module-card feature-module-card module-card-disabled" bindtap="goToChat">
-         <text class="module-icon module-icon-chat">?</text>
-        <text class="module-name">小牛即时问答</text>
-        <text class="module-desc">还在准备中</text>
-      </view>
-
-       <view class="module-card feature-module-card" bindtap="goToGrowthRecord">
-         <text class="module-icon module-icon-record">▣</text>
-        <text class="module-name">成长记录档案</text>
-        <text class="module-desc">记录今天表现，用来生成周总结和趋势变化。</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">今天先做这几步</text>
-      <text class="section-subtitle">已完成 {{dailyPlanCompletedCount}}/3</text>
-    </view>
-
-    <view wx:if="{{dailyPlanLoading}}" class="plan-loading-card">
-      <text class="plan-loading-title">正在找今天适合做的事</text>
-      <text class="plan-loading-desc">会优先看孩子的年龄和档案。</text>
-    </view>
-
-    <block wx:elif="{{dailyPlanCards.length}}">
-      <view
-        class="plan-card"
-        wx:for="{{dailyPlanCards}}"
-        wx:key="id"
-        data-index="{{index}}"
-        bindtap="onDailyPlanTap"
-      >
-        <view class="plan-card-top">
-          <text class="plan-type">{{item.typeLabel}}</text>
-          <text wx:if="{{item.completed}}" class="plan-status plan-status-done">已完成</text>
-          <text wx:else class="plan-status">{{item.durationMinutes}}分钟</text>
-        </view>
-        <text class="plan-title">{{item.title}}</text>
-        <text class="plan-reason">{{item.reason}}</text>
-        <text class="plan-summary">{{item.summary}}</text>
-        <view class="plan-actions">
-          <text class="plan-link">{{item.actionText}}</text>
-          <view
-            class="plan-complete-btn {{item.completed ? 'plan-complete-btn-done' : ''}}"
-            catchtap="onDailyPlanComplete"
-            data-index="{{index}}"
-          >
-            {{item.completed ? '已记录' : '标记完成'}}
-          </view>
-        </view>
-      </view>
-    </block>
-
-    <view wx:else class="plan-empty-card" bindtap="goToTodayTask">
-      <text class="plan-empty-title">{{todayTask.title}}</text>
-      <text class="plan-empty-desc">{{dailyPlanEmptyText || todayTask.duration}}</text>
-    </view>
-  </view>
-
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">本周成长总结</text>
-    </view>
-
-    <view class="progress-card" bindtap="goToWeeklyReport">
-      <text class="progress-line">{{weeklyProgress.headline}}</text>
-      <text class="progress-line">{{weeklyProgress.summary}}</text>
-      <text class="progress-line">最近 7 天记录 {{weeklyProgress.streakDays}} 天</text>
-      <view class="progress-actions">
-        <text class="progress-action">{{weeklyProgress.actionText}}</text>
-        <text class="progress-share" catchtap="onShareProgressCard">分享成果卡</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="section" wx:if="{{membershipTouchpointVisible}}">
-      <view class="progress-card" bindtap="goToMembership">
-        <text class="progress-line">{{membershipTouchpointTitle}}</text>
-        <text class="progress-line">{{membershipTouchpointDesc}}</text>
-        <view class="progress-actions">
-          <text class="progress-action">{{membershipTouchpointCta}}</text>
-        </view>
-      </view>
-  </view>
   </block>
-
-  <view class="tips-card">
-    <text class="tips-title">温馨提示</text>
-    <text class="tips-content">本服务内容仅供家庭教育参考，不能替代专业评估或诊断。如对孩子发育有明显担忧，建议咨询医生或相关专业人员。</text>
-  </view>
-  </block>
-  <encouragement-popup
-    visible="{{showEncouragementPopup}}"
-    message="{{encouragementMessage}}"
-    level="{{encouragementLevel}}"
-    bind:confirm="onEncouragementConfirm"
-    bind:cancel="onEncouragementCancel"
-  />
+  <encouragement-popup visible="{{showEncouragementPopup}}" message="{{encouragementMessage}}" level="{{encouragementLevel}}" bind:confirm="onEncouragementConfirm" bind:cancel="onEncouragementCancel" />
 </view>

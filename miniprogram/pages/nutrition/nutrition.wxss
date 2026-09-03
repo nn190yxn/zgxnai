@@ -8,7 +8,9 @@
 
 /* 页面头部 */
 .page-header {
-  background: linear-gradient(145deg, #E85A29, #FF6B35 40%, #FF7E4B);
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
   overflow: hidden;
@@ -40,7 +42,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 900;
-  color: #fff;
+  color: #283936;
   margin-bottom: 12rpx;
   line-height: 1.45;
   position: relative;
@@ -51,7 +53,7 @@
 .page-subtitle {
   font-size: 26rpx;
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.85);
+  color: #657773;
   position: relative;
   z-index: 1;
   word-break: break-word;
@@ -104,7 +106,7 @@
 }
 
 .nutrition-cover-placeholder {
-  background: linear-gradient(135deg, #FFF3ED 0%, #FFF8E1 54%, #E8F5E9 100%);
+  background: #F0F3EE;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -167,7 +169,7 @@
 }
 
 .age-switch-item.active {
-  background: linear-gradient(135deg, #FF6B35, #FF8A55);
+  background: #2F9D8E;
   color: #fff;
   box-shadow: 0 8rpx 18rpx rgba(255, 107, 53, 0.22);
 }
@@ -196,7 +198,7 @@
 
 .section-tag {
   font-size: 22rpx;
-  color: #FF8F00;
+  color: #E9895B;
   background: #FFF8E1;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
@@ -328,7 +330,7 @@
 }
 
 .recipe-visual {
-  background: linear-gradient(135deg, #FFF3ED 0%, #FFF8E1 56%, #E8F5E9 100%);
+  background: #F0F3EE;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -451,7 +453,7 @@
 
 .tag-primary {
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 /* 加载状态 */

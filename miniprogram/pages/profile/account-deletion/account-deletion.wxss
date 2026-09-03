@@ -5,7 +5,7 @@
 }
 
 .warning-card {
-  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  background: #F4F1E8;
   border-radius: 16rpx;
   padding: 40rpx;
   text-align: center;

@@ -80,7 +80,7 @@
   width: 100%;
   min-height: 92rpx;
   line-height: 1.45;
-  background: linear-gradient(145deg, #E85A29, #FF6B35);
+  background: #E8F5F1;
   color: #FFFFFF;
   font-size: 32rpx;
   font-weight: 700;
@@ -117,7 +117,7 @@
 
 .history-type {
   font-size: 22rpx;
-  color: #E85A29;
+  color: #2F8175;
   font-weight: 600;
   margin-bottom: 8rpx;
   line-height: 1.45;

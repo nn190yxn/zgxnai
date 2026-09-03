@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background: #f6f1eb;
+  background: #F7F7F2;
   padding: 24rpx;
   box-sizing: border-box;
 }
@@ -25,13 +25,59 @@
   word-break: break-word;
 }
 
+.hero-card .helper-copy {
+  margin-top: 12rpx;
+}
+
+.growth-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.growth-overview-card {
+  min-height: 188rpx;
+  padding: 22rpx;
+  border: 1rpx solid #E8EEEA;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+
+.growth-overview-kicker,
+.growth-overview-title,
+.growth-overview-link {
+  display: block;
+}
+
+.growth-overview-kicker {
+  color: #2F8175;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.growth-overview-title {
+  margin-top: 10rpx;
+  color: #24332F;
+  font-size: 27rpx;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.growth-overview-link {
+  margin-top: 12rpx;
+  color: #7A8984;
+  font-size: 22rpx;
+}
+
 .date-chip {
   margin-top: 16rpx;
   display: inline-block;
   padding: 12rpx 20rpx;
   border-radius: 999rpx;
-  background: #fff2e8;
-  color: #d65a1f;
+  background: #E8F5F1;
+  color: #2F8175;
   font-size: 24rpx;
   line-height: 1.45;
 }
@@ -55,7 +101,7 @@
 }
 
 .option-chip-active {
-  background: #ff7a45;
+  background: #2F9D8E;
   color: #fff;
 }
 
@@ -100,8 +146,9 @@
 }
 
 .primary-btn {
-  background: #ff7a45;
+  background: #2F9D8E;
   color: #fff;
+  margin-bottom: 20rpx;
 }
 
 .primary-btn-disabled {

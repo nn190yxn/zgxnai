@@ -3,7 +3,7 @@
   <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-input-wrap">
-      <text class="search-icon">🔍</text>
+      <text class="search-icon">搜索</text>
       <input
         class="search-input"
         placeholder="搜索食谱、食材..."
@@ -72,7 +72,7 @@
 
     <!-- 空状态 -->
     <view class="empty-wrap" wx:if="{{!loading && recipeList.length === 0}}">
-      <text class="empty-icon">🍽️</text>
+      <text class="empty-icon">食谱</text>
       <text class="empty-text">这组条件下还没找到食谱</text>
       <text class="empty-desc">换个年龄、餐次或食材试试。</text>
     </view>
@@ -107,8 +107,8 @@
             </view>
             <view class="recipe-meta">
               <text class="meta-item">⏱️ {{item.cookTime}}</text>
-              <text class="meta-item" wx:if="{{item.viewCount}}">👁️ {{item.viewCount}}</text>
-              <text class="meta-item" wx:if="{{item.difficulty}}">📊 {{item.difficulty}}</text>
+              <text class="meta-item" wx:if="{{item.viewCount}}">阅读 {{item.viewCount}}</text>
+              <text class="meta-item" wx:if="{{item.difficulty}}">难度 {{item.difficulty}}</text>
             </view>
           </view>
         </view>
@@ -118,7 +118,7 @@
           data-id="{{item.id}}"
           data-index="{{index}}"
         >
-          <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+              <text class="favorite-icon">{{item.isFavorite ? '已收藏' : '收藏'}}</text>
         </view>
       </view>
     </view>

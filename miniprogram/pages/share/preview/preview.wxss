@@ -27,11 +27,11 @@
 
 .card {
   min-height: 760rpx;
-  border-radius: 12rpx;
+  border-radius: 32rpx;
   padding: 42rpx 38rpx;
   box-sizing: border-box;
   color: #fff;
-  background: linear-gradient(155deg, #24312A 0%, #31523A 46%, #E86B3D 100%);
+  background: #2F665D;
   box-shadow: 0 20rpx 46rpx rgba(36, 49, 42, 0.18);
   display: flex;
   flex-direction: column;

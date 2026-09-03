@@ -3,7 +3,7 @@
     <text class="title">{{zone.title}}</text>
       <text class="subtitle">{{zone.subtitle}}</text>
       <text class="action-text">{{zone.actionText}}</text>
-      <text class="source-label">{{isFallback ? '本地备用内容' : '正式内容'}}</text>
+      <text class="source-label">{{isFallback ? '内容准备中' : '已更新内容'}}</text>
   </view>
 
   <block wx:if="{{zone}}">

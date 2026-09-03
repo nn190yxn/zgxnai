@@ -8,7 +8,9 @@
 
 /* 页面头部 */
 .page-header {
-  background: linear-gradient(145deg, #E85A29, #FF6B35 40%, #FF7E4B);
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
   overflow: hidden;
@@ -112,7 +114,7 @@
 
 .section-tag {
   font-size: 22rpx;
-  color: #FF8F00;
+  color: #E9895B;
   background: #FFF8E1;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
@@ -194,7 +196,7 @@
 }
 
 .milestone-cover-placeholder {
-  background: linear-gradient(135deg, #FFF0E8 0%, #FFE7D6 52%, #FFF8F2 100%);
+  background: #F0F3EE;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -221,7 +223,7 @@
 }
 
 .milestone-entry {
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #2F9D8E;
   border-radius: 24rpx;
   padding: 32rpx;
   display: flex;
@@ -416,12 +418,12 @@
 
 .tag-primary {
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 .tag-accent {
   background: #FFF8E1;
-  color: #FF8F00;
+  color: #E9895B;
 }
 
 .article-meta {

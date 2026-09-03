@@ -306,6 +306,14 @@ Page({
     });
   },
 
+  goToDevelopment: function() {
+    wx.switchTab({ url: '/pages/development/index/index' });
+  },
+
+  focusObservation: function() {
+    wx.pageScrollTo({ selector: '#observation-form', duration: 250 });
+  },
+
   goToChildSetup: function() {
     app.requireLoginForAction('请先完成微信登录，再添加孩子档案').then(function(canOperate) {
       if (!canOperate) {

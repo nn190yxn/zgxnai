@@ -2,16 +2,20 @@
 
 /* 主题变量 */
 page {
-  --primary: #2AAE9B;
-  --primary-light: #62CBBB;
-  --primary-bg: #EAF9F6;
-  --accent: #F2B84B;
-  --text: #243238;
-  --text-secondary: #64747B;
-  --text-muted: #9AA8AD;
-  --bg: #F7F9FA;
-  --white: #FFF;
-  --border: #E5ECEE;
+  --primary: #2F9D8E;
+  --primary-light: #79C8BA;
+  --primary-bg: #E8F5F1;
+  --accent: #C58A52;
+  --text: #283936;
+  --text-secondary: #657773;
+  --text-muted: #99AAA5;
+  --bg: #F7F7F2;
+  --white: #FFFFFF;
+  --surface-soft: #F0F3EE;
+  --border: #DDE8E3;
+  --radius-card: 28rpx;
+  --radius-control: 18rpx;
+  --shadow-card: 0 10rpx 30rpx rgba(54, 83, 75, 0.08);
   
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
   font-size: 28rpx;
@@ -49,10 +53,10 @@ text {
 /* 卡片 */
 .card {
   background: var(--white);
-  border-radius: 20rpx;
+  border-radius: var(--radius-card);
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(35, 62, 70, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 /* 按钮 */
@@ -73,6 +77,144 @@ text {
 .btn-primary {
   background: var(--primary);
   color: var(--white);
+}
+
+/* 统一跨页面视觉基线 */
+.page,
+.membership-page {
+  background: var(--bg) !important;
+  color: var(--text);
+}
+
+.page-header,
+.header,
+.user-section,
+.membership-card,
+.core-hero-content {
+  background: var(--primary-bg) !important;
+  color: var(--text) !important;
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--shadow-card);
+}
+
+.page-header .page-title,
+.page-header .page-subtitle,
+.header .title,
+.header .subtitle,
+.user-section .user-name,
+.user-section .user-id,
+.user-section .user-phone,
+.membership-card .membership-title,
+.membership-card .membership-type,
+.membership-card .membership-days,
+.membership-card .membership-tip {
+  color: var(--text) !important;
+}
+
+.page-header .page-subtitle,
+.header .subtitle,
+.header .source-tip,
+.membership-card .membership-days,
+.membership-card .membership-tip {
+  opacity: 1 !important;
+  color: var(--text-secondary) !important;
+}
+
+.auth-primary-btn,
+.primary-btn,
+.btn-pay,
+.btn-share,
+.core-primary-action,
+.service-action,
+.option-chip-active,
+.filter-chip-active {
+  background: var(--primary) !important;
+  color: var(--white) !important;
+  border-color: var(--primary) !important;
+  border-radius: var(--radius-control) !important;
+}
+
+.auth-secondary-btn,
+.secondary-btn,
+.btn-secondary,
+.service-action.secondary,
+.summary-badge-soft,
+.option-chip,
+.filter-chip {
+  background: var(--surface-soft) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border) !important;
+  border-radius: var(--radius-control) !important;
+}
+
+.plans-section,
+.promo-section,
+.referral-section,
+.summary-card,
+.content-card,
+.hero-card,
+.section-card,
+.empty-card,
+.auth-card,
+.child-entry,
+.ai-intro,
+.zone-card,
+.featured-item,
+.pain-point-card,
+.guide-card,
+.training-card,
+.assessment-card,
+.record-card,
+.history-card {
+  background: var(--white) !important;
+  border-color: var(--border) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--shadow-card);
+}
+
+.search-input-wrap,
+.note-box,
+input,
+textarea {
+  background: var(--surface-soft) !important;
+  border-color: var(--border) !important;
+  border-radius: var(--radius-control) !important;
+  color: var(--text) !important;
+}
+
+.section-title,
+.hero-title,
+.summary-title,
+.content-title,
+.plan-name,
+.auth-title,
+.zone-title,
+.featured-title,
+.guide-title,
+.training-title,
+.assessment-title {
+  color: var(--text) !important;
+  font-weight: 700;
+}
+
+.subtitle,
+.summary-copy,
+.helper-copy,
+.content-summary,
+.auth-desc,
+.zone-subtitle,
+.featured-action,
+.guide-desc,
+.section-subtext {
+  color: var(--text-secondary) !important;
+}
+
+.page-header::before,
+.page-header::after,
+.header::before,
+.header::after {
+  display: none;
 }
 
 .btn-secondary {

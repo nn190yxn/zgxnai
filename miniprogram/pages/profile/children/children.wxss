@@ -65,7 +65,7 @@
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFF3ED, #C8E6C9);
+  background: #E8F5F1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,7 +113,7 @@
 .default-badge {
   font-size: 20rpx;
   color: #FFFFFF;
-  background: #FF6B35;
+  background: #2F9D8E;
   padding: 4rpx 12rpx;
   border-radius: 20rpx;
   line-height: 1.45;
@@ -147,7 +147,7 @@
 
 .tag {
   font-size: 22rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   background: #FFF3ED;
   padding: 6rpx 16rpx;
   border-radius: 20rpx;
@@ -198,7 +198,7 @@
 }
 
 .add-btn-primary {
-  background: linear-gradient(135deg, #FF6B35, #E85A29);
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 30rpx;
   padding: 24rpx 80rpx;
@@ -237,7 +237,7 @@
 
 .add-btn {
   width: 100%;
-  background: linear-gradient(135deg, #FF6B35, #E85A29);
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 30rpx;
   padding: 24rpx 0;

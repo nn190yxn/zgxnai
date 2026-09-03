@@ -5,7 +5,9 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
   padding: 60rpx 40rpx 40rpx;
   text-align: center;
   color: #fff;
@@ -93,7 +95,7 @@
 }
 
 .age-card.active {
-  border-color: #FF6B35;
+  border-color: #2F9D8E;
   background: #FFF8F5;
 }
 
@@ -125,7 +127,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #FF6B35, #FF8C5A);
+  background: #2F9D8E;
   border-radius: 6rpx;
   transition: width 0.3s;
 }
@@ -226,7 +228,7 @@
 .result-header {
   text-align: center;
   padding: 40rpx 0;
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #2F9D8E;
   border-radius: 24rpx;
   margin-bottom: 30rpx;
   color: #fff;
@@ -518,7 +520,7 @@
 }
 
 .notice-dot {
-  background: #FF6B35;
+  background: #2F9D8E;
 }
 
 .practice-text,
@@ -551,7 +553,7 @@
 
 /* 按钮样式 */
 .btn-primary {
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #2F9D8E;
   color: #fff;
   border: none;
   border-radius: 40rpx;
@@ -572,8 +574,8 @@
 
 .btn-secondary {
   background: #fff;
-  color: #FF6B35;
-  border: 2rpx solid #FF6B35;
+  color: #2F9D8E;
+  border: 2rpx solid #2F9D8E;
   border-radius: 40rpx;
   padding: 24rpx 0;
   font-size: 30rpx;

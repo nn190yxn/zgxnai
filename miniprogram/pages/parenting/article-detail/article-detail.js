@@ -676,7 +676,7 @@ Page({
       event_type: 'article_practice_record_click',
       event_meta: { action: 'open_growth_record' }
     }));
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/growth-record/index',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

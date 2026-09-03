@@ -12,7 +12,14 @@ Page({
     loadError: '',
     painPoints: [],
     painPointSource: 'local_fallback',
-    painPointCategory: ''
+    painPointCategory: '',
+    familyScenes: [
+      { key: 'homework', title: '写作业', description: '拖着不开始、做着分心', keyword: '写作业' },
+      { key: 'meal', title: '吃饭', description: '挑食、坐不住、容易磨蹭', keyword: '吃饭' },
+      { key: 'bedtime', title: '睡前', description: '不愿洗漱、迟迟不睡', keyword: '睡前' },
+      { key: 'outside', title: '出门', description: '换活动困难、陌生地方紧张', keyword: '出门' },
+      { key: 'reading', title: '亲子共读', description: '坐不住、故事讲不出来', keyword: '亲子共读' }
+    ]
   },
 
   onLoad() {
@@ -46,6 +53,18 @@ Page({
     var key = e.currentTarget.dataset.key || '';
     if (!key) return;
     wx.navigateTo({ url: '/pages/development/detail/detail?painPointKey=' + encodeURIComponent(key) });
+  },
+
+  openFamilyScene: function(e) {
+    var scene = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
+    var keyword = String(scene.keyword || scene.title || '').trim();
+    if (!keyword) return;
+    wx.navigateTo({
+      url: '/pages/parenting/search/search?keyword=' + encodeURIComponent(keyword) + '&sceneKey=' + encodeURIComponent(scene.key || ''),
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
   },
 
   loadZones() {

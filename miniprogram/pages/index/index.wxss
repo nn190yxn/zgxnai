@@ -6,6 +6,180 @@
   padding-bottom: 40rpx;
 }
 
+.home-banner-section,
+.home-feature-section,
+.home-topic-section {
+  padding: 24rpx 32rpx 0;
+}
+
+.home-banner {
+  height: 300rpx;
+}
+
+.home-banner-card {
+  height: 260rpx;
+  box-sizing: border-box;
+  padding: 34rpx 36rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, #FBE5D6 0%, #F5C7AD 100%);
+  color: #24332F;
+}
+
+.home-banner-card:nth-child(2n) {
+  background: linear-gradient(135deg, #E3F1EC 0%, #B9DED0 100%);
+}
+
+.home-banner-kicker,
+.home-banner-title,
+.home-banner-desc,
+.home-banner-cta {
+  display: block;
+}
+
+.home-banner-kicker {
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: #A85F43;
+  font-weight: 700;
+}
+
+.home-banner-title {
+  margin-top: 16rpx;
+  font-size: 42rpx;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.home-banner-desc {
+  margin-top: 12rpx;
+  font-size: 25rpx;
+  line-height: 1.5;
+  color: #53635D;
+}
+
+.home-banner-cta {
+  margin-top: 22rpx;
+  font-size: 26rpx;
+  line-height: 1.45;
+  color: #3E8872;
+  font-weight: 800;
+}
+
+.home-section-heading {
+  margin-bottom: 18rpx;
+}
+
+.home-section-title,
+.home-section-subtitle,
+.home-feature-title,
+.home-feature-desc,
+.home-topic-title,
+.home-topic-desc,
+.home-topic-link {
+  display: block;
+}
+
+.home-section-title {
+  font-size: 32rpx;
+  line-height: 1.45;
+  color: #24332F;
+  font-weight: 800;
+}
+
+.home-section-subtitle {
+  margin-top: 6rpx;
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: #8A9892;
+}
+
+.home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18rpx 12rpx;
+}
+
+.home-feature-grid-secondary {
+  margin-top: 20rpx;
+}
+
+.home-feature-item {
+  min-width: 0;
+  text-align: center;
+}
+
+.home-feature-icon {
+  width: 84rpx;
+  height: 84rpx;
+  margin: 0 auto 12rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #E7F3EE;
+  color: #3E8872;
+  font-size: 22rpx;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.home-feature-item:nth-child(2n) .home-feature-icon {
+  background: #FFF1E8;
+  color: #A85F43;
+}
+
+.home-feature-title {
+  font-size: 24rpx;
+  line-height: 1.45;
+  color: #354640;
+  font-weight: 700;
+}
+
+.home-feature-desc {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  line-height: 1.45;
+  color: #8A9892;
+}
+
+.home-topic-list {
+  display: flex;
+  gap: 18rpx;
+  overflow-x: auto;
+  padding-bottom: 8rpx;
+}
+
+.home-topic-card {
+  flex: 0 0 300rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+  border: 1rpx solid #E8EEEA;
+}
+
+.home-topic-title {
+  font-size: 27rpx;
+  line-height: 1.45;
+  color: #24332F;
+  font-weight: 800;
+}
+
+.home-topic-desc {
+  min-height: 66rpx;
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: #64746D;
+}
+
+.home-topic-link {
+  margin-top: 18rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  color: #4F9B83;
+  font-weight: 700;
+}
+
 .safe-mode {
   min-height: 100vh;
   padding: 120rpx 48rpx;
@@ -137,7 +311,7 @@
   padding: 8rpx 14rpx;
   border-radius: 999rpx;
   background: #FFF2E8;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -277,7 +451,7 @@
 }
 
 .core-scene-item-active {
-  border-color: #D85C26;
+  border-color: #2F8175;
   background: #FFF8F1;
 }
 
@@ -481,7 +655,7 @@
 }
 
 .core-pain-category-active {
-  border-color: #D85C26;
+  border-color: #2F8175;
   background: #FFF8F1;
 }
 
@@ -526,7 +700,7 @@
 }
 
 .core-pain-item-active {
-  border-color: #D85C26;
+  border-color: #2F8175;
   background: #FFF8F1;
 }
 
@@ -587,7 +761,7 @@
   min-height: 76rpx;
   margin-top: 16rpx;
   border-radius: 18rpx;
-  border: 2rpx solid #D85C26;
+  border: 2rpx solid #2F8175;
   background: #FFF8F1;
   display: flex;
   align-items: center;
@@ -681,7 +855,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 850;
 }
 
@@ -805,7 +979,7 @@
 }
 
 .core-result-primary {
-  background: #D85C26;
+  background: #2F8175;
 }
 
 .core-result-secondary {
@@ -907,7 +1081,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 850;
 }
 
@@ -971,7 +1145,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 850;
 }
 
@@ -1029,7 +1203,7 @@
   margin-top: 22rpx;
   min-height: 82rpx;
   border-radius: 18rpx;
-  background: #D85C26;
+  background: #2F8175;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1474,7 +1648,7 @@
 }
 
 .plan-card {
-  background: linear-gradient(180deg, #FFFDF9 0%, #FFF5EB 100%);
+  background: #F7F7F2;
   border: 2rpx solid rgba(255, 126, 75, 0.14);
   border-radius: 24rpx;
   padding: 28rpx;
@@ -1497,7 +1671,7 @@
   padding: 8rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 107, 53, 0.1);
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -1548,7 +1722,7 @@
 .plan-link {
   flex: 1;
   font-size: 24rpx;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 700;
 }
 
@@ -1557,7 +1731,7 @@
   padding: 16rpx 22rpx;
   text-align: center;
   border-radius: 18rpx;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 24rpx;
   font-weight: 700;
@@ -1580,7 +1754,7 @@
   margin-left: 18rpx;
   font-size: 24rpx;
   line-height: 1.45;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 700;
 }
 
@@ -1689,7 +1863,7 @@
 
 .development-zone-section .section-header-link {
   flex-shrink: 0;
-  color: #D85C26;
+  color: #2F8175;
   font-weight: 800;
 }
 
@@ -1702,7 +1876,7 @@
 .development-zone-entry {
   padding: 30rpx;
   border-radius: 28rpx;
-  background: linear-gradient(135deg, #3A2A22 0%, #6A412F 100%);
+  background: #E8F5F1;
   box-shadow: 0 14rpx 34rpx rgba(91, 56, 41, 0.18);
 }
 
@@ -1794,7 +1968,7 @@
 
 .quick-arrow {
   font-size: 24rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   font-weight: 600;
 }
 
@@ -1827,7 +2001,7 @@
 .progress-action {
   display: inline-block;
   font-size: 24rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 .progress-actions {
@@ -1848,7 +2022,7 @@
 }
 
 .touchpoint-card {
-  background: linear-gradient(135deg, #FFF7F0, #FFFCF8);
+  background: #F7F7F2;
   border: 2rpx solid #FFE0C8;
   border-radius: 20rpx;
   padding: 24rpx;
@@ -1864,7 +2038,7 @@
 
 .touchpoint-eyebrow {
   font-size: 22rpx;
-  color: #FF6B35;
+  color: #2F9D8E;
   background: #FFF0E5;
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
@@ -1900,7 +2074,7 @@
   display: inline-block;
   font-size: 26rpx;
   font-weight: 600;
-  color: #FF6B35;
+  color: #2F9D8E;
   padding: 8rpx 0;
 }
 

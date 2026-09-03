@@ -6,7 +6,9 @@
 
 .header {
   padding: 56rpx 32rpx 28rpx;
-  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  background: #E8F5F1;
+  border: 1rpx solid #DDE8E3;
+  border-radius: 28rpx;
 }
 
 .zone-label,
@@ -36,7 +38,7 @@
   padding: 8rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
+  color: #283936;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 700;
@@ -46,7 +48,7 @@
   display: block;
   font-size: 42rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #283936;
   font-weight: 800;
 }
 
@@ -67,7 +69,7 @@
 }
 
 .practice-card {
-  background: linear-gradient(180deg, #FFFFFF 0%, #FFF7F0 100%);
+  background: #FFFFFF;
   border: 2rpx solid rgba(255, 107, 53, 0.12);
 }
 
@@ -81,7 +83,7 @@
 .card-eyebrow {
   display: block;
   margin-bottom: 10rpx;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -107,7 +109,7 @@
   flex-shrink: 0;
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 22rpx;
   line-height: 1.45;
@@ -116,7 +118,7 @@
 
 .age-badge {
   background: #FFF0E8;
-  color: #D85C26;
+  color: #2F8175;
 }
 
 .script-text {
@@ -154,7 +156,7 @@
 .depth-label {
   display: block;
   margin-bottom: 6rpx;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -190,14 +192,14 @@
   border-radius: 18rpx;
   text-align: center;
   background: #FFF0E8;
-  color: #D85C26;
+  color: #2F8175;
   font-size: 25rpx;
   line-height: 1.45;
   font-weight: 800;
 }
 
 .action-btn-primary {
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
 }
 
@@ -230,7 +232,7 @@
   padding: 20rpx 12rpx;
   border-radius: 18rpx;
   text-align: center;
-  background: #FF6B35;
+  background: #2F9D8E;
   color: #FFFFFF;
   font-size: 25rpx;
   line-height: 1.45;

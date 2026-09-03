@@ -323,7 +323,7 @@ Page({
   },
 
   goToGrowthRecord: function() {
-    wx.navigateTo({ url: '/pages/growth-record/index' });
+    wx.switchTab({ url: '/pages/growth-record/index' });
   },
 
   goHome: function() {

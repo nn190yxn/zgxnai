@@ -3,6 +3,7 @@
 
   const MODULES = [
     { key: 'media', label: '媒体', read: '/media?status=active&limit=30', permission: 'media:read' },
+    { key: 'banners', label: 'Banner', read: '/banners?limit=30', permission: 'banner:read' },
     { key: 'articles', label: '文章', read: '/articles?limit=30', permission: 'article:read' },
     { key: 'pain-points', label: '成长痛点', read: '/content/ops/tips?limit=30', permission: 'pain_point:read' },
     { key: 'training', label: '训练', read: '/content/ops/articles?content_type=task&limit=30', permission: 'article:read' },
@@ -53,7 +54,7 @@
     container.querySelectorAll('.operation-row').forEach((row) => row.addEventListener('click', () => selectItem(key, row.dataset.itemId, row.dataset.itemTitle)));
   }
 
-  function editor(key, itemId, title) {
+  function editor(key, itemId, title, item) {
     const container = document.querySelector(`[data-module-editor="${key}"]`);
     if (!container) return;
     if (key === 'media') {
@@ -69,6 +70,16 @@
       const ticketForm = container.querySelector('form');
       ticketForm.addEventListener('submit', (event) => updateTicket(event, ticketForm));
       ticketForm.querySelector('.callback-action').addEventListener('click', () => callbackTicket(ticketForm));
+      return;
+    }
+    if (key === 'banners') {
+      const banner = item || {};
+      container.innerHTML = `<form class="operation-editor banner-editor" data-editor-form="banners" data-item-id="${esc(itemId || '')}"><div class="editor-heading"><h4>${esc(title || '新建 Banner')}</h4><span class="permission-badge">需要 banner:write</span></div><label>Banner 标识<input name="banner_id" required value="${esc(banner.banner_id || itemId || '')}" placeholder="稳定标识" /></label><label>标题<input name="title" required value="${esc(banner.title || '')}" /></label><label>描述<textarea name="description">${esc(banner.description || '')}</textarea></label><label>按钮文案<input name="cta" value="${esc(banner.cta || '')}" /></label><label>跳转类型<select name="action">${['assessment', 'chat', 'task', 'weekly_report', 'development_zones', 'parenting', 'nutrition', 'textbook'].map((action) => `<option value="${action}"${banner.action === action ? ' selected' : ''}>${action}</option>`).join('')}</select></label><label>图片 URL<input name="image_url" value="${esc(banner.image_url || '')}" /></label><label>备用图片 URL<input name="mobile_image_url" value="${esc(banner.mobile_image_url || '')}" /></label><label>排序<input name="sort_order" type="number" value="${esc(banner.sort_order || 0)}" /></label><label><input name="enabled" type="checkbox" value="1"${Number(banner.enabled) !== 0 ? ' checked' : ''} /> 启用</label><label>展示开始时间<input name="start_at" type="datetime-local" value="${esc(banner.start_at || '')}" /></label><label>展示结束时间<input name="end_at" type="datetime-local" value="${esc(banner.end_at || '')}" /></label><label>计划上线时间<input name="scheduled_at" type="datetime-local" value="${esc(banner.scheduled_at || '')}" /></label><label>替代文本<input name="alt_text" value="${esc(banner.alt_text || '')}" /></label><label>审核意见<textarea name="comment"></textarea></label><div class="editor-actions"><button type="submit">保存草稿</button><button type="button" class="ghost editor-preview">预览</button><button type="button" class="ghost content-action" data-action="submit-review">送审</button><button type="button" class="ghost content-action" data-action="approve">审核通过</button><button type="button" class="content-action" data-action="publish">立即上线</button><button type="button" class="ghost content-action" data-action="schedule">安排上线</button><button type="button" class="ghost content-action" data-action="offline">下线</button><button type="button" class="ghost content-action" data-action="restore">恢复版本</button></div><p class="hint" data-unsaved></p><div class="editor-preview-panel" hidden></div><div class="editor-state" data-editor-state>Banner 仅允许纯文本内容</div></form>`;
+      const bannerForm = container.querySelector('form');
+      bannerForm.addEventListener('input', () => markDirty(bannerForm, true));
+      bannerForm.addEventListener('submit', (event) => saveEditor(event, key, bannerForm));
+      bannerForm.querySelector('.editor-preview').addEventListener('click', () => previewEditor(bannerForm));
+      bannerForm.querySelectorAll('.content-action').forEach((button) => button.addEventListener('click', () => contentAction(key, bannerForm, button.dataset.action)));
       return;
     }
     if (key === 'membership') {
@@ -105,7 +116,8 @@
 
   function selectItem(key, id, title) {
     state[key] = Object.assign({}, state[key], { itemId: id });
-    editor(key, id, title);
+    const item = itemList(state[key].payload).find((candidate) => String(candidate.id || candidate.content_id || candidate.banner_id || candidate.pain_point_key || '') === String(id));
+    editor(key, id, title, item);
   }
 
   async function loadModule(key) {
@@ -125,12 +137,15 @@
 
   async function saveEditor(event, key, form) {
     event.preventDefault();
-    const id = form.dataset.itemId || form.elements.content_id.value.trim();
+    const existingId = form.dataset.itemId || '';
+    const editorIdField = key === 'banners' ? form.elements.banner_id : form.elements.content_id;
+    const id = existingId || editorIdField.value.trim();
     const body = Object.fromEntries(new FormData(form).entries());
-    const path = key === 'articles' ? (id ? `/articles/${encodeURIComponent(id)}` : '/articles') : key === 'pain-points' ? (id ? `/pain-points/${encodeURIComponent(id)}` : '/pain-points') : `/articles${id ? `/${encodeURIComponent(id)}` : ''}`;
+    if (key === 'banners') body.enabled = form.elements.enabled.checked ? 1 : 0;
+    const path = key === 'banners' ? (existingId ? `/banners/${encodeURIComponent(existingId)}` : '/banners') : key === 'articles' ? (id ? `/articles/${encodeURIComponent(id)}` : '/articles') : key === 'pain-points' ? (id ? `/pain-points/${encodeURIComponent(id)}` : '/pain-points') : `/articles${id ? `/${encodeURIComponent(id)}` : ''}`;
     setEditorState(form, '正在保存草稿...', 'loading');
     try {
-      await window.AdminPortal.request(path, { method: id && key !== 'articles' ? 'PUT' : id && key === 'articles' ? 'PUT' : 'POST', body: JSON.stringify(body) });
+      await window.AdminPortal.request(path, { method: key === 'banners' ? (existingId ? 'PUT' : 'POST') : (id ? 'PUT' : 'POST'), body: JSON.stringify(body) });
       markDirty(form, false);
       setEditorState(form, '草稿已保存', 'success');
       loadModule(key);
@@ -172,10 +187,15 @@
   }
 
   async function contentAction(key, form, action) {
-    const id = form.dataset.itemId || form.elements.content_id.value.trim();
+    if (key === 'banners' && !form.dataset.itemId) return setEditorState(form, '请先保存 Banner 草稿', 'error');
+    const idField = key === 'banners' ? form.elements.banner_id : form.elements.content_id;
+    const id = form.dataset.itemId || idField.value.trim();
     if (!id) return setEditorState(form, '请先填写内容标识', 'error');
-    const type = key === 'pain-points' ? 'pain_point' : key === 'articles' ? 'article' : key === 'training' ? 'task' : 'recipe';
-    const body = action === 'schedule' ? { scheduled_at: form.elements.scheduled_at.value, comment: form.elements.comment?.value } : { comment: form.elements.comment?.value };
+    const type = key === 'banners' ? 'home_banner' : key === 'pain-points' ? 'pain_point' : key === 'articles' ? 'article' : key === 'training' ? 'task' : 'recipe';
+    if (action === 'schedule' && !form.elements.scheduled_at.value) return setEditorState(form, '请选择计划上线时间', 'error');
+    const restoreVersion = action === 'restore' ? Number(window.prompt('请输入要恢复的版本号')) : 0;
+    if (action === 'restore' && (!Number.isInteger(restoreVersion) || restoreVersion < 1)) return setEditorState(form, '请输入有效的历史版本号', 'error');
+    const body = action === 'schedule' ? { scheduled_at: form.elements.scheduled_at.value, comment: form.elements.comment?.value } : action === 'restore' ? { version: restoreVersion, comment: form.elements.comment?.value } : { comment: form.elements.comment?.value };
     setEditorState(form, '正在提交操作...', 'loading');
     try {
       await window.AdminPortal.request(`/content/${type}/${encodeURIComponent(id)}/${action}`, { method: 'POST', body: JSON.stringify(body) });
@@ -190,6 +210,11 @@
   function previewEditor(form) {
     const preview = form.querySelector('.editor-preview-panel');
     preview.hidden = false;
+    if (form.dataset.editorForm === 'banners') {
+      const imageUrl = form.elements.mobile_image_url.value || form.elements.image_url.value;
+      preview.innerHTML = `<strong>Banner 预览</strong><h5>${esc(form.elements.title.value)}</h5><p>${esc(form.elements.description.value)}</p>${imageUrl ? `<img src="${esc(imageUrl)}" alt="${esc(form.elements.alt_text.value || form.elements.title.value)}" />` : ''}<div>${esc(form.elements.cta.value)}</div>`;
+      return;
+    }
     preview.innerHTML = `<strong>内容预览</strong><h5>${esc(form.elements.title.value)}</h5><p>${esc(form.elements.summary.value)}</p><div>${esc(form.elements.content.value).replace(/\n/g, '<br />')}</div>${form.elements.media_url.value ? `<img src="${esc(form.elements.media_url.value)}" alt="内容媒体预览" />` : ''}`;
   }
 

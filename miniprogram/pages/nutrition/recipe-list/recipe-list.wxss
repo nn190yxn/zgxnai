@@ -73,7 +73,7 @@
 
 .filter-item.active {
   color: #fff;
-  background: #FF6B35;
+  background: #2F9D8E;
 }
 
 .filter-item.age-item {
@@ -156,7 +156,7 @@
 }
 
 .recipe-visual {
-  background: linear-gradient(135deg, #FFF3ED 0%, #FFF8E1 56%, #E8F5E9 100%);
+  background: #F0F3EE;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -255,7 +255,7 @@
   font-size: 20rpx;
   line-height: 1.45;
   background: #FFF3ED;
-  color: #FF6B35;
+  color: #2F9D8E;
 }
 
 .recipe-meta {
@@ -309,7 +309,7 @@
   width: 32rpx;
   height: 32rpx;
   border: 3rpx solid #eee;
-  border-top-color: #FF6B35;
+  border-top-color: #2F9D8E;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

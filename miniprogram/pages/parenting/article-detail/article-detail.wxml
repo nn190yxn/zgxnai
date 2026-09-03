@@ -37,7 +37,7 @@
         </view>
         <view class="publish-info">
           <text class="publish-time">{{article.publishTime}}</text>
-          <text class="view-count" wx:if="{{article.viewCount}}">👁️ {{article.viewCount}}人阅读</text>
+          <text class="view-count" wx:if="{{article.viewCount}}">{{article.viewCount}}人阅读</text>
         </view>
       </view>
     </view>
@@ -96,7 +96,7 @@
     <!-- 关键要点 -->
     <view class="key-points-section" wx:if="{{article.keyPoints && article.keyPoints.length > 0}}">
       <view class="section-header">
-        <text class="section-title">💡 关键要点</text>
+        <text class="section-title">关键要点</text>
         <text class="copy-btn" bindtap="copyKeyPoints">复制</text>
       </view>
       <view class="key-points-list">
@@ -110,7 +110,7 @@
     <!-- 相关文章推荐 -->
     <view class="related-section" wx:if="{{relatedArticles.length > 0}}">
       <view class="section-header">
-        <text class="section-title">📖 相关推荐</text>
+        <text class="section-title">相关推荐</text>
       </view>
       <view class="related-list">
         <view
@@ -139,15 +139,15 @@
       <!-- 点赞和收藏 -->
       <view class="action-bar">
         <view class="action-item {{isLiked ? 'active' : ''}}" bindtap="toggleLike">
-          <text class="action-icon">{{isLiked ? '👍' : '👍'}}</text>
+          <text class="action-icon">{{isLiked ? '已点赞' : '点赞'}}</text>
           <text class="action-count">{{likeCount || 0}}</text>
         </view>
         <view class="action-item {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
-          <text class="action-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+          <text class="action-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
           <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
         </view>
         <button class="action-item share-btn" open-type="share">
-          <text class="action-icon">📤</text>
+          <text class="action-icon">分享</text>
           <text class="action-text">分享</text>
         </button>
       </view>
@@ -168,7 +168,7 @@
       <!-- 评论列表 -->
       <view class="comments-section" wx:if="{{comments.length > 0}}">
         <view class="section-header">
-          <text class="section-title">💬 评论 ({{comments.length}})</text>
+        <text class="section-title">评论 ({{comments.length}})</text>
         </view>
         <view class="comment-list">
           <view class="comment-item" wx:for="{{comments}}" wx:key="id">
@@ -185,11 +185,11 @@
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
       <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
-        <text class="action-icon">{{isFavorite ? '❤️' : '🤍'}}</text>
+        <text class="action-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
         <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>
       </view>
       <button class="action-btn share-btn" open-type="share">
-        <text class="action-icon">📤</text>
+        <text class="action-icon">分享</text>
         <text class="action-text">分享</text>
       </button>
     </view>
@@ -197,7 +197,7 @@
 
   <!-- 空状态 -->
   <view class="empty-wrap" wx:else>
-    <text class="empty-icon">📄</text>
+    <text class="empty-icon">文章</text>
     <text class="empty-text">这篇锦囊没找到</text>
   </view>
 

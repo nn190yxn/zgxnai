@@ -2,10 +2,10 @@ const SENSITIVE_FIELDS = new Set(['password', 'password_hash', 'token', 'access_
 
 const ROLE_ACTIONS = Object.freeze({
   super_admin: ['*'],
-  content_editor: ['article:read', 'article:write', 'pain_point:read', 'pain_point:write', 'media:read', 'media:write', 'content:submit_review', 'membership:read', 'membership:write', 'membership:submit_review'],
+  content_editor: ['article:read', 'article:write', 'pain_point:read', 'pain_point:write', 'media:read', 'media:write', 'banner:read', 'banner:write', 'content:submit_review', 'membership:read', 'membership:write', 'membership:submit_review'],
   reviewer: ['article:read', 'pain_point:read', 'media:read', 'content:approve', 'content:publish', 'content:schedule', 'content:offline', 'content:restore', 'membership:read', 'membership:approve', 'membership:publish', 'membership:offline', 'membership:restore'],
   customer_service: ['ticket:read', 'ticket:write', 'ticket:callback', 'ticket:contact'],
-  data_operator: ['article:read', 'pain_point:read', 'media:read', 'ticket:read', 'membership:read', 'user:read', 'user:service'],
+  data_operator: ['article:read', 'pain_point:read', 'media:read', 'banner:read', 'ticket:read', 'membership:read', 'user:read', 'user:service'],
 });
 
 function can(role, action) {

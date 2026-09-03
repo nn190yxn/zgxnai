@@ -2,7 +2,7 @@
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f7f3ec;
+  background: #F7F7F2;
 }
 
 .summary-card {
@@ -33,7 +33,7 @@
   margin-top: 20rpx;
   padding: 22rpx 24rpx;
   border-radius: 18rpx;
-  background: #ff7a45;
+  background: #2F9D8E;
   color: #fff;
   text-align: center;
   font-size: 28rpx;

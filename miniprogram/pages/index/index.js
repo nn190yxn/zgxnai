@@ -211,7 +211,8 @@ Page({
         cta: '看看入口',
         action: 'assessment'
       }
-    ]
+    ],
+    bannerLoading: false
   },
 
   onLoad() {
@@ -222,6 +223,7 @@ Page({
       return;
     }
     this.syncFeatureFlags();
+    this.loadRemoteBanners();
     this.refreshCoreActionHomeState();
     this.checkLogin();
     this.loadReadingStatus();
@@ -238,6 +240,7 @@ Page({
       return;
     }
     this.syncFeatureFlags();
+    this.loadRemoteBanners();
     this.refreshCoreActionHomeState();
     this.checkLogin();
     this.loadReadingStatus();
@@ -250,6 +253,34 @@ Page({
 
   onUnload() {
     this.clearHeroImageTimer();
+  },
+
+  loadRemoteBanners: function() {
+    if (this.data.bannerLoading) return;
+    this.setData({ bannerLoading: true });
+    app.request({ url: '/home/banners' }).then(function(result) {
+      var list = result && Array.isArray(result.list) ? result.list : [];
+      if (!list.length) return;
+      this.setData({ bannerList: list.map(function(item) {
+        return {
+          title: item.title || '',
+          desc: item.description || item.desc || '',
+          cta: item.cta || '',
+          action: item.action || 'weekly_report',
+          image_url: item.mobile_image_url || item.image_url || '',
+          alt_text: item.alt_text || '',
+          imageFailed: false
+        };
+      }) });
+    }.bind(this)).catch(function() {}).then(function() {
+      this.setData({ bannerLoading: false });
+    }.bind(this));
+  },
+
+  onBannerImageError: function(e) {
+    var index = e && e.currentTarget && e.currentTarget.dataset ? Number(e.currentTarget.dataset.index) : -1;
+    if (index < 0 || !this.data.bannerList[index]) return;
+    this.setData({ ['bannerList[' + index + '].imageFailed']: true });
   },
 
   clearHeroImageTimer() {
@@ -2469,7 +2500,7 @@ Page({
   },
 
   goToAllDevelopmentZones() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/development/index/index',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
@@ -2509,7 +2540,7 @@ Page({
       this.navigateByDailyPlan({ targetPath: '/pages/profile/child-edit/child-edit' });
       return;
     }
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/growth-record/index',
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

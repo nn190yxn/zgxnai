@@ -3,7 +3,7 @@
   <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-input-wrap">
-      <text class="search-icon">🔍</text>
+      <text class="search-icon">搜索</text>
       <input
         class="search-input"
         placeholder="搜索育儿知识..."
@@ -92,7 +92,7 @@
 
     <!-- 空状态 -->
     <view class="empty-wrap" wx:if="{{!loading && articleList.length === 0}}">
-      <text class="empty-icon">📚</text>
+      <text class="empty-icon">内容</text>
       <text class="empty-text">暂时还没有锦囊</text>
       <text class="empty-desc">换个条件试试吧</text>
     </view>
@@ -115,7 +115,7 @@
             </view>
             <view class="article-meta">
               <text class="meta-item">{{item.author || '小牛育儿'}}</text>
-              <text class="meta-item" wx:if="{{item.viewCount}}">👁️ {{item.viewCount}}</text>
+              <text class="meta-item" wx:if="{{item.viewCount}}">阅读 {{item.viewCount}}</text>
             </view>
           </view>
         </view>
@@ -125,7 +125,7 @@
           data-id="{{item.id}}"
           data-index="{{index}}"
         >
-          <text class="favorite-icon">{{item.isFavorite ? '❤️' : '🤍'}}</text>
+              <text class="favorite-icon">{{item.isFavorite ? '已收藏' : '收藏'}}</text>
         </view>
       </view>
     </view>

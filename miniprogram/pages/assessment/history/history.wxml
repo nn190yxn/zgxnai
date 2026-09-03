@@ -7,11 +7,11 @@
     </view>
     <view class="header-actions">
       <view class="action-btn" bindtap="showTrendChart">
-        <text class="action-icon">📈</text>
+        <text class="action-icon">趋势</text>
         <text class="action-text">趋势</text>
       </view>
       <view class="action-btn" bindtap="showFilter">
-        <text class="action-icon">🔍</text>
+        <text class="action-icon">查看</text>
         <text class="action-text">筛选</text>
       </view>
     </view>
@@ -27,7 +27,7 @@
       data-id="{{item.recordId}}"
     >
       <view class="record-left">
-        <view class="record-icon">{{item.assessmentCode === 'sensory' ? '🧠' : item.assessmentCode === 'focus' ? '💡' : item.assessmentCode === 'adhd' ? '📝' : item.assessmentCode === 'multi_intelligence' ? '🎨' : item.assessmentCode === 'emotion' ? '🤗' : item.assessmentCode === 'gross_motor' ? '🦵' : item.assessmentCode === 'fine_motor' ? '✋' : item.assessmentCode === 'language_dev' ? '🗣️' : item.assessmentCode === 'social_emotion' ? '🥰' : '📚'}}</view>
+        <view class="record-icon">{{item.assessmentCode === 'sensory' ? '感知' : item.assessmentCode === 'focus' ? '专注' : item.assessmentCode === 'adhd' ? '行为' : item.assessmentCode === 'multi_intelligence' ? '能力' : item.assessmentCode === 'emotion' ? '情绪' : item.assessmentCode === 'gross_motor' ? '大运动' : item.assessmentCode === 'fine_motor' ? '精细' : item.assessmentCode === 'language_dev' ? '语言' : item.assessmentCode === 'social_emotion' ? '社交' : '成长'}}</view>
       </view>
       <view class="record-content">
         <view class="record-header">
@@ -54,7 +54,7 @@
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
-    <text class="empty-icon">📋</text>
+    <text class="empty-icon">记录</text>
     <text class="empty-text">还没有观察记录</text>
     <text class="empty-hint">做完一次成长观察，这里会帮你留好记录</text>
     <navigator url="/pages/assessment/assessment" class="empty-btn">开始一次观察</navigator>

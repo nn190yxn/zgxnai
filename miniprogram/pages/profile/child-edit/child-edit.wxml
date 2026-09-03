@@ -12,10 +12,10 @@
       <view class="avatar-wrapper" bindtap="chooseAvatar">
         <image wx:if="{{formData.avatar}}" src="{{formData.avatar}}" mode="aspectFill" class="avatar-img" binderror="onAvatarError"></image>
         <view wx:else class="avatar-placeholder">
-          <text class="avatar-icon">{{formData.gender === 'male' ? '👦' : formData.gender === 'female' ? '👧' : '👶'}}</text>
+          <text class="avatar-icon">{{formData.gender === 'male' ? '男孩' : formData.gender === 'female' ? '女孩' : '孩子'}}</text>
         </view>
         <view class="avatar-edit-icon">
-          <text>📷</text>
+          <text>上传</text>
         </view>
       </view>
       <text class="avatar-tip">点击更换头像</text>

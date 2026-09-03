@@ -210,7 +210,7 @@ Page({
   // 查看成长记录
   viewAssessments: function() {
     this.ensureLoginBeforeNavigate('先登录，再查看成长记录', function() {
-      wx.navigateTo({
+      wx.switchTab({
         url: '/pages/growth-record/index',
         fail: function() {
           wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });

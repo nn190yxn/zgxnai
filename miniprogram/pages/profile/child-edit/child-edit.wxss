@@ -48,7 +48,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FFF3ED, #C8E6C9);
+  background: #E8F5F1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,8 +254,8 @@
 
 .tag-item.selected {
   background: #FFF3ED;
-  border-color: #FF6B35;
-  color: #FF6B35;
+  border-color: #2F9D8E;
+  color: #2F9D8E;
 }
 
 .tag-item::after {
@@ -290,7 +290,7 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #FF6B35, #E85A29);
+  background: #2F9D8E;
   color: #FFFFFF;
 }
 

@@ -43,7 +43,7 @@
           </view>
           <view class="point-actions">
             <view class="action-btn test-btn" catchtap="onQuickTest" data-point="{{point}}">
-              <text class="action-icon">📝</text>
+              <text class="action-icon">练习</text>
               <text class="action-text">练一下</text>
             </view>
           </view>
@@ -54,7 +54,7 @@
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{!loading && chapterList.length === 0}}">
-    <text class="empty-icon">📚</text>
+    <text class="empty-icon">内容</text>
     <text class="empty-text">这里暂时还没有练习内容</text>
   </view>
 </view>
@@ -68,7 +68,7 @@
     </view>
     <view class="modal-body">
       <view class="test-info">
-        <text class="test-icon">📝</text>
+        <text class="test-icon">测验</text>
         <text class="test-name">{{currentPoint.name}}</text>
       </view>
       <view class="test-desc">

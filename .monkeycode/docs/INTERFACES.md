@@ -128,6 +128,9 @@
 | GET | `/articles` | 查询文章运营列表 |
 | POST | `/pain-points` | 创建成长痛点主数据 |
 | PUT | `/pain-points/:key` | 更新成长痛点并生成新版本 |
+| GET | `/banners` | 查询 Banner 运营列表及版本状态 |
+| POST | `/banners` | 创建 Banner 草稿版本 |
+| PUT | `/banners/:id` | 更新 Banner 并生成新草稿版本 |
 
 ### 内容发布
 
@@ -138,9 +141,9 @@
 | POST | `/content/:type/:id/publish` | 立即发布审核通过版本 |
 | POST | `/content/:type/:id/schedule` | 创建定时发布任务 |
 | POST | `/content/:type/:id/offline` | 下线已发布版本 |
-| POST | `/content/:type/:id/restore` | 从当前历史版本创建新的草稿版本 |
+| POST | `/content/:type/:id/restore` | 通过请求体中的必填正整数 `version` 指定历史版本，并基于其内容创建新的草稿版本 |
 
-`type` 当前支持文章和成长痛点等内容类型。状态变更受发布状态机和角色权限共同约束；定时任务由 `backend/src/scripts/publish-due-content.js` 执行。
+`type` 当前支持文章、成长痛点和首页 Banner 等内容类型，Banner 使用 `home_banner`。状态变更受发布状态机和角色权限共同约束；定时任务由 `backend/src/scripts/publish-due-content.js` 执行。
 
 ### 客服工单
 
@@ -179,6 +182,14 @@
 | GET | `/content/:type/:id` | 查询指定内容已发布版本 |
 
 成长痛点返回 `pain_point_key`、分类、短标题、描述、可观察表现、可能原因、今日行动、家长提示和观察信号。公共内容接口会过滤未审核、未发布或尚未到发布时间的版本。
+
+### 首页 Banner 公共接口
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/home/banners` | 返回已审核、已发布、已到发布时间且处于有效时间范围的首页 Banner |
+
+Banner 响应字段包含稳定 `banner_id`、标题、描述、按钮文案、跳转类型、图片地址、移动端备用图片、替代文本和排序。后台将 `scheduled_at` 用于计划发布，将 `start_at` 和 `end_at` 用于发布后的展示有效期。小程序优先使用 `mobile_image_url`，随后使用 `image_url`；接口无可用内容或请求失败时继续展示本地 Banner。
 
 新增分析接口统一支持 `start_date`、`end_date`、`age_segment_code`、`ability_code`、`membership_status`；日期格式为 `YYYY-MM-DD`。事件质量与内容覆盖接口还接受 `days`，范围为 1-90。会员转化接口额外接受 `source` 或 `entry_source`，内容覆盖额外接受 `content_form`。
 
