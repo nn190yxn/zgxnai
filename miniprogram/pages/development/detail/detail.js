@@ -7,6 +7,7 @@ const painPointApi = require('../../../utils/pain-points.js');
 Page({
   data: {
     zoneCode: '',
+    painPointKey: '',
     zone: null,
     ageGroups: developmentZones.DEVELOPMENT_AGE_GROUPS,
     selectedAgeGroup: '',
@@ -37,27 +38,54 @@ Page({
     var that = this;
     return painPointApi.readDetail(app, key).then(function(result) {
       var point = result.item;
-      if (!point) { that.setData({ loadError: '这个成长痛点暂时没有内容' }); return result; }
-      var action = point.todayAction || {};
+      if (!point) {
+        that.setData({
+          zoneCode: '',
+          painPointKey: key,
+          zone: null,
+          scenarios: [],
+          scenarioGroups: [],
+          selectedScenarioCode: '',
+          selectedScenario: null,
+          activePractice: null,
+          loadError: '这个成长痛点暂时没有内容'
+        });
+        return result;
+      }
+      var action = point.todayAction && typeof point.todayAction === 'object'
+        ? point.todayAction
+        : point.defaultAction || {};
+      var possibleReasons = Array.isArray(point.possibleReasons) && point.possibleReasons.length
+        ? point.possibleReasons
+        : [point.defaultBottleneck && point.defaultBottleneck.text].filter(function(item) { return !!item; });
+      var observeSignals = Array.isArray(point.observeSignals) && point.observeSignals.length
+        ? point.observeSignals
+        : point.observableSigns || [];
       var scenario = {
         code: point.key, title: point.title, symptomText: point.description,
+        categoryKey: point.categoryKey || point.category_key || '',
+        categoryLabel: point.categoryLabel || point.category_label || point.category || '',
+        sceneKey: point.sceneKey || point.scene_key || '',
+        abilityTags: point.abilityTags || point.ability_tags || [],
+        bottleneckTitle: point.defaultBottleneck && point.defaultBottleneck.title || '',
         parentCheck: (point.observableSigns || []).join('、') || '观察孩子在家庭场景中的具体表现。',
         todayAction: action.title || action.action || '先做一个 3 分钟小练习',
         parentScript: point.parentPrompt || '我先陪你做一小步，做完我们再看下一步。',
-        observeSignal: (point.observeSignals || []).join('、'),
-        developmentalFocus: (point.possibleReasons || []).join('、'),
-        practicePrinciples: [], difficultySteps: action.steps || [], progressSignals: point.observeSignals || [],
+        observeSignal: observeSignals.join('、'),
+        possibleReasons: possibleReasons,
+        developmentalFocus: possibleReasons.join('、'),
+        practicePrinciples: [], difficultySteps: action.steps || [], progressSignals: observeSignals,
         adjustmentSignals: [], commonPitfalls: [], safetyBoundary: '', media: point.media || []
       };
-      var zone = { code: point.key, title: point.categoryLabel || '成长痛点', subtitle: point.description, actionText: '今天做一步', theme: { color: '#2AAE9B' }, scenarios: [scenario], sevenDayPlan: [] };
-      that.setData({ zoneCode: zone.code, zone: zone, scenarios: [scenario], scenarioGroups: that.buildScenarioGroups([scenario]), selectedAgeGroup: '当前孩子', selectedScenarioCode: scenario.code, selectedScenario: scenario, activePractice: that.buildActivePractice(scenario), contentSource: result.source, isFallback: result.fallback, professionalBoundary: that.getProfessionalBoundary(zone.code) });
+      var zone = { code: point.key, title: point.title, subtitle: point.description, actionText: '先判断，再做一个小行动', theme: { color: '#6AAE98', tint: '#E6F7ED' }, scenarios: [scenario], sevenDayPlan: [] };
+      that.setData({ zoneCode: zone.code, painPointKey: point.key, zone: zone, scenarios: [scenario], scenarioGroups: [], selectedAgeGroup: '当前孩子', selectedScenarioCode: scenario.code, selectedScenario: scenario, activePractice: that.buildActivePractice(scenario), currentChild: app.getCurrentChild ? app.getCurrentChild() : null, contentSource: result.source, isFallback: result.fallback, professionalBoundary: that.getProfessionalBoundary(zone.code) });
       wx.setNavigationBarTitle({ title: scenario.title });
       return result;
     });
   },
 
   onShow() {
-    if (this.data.zoneCode) {
+    if (this.data.zoneCode && !this.data.painPointKey) {
       this.refreshCurrentChild();
     }
   },
@@ -67,6 +95,7 @@ Page({
     if (!zone) {
       this.setData({
         zoneCode: zoneCode || '',
+        painPointKey: '',
         zone: null,
         selectedAgeGroup: '',
         scenarios: [],
@@ -77,6 +106,7 @@ Page({
     }
     this.setData({
       zoneCode: zone.code,
+      painPointKey: '',
       zone: zone,
       loadError: ''
     });
@@ -233,6 +263,7 @@ Page({
   },
 
   openScenarioDetail(e) {
+    if (this.data.painPointKey) return;
     var scenarioCode = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.scenario : '';
     var targetScenarioCode = scenarioCode || this.data.selectedScenarioCode;
     if (!this.data.zoneCode || !targetScenarioCode) {
@@ -259,7 +290,9 @@ Page({
   askXiaoniu() {
     var scenario = this.data.selectedScenario;
     var zone = this.data.zone || {};
-    var question = scenario && scenario.chatQuestion
+    var question = this.data.painPointKey && scenario
+      ? this.buildPainPointChatQuestion()
+      : scenario && scenario.chatQuestion
       ? scenario.chatQuestion
       : (zone.title ? '孩子在' + zone.title + '方面需要怎么陪？' : '孩子发展练习怎么做？');
     crossPageStorage.save('pendingChatQuestion', question, {
@@ -272,6 +305,37 @@ Page({
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
+  },
+
+  buildPainPointChatQuestion() {
+    var child = this.data.currentChild || {};
+    var childContext = app.buildChildChatContext ? app.buildChildChatContext(child) : null;
+    var scenario = this.data.selectedScenario || {};
+    var practice = this.data.activePractice || {};
+    var ageGroup = childContext && childContext.age_group
+      ? childContext.age_group
+      : developmentZones.inferDevelopmentAgeGroupFromBirthday(child.birthday || child.birth_date);
+    var childName = childContext && childContext.name || child.name || child.nickname || '当前孩子';
+    var categoryLabel = scenario.categoryLabel || this.getScenarioCategory(scenario);
+    var observableSigns = Array.isArray(scenario.progressSignals) ? scenario.progressSignals : [];
+    var abilityTags = Array.isArray(scenario.abilityTags) ? scenario.abilityTags : [];
+    return [
+      '我想继续问问这个成长痛点怎么陪。',
+      '孩子：' + childName,
+      '年龄：' + (ageGroup || '未确认'),
+      '类别：' + (categoryLabel || '日常表现'),
+      scenario.categoryKey ? '类别Key：' + scenario.categoryKey : '',
+      '场景：' + (scenario.title || '当前家庭场景'),
+      scenario.sceneKey ? '场景Key：' + scenario.sceneKey : '',
+      '痛点：' + (scenario.title || this.data.zoneCode || '当前成长痛点'),
+      scenario.symptomText ? '表现：' + scenario.symptomText : '',
+      observableSigns.length ? '可观察表现：' + observableSigns.join('、') : '',
+      abilityTags.length ? '背后能力：' + abilityTags.join('、') : '',
+      scenario.bottleneckTitle ? '卡点判断：' + scenario.bottleneckTitle : '',
+      practice.action ? '今晚第一步：' + practice.action : '',
+      scenario.difficultySteps && scenario.difficultySteps.length ? '具体步骤：' + scenario.difficultySteps.join('；') : '',
+      '请结合孩子年龄和这个家庭场景，告诉我今晚怎么说、怎么做，以及明天观察什么。'
+    ].filter(function(item) { return !!item; }).join('\n');
   },
 
   askFallback() {
@@ -296,9 +360,9 @@ Page({
     var scenario = this.data.selectedScenario || {};
     var practice = this.data.activePractice || {};
     return [
-      zone.title ? '专区：' + zone.title : '',
-      scenario.title ? '场景：' + scenario.title : '',
-      practice.action ? '今天练习：' + practice.action : '',
+      zone.title ? (this.data.painPointKey ? '成长痛点：' : '专区：') + zone.title : '',
+      !this.data.painPointKey && scenario.title ? '场景：' + scenario.title : '',
+      practice.action ? (this.data.painPointKey ? '今日行动：' : '今天练习：') + practice.action : '',
       practice.observeSignal ? '观察：' + practice.observeSignal : ''
     ].filter(function(item) { return !!item; }).join('\n');
   },
@@ -308,14 +372,16 @@ Page({
     var scenario = this.data.selectedScenario || {};
     var practice = this.data.activePractice || {};
     return {
-      sourceType: 'development_zone',
+      sourceType: this.data.painPointKey ? 'development_pain_point' : 'development_zone',
       zoneCode: this.data.zoneCode || zone.code || '',
       zoneTitle: zone.title || '',
+      painPointKey: this.data.painPointKey || '',
+      painPointTitle: this.data.painPointKey ? (scenario.title || zone.title || '') : '',
       scenarioCode: this.data.selectedScenarioCode || scenario.code || '',
       scenarioTitle: scenario.title || '',
       practiceTitle: practice.title || scenario.title || '专区练习',
       practiceAction: practice.action || '',
-      sourceId: (this.data.zoneCode || '') + ':' + (this.data.selectedScenarioCode || '')
+      sourceId: this.data.painPointKey || ((this.data.zoneCode || '') + ':' + (this.data.selectedScenarioCode || ''))
     };
   },
 

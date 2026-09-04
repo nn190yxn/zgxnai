@@ -2,14 +2,14 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
 /* 页面头部 */
 .page-header {
-  background: #E8F5F1;
-  border: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
   border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
@@ -42,7 +42,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 900;
-  color: #283936;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.45;
   position: relative;
@@ -53,7 +53,7 @@
 .page-subtitle {
   font-size: 26rpx;
   line-height: 1.65;
-  color: #657773;
+  color: #626A66;
   position: relative;
   z-index: 1;
   word-break: break-word;
@@ -62,7 +62,7 @@
 /* 搜索栏 */
 .search-bar {
   padding: 24rpx 32rpx;
-  background: #fff;
+  background: #FFFFFF;
   margin-top: -20rpx;
   border-radius: 32rpx 32rpx 0 0;
   position: relative;
@@ -72,7 +72,7 @@
 .search-input-wrap {
   display: flex;
   align-items: center;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 40rpx;
   padding: 16rpx 24rpx;
 }
@@ -85,16 +85,17 @@
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
 }
 
 .search-input::placeholder {
-  color: #999;
+  color: #929995;
 }
 
 .nutrition-cover-wrap {
   padding: 0 32rpx 8rpx;
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
 }
 
 .nutrition-cover {
@@ -102,11 +103,11 @@
   width: 100%;
   height: 300rpx;
   border-radius: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.14);
+  box-shadow: none;
 }
 
 .nutrition-cover-placeholder {
-  background: #F0F3EE;
+  background: #FAF8F5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -134,7 +135,8 @@
 
 .age-switch-section {
   padding: 16rpx 32rpx 8rpx;
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
 }
 
 .compact-header {
@@ -144,7 +146,7 @@
 .section-subtext {
   font-size: 22rpx;
   line-height: 1.55;
-  color: #999;
+  color: #929995;
 }
 
 .age-switch-scroll {
@@ -161,7 +163,7 @@
   margin-right: 16rpx;
   padding: 14rpx 24rpx;
   border-radius: 999rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   color: #A04B20;
   font-size: 24rpx;
   line-height: 1.45;
@@ -169,9 +171,9 @@
 }
 
 .age-switch-item.active {
-  background: #2F9D8E;
-  color: #fff;
-  box-shadow: 0 8rpx 18rpx rgba(255, 107, 53, 0.22);
+  background: #6AAE98;
+  color: #FFFFFF;
+  box-shadow: none;
 }
 
 /* 区块 */
@@ -191,15 +193,15 @@
   font-size: 32rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   min-width: 0;
   word-break: break-word;
 }
 
 .section-tag {
   font-size: 22rpx;
-  color: #E9895B;
-  background: #FFF8E1;
+  color: #F28C72;
+  background: #F5E8BC;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
   line-height: 1.45;
@@ -209,7 +211,7 @@
   display: flex;
   align-items: center;
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
 }
 
 .more-arrow {
@@ -224,18 +226,18 @@
 }
 
 .advice-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 22rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .advice-badge {
   display: inline-block;
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
-  background: #FFF3ED;
-  color: #D65A28;
+  background: #F3DFE3;
+  color: #F28C72;
   font-size: 20rpx;
   line-height: 1.45;
   margin-bottom: 12rpx;
@@ -245,7 +247,7 @@
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -253,7 +255,7 @@
 .advice-content {
   display: block;
   font-size: 24rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.7;
 }
 
@@ -276,9 +278,9 @@
   text-align: center;
   margin-right: 24rpx;
   padding: 24rpx 16rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .category-item:active {
@@ -288,7 +290,7 @@
 .category-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -304,7 +306,7 @@
   display: block;
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 8rpx;
   line-height: 1.45;
 }
@@ -313,15 +315,15 @@
   display: block;
   font-size: 20rpx;
   line-height: 1.45;
-  color: #999;
+  color: #929995;
 }
 
 /* 今日推荐卡片 */
 .recommend-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .recommend-image {
@@ -330,7 +332,7 @@
 }
 
 .recipe-visual {
-  background: #F0F3EE;
+  background: #FAF8F5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -411,7 +413,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -419,7 +421,7 @@
 .recommend-desc {
   display: block;
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.65;
   margin-bottom: 16rpx;
 }
@@ -439,7 +441,7 @@
 .info-item {
   font-size: 24rpx;
   line-height: 1.45;
-  color: #666;
+  color: #626A66;
 }
 
 /* 标签 */
@@ -452,8 +454,8 @@
 }
 
 .tag-primary {
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 /* 加载状态 */
@@ -465,7 +467,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 空状态 */
@@ -484,13 +486,13 @@
 .empty-text {
   font-size: 28rpx;
   line-height: 1.6;
-  color: #999;
+  color: #929995;
 }
 
 .empty-desc {
   margin-top: 12rpx;
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   text-align: center;
   max-width: 560rpx;
   line-height: 1.7;
@@ -503,7 +505,7 @@
   line-height: 1.45;
   border-radius: 8rpx;
   background: #2f7cf6;
-  color: #fff;
+  color: #FFFFFF;
   font-size: 24rpx;
   padding: 13rpx 20rpx;
 }
@@ -516,10 +518,10 @@
 }
 
 .recipe-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   position: relative;
 }
 
@@ -545,7 +547,7 @@
 .recipe-name {
   font-size: 30rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.5;
   display: -webkit-box;
@@ -556,7 +558,7 @@
 
 .recipe-desc {
   font-size: 24rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.65;
   margin-bottom: 12rpx;
   display: -webkit-box;
@@ -581,7 +583,7 @@
 .meta-item {
   font-size: 22rpx;
   line-height: 1.45;
-  color: #999;
+  color: #929995;
 }
 
 /* 收藏按钮 */
@@ -596,7 +598,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .favorite-btn.active {

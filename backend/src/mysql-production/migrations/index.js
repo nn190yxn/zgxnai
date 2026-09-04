@@ -314,6 +314,13 @@ const migrations = [
         INDEX idx_release_alerts_created (created_at)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
     ]
+  },
+  {
+    version: '20260903_001_feedback_device_context',
+    name: 'feedback ticket device context',
+    statements: [
+      'ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS device_info JSON NULL AFTER channel'
+    ]
   }
 ];
 

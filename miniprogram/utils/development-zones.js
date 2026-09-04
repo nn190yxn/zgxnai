@@ -7,7 +7,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '从会说，到说清楚、说完整',
     actionText: '今晚练一句完整表达',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#FF6B35', tint: '#FFF3EC' },
+    theme: { color: '#397A68', tint: '#DDEBF3' },
     scenarios: [
       {
         code: 'unclear_speech',
@@ -95,7 +95,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '坐不住、怕吵、跑跳不稳，先从身体小游戏开始',
     actionText: '今天做一个身体小游戏',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#3E9B8A', tint: '#EAF7F4' },
+    theme: { color: '#397A68', tint: '#DDEDE5' },
     scenarios: [
       {
         code: 'always_moving',
@@ -183,7 +183,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '听得进、坐得住、做得完',
     actionText: '今天练 5 分钟完成一件事',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#4A6FE3', tint: '#EEF2FF' },
+    theme: { color: '#397A68', tint: '#F5E8BC' },
     scenarios: [
       {
         code: 'task_start',
@@ -271,7 +271,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '跑跳爬投，练协调和力量',
     actionText: '今天练一个跑跳动作',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#F59E0B', tint: '#FFF7E6' },
+    theme: { color: '#397A68', tint: '#DDEDE5' },
     scenarios: [
       {
         code: 'balance_weak',
@@ -359,7 +359,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '哭闹、发脾气、一输就难过，有步骤地回应',
     actionText: '今天练一次说出情绪',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#E85D75', tint: '#FFF0F3' },
+    theme: { color: '#F28C72', tint: '#E7DDF2' },
     scenarios: [
       {
         code: 'tantrum',
@@ -447,7 +447,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '会表达、会轮流、会加入游戏',
     actionText: '今天练一句加入游戏的话',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#8B5CF6', tint: '#F3EEFF' },
+    theme: { color: '#397A68', tint: '#F3DFE3' },
     scenarios: [
       {
         code: 'join_play',
@@ -535,7 +535,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '怕生、不敢试，慢慢建立安全感',
     actionText: '今天练一个小尝试',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#10B981', tint: '#ECFDF5' },
+    theme: { color: '#397A68', tint: '#DDEDE5' },
     scenarios: [
       {
         code: 'shy_greeting',
@@ -623,7 +623,7 @@ var DEVELOPMENT_ZONES = [
     subtitle: '吃饭睡觉出门磨蹭，拆成小步骤',
     actionText: '今天固定一个生活小流程',
     ageGroups: DEVELOPMENT_AGE_GROUPS,
-    theme: { color: '#A16207', tint: '#FFF8E1' },
+    theme: { color: '#397A68', tint: '#F5E8BC' },
     scenarios: [
       {
         code: 'bedtime_delay',

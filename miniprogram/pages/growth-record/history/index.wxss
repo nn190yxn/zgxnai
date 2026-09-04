@@ -1,20 +1,50 @@
 .page {
   min-height: 100vh;
-  background: #F7F7F2;
+  background: #FAF8F5;
   padding: 24rpx;
 }
 
 .history-card,
 .empty-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
+  border: 1rpx solid #ECEFEB;
+}
+
+.state-title,
+.state-copy {
+  display: block;
+}
+
+.state-title {
+  color: #2F3432;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.state-copy {
+  margin-top: 12rpx;
+  color: #626A66;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.state-card button {
+  margin: 24rpx 0 0;
+  padding: 18rpx 28rpx;
+  border-radius: 24rpx;
+  background: #6AAE98;
+  color: #FFFFFF;
+  font-size: 26rpx;
+  line-height: 1.45;
 }
 
 .history-date {
   font-size: 30rpx;
-  color: #2c2623;
+  color: #2F3432;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -24,7 +54,7 @@
 .empty-card {
   display: block;
   margin-top: 12rpx;
-  color: #6c625b;
+  color: #626A66;
   font-size: 24rpx;
   line-height: 1.7;
 }

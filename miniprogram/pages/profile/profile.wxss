@@ -2,13 +2,13 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
 }
 
 /* 用户区域 */
 .user-section {
-  background: #E8F5F1;
-  border-bottom: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border-bottom: 1rpx solid #ECEFEB;
   border-radius: 0 0 28rpx 28rpx;
   padding: 60rpx 32rpx;
   display: flex;
@@ -42,14 +42,14 @@
   font-size: 36rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #283936;
+  color: #2F3432;
   margin-bottom: 10rpx;
 }
 
 .user-id {
   font-size: 24rpx;
   line-height: 1.45;
-  color: #657773;
+  color: #626A66;
 }
 
 .user-phone {
@@ -57,7 +57,7 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.45;
-  color: #657773;
+  color: #626A66;
 }
 
 /* 区块 */
@@ -73,7 +73,7 @@
 .group-title {
   display: block;
   margin-bottom: 14rpx;
-  color: #765247;
+  color: #2F3432;
   font-size: 24rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -87,7 +87,7 @@
   background: #FFFFFF;
   border-radius: 24rpx;
   padding: 32rpx 28rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.05);
+  border: 1rpx solid #ECEFEB;
 }
 
 .auth-copy {
@@ -98,7 +98,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: 600;
-  color: #2F2F2F;
+  color: #2F3432;
   line-height: 1.5;
 }
 
@@ -106,7 +106,7 @@
   display: block;
   margin-top: 12rpx;
   font-size: 26rpx;
-  color: #666666;
+  color: #626A66;
   line-height: 1.7;
 }
 
@@ -124,12 +124,13 @@
 
 .auth-primary-btn {
   color: #FFFFFF;
-  background: #2F9D8E;
+  background: #6AAE98;
 }
 
 .auth-secondary-btn {
-  color: #2F8175;
-  background: #FFF3ED;
+  color: #397A68;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
 }
 
 .auth-success {
@@ -143,14 +144,14 @@
   font-size: 28rpx;
   line-height: 1.45;
   font-weight: 600;
-  color: #2F8175;
+  color: #397A68;
 }
 
 .auth-success-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #666666;
+  color: #626A66;
   line-height: 1.6;
 }
 
@@ -162,11 +163,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  border: 1rpx solid #ECEFEB;
 }
 
 .child-entry:active {
-  background: #FAFAFA;
+  background: #FAF8F5;
 }
 
 .child-entry-left {
@@ -177,7 +178,7 @@
 .child-entry-icon {
   width: 80rpx;
   height: 80rpx;
-  background: #E8F5F1;
+  background: #E6F7ED;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -195,14 +196,14 @@
   font-size: 32rpx;
   line-height: 1.45;
   font-weight: 600;
-  color: #333333;
+  color: #2F3432;
   margin-bottom: 10rpx;
 }
 
 .child-entry-desc {
   font-size: 24rpx;
   line-height: 1.55;
-  color: #999999;
+  color: #929995;
 }
 
 .child-entry-right {
@@ -212,13 +213,13 @@
 
 .child-count {
   font-size: 26rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   margin-right: 8rpx;
 }
 
 .arrow-icon {
   font-size: 36rpx;
-  color: #CCCCCC;
+  color: #929995;
 }
 
 /* 当前孩子卡片 */
@@ -229,14 +230,14 @@
   margin-top: 24rpx;
   display: flex;
   align-items: center;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  border: 1rpx solid #ECEFEB;
 }
 
 .child-avatar-small {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: #E8F5F1;
+  background: #E6F7ED;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,14 +269,14 @@
 .child-name-small {
   font-size: 30rpx;
   font-weight: 600;
-  color: #333333;
+  color: #2F3432;
   margin-right: 12rpx;
 }
 
 .default-badge-small {
   font-size: 20rpx;
   color: #FFFFFF;
-  background: #2F9D8E;
+  background: #6AAE98;
   padding: 4rpx 12rpx;
   border-radius: 20rpx;
 }
@@ -287,18 +288,18 @@
 
 .detail-text-small {
   font-size: 24rpx;
-  color: #666666;
+  color: #626A66;
 }
 
 .detail-divider-small {
   font-size: 24rpx;
-  color: #CCCCCC;
+  color: #929995;
   margin: 0 12rpx;
 }
 
 .switch-btn {
   padding: 12rpx 24rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 20rpx;
 }
 
@@ -308,7 +309,7 @@
 
 .switch-text {
   font-size: 26rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
 }
 
 /* 菜单列表 */
@@ -316,14 +317,14 @@
   background: #FFFFFF;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  border: 1rpx solid #ECEFEB;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   padding: 32rpx 24rpx;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .menu-item:last-child {
@@ -331,7 +332,7 @@
 }
 
 .menu-item:active {
-  background: #FAFAFA;
+  background: #FAF8F5;
 }
 
 .menu-icon {
@@ -342,12 +343,12 @@
 .menu-text {
   flex: 1;
   font-size: 30rpx;
-  color: #333333;
+  color: #2F3432;
 }
 
 .menu-arrow {
   font-size: 28rpx;
-  color: #CCCCCC;
+  color: #929995;
 }
 
 /* 危险操作菜单项 */
@@ -357,13 +358,14 @@
 
 /* 会员入口 */
 .membership-entry {
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 20rpx;
   padding: 32rpx 24rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4rpx 16rpx rgba(255, 107, 53, 0.2);
+  border: 1rpx solid #6AAE98;
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
 }
 
 .membership-entry:active {
@@ -429,7 +431,7 @@
 .version {
   text-align: center;
   padding: 40rpx;
-  color: #999999;
+  color: #929995;
   font-size: 24rpx;
 }
 

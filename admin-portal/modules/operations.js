@@ -14,6 +14,7 @@
   ];
   const contentTypes = ['articles', 'pain-points', 'training', 'nutrition'];
   const state = {};
+  const ticketStatusText = { pending: '待处理', processing: '处理中', pending_callback: '待回访', closed: '已完成' };
 
   function esc(value) {
     return window.AdminPortal.escapeHtml(value);
@@ -49,7 +50,8 @@
       const id = item.id || item.pain_point_key || item.content_id || item.key || index + 1;
       const title = item.title || item.short_title || item.name || item.nickname || item.type || `记录 ${id}`;
       const status = item.publish_status || item.status || item.activity_status || '';
-      return `<button type="button" class="operation-row" data-item-id="${esc(id)}" data-item-title="${esc(title)}"><strong>${esc(title)}</strong><span>${esc(status || '可编辑')}</span></button>`;
+      const statusLabel = key === 'support' ? ticketStatusText[status] || '待处理' : status || '可编辑';
+      return `<button type="button" class="operation-row" data-item-id="${esc(id)}" data-item-title="${esc(title)}"><strong>${esc(title)}</strong><span>${esc(statusLabel)}</span></button>`;
     }).join('');
     container.querySelectorAll('.operation-row').forEach((row) => row.addEventListener('click', () => selectItem(key, row.dataset.itemId, row.dataset.itemTitle)));
   }
@@ -66,7 +68,9 @@
       return;
     }
     if (key === 'support') {
-      container.innerHTML = `<form class="operation-editor" data-editor-form="support" data-item-id="${esc(itemId || '')}"><div class="editor-heading"><h4>跟进家长反馈 #${esc(itemId || '')}</h4><span class="permission-badge">需要 ticket:write</span></div><label>处理状态<select name="status"><option value="processing">处理中</option><option value="pending_callback">待回访</option><option value="closed">已完成</option></select></label><label>优先级<select name="priority"><option value="urgent">紧急</option><option value="high">高</option><option value="normal">普通</option><option value="low">低</option></select></label><label>公开进展<textarea name="public_progress"></textarea></label><label>回访结果<textarea name="callback_result"></textarea></label><div class="editor-actions"><button type="submit">保存跟进进展</button><button type="button" class="ghost callback-action">记录回访</button></div><div class="editor-state" data-editor-state>联系方式按角色权限显示</div></form>`;
+      const ticket = item || {};
+      const option = (value, label, selected) => `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`;
+      container.innerHTML = `<form class="operation-editor" data-editor-form="support" data-item-id="${esc(itemId || '')}"><div class="editor-heading"><h4>跟进家长反馈 #${esc(itemId || '')}</h4><span class="permission-badge">需要 ticket:write</span></div><p class="hint">${ticket.channel === 'callback_request' ? '家长已申请人工回访' : '普通反馈'} · 联系方式：${esc(ticket.contact || '未填写')}</p><label>处理状态<select name="status">${option('pending', '待处理', ticket.status)}${option('processing', '处理中', ticket.status)}${option('pending_callback', '待回访', ticket.status)}${option('closed', '已完成', ticket.status)}</select></label><label>优先级<select name="priority">${option('urgent', '紧急', ticket.priority)}${option('high', '高', ticket.priority)}${option('normal', '普通', ticket.priority || 'normal')}${option('low', '低', ticket.priority)}</select></label><label>负责人 ID<input name="assignee_id" type="number" min="1" value="${esc(ticket.assignee_id || '')}" placeholder="客服人员 ID" /></label><label>公开进展<textarea name="public_progress">${esc(ticket.public_progress || '')}</textarea></label><label>内部处理备注<textarea name="note"></textarea></label><label>回访方式<select name="callback_method">${option('phone', '电话', 'phone')}${option('wechat', '微信', '')}</select></label><label>回访结果<textarea name="callback_result"></textarea></label><div class="editor-actions"><button type="submit">保存跟进进展</button><button type="button" class="ghost callback-action">记录回访并完成</button></div><div class="editor-state" data-editor-state>联系方式按角色权限显示</div></form>`;
       const ticketForm = container.querySelector('form');
       ticketForm.addEventListener('submit', (event) => updateTicket(event, ticketForm));
       ticketForm.querySelector('.callback-action').addEventListener('click', () => callbackTicket(ticketForm));
@@ -183,7 +187,9 @@
   }
 
   async function callbackTicket(form) {
-    try { await window.AdminPortal.request(`/support/tickets/${encodeURIComponent(form.dataset.itemId)}/callbacks`, { method: 'POST', body: JSON.stringify({ callback_result: form.elements.callback_result.value, note: form.elements.callback_result.value, callback_method: 'phone' }) }); setEditorState(form, '回访记录已保存', 'success'); } catch (error) { setEditorState(form, `回访失败：${error.message}`, 'error'); }
+    const callbackResult = form.elements.callback_result.value.trim();
+    if (!callbackResult) return setEditorState(form, '请填写回访结果', 'error');
+    try { await window.AdminPortal.request(`/support/tickets/${encodeURIComponent(form.dataset.itemId)}/callbacks`, { method: 'POST', body: JSON.stringify({ callback_result: callbackResult, note: form.elements.note.value, callback_method: form.elements.callback_method.value, public_progress: form.elements.public_progress.value || '客服已完成回访，反馈已处理。', status: 'closed' }) }); setEditorState(form, '回访记录已保存，工单已完成', 'success'); loadModule('support'); } catch (error) { setEditorState(form, `回访失败：${error.message}`, 'error'); }
   }
 
   async function contentAction(key, form, action) {

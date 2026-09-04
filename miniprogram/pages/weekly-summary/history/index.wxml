@@ -1,20 +1,32 @@
 <view class="page">
-  <view class="summary-card" wx:if="{{loading}}">
+  <view class="summary-card" wx:if="{{loadState === 'loading'}}">
     <text class="summary-copy">正在加载历史报告...</text>
   </view>
-  <view class="summary-card" wx:elif="{{errorMessage}}">
+  <view class="summary-card" wx:elif="{{loadState === 'login_required'}}">
+    <text class="summary-title">登录后查看历史报告</text>
+    <text class="summary-copy">登录后可以按孩子查看每个阶段的记录、练习和成长变化。</text>
+    <view class="primary-btn" bindtap="loginAndReload">微信登录</view>
+  </view>
+  <view class="summary-card" wx:elif="{{loadState === 'profile_required'}}">
+    <text class="summary-title">先完善孩子档案</text>
+    <text class="summary-copy">添加孩子后，阶段报告会按孩子分别保存，方便持续查看变化。</text>
+    <view class="primary-btn" bindtap="goToChildSetup">完善孩子档案</view>
+  </view>
+  <view class="summary-card" wx:elif="{{loadState === 'error'}}">
     <text class="summary-title">历史报告暂时没加载出来</text>
     <text class="summary-copy">{{errorMessage}}</text>
     <view class="primary-btn" bindtap="retryLoad">重新加载</view>
   </view>
-  <view class="summary-card" wx:elif="{{!list.length}}">
+  <view class="summary-card" wx:elif="{{loadState === 'empty'}}">
     <text class="summary-title">还没有历史报告</text>
     <text class="summary-copy">持续记录和训练后，阶段报告会保留在这里。</text>
   </view>
-  <view class="summary-card report-item" wx:for="{{list}}" wx:key="weekStart">
+  <view wx:if="{{loadState === 'ready'}}">
+    <view class="summary-card report-item" wx:for="{{list}}" wx:key="weekStart">
     <text class="summary-title">{{item.weekStart}} - {{item.weekEnd}}</text>
     <text class="summary-copy">{{item.dataStatus === 'complete' ? '周期数据完整' : item.dataStatus === 'partial' ? '周期数据持续补充中' : '记录积累中'}}</text>
     <text class="summary-copy">记录 {{item.recordDays}} 天，完成能力练习 {{item.completedTaskCount}} 次。</text>
     <text class="summary-copy">{{item.overview}}</text>
+    </view>
   </view>
 </view>

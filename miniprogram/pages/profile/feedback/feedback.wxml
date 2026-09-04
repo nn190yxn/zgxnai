@@ -25,21 +25,41 @@
     </view>
 
     <view class="field">
-      <view class="field-label">联系方式（选填）</view>
+      <view class="callback-row">
+        <view>
+          <view class="field-label callback-label">希望客服回访</view>
+          <view class="callback-desc">开启后，客服会通过电话或微信联系你</view>
+        </view>
+        <switch color="#6AAE98" checked="{{callbackRequested}}" bindchange="onCallbackChange" />
+      </view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">联系方式{{callbackRequested ? '（必填）' : '（选填）'}}</view>
       <input class="contact-input" value="{{contact}}" placeholder="手机号或微信号，方便我们联系你" bindinput="onContactInput" />
     </view>
 
     <button class="submit-btn" bindtap="submitFeedback" loading="{{submitting}}" disabled="{{!canSubmit}}">发给我们</button>
   </view>
 
-  <view class="history-section" wx:if="{{history.length > 0}}">
+  <view class="history-section">
     <view class="history-title">我发过的反馈</view>
+    <view class="history-state" wx:if="{{historyLoading}}">正在加载处理进展...</view>
+    <view class="history-error" wx:if="{{historyError}}">
+      <text>{{historyError}}</text>
+      <button class="retry-btn" bindtap="retryHistory">重新加载</button>
+    </view>
     <view class="history-item" wx:for="{{history}}" wx:key="id">
-      <view class="history-type">{{item.type_text || '问题反馈'}}</view>
+      <view class="history-head">
+        <view class="history-type">{{item.type_text || item.type || '问题反馈'}}</view>
+        <view class="callback-tag" wx:if="{{item.callback_requested}}">已申请回访</view>
+      </view>
       <view class="history-content">{{item.content}}</view>
-      <view class="history-status">处理状态：{{item.public_status || item.status || '待处理'}}</view>
+      <view class="history-status">处理状态：{{item.status_text}}</view>
       <view class="history-progress" wx:if="{{item.public_progress}}">最近进展：{{item.public_progress}}</view>
+      <view class="history-progress" wx:else>最近进展：我们已收到，处理后会在这里更新</view>
       <view class="history-time">{{item.created_at || ''}}</view>
     </view>
+    <view class="history-state" wx:if="{{!historyLoading && !historyError && history.length === 0}}">还没有反馈记录</view>
   </view>
 </view>

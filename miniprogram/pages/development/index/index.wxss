@@ -1,14 +1,14 @@
 .page {
   min-height: 100vh;
-  background: #FAF6F3;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
 .header {
   margin: 24rpx 32rpx 0;
   padding: 40rpx 32rpx 30rpx;
-  background: #E8F5F1;
-  border: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
   border-radius: 28rpx;
 }
 
@@ -31,7 +31,7 @@
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.16);
-  color: #2F8175;
+  color: #397A68;
   font-size: 23rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -42,7 +42,7 @@
   margin-top: 20rpx;
   font-size: 40rpx;
   line-height: 1.45;
-  color: #283936;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -51,14 +51,14 @@
   margin-top: 14rpx;
   font-size: 25rpx;
   line-height: 1.7;
-  color: #657773;
+  color: #626A66;
 }
 
 .source-tip {
   display: block;
   margin-top: 14rpx;
   font-size: 21rpx;
-  color: #82918D;
+  color: #929995;
 }
 
 .scene-section {
@@ -68,7 +68,7 @@
 .scene-section-desc {
   display: block;
   margin-top: 8rpx;
-  color: #7A8984;
+  color: #929995;
   font-size: 24rpx;
   line-height: 1.55;
 }
@@ -83,7 +83,7 @@
 .family-scene-item {
   min-height: 156rpx;
   padding: 22rpx;
-  border: 1rpx solid #E8EEEA;
+  border: 1rpx solid #ECEFEB;
   border-radius: 20rpx;
   background: #FFFFFF;
   box-sizing: border-box;
@@ -95,14 +95,14 @@
 }
 
 .family-scene-title {
-  color: #24332F;
+  color: #2F3432;
   font-size: 28rpx;
   font-weight: 700;
 }
 
 .family-scene-desc {
   margin-top: 8rpx;
-  color: #6C7A75;
+  color: #626A66;
   font-size: 23rpx;
   line-height: 1.5;
 }
@@ -120,7 +120,7 @@
 
 .featured-label {
   display: block;
-  color: #765247;
+  color: #2F3432;
   font-size: 23rpx;
   font-weight: 900;
 }
@@ -136,7 +136,7 @@
   padding: 18rpx;
   border-radius: 18rpx;
   background: #FFFFFF;
-  border: 2rpx solid rgba(74, 111, 227, 0.18);
+  border: 1rpx solid #ECEFEB;
 }
 
 .featured-title,
@@ -145,14 +145,14 @@
 }
 
 .featured-title {
-  color: #2F241F;
+  color: #2F3432;
   font-size: 26rpx;
   font-weight: 900;
 }
 
 .featured-action {
   margin-top: 6rpx;
-  color: #6F5B53;
+  color: #626A66;
   font-size: 20rpx;
   line-height: 1.5;
 }
@@ -163,8 +163,8 @@
   padding: 24rpx 22rpx;
   box-sizing: border-box;
   border-radius: 22rpx;
-  border: 2rpx solid rgba(255, 107, 53, 0.16);
-  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
 }
 
 .zone-card:active {
@@ -182,12 +182,12 @@
   flex: 1;
   font-size: 29rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
 .zone-arrow {
-  color: #2F8175;
+  color: #397A68;
   font-size: 25rpx;
   line-height: 1.45;
   font-weight: 900;
@@ -198,7 +198,7 @@
   margin-top: 12rpx;
   font-size: 22rpx;
   line-height: 1.65;
-  color: #6F5B53;
+  color: #626A66;
 }
 
 .zone-badge {
@@ -237,7 +237,7 @@
 }
 
 .zone-action {
-  color: #2F8175;
+  color: #397A68;
 }
 
 .guide-card {
@@ -245,14 +245,14 @@
   padding: 26rpx;
   border-radius: 22rpx;
   background: #FFFFFF;
-  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+  box-shadow: none;
 }
 
 .guide-title {
   display: block;
   font-size: 28rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -261,14 +261,14 @@
   margin-top: 10rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: #7A6660;
+  color: #626A66;
 }
-.pain-point-card { background: #fff; border-radius: 20rpx; padding: 28rpx; margin: 24rpx 0; }
+.pain-point-card { background: #FFFFFF; border-radius: 20rpx; padding: 28rpx; margin: 24rpx 0; }
 .filter-row { display: flex; gap: 12rpx; flex-wrap: wrap; margin: 18rpx 0; }
-.filter-chip { padding: 12rpx 18rpx; border-radius: 999rpx; background: #f2f7f7; color: #64747b; font-size: 24rpx; }
-.filter-chip-active { background: #e5f7f3; color: #168c7c; }
-.pain-point-item { min-height: 88rpx; padding: 20rpx 0; border-top: 1rpx solid #e5ecee; }
+.filter-chip { padding: 12rpx 18rpx; border-radius: 999rpx; background: #f2f7f7; color: #626A66; font-size: 24rpx; }
+.filter-chip-active { background: #E6F7ED; color: #397A68; }
+.pain-point-item { min-height: 88rpx; padding: 20rpx 0; border-top: 1rpx solid #ECEFEB; }
 .pain-point-title, .pain-point-desc, .pain-point-link { display: block; }
-.pain-point-title { color: #243238; font-weight: 600; }
-.pain-point-desc { color: #64747b; font-size: 24rpx; margin-top: 8rpx; }
-.pain-point-link { color: #168c7c; font-size: 23rpx; margin-top: 10rpx; }
+.pain-point-title { color: #2F3432; font-weight: 600; }
+.pain-point-desc { color: #626A66; font-size: 24rpx; margin-top: 8rpx; }
+.pain-point-link { color: #397A68; font-size: 23rpx; margin-top: 10rpx; }

@@ -102,7 +102,7 @@ function registerPlatformRoutes(app, options) {
   app.post(`${prefix}/content/:type/:id/offline`, permission('content:offline'), contentAction(pool, 'offline'));
   app.post(`${prefix}/content/:type/:id/restore`, permission('content:restore'), contentAction(pool, 'draft'));
 
-  app.get(`${prefix}/support/tickets`, permission('ticket:read'), async (req, res, next) => { try { const [rows] = await pool.execute('SELECT id, user_id, type, content, contact, priority, status, assignee_id, public_progress, created_at, updated_at FROM support_tickets ORDER BY FIELD(priority, "urgent", "high", "normal", "low"), created_at ASC LIMIT ?', [boundedLimit(req.query.limit)]); res.json({ success: true, list: rows.map((row) => ({ ...row, contact: access.can(req.admin.role, 'ticket:contact') ? row.contact : tickets.maskContact(row.contact) })) }); } catch (error) { next(error); } });
+  app.get(`${prefix}/support/tickets`, permission('ticket:read'), supportList(pool));
   app.put(`${prefix}/support/tickets/:id`, permission('ticket:write'), supportUpdate(pool));
   app.post(`${prefix}/support/tickets/:id/callbacks`, permission('ticket:callback'), callbackCreate(pool));
 }
@@ -253,7 +253,7 @@ function registerPublicRoutes(app, options) {
     } catch (error) { next(error); }
   });
   app.get(`${prefix}/feedback/history`, authenticateToken, async (req, res, next) => {
-    try { const [rows] = await pool.execute('SELECT id, type, content, status, public_progress, created_at FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]); res.json({ success: true, list: rows.map(tickets.publicTicket) }); } catch (error) { next(error); }
+    try { const [rows] = await pool.execute('SELECT id, type, content, status, channel, public_progress, created_at FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]); res.json({ success: true, list: rows.map(tickets.publicTicket) }); } catch (error) { next(error); }
   });
 }
 
@@ -373,8 +373,113 @@ function contentAction(pool, targetStatus) {
   };
 }
 
-function supportUpdate(pool) { return async (req, res, next) => { let connection; try { const body = req.body || {}; const fields = []; const values = []; if (body.status) { tickets.assertStatusTransition(String(body.from_status || 'pending'), body.status); fields.push('status = ?'); values.push(body.status); } if (body.priority && tickets.STATUSES.includes(String(body.status || 'pending'))) { fields.push('priority = ?'); values.push(body.priority); } if (body.assignee_id !== undefined) { fields.push('assignee_id = ?'); values.push(body.assignee_id || null); } if (body.public_progress !== undefined) { fields.push('public_progress = ?'); values.push(String(body.public_progress).slice(0, 2000)); } if (!fields.length) return res.status(400).json({ success: false, message: '没有可更新字段' }); connection = await pool.getConnection(); await connection.beginTransaction(); values.push(req.params.id); await connection.execute(`UPDATE support_tickets SET ${fields.join(', ')} WHERE id = ?`, values); await connection.execute('INSERT INTO support_ticket_events (ticket_id, event_type, actor_id, note, public_visible) VALUES (?, "update", ?, ?, ?)', [req.params.id, req.admin.adminUserId, String(body.note || '').slice(0, 2000), body.public_progress ? 1 : 0]); await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, 'ticket.update', 'support_ticket', req.params.id, JSON.stringify({ status: body.status, priority: body.priority, public_progress: body.public_progress }), req.ip]); await connection.commit(); res.json({ success: true }); } catch (error) { if (connection) await connection.rollback().catch(() => {}); next(error); } finally { if (connection) connection.release(); } }; }
-function callbackCreate(pool) { return async (req, res, next) => { try { const body = req.body || {}; await pool.execute('INSERT INTO support_ticket_events (ticket_id, event_type, actor_id, note, callback_at, callback_method, callback_result, public_visible) VALUES (?, "callback", ?, ?, ?, ?, ?, ?)', [req.params.id, req.admin.adminUserId, String(body.note || '').slice(0, 4000), body.callback_at || new Date(), body.callback_method || 'phone', String(body.callback_result || '').slice(0, 4000), body.public_visible ? 1 : 0]); res.json({ success: true }); } catch (error) { next(error); } }; }
+function supportList(pool) {
+  return async (req, res, next) => {
+    try {
+      const status = tickets.STATUSES.includes(String(req.query.status || '')) ? String(req.query.status) : '';
+      const where = status ? ' WHERE status = ?' : '';
+      const params = status ? [status] : [];
+      params.push(boundedLimit(req.query.limit));
+      const [rows] = await pool.execute(
+        `SELECT id, user_id, type, content, contact, source_page, channel, priority, status, assignee_id, public_progress, created_at, updated_at FROM support_tickets${where} ORDER BY FIELD(priority, "urgent", "high", "normal", "low"), created_at ASC LIMIT ?`,
+        params
+      );
+      const canReadContact = access.can(req.admin.role, 'ticket:contact');
+      res.json({ success: true, list: rows.map((row) => ({ ...row, contact: canReadContact ? row.contact : tickets.maskContact(row.contact) })) });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function supportUpdate(pool) {
+  return async (req, res, next) => {
+    let connection;
+    try {
+      const body = req.body || {};
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+      const [rows] = await connection.execute('SELECT id, status FROM support_tickets WHERE id = ? FOR UPDATE', [req.params.id]);
+      if (!rows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: '客服工单不存在' });
+      }
+
+      const fields = [];
+      const values = [];
+      if (body.status && body.status !== rows[0].status) {
+        tickets.assertStatusTransition(rows[0].status, body.status);
+        fields.push('status = ?');
+        values.push(body.status);
+      }
+      if (body.priority) {
+        if (!tickets.PRIORITIES.includes(body.priority)) {
+          await connection.rollback();
+          return res.status(400).json({ success: false, message: '工单优先级无效' });
+        }
+        fields.push('priority = ?');
+        values.push(body.priority);
+      }
+      if (body.assignee_id !== undefined) {
+        fields.push('assignee_id = ?');
+        values.push(Number(body.assignee_id) || null);
+      }
+      if (body.public_progress !== undefined) {
+        fields.push('public_progress = ?');
+        values.push(String(body.public_progress).slice(0, 2000));
+      }
+      if (!fields.length) {
+        await connection.rollback();
+        return res.status(400).json({ success: false, message: '没有可更新字段' });
+      }
+
+      values.push(req.params.id);
+      await connection.execute(`UPDATE support_tickets SET ${fields.join(', ')} WHERE id = ?`, values);
+      await connection.execute('INSERT INTO support_ticket_events (ticket_id, event_type, actor_id, note, public_visible) VALUES (?, "update", ?, ?, ?)', [req.params.id, req.admin.adminUserId, String(body.note || '').slice(0, 2000), body.public_progress ? 1 : 0]);
+      await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, 'ticket.update', 'support_ticket', req.params.id, JSON.stringify({ status: body.status, priority: body.priority, assignee_id: body.assignee_id, public_progress: body.public_progress }), req.ip]);
+      await connection.commit();
+      res.json({ success: true });
+    } catch (error) {
+      if (connection) await connection.rollback().catch(() => {});
+      next(error);
+    } finally {
+      if (connection) connection.release();
+    }
+  };
+}
+
+function callbackCreate(pool) {
+  return async (req, res, next) => {
+    let connection;
+    try {
+      const body = req.body || {};
+      const callbackResult = String(body.callback_result || '').trim().slice(0, 4000);
+      const callbackMethod = ['phone', 'wechat'].includes(body.callback_method) ? body.callback_method : 'phone';
+      if (!callbackResult) return res.status(400).json({ success: false, message: '请填写回访结果' });
+
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+      const [rows] = await connection.execute('SELECT id, status FROM support_tickets WHERE id = ? FOR UPDATE', [req.params.id]);
+      if (!rows.length) {
+        await connection.rollback();
+        return res.status(404).json({ success: false, message: '客服工单不存在' });
+      }
+      const nextStatus = body.status || 'closed';
+      if (nextStatus !== rows[0].status) tickets.assertStatusTransition(rows[0].status, nextStatus);
+      const publicProgress = String(body.public_progress || '客服已完成回访，反馈已处理。').slice(0, 2000);
+      await connection.execute('INSERT INTO support_ticket_events (ticket_id, event_type, actor_id, note, callback_at, callback_method, callback_result, public_visible) VALUES (?, "callback", ?, ?, ?, ?, ?, ?)', [req.params.id, req.admin.adminUserId, String(body.note || callbackResult).slice(0, 4000), body.callback_at || new Date(), callbackMethod, callbackResult, body.public_visible ? 1 : 0]);
+      await connection.execute('UPDATE support_tickets SET status = ?, public_progress = ? WHERE id = ?', [nextStatus, publicProgress, req.params.id]);
+      await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, 'ticket.callback', 'support_ticket', req.params.id, JSON.stringify({ status: nextStatus, callback_method: callbackMethod, public_progress: publicProgress }), req.ip]);
+      await connection.commit();
+      res.json({ success: true, data: { status: nextStatus, public_progress: publicProgress } });
+    } catch (error) {
+      if (connection) await connection.rollback().catch(() => {});
+      next(error);
+    } finally {
+      if (connection) connection.release();
+    }
+  };
+}
 function formatPainPoint(row) { return { ...row, observable_signs: parseJson(row.observable_signs), possible_reasons: parseJson(row.possible_reasons), today_action: parseJson(row.today_action), observe_signals: parseJson(row.observe_signals) }; }
 function parseJson(value) { if (Array.isArray(value) || (value && typeof value === 'object')) return value; try { return value ? JSON.parse(value) : []; } catch (error) { return []; } }
 function boundedLimit(value) { const number = Number(value); return Number.isInteger(number) ? Math.min(100, Math.max(1, number)) : 20; }

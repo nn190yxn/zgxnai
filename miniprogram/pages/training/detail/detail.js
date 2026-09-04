@@ -1,13 +1,24 @@
 var app = getApp();
 var trainingSync = require('../../../utils/training-sync.js');
 var contentSource = require('../../../utils/content-source.js');
+var detailNavigation = require('../../../utils/detail-navigation.js');
 
 Page({
-  data: { task: null, selectedFeedback: '', note: '', loading: true, submitting: false, syncStatus: 'synced', syncMessage: '', nextSuggestion: '', feedbackOptions: [{ key: 'smooth', label: '完成顺利' }, { key: 'reminder_needed', label: '需要提醒' }, { key: 'left_early', label: '中途离开' }, { key: 'resisted', label: '孩子有些抗拒' }, { key: 'incomplete', label: '今天未完成' }] },
+  data: { task: null, selectedFeedback: '', note: '', loading: true, loadState: 'loading', errorMessage: '', submitting: false, syncStatus: 'synced', syncMessage: '', nextSuggestion: '', feedbackOptions: [{ key: 'smooth', label: '完成顺利' }, { key: 'reminder_needed', label: '需要提醒' }, { key: 'left_early', label: '中途离开' }, { key: 'resisted', label: '孩子有些抗拒' }, { key: 'incomplete', label: '今天未完成' }] },
   onLoad: function(options) { this.taskId = Number(options && options.taskId); this.loadTask(); },
   onShow: function() {
     var that = this;
-    Promise.resolve(app.retryPendingTrainingRecords && app.retryPendingTrainingRecords()).then(function() { that.refreshSyncStatus(); });
+    if (!that._hasShown) {
+      that._hasShown = true;
+      return;
+    }
+    Promise.resolve(app.retryPendingTrainingRecords && app.retryPendingTrainingRecords()).then(function() {
+      if (that.data.loadState === 'profile_required' || that.data.loadState === 'login_required' || that.data.loadState === 'error') {
+        that.loadTask();
+        return;
+      }
+      that.refreshSyncStatus();
+    });
   },
   onUnload: function() {
     var task = this.data.task;
@@ -30,28 +41,47 @@ Page({
   loadTask: function() {
     var that = this;
     var child = app.getCurrentChild && app.getCurrentChild();
-    if (!child || !child.id) { that.setData({ loading: false }); return; }
+    if (!wx.getStorageSync('token')) { that.setData({ task: null, loading: false, loadState: 'login_required', errorMessage: '' }); return; }
+    if (!child || !child.id) { that.setData({ task: null, loading: false, loadState: 'profile_required', errorMessage: '' }); return; }
+    that.setData({ task: null, loading: true, loadState: 'loading', errorMessage: '' });
     var url = that.taskId ? '/training-tasks/' + that.taskId : '/training-plans/next?childId=' + child.id;
     var request = that.taskId
       ? contentSource.readPublishedOrLegacy(app, 'training_task', that.taskId, url, null).then(function(result) { return result.item; })
       : app.request({ url: url, method: 'GET' });
     request.then(function(res) {
-      var payload = res.data || res;
-      var task = payload.task || payload;
-      that.setData({ task: task, loading: false });
+      var payload = res && (res.data || res) || {};
+      var task = payload.task || (payload.id ? payload : null);
+      if (!task) { that.setData({ task: null, loading: false, loadState: 'empty', errorMessage: '' }); return; }
+      that.setData({ task: task, loading: false, loadState: 'ready', errorMessage: '' });
       that.refreshSyncStatus();
       if (!that._startedTracked) {
         that._startedTracked = true;
         that.trackTaskEvent('training_task_start');
       }
       that.trackTaskEvent('training_task_view');
-    }).catch(function() { that.setData({ loading: false }); });
+    }).catch(function(err) { that.setData({ task: null, loading: false, loadState: 'error', errorMessage: app.getApiErrorMessage(err, '训练内容暂时没加载出来') }); });
+  },
+  retryLoad: function() { this.loadTask(); },
+  loginAndReload: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再查看训练内容').then(function(canOperate) {
+      if (canOperate) that.loadTask();
+    });
+  },
+  goToChildSetup: function() {
+    app.requireLoginForAction('请先完成微信登录，再完善孩子档案').then(function(canOperate) {
+      if (canOperate) wx.navigateTo({ url: '/pages/profile/children/children' });
+    });
   },
   selectFeedback: function(e) { this.setData({ selectedFeedback: e.currentTarget.dataset.key }); },
   onNoteInput: function(e) { this.setData({ note: e.detail.value }); },
   completeTask: function() {
     var that = this;
     if (!that.data.task || that.data.submitting) return;
+    if (that.data.task.completed) {
+      that.returnToMainPath();
+      return;
+    }
     that.setData({ submitting: true });
     var task = that.data.task;
     var url = '/training-tasks/' + task.id + '/complete';
@@ -87,5 +117,8 @@ Page({
       that.trackTaskEvent('training_next_suggestion_view', { source: 'local_fallback' });
       wx.showToast({ title: '已保存，联网后同步', icon: 'none' });
     });
+  },
+  returnToMainPath: function() {
+    detailNavigation.returnToMainPath('growth');
   }
 });

@@ -1,9 +1,13 @@
-.training-page { padding-bottom: 60rpx; background: #F7F7F2; }
-.today-card, .empty-card, .plan-item { margin: 24rpx 32rpx; padding: 32rpx; border-radius: 28rpx; background: #FFFFFF; border: 1rpx solid #DDE8E3; box-shadow: 0 10rpx 30rpx rgba(54, 83, 75, 0.08); }
+.training-page { padding-bottom: 60rpx; background: #FAF8F5; }
+.today-card, .empty-card, .plan-item { margin: 24rpx 32rpx; padding: 32rpx; border-radius: 28rpx; background: #FFFFFF; border: 1rpx solid #ECEFEB; box-shadow: none; }
 .eyebrow, .task-meta { display: block; color: #9d8172; font-size: 24rpx; }
-.task-title { display: block; margin: 14rpx 0; color: #283936; font-size: 38rpx; font-weight: 700; }
-.task-objective { display: block; color: #657773; font-size: 28rpx; line-height: 1.6; }
-.section-title { margin: 36rpx 32rpx 16rpx; color: #283936; font-size: 30rpx; font-weight: 700; }
+.task-title { display: block; margin: 14rpx 0; color: #2F3432; font-size: 38rpx; font-weight: 700; }
+.task-objective { display: block; color: #626A66; font-size: 28rpx; line-height: 1.6; }
+.section-title { margin: 36rpx 32rpx 16rpx; color: #2F3432; font-size: 30rpx; font-weight: 700; }
 .plan-actions { display: flex; gap: 12rpx; padding: 0 32rpx; }
-.plan-actions button { flex: 1; margin: 0; color: #fff; background: #2F9D8E; border-radius: 18rpx; font-size: 25rpx; }
+.plan-actions button { flex: 1; margin: 0; color: #FFFFFF; background: #6AAE98; border-radius: 18rpx; font-size: 25rpx; }
 .plan-item { display: flex; justify-content: space-between; color: #66534a; font-size: 25rpx; }
+.state-card { display: flex; flex-direction: column; align-items: flex-start; }
+.state-title { color: #2F3432; font-size: 30rpx; font-weight: 700; line-height: 1.45; }
+.state-copy { margin-top: 12rpx; color: #626A66; font-size: 26rpx; line-height: 1.6; }
+.state-card button { margin: 24rpx 0 0; padding: 18rpx 28rpx; border: 1rpx solid #6AAE98; border-radius: 24rpx; background: #6AAE98; color: #FFFFFF; font-size: 26rpx; line-height: 1.45; }

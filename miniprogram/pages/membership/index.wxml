@@ -1,7 +1,23 @@
 <!-- 成长服务页面 -->
 <view class="membership-page">
+  <view class="membership-state-card" wx:if="{{membershipLoadState === 'loading'}}">
+    <text class="membership-state-title">正在加载成长服务状态</text>
+    <text class="membership-state-copy">正在确认当前权益和可用方案...</text>
+  </view>
+  <view class="membership-state-card" wx:elif="{{membershipLoadState === 'login_required'}}">
+    <text class="membership-state-title">登录后查看成长服务状态</text>
+    <text class="membership-state-copy">权益介绍可以继续浏览，登录后可查看试用资格、剩余天数和邀请记录。</text>
+    <button class="membership-state-button" bindtap="loginAndReload">微信登录</button>
+  </view>
+  <view class="membership-state-card membership-state-error" wx:elif="{{membershipLoadState === 'error'}}">
+    <text class="membership-state-title">成长服务状态暂时没加载出来</text>
+    <text class="membership-state-copy">{{membershipErrorMessage}}</text>
+    <button class="membership-state-button" bindtap="retryLoadMembership">重新加载</button>
+  </view>
+  <view class="membership-fallback-notice" wx:if="{{membershipFallbackMessage}}">{{membershipFallbackMessage}}</view>
+
   <!-- 成长服务状态卡片 -->
-  <view class="membership-card">
+  <view class="membership-card" wx:if="{{membershipLoadState === 'ready'}}">
     <view class="membership-header">
       <text class="membership-title">宝贝成长服务</text>
     </view>
@@ -17,7 +33,14 @@
     </view>
   </view>
 
-  <view class="membership-card recall-card" wx:if="{{showExpiryRecall}}">
+  <view class="membership-primary-card" wx:if="{{membershipLoadState === 'ready'}}">
+    <text class="membership-primary-title">{{membershipPrimaryAction.title}}</text>
+    <text class="membership-primary-desc">{{membershipPrimaryAction.desc}}</text>
+    <button class="membership-primary-button" bindtap="handleMembershipPrimaryAction">{{membershipPrimaryAction.cta}}</button>
+    <button class="membership-return-button" bindtap="returnToMainPath">返回进入前的页面</button>
+  </view>
+
+  <view class="membership-card recall-card" wx:if="{{membershipLoadState === 'ready' && showExpiryRecall}}">
     <view class="membership-body">
       <view class="recall-badge {{expiryRecallLevel === 'urgent' ? 'recall-urgent' : 'recall-soon'}}">
         <text class="badge-text">{{expiryRecallLevel === 'urgent' ? '即将到期' : '快到期了'}}</text>
@@ -40,7 +63,7 @@
    </view>
 
   <!-- 成长服务方案 -->
-  <view class="plans-section" wx:if="{{showMembership}}">
+  <view id="membership-plans" class="plans-section" wx:if="{{showMembership}}">
     <view class="section-title">选择成长服务方案</view>
     <view class="payment-compliance" wx:if="{{showPayment}}">
       <text class="payment-compliance-title">微信官方小程序虚拟支付</text>
@@ -78,7 +101,7 @@
       </view>
   </view>
 
-  <view class="plans-section">
+  <view id="membership-benefits" class="plans-section">
     <view class="section-title">能多看到什么</view>
     <view class="benefit-list">
       <view class="benefit-item {{item.unlocked ? 'benefit-item-active' : ''}}" wx:for="{{displayFeatures}}" wx:key="key">
@@ -92,7 +115,7 @@
   </view>
 
   <!-- 裂变邀请 -->
-  <view class="referral-section">
+  <view id="membership-referral" class="referral-section">
     <view class="section-title">邀请家人一起用</view>
     <view class="referral-info">
       <text class="referral-desc">邀请一位家人或朋友注册，双方各得7天成长服务</text>

@@ -2,6 +2,8 @@
 var app = getApp();
 var encouragementUtils = require('../../../utils/encouragement.js');
 var contentSource = require('../../../utils/content-source.js');
+var crossPageStorage = require('../../../utils/cross-page-storage.js');
+var detailNavigation = require('../../../utils/detail-navigation.js');
 
 Page({
   data: {
@@ -671,7 +673,11 @@ Page({
 
   recordArticlePractice: function() {
     var article = this.data.article || {};
-    wx.setStorageSync('pendingGrowthRecordNote', '今天尝试了《' + (article.title || '育儿文章') + '》里的一个方法：');
+    var child = app.getCurrentChild && app.getCurrentChild();
+    crossPageStorage.save('pendingGrowthRecordNote', '今天尝试了《' + (article.title || '育儿文章') + '》里的一个方法：', {
+      childId: child && child.id,
+      source: 'article_detail'
+    });
     app.trackKbEvent(this.buildArticleTrackPayload({
       event_type: 'article_practice_record_click',
       event_meta: { action: 'open_growth_record' }
@@ -682,6 +688,10 @@ Page({
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }
     });
+  },
+
+  returnToMainPath: function() {
+    detailNavigation.returnToMainPath('development');
   },
 
   // 下拉刷新

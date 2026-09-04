@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="header" wx:if="{{zone}}" style="background: linear-gradient(135deg, {{zone.theme.color}}, #FF8C5A);">
+  <view class="header" wx:if="{{zone}}" style="background: {{zone.theme.tint}};">
     <text class="title">{{zone.title}}</text>
       <text class="subtitle">{{zone.subtitle}}</text>
       <text class="action-text">{{zone.actionText}}</text>
@@ -8,7 +8,7 @@
 
   <block wx:if="{{zone}}">
     <media-gallery items="{{selectedScenario.media}}" />
-    <view class="section-card age-card">
+    <view class="section-card age-card" wx:if="{{!painPointKey}}">
       <view class="section-head">
         <text class="section-title">先选年龄段</text>
         <text class="section-desc">{{ageStatusText}}</text>
@@ -28,7 +28,7 @@
       </view>
     </view>
 
-    <view class="section-card" wx:if="{{selectedAgeGroup && scenarios.length}}">
+    <view class="section-card" wx:if="{{!painPointKey && selectedAgeGroup && scenarios.length}}">
       <view class="section-head">
         <text class="section-title">你家孩子像哪种情况</text>
         <text class="section-desc">点进最接近的表现，直接看专题方法和练习步骤。</text>
@@ -58,13 +58,67 @@
       </view>
     </view>
 
-    <view class="section-card empty-card" wx:if="{{selectedAgeGroup && !scenarios.length}}">
+    <view class="section-card empty-card" wx:if="{{!painPointKey && selectedAgeGroup && !scenarios.length}}">
       <text class="section-title">这个方向正在补充</text>
       <text class="section-desc">先问小牛，描述孩子今天的具体表现。</text>
       <view class="empty-action" bindtap="askFallback">问小牛</view>
     </view>
 
-    <view class="section-card" wx:if="{{zone.sevenDayPlan.length}}">
+    <block wx:if="{{painPointKey && selectedScenario}}">
+      <view class="section-card pain-evidence-card">
+        <view class="section-head">
+          <text class="section-title">先看看是不是这种表现</text>
+          <text class="section-desc">符合其中一两项，就可以先用今天的小行动试一试。</text>
+        </view>
+        <text class="pain-list-item">{{selectedScenario.parentCheck}}</text>
+      </view>
+
+      <view class="section-card" wx:if="{{selectedScenario.possibleReasons.length}}">
+        <view class="section-head">
+          <text class="section-title">可能卡在哪里</text>
+          <text class="section-desc">先理解孩子当下的难处，再调整要求。</text>
+        </view>
+        <view class="pain-list">
+          <text class="pain-list-item" wx:for="{{selectedScenario.possibleReasons}}" wx:key="*this">{{index + 1}}. {{item}}</text>
+        </view>
+      </view>
+
+      <view class="section-card pain-action-card">
+        <text class="practice-badge">今日行动</text>
+        <text class="practice-title">{{activePractice.action}}</text>
+        <view class="action-step-list" wx:if="{{selectedScenario.difficultySteps.length}}">
+          <view class="action-step" wx:for="{{selectedScenario.difficultySteps}}" wx:key="*this">
+            <text class="action-step-index">{{index + 1}}</text>
+            <text class="action-step-text">{{item}}</text>
+          </view>
+        </view>
+        <view class="practice-note" wx:if="{{activePractice.parentScript}}">
+          <text class="practice-note-label">家长可以这样说</text>
+          <text class="practice-note-text">“{{activePractice.parentScript}}”</text>
+        </view>
+      </view>
+
+      <view class="section-card" wx:if="{{selectedScenario.progressSignals.length}}">
+        <view class="section-head">
+          <text class="section-title">做完观察什么</text>
+          <text class="section-desc">只记最明显的变化，方便判断下一步。</text>
+        </view>
+        <view class="pain-list">
+          <text class="pain-list-item" wx:for="{{selectedScenario.progressSignals}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="section-card related-card pain-followup-card">
+        <text class="section-title">做完以后</text>
+        <text class="section-desc">有拿不准的地方可以问小牛，也可以把今天的变化记下来。</text>
+        <view class="related-actions">
+          <view class="related-btn related-btn-primary" bindtap="askXiaoniu">问小牛</view>
+          <view class="related-btn" bindtap="recordPractice">行动做完了，记录变化</view>
+        </view>
+      </view>
+    </block>
+
+    <view class="section-card" wx:if="{{!painPointKey && zone.sevenDayPlan.length}}">
       <view class="section-head">
         <text class="section-title">7 天慢慢练</text>
         <text class="section-desc">每天一个小动作，不用一次练很多。</text>
@@ -77,7 +131,7 @@
       </view>
     </view>
 
-    <view class="section-card related-card">
+    <view class="section-card related-card" wx:if="{{!painPointKey}}">
       <text class="section-title">没找到很像的表现</text>
       <text class="section-desc">可以直接问小牛，描述孩子今天的具体情况。</text>
       <view class="related-btn related-btn-primary" bindtap="askXiaoniu">问小牛</view>

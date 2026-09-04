@@ -1,11 +1,17 @@
 <view class="page training-page">
   <view class="page-header"><text class="page-title">家庭训练</text><text class="page-subtitle">每天一个短动作，先看见孩子的具体表现。</text></view>
-  <view wx:if="{{error}}" class="empty-card"><text>{{error}}</text></view>
-  <view wx:if="{{task}}" class="today-card" bindtap="openTask">
+  <view wx:if="{{dataStatus === 'login_required'}}" class="empty-card state-card"><text class="state-title">登录后查看训练计划</text><text class="state-copy">完成微信登录后，可以继续孩子的训练并同步进度。</text><button bindtap="loginAndReload">去登录</button></view>
+  <view wx:elif="{{dataStatus === 'profile_required'}}" class="empty-card state-card"><text class="state-title">先完善孩子档案</text><text class="state-copy">填好年龄和基本情况后，我们才能匹配合适的训练。</text><button bindtap="goToChildSetup">去完善档案</button></view>
+  <view wx:elif="{{loading}}" class="empty-card state-card"><text class="state-title">正在加载训练计划...</text><text class="state-copy">我们正在查找今天适合孩子的短练习。</text></view>
+  <view wx:elif="{{dataStatus === 'error'}}" class="empty-card state-card"><text class="state-title">训练计划暂时没加载出来</text><text class="state-copy">{{error}}</text><button bindtap="retryLoad">重新加载</button></view>
+  <view wx:elif="{{dataStatus === 'empty'}}" class="empty-card state-card"><text class="state-title">还没有可用的训练计划</text><text class="state-copy">先完成一次能力观察，再生成适合孩子的训练。</text><button bindtap="goToObservation">去做能力观察</button></view>
+  <view wx:if="{{dataStatus === 'ready' && task}}" class="today-card" bindtap="openTask">
     <text class="eyebrow">今天的训练</text><text class="task-title">{{task.title}}</text><text class="task-objective">{{task.objective}}</text>
     <text class="task-meta">第{{task.dayIndex}}天 · {{task.durationMinutes}}分钟 · {{task.completed ? '已完成' : '开始训练'}}</text>
   </view>
-  <view class="section-title">选择计划周期</view>
-  <view class="plan-actions"><button data-days="3" bindtap="generatePlan">3天体验</button><button data-days="7" bindtap="generatePlan">7天训练</button><button data-days="30" bindtap="generatePlan">30天持续</button></view>
-  <view class="plan-list"><view wx:for="{{plans}}" wx:key="id" class="plan-item"><text>{{item.durationDays}}天计划</text><text>{{item.startDate}} 至 {{item.endDate}}</text></view></view>
+  <block wx:if="{{child && (dataStatus === 'ready' || dataStatus === 'empty')}}">
+    <view class="section-title">选择计划周期</view>
+    <view class="plan-actions"><button data-days="3" bindtap="generatePlan">3天体验</button><button data-days="7" bindtap="generatePlan">7天训练</button><button data-days="30" bindtap="generatePlan">30天持续</button></view>
+    <view class="plan-list"><view wx:for="{{plans}}" wx:key="id" class="plan-item"><text>{{item.durationDays}}天计划</text><text>{{item.startDate}} 至 {{item.endDate}}</text></view></view>
+  </block>
 </view>

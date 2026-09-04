@@ -1,5 +1,9 @@
 <view class="page">
-  <view class="history-card" wx:for="{{list}}" wx:key="id">
+  <view class="empty-card state-card" wx:if="{{loadState === 'login_required'}}"><text class="state-title">登录后查看成长记录</text><text class="state-copy">完成微信登录后，可以查看并同步孩子每天的变化。</text><button bindtap="loginAndReload">去登录</button></view>
+  <view class="empty-card state-card" wx:elif="{{loadState === 'profile_required'}}"><text class="state-title">先完善孩子档案</text><text class="state-copy">添加孩子后，成长记录会按孩子分别保存在这里。</text><button bindtap="goToChildSetup">去完善档案</button></view>
+  <view class="empty-card state-card" wx:elif="{{loadState === 'loading'}}"><text class="state-title">正在加载成长记录...</text></view>
+  <view class="empty-card state-card" wx:elif="{{loadState === 'error'}}"><text class="state-title">成长记录暂时没加载出来</text><text class="state-copy">{{errorMessage}}</text><button bindtap="retryLoad">重新加载</button></view>
+  <view class="history-card" wx:for="{{list}}" wx:key="id" wx:if="{{loadState === 'ready'}}">
     <view class="history-head">
       <text class="history-date">{{item.recordDate}}</text>
     </view>
@@ -7,5 +11,5 @@
     <text class="history-line">睡眠：{{item.sleepStatus}}  活动：{{item.exerciseStatus}}  社交：{{item.socialStatus}}</text>
     <text class="history-note" wx:if="{{item.noteText}}">{{item.noteText}}</text>
   </view>
-  <view class="empty-card" wx:if="{{!loading && !list.length}}">还没有记录，今晚先记一次就好</view>
+  <view class="empty-card" wx:if="{{loadState === 'empty'}}">还没有记录，今晚先记一次就好</view>
 </view>

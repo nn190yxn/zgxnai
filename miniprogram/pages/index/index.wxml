@@ -6,20 +6,44 @@
   </view>
 
   <block wx:else>
+    <view class="home-profile-bar">
+      <view class="home-profile-avatar"><text>{{currentChild ? (currentChild.name || currentChild.nickname || '孩') : '家'}}</text></view>
+      <view class="home-profile-copy">
+        <text class="home-profile-name">{{currentChild ? (currentChild.name || currentChild.nickname || '当前孩子') : '欢迎来到小牛育儿'}}</text>
+        <text class="home-profile-stage">{{currentChild ? '为孩子选择今天的一小步' : '先浏览内容，也可以完善孩子档案'}}</text>
+      </view>
+      <text class="home-profile-arrow">></text>
+    </view>
+
     <view class="home-banner-section">
       <swiper class="home-banner" indicator-dots="true" autoplay="true" interval="4500" duration="500" circular="true">
         <swiper-item wx:for="{{bannerList}}" wx:key="action">
           <view class="home-banner-card" data-action="{{item.action}}" bindtap="onTapBannerCta">
             <image wx:if="{{item.image_url && !item.imageFailed}}" class="home-banner-image" src="{{item.image_url}}" mode="aspectFill" data-index="{{index}}" binderror="onBannerImageError" lazy-load="true" alt="{{item.alt_text || item.title}}" />
-            <view wx:else class="home-banner-copy">
-            <text class="home-banner-kicker">小牛育儿</text>
-            <text class="home-banner-title">{{item.title}}</text>
-            <text class="home-banner-desc">{{item.desc}}</text>
-            <text class="home-banner-cta">{{item.cta}} ></text>
+            <view class="home-banner-copy">
+              <text class="home-banner-kicker">{{currentChild ? '为 ' + (currentChild.name || currentChild.nickname || '孩子') + ' 推荐' : '小牛育儿'}}</text>
+              <text class="home-banner-title">{{item.title}}</text>
+              <text class="home-banner-desc">{{item.desc}}</text>
+              <text class="home-banner-cta">{{item.cta || '查看内容'}} ></text>
             </view>
           </view>
         </swiper-item>
       </swiper>
+    </view>
+
+    <view class="home-primary-section">
+      <view class="home-primary-card">
+        <view class="home-primary-heading">
+          <text class="home-primary-eyebrow">{{currentChild ? currentChild.name + ' 的今天' : '今天先从这里开始'}}</text>
+          <text class="home-primary-status">{{homeState.recovered ? '已恢复本地记录' : '当前重点'}}</text>
+        </view>
+        <text class="home-primary-title">{{homePrimaryCard.title}}</text>
+        <text class="home-primary-desc">{{homePrimaryCard.desc}}</text>
+        <view class="home-primary-action" bindtap="onHomePrimaryActionTap">
+          <text class="home-primary-action-text">{{homePrimaryCard.cta}}</text>
+          <text class="home-primary-action-arrow">></text>
+        </view>
+      </view>
     </view>
 
     <view class="home-feature-section">
@@ -29,14 +53,14 @@
       </view>
       <view class="home-feature-grid">
         <view class="home-feature-item" wx:for="{{coreSupportTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
-          <view class="home-feature-icon"><text>{{item.title}}</text></view>
+          <view class="home-feature-icon"><image src="{{item.iconPath}}" mode="aspectFit" /></view>
           <text class="home-feature-title">{{item.title}}</text>
           <text class="home-feature-desc">{{item.desc}}</text>
         </view>
       </view>
       <view class="home-feature-grid home-feature-grid-secondary">
         <view class="home-feature-item" wx:for="{{coreAuxiliaryTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
-          <view class="home-feature-icon"><text>{{item.title}}</text></view>
+          <view class="home-feature-icon"><image src="{{item.iconPath}}" mode="aspectFit" /></view>
           <text class="home-feature-title">{{item.title}}</text>
           <text class="home-feature-desc">{{item.desc}}</text>
         </view>
@@ -227,7 +251,7 @@
       </view>
     </view>
 
-    <view class="section development-zone-section">
+    <view wx:if="{{false}}" class="section development-zone-section">
       <view class="section-header">
         <view>
           <text class="section-title">3-6 岁发展专区</text>
@@ -283,6 +307,27 @@
       <text class="core-membership-title">{{membershipTouchpointTitle}}</text>
       <text class="core-membership-desc">{{membershipTouchpointDesc}}</text>
       <text class="core-membership-action">{{membershipTouchpointCta}}</text>
+    </view>
+
+    <view class="home-growth-service-section">
+      <view class="home-section-heading">
+        <text class="home-section-title">成长服务</text>
+        <text class="home-section-subtitle">记录变化，回看每一步进步</text>
+      </view>
+      <view class="home-growth-service-card" bindtap="goToGrowthRecord">
+        <view>
+          <text class="home-growth-service-title">成长记录与周总结</text>
+          <text class="home-growth-service-desc">把今天的观察留下来，慢慢看见孩子的变化</text>
+        </view>
+        <text class="home-growth-service-arrow">></text>
+      </view>
+      <view wx:if="{{membershipTouchpointVisible}}" class="home-growth-service-card home-membership-service-card" bindtap="goToMembership">
+        <view>
+          <text class="home-growth-service-title">{{membershipTouchpointTitle}}</text>
+          <text class="home-growth-service-desc">{{membershipTouchpointDesc}}</text>
+        </view>
+        <text class="home-growth-service-arrow">></text>
+      </view>
     </view>
 
     <view class="tips-card">

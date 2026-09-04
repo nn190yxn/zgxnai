@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="header" wx:if="{{scenario}}" style="background: linear-gradient(135deg, {{zone.theme.color}}, #FF8C5A);">
+  <view class="header" wx:if="{{scenario}}" style="background: {{zone.theme.tint}};">
     <text class="zone-label">{{zone.title}}</text>
     <text class="title">{{scenario.title}}</text>
       <text class="subtitle">{{scenario.symptomText}}</text>

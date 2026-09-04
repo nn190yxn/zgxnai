@@ -88,8 +88,8 @@
       <text class="practice-title">今晚试一个方法</text>
       <text class="practice-desc">选一个方法，今晚试，明天看效果。</text>
       <view class="practice-actions">
-        <view class="practice-btn primary" bindtap="askAiAboutArticle">帮我拆成今晚三步</view>
-        <view class="practice-btn secondary" bindtap="recordArticlePractice">记录一次实践</view>
+        <view class="practice-btn primary" bindtap="recordArticlePractice">使用这个方法</view>
+        <view class="practice-btn secondary" bindtap="askAiAboutArticle">帮我拆成三步</view>
       </view>
     </view>
 
@@ -184,6 +184,10 @@
 
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
+      <view class="action-btn" bindtap="returnToMainPath">
+        <text class="action-icon">返回</text>
+        <text class="action-text">上一页</text>
+      </view>
       <view class="action-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
         <text class="action-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
         <text class="action-text">{{isFavorite ? '已收藏' : '收藏'}}</text>

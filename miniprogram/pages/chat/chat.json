@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "小牛问答",
-  "navigationBarBackgroundColor": "#FF6B35",
+  "navigationBarBackgroundColor": "#FAF8F5",
   "usingComponents": {
     "tip-card": "/components/tip-card/tip-card"
   }

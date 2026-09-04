@@ -73,30 +73,34 @@ Page({
       ageOptions: coreActionScenes.getCoreActionAgeGroups()
     },
     coreScenes: coreActionScenes.getCoreActionScenes(),
-    coreSupportTools: [
+      coreSupportTools: [
       {
         key: 'assessment',
         title: '能力观察',
         desc: '看看孩子当前的表现',
-        action: 'assessment'
+        action: 'assessment',
+        iconPath: 'images/tab-home.png'
       },
       {
         key: 'training',
         title: '今日训练',
         desc: '完成一个适龄短训练',
-        action: 'today_task'
+        action: 'today_task',
+        iconPath: 'images/tab-chat.png'
       },
       {
         key: 'report',
         title: '成长报告',
         desc: '回看近期表现变化',
-        action: 'weekly_report'
+        action: 'weekly_report',
+        iconPath: 'images/tab-profile.png'
       },
       {
         key: 'development',
         title: '发展专题',
         desc: '按年龄查看支持内容',
-        action: 'development_zones'
+        action: 'development_zones',
+        iconPath: 'images/tab-chat.png'
       },
     ],
     coreAuxiliaryTools: [
@@ -104,25 +108,29 @@ Page({
         key: 'chat',
         title: '家庭支持助手',
         desc: '描述家庭场景，获得支持步骤',
-        action: 'chat'
+        action: 'chat',
+        iconPath: 'images/tab-chat.png'
       },
       {
         key: 'textbook',
         title: '文章与练习',
         desc: '按年龄补充家庭练习',
-        action: 'textbook'
+        action: 'textbook',
+        iconPath: 'images/tab-home.png'
       },
       {
         key: 'nutrition',
         title: '营养支持',
         desc: '查看家庭饮食建议',
-        action: 'nutrition'
+        action: 'nutrition',
+        iconPath: 'images/tab-profile.png'
       },
       {
         key: 'parenting',
         title: '家庭场景支持',
         desc: '查找吃饭、睡前和出门步骤',
-        action: 'parenting'
+        action: 'parenting',
+        iconPath: 'images/tab-home.png'
       }
     ],
     homePrimaryCard: {
@@ -134,6 +142,7 @@ Page({
       targetPath: '',
       targetPayload: {}
     },
+    currentChild: null,
     homeState: {
       status: 'no_observation',
       source: 'local',
@@ -209,7 +218,7 @@ Page({
         title: '成长记录',
         desc: '每天记一点，周总结更准确',
         cta: '看看入口',
-        action: 'assessment'
+        action: 'growth_record'
       }
     ],
     bannerLoading: false
@@ -323,6 +332,7 @@ Page({
     });
 
     this.setData({
+      currentChild: currentChild,
       recentCoreAction: recentAction,
       homePrimaryCard: primaryCard,
       homeState: {
@@ -2641,6 +2651,10 @@ Page({
     }
     if (action === 'chat') {
       this.goToChat();
+      return;
+    }
+    if (action === 'growth_record') {
+      this.goToGrowthRecord();
       return;
     }
     this.goToWeeklyReport();

@@ -39,14 +39,14 @@
   ],
   "window": {
     "navigationBarTitleText": "小牛育儿",
-    "navigationBarBackgroundColor": "#F7F7F2",
+    "navigationBarBackgroundColor": "#FAF8F5",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#F7F7F2",
+    "backgroundColor": "#FAF8F5",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#8A9A95",
-    "selectedColor": "#2F9D8E",
+    "color": "#929995",
+    "selectedColor": "#397A68",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "black",
     "list": [
@@ -65,8 +65,8 @@
       {
         "pagePath": "pages/growth-record/index",
         "text": "成长",
-        "iconPath": "images/tab-chat.png",
-        "selectedIconPath": "images/tab-chat-active.png"
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
       },
       {
         "pagePath": "pages/profile/profile",

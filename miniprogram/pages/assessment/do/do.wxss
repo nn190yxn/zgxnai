@@ -2,24 +2,25 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   display: flex;
   flex-direction: column;
 }
 
 /* 顶部进度条 */
 .progress-header {
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   padding: 24rpx 32rpx;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .progress-bar {
   height: 12rpx;
-  background: #E8E8E8;
+  background: #ECEFEB;
   border-radius: 6rpx;
   overflow: hidden;
   margin-bottom: 16rpx;
@@ -27,7 +28,7 @@
 
 .progress-fill {
   height: 100%;
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 6rpx;
   transition: width 0.3s ease;
 }
@@ -40,24 +41,24 @@
 
 .progress-text {
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
   font-weight: 500;
 }
 
 .time-text {
   font-size: 26rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 600;
 }
 
 /* 题目卡片 */
 .question-card {
   flex: 1;
-  background: #fff;
+  background: #FFFFFF;
   margin: 24rpx 32rpx;
   border-radius: 24rpx;
   padding: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .question-header {
@@ -66,19 +67,19 @@
   align-items: center;
   margin-bottom: 24rpx;
   padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .question-number {
   font-size: 28rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 600;
 }
 
 .assessment-name {
   font-size: 24rpx;
-  color: #999;
-  background: #F5F5F5;
+  color: #929995;
+  background: #FAF8F5;
   padding: 8rpx 16rpx;
   border-radius: 16rpx;
 }
@@ -89,7 +90,7 @@
 
 .question-text {
   font-size: 34rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
   font-weight: 500;
 }
@@ -98,7 +99,7 @@
   display: block;
   margin-top: 16rpx;
   font-size: 26rpx;
-  color: #8A8A8A;
+  color: #929995;
   line-height: 1.65;
 }
 
@@ -113,7 +114,7 @@
   display: flex;
   align-items: flex-start;
   padding: 26rpx 24rpx;
-  background: #FAFAFA;
+  background: #FAF8F5;
   border-radius: 16rpx;
   border: 2rpx solid transparent;
   transition: all 0.3s;
@@ -124,8 +125,8 @@
 }
 
 .option-item.selected {
-  background: #FFF3ED;
-  border-color: #2F9D8E;
+  background: #F3DFE3;
+  border-color: #6AAE98;
 }
 
 .option-radio {
@@ -142,19 +143,19 @@
 }
 
 .option-item.selected .option-radio {
-  border-color: #2F9D8E;
+  border-color: #6AAE98;
 }
 
 .radio-inner {
   width: 24rpx;
   height: 24rpx;
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 50%;
 }
 
 .option-text {
   font-size: 30rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
 }
 
@@ -167,20 +168,20 @@
   display: block;
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #8A8A8A;
+  color: #929995;
   line-height: 1.6;
 }
 
 .option-item.selected .option-text {
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 500;
 }
 
 /* 题目导航点 */
 .question-nav {
-  background: #fff;
+  background: #FFFFFF;
   padding: 16rpx 0;
-  border-top: 1rpx solid #F0F0F0;
+  border-top: 1rpx solid #ECEFEB;
 }
 
 .nav-scroll {
@@ -196,31 +197,31 @@
 .nav-dot {
   min-width: 56rpx;
   height: 56rpx;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   flex-shrink: 0;
   transition: all 0.3s;
 }
 
 .nav-dot.answered {
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 .nav-dot.current {
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   font-weight: 600;
 }
 
 .nav-dot.current.answered {
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
 }
 
 /* 底部导航按钮 */
@@ -228,9 +229,10 @@
   display: flex;
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   gap: 16rpx;
-  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .nav-btn {
@@ -250,8 +252,8 @@
 
 .exit-btn {
   width: 120rpx;
-  background: #F5F5F5;
-  color: #666;
+  background: #FAF8F5;
+  color: #626A66;
   flex-direction: column;
   gap: 4rpx;
 }
@@ -266,9 +268,9 @@
 
 .prev-btn {
   flex: 1;
-  background: #fff;
-  border: 2rpx solid #2F9D8E;
-  color: #2F9D8E;
+  background: #FFFFFF;
+  border: 2rpx solid #6AAE98;
+  color: #6AAE98;
   gap: 8rpx;
 }
 
@@ -279,8 +281,8 @@
 
 .next-btn {
   flex: 1.5;
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   gap: 8rpx;
 }
 

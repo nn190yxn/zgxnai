@@ -36,7 +36,7 @@ Page({
         icon: '💬',
         name: '表达沟通',
         desc: '说不清、讲不完整时先练这一块',
-        color: '#FF6B35'
+        color: '#6AAE98'
       },
       {
         id: 4,

@@ -1,18 +1,19 @@
 .page {
   min-height: 100vh;
-  background: #F7F7F2;
-  padding: 24rpx;
+  background: #FAF8F5;
+  padding: 32rpx;
   box-sizing: border-box;
 }
 
 .hero-card,
 .section-card,
 .empty-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
   box-sizing: border-box;
+  border: 1rpx solid #ECEFEB;
 }
 
 .hero-title,
@@ -20,13 +21,68 @@
 .empty-title {
   font-size: 32rpx;
   line-height: 1.45;
-  color: #2c2623;
+  color: #2F3432;
   font-weight: 700;
   word-break: break-word;
 }
 
 .hero-card .helper-copy {
   margin-top: 12rpx;
+}
+
+.source-action-card {
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border: 1rpx solid #ECEFEB;
+  border-radius: 24rpx;
+  background: #E6F7ED;
+}
+
+.source-action-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.source-action-kicker,
+.source-action-status,
+.source-action-title,
+.source-action-desc {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+.source-action-kicker {
+  color: #397A68;
+  font-size: 23rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.source-action-status {
+  flex-shrink: 0;
+  padding: 7rpx 14rpx;
+  border-radius: 999rpx;
+  background: #FFFFFF;
+  color: #397A68;
+  font-size: 21rpx;
+  line-height: 1.45;
+}
+
+.source-action-title {
+  margin-top: 14rpx;
+  color: #2F3432;
+  font-size: 29rpx;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.source-action-desc {
+  margin-top: 10rpx;
+  color: #626A66;
+  font-size: 24rpx;
+  line-height: 1.65;
 }
 
 .growth-overview {
@@ -39,7 +95,7 @@
 .growth-overview-card {
   min-height: 188rpx;
   padding: 22rpx;
-  border: 1rpx solid #E8EEEA;
+  border: 1rpx solid #ECEFEB;
   border-radius: 20rpx;
   background: #FFFFFF;
   box-sizing: border-box;
@@ -52,14 +108,14 @@
 }
 
 .growth-overview-kicker {
-  color: #2F8175;
+  color: #397A68;
   font-size: 22rpx;
   font-weight: 600;
 }
 
 .growth-overview-title {
   margin-top: 10rpx;
-  color: #24332F;
+  color: #2F3432;
   font-size: 27rpx;
   line-height: 1.5;
   font-weight: 700;
@@ -67,7 +123,7 @@
 
 .growth-overview-link {
   margin-top: 12rpx;
-  color: #7A8984;
+  color: #929995;
   font-size: 22rpx;
 }
 
@@ -76,8 +132,8 @@
   display: inline-block;
   padding: 12rpx 20rpx;
   border-radius: 999rpx;
-  background: #E8F5F1;
-  color: #2F8175;
+  background: #E6F7ED;
+  color: #397A68;
   font-size: 24rpx;
   line-height: 1.45;
 }
@@ -92,8 +148,9 @@
 .option-chip {
   padding: 16rpx 22rpx;
   border-radius: 999rpx;
-  background: #f3f0ec;
-  color: #6c625b;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
+  color: #626A66;
   font-size: 24rpx;
   line-height: 1.45;
   box-sizing: border-box;
@@ -101,27 +158,28 @@
 }
 
 .option-chip-active {
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
 }
 
 .note-box {
   width: 100%;
   min-height: 180rpx;
   margin-top: 16rpx;
-  background: #faf7f3;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   border-radius: 16rpx;
   padding: 20rpx;
   box-sizing: border-box;
   line-height: 1.7;
   font-size: 26rpx;
-  color: #2c2623;
+  color: #2F3432;
 }
 
 .helper-copy {
   display: block;
   margin-top: 16rpx;
-  color: #6c625b;
+  color: #626A66;
   font-size: 24rpx;
   line-height: 1.7;
   word-break: break-word;
@@ -146,9 +204,10 @@
 }
 
 .primary-btn {
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   margin-bottom: 20rpx;
+  border: 1rpx solid #6AAE98;
 }
 
 .primary-btn-disabled {
@@ -158,6 +217,7 @@
 .secondary-btn {
   flex: 1 1 260rpx;
   min-width: 0;
-  background: #fff;
-  color: #6c625b;
+  background: #FFFFFF;
+  color: #626A66;
+  border: 1rpx solid #ECEFEB;
 }

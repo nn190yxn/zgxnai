@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #FAF8F5;
   padding: 30rpx;
 }
 
@@ -16,7 +16,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: bold;
-  color: #333333;
+  color: #2F3432;
   margin-bottom: 20rpx;
   line-height: 1.35;
 }
@@ -24,7 +24,7 @@
 .date {
   display: block;
   font-size: 24rpx;
-  color: #999999;
+  color: #929995;
   line-height: 1.45;
 }
 
@@ -38,7 +38,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: bold;
-  color: #333333;
+  color: #2F3432;
   margin-top: 30rpx;
   margin-bottom: 20rpx;
   line-height: 1.45;
@@ -51,7 +51,7 @@
 .section-text {
   display: block;
   font-size: 28rpx;
-  color: #666666;
+  color: #626A66;
   line-height: 1.8;
   margin-bottom: 20rpx;
 }
@@ -59,7 +59,7 @@
 .list-item {
   display: block;
   font-size: 26rpx;
-  color: #666666;
+  color: #626A66;
   line-height: 1.8;
   margin-left: 20rpx;
   margin-bottom: 10rpx;

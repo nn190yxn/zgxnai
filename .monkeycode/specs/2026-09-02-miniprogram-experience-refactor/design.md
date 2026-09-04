@@ -343,22 +343,30 @@ stateDiagram-v2
 
 ```js
 {
-  pageBackground: '#F7F9F7',
+  pageBackground: '#FAF8F5',
   surface: '#FFFFFF',
-  brand: '#E9895B',
-  action: '#4F9B83',
-  actionSoft: '#E7F3EE',
-  warmSoft: '#FFF1E8',
-  textStrong: '#24332F',
-  textBody: '#53635D',
-  textMuted: '#8A9892',
-  border: '#E8EEEA',
-  radiusCard: '24rpx',
-  radiusControl: '16rpx'
+  brand: '#6AAE98',
+  brandDeep: '#397A68',
+  brandSoft: '#E6F7ED',
+  action: '#F28C72',
+  textStrong: '#2F3432',
+  textBody: '#626A66',
+  textMuted: '#929995',
+  border: '#ECEFEB',
+  categoryStudy: '#F5E8BC',
+  categoryEmotion: '#E7DDF2',
+  categoryLanguage: '#DDEBF3',
+  categorySocial: '#F3DFE3',
+  categoryBody: '#DDEDE5',
+  radiusCard: '32rpx',
+  radiusControl: '24rpx',
+  shadowFloating: '0 8rpx 32rpx rgba(106, 174, 152, 0.12)'
 }
 ```
 
-页面使用统一的 `page-shell`、`page-header`、`section-heading`、`surface-card`、`primary-action`、`secondary-action`、`status-chip`、`empty-state` 和 `error-state` 结构。业务页面只负责内容和状态，公共样式负责视觉表达。
+页面使用统一的 `page-shell`、`page-header`、`section-heading`、`surface-card`、`primary-action`、`secondary-action`、`status-chip`、`empty-state` 和 `error-state` 结构。普通卡片、列表项、输入框和次要按钮使用 `#ECEFEB` 边框建立层级；主行动卡和悬浮卡使用薄荷绿轻阴影。页面避免复杂渐变和大面积撞色，业务页面只负责内容和状态，公共样式负责视觉表达。
+
+字体栈统一为 `'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif`。页面大标题、区块标题、卡片标题、正文和辅助说明分别采用约 40rpx、34rpx、30 至 32rpx、28rpx、24 至 26rpx 的层级。页面左右安全边距为 32rpx，布局使用 16rpx 基础栅格，卡片圆角为 28 至 36rpx，按钮圆角为 24 至 32rpx。
 
 ### 页面迁移顺序
 

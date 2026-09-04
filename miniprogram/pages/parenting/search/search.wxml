@@ -22,6 +22,13 @@
       <text class="loading-text">正在整理最接近你家的方案...</text>
     </view>
 
+    <view class="empty-wrap" wx:elif="{{!loading && errorMessage}}">
+      <text class="empty-icon">重试</text>
+      <text class="empty-text">搜索暂时没有响应</text>
+      <text class="empty-desc">{{errorMessage}}</text>
+      <button class="retry-button" bindtap="retrySearch">重新搜索</button>
+    </view>
+
     <view class="empty-wrap" wx:elif="{{!loading && !sceneSolutions.length && !searchResults.length}}">
       <text class="empty-icon">搜索</text>
       <text class="empty-text">还没有找到直接匹配的内容</text>
@@ -29,6 +36,7 @@
     </view>
 
     <block wx:else>
+      <view class="partial-state" wx:if="{{partialMessage}}">{{partialMessage}}</view>
       <view class="scene-card" wx:if="{{matchedScene}}">
         <view class="scene-card-head">
           <text class="scene-category">{{matchedScene.sceneCategory}}</text>

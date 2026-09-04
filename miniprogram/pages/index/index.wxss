@@ -2,14 +2,142 @@
 
 .page {
   min-height: 100vh;
-  background: #F7F9FA;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
+.home-profile-bar {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 32rpx 6rpx;
+}
+
+.home-profile-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 64rpx;
+  border-radius: 50%;
+  background: #E6F7ED;
+  color: #397A68;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.home-profile-copy {
+  min-width: 0;
+  flex: 1;
+  margin-left: 16rpx;
+}
+
+.home-profile-name,
+.home-profile-stage {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-profile-name {
+  color: #2F3432;
+  font-size: 28rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.home-profile-stage {
+  margin-top: 4rpx;
+  color: #929995;
+  font-size: 22rpx;
+  line-height: 1.45;
+}
+
+.home-profile-arrow {
+  margin-left: 16rpx;
+  color: #929995;
+  font-size: 30rpx;
+}
+
 .home-banner-section,
+.home-primary-section,
 .home-feature-section,
 .home-topic-section {
   padding: 24rpx 32rpx 0;
+}
+
+.home-primary-section {
+  padding-top: 8rpx;
+}
+
+.home-primary-card {
+  padding: 28rpx 30rpx;
+  border: 1rpx solid #ECEFEB;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
+}
+
+.home-primary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-primary-eyebrow,
+.home-primary-status {
+  font-size: 22rpx;
+  line-height: 1.45;
+}
+
+.home-primary-eyebrow {
+  color: #397A68;
+  font-weight: 700;
+}
+
+.home-primary-status {
+  color: #929995;
+}
+
+.home-primary-title {
+  display: block;
+  margin-top: 14rpx;
+  color: #2F3432;
+  font-size: 32rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.home-primary-desc {
+  display: block;
+  margin-top: 8rpx;
+  color: #626A66;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.home-primary-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 20rpx;
+  background: #397A68;
+  color: #FFFFFF;
+}
+
+.home-primary-action-text {
+  font-size: 26rpx;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.home-primary-action-arrow {
+  font-size: 30rpx;
+  line-height: 1;
 }
 
 .home-banner {
@@ -17,16 +145,38 @@
 }
 
 .home-banner-card {
+  position: relative;
+  overflow: hidden;
   height: 260rpx;
   box-sizing: border-box;
   padding: 34rpx 36rpx;
   border-radius: 28rpx;
-  background: linear-gradient(135deg, #FBE5D6 0%, #F5C7AD 100%);
-  color: #24332F;
+  background: #6AAE98;
+  border: 1rpx solid #ECEFEB;
+  color: #FFFFFF;
 }
 
 .home-banner-card:nth-child(2n) {
-  background: linear-gradient(135deg, #E3F1EC 0%, #B9DED0 100%);
+  background: #397A68;
+}
+
+.home-banner-image,
+.home-banner-copy {
+  position: absolute;
+  inset: 0;
+}
+
+.home-banner-image {
+  width: 100%;
+  height: 100%;
+  opacity: 0.42;
+}
+
+.home-banner-copy {
+  z-index: 1;
+  box-sizing: border-box;
+  padding: 34rpx 36rpx;
+  background: rgba(55, 109, 91, 0.72);
 }
 
 .home-banner-kicker,
@@ -39,7 +189,7 @@
 .home-banner-kicker {
   font-size: 22rpx;
   line-height: 1.45;
-  color: #A85F43;
+  color: #E6F7ED;
   font-weight: 700;
 }
 
@@ -54,14 +204,14 @@
   margin-top: 12rpx;
   font-size: 25rpx;
   line-height: 1.5;
-  color: #53635D;
+  color: #F4FFFA;
 }
 
 .home-banner-cta {
   margin-top: 22rpx;
   font-size: 26rpx;
   line-height: 1.45;
-  color: #3E8872;
+  color: #FFFFFF;
   font-weight: 800;
 }
 
@@ -82,7 +232,7 @@
 .home-section-title {
   font-size: 32rpx;
   line-height: 1.45;
-  color: #24332F;
+  color: #2F3432;
   font-weight: 800;
 }
 
@@ -90,7 +240,7 @@
   margin-top: 6rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8A9892;
+  color: #929995;
 }
 
 .home-feature-grid {
@@ -116,22 +266,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #E7F3EE;
-  color: #3E8872;
+  background: #E6F7ED;
+  color: #397A68;
   font-size: 22rpx;
   line-height: 1.5;
   font-weight: 800;
 }
 
+.home-feature-icon image {
+  width: 42rpx;
+  height: 42rpx;
+}
+
 .home-feature-item:nth-child(2n) .home-feature-icon {
-  background: #FFF1E8;
+  background: #F3DFE3;
   color: #A85F43;
 }
 
 .home-feature-title {
   font-size: 24rpx;
   line-height: 1.45;
-  color: #354640;
+  color: #2F3432;
   font-weight: 700;
 }
 
@@ -139,7 +294,7 @@
   margin-top: 4rpx;
   font-size: 20rpx;
   line-height: 1.45;
-  color: #8A9892;
+  color: #929995;
 }
 
 .home-topic-list {
@@ -149,18 +304,63 @@
   padding-bottom: 8rpx;
 }
 
+.home-growth-service-section {
+  padding: 26rpx 32rpx 0;
+}
+
+.home-growth-service-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  margin-bottom: 16rpx;
+  padding: 24rpx;
+  border: 1rpx solid #ECEFEB;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+}
+
+.home-growth-service-card > view {
+  min-width: 0;
+}
+
+.home-growth-service-title,
+.home-growth-service-desc {
+  display: block;
+}
+
+.home-growth-service-title {
+  color: #2F3432;
+  font-size: 27rpx;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.home-growth-service-desc {
+  margin-top: 8rpx;
+  color: #626A66;
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.home-growth-service-arrow {
+  margin-left: 20rpx;
+  color: #397A68;
+  font-size: 30rpx;
+}
+
 .home-topic-card {
   flex: 0 0 300rpx;
   padding: 24rpx;
   border-radius: 24rpx;
   background: #FFFFFF;
-  border: 1rpx solid #E8EEEA;
+  border: 1rpx solid #ECEFEB;
 }
 
 .home-topic-title {
   font-size: 27rpx;
   line-height: 1.45;
-  color: #24332F;
+  color: #2F3432;
   font-weight: 800;
 }
 
@@ -169,14 +369,14 @@
   margin-top: 10rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #64746D;
+  color: #626A66;
 }
 
 .home-topic-link {
   margin-top: 18rpx;
   font-size: 23rpx;
   line-height: 1.45;
-  color: #4F9B83;
+  color: #6AAE98;
   font-weight: 700;
 }
 
@@ -184,14 +384,14 @@
   min-height: 100vh;
   padding: 120rpx 48rpx;
   box-sizing: border-box;
-  background: #F7F9FA;
+  background: #FAF8F5;
 }
 
 .safe-title {
   display: block;
   font-size: 44rpx;
   font-weight: 800;
-  color: #243238;
+  color: #2F3432;
   line-height: 1.45;
 }
 
@@ -199,7 +399,7 @@
   display: block;
   margin-top: 28rpx;
   font-size: 30rpx;
-  color: #2AAE9B;
+  color: #6AAE98;
   font-weight: 700;
 }
 
@@ -208,29 +408,29 @@
   margin-top: 24rpx;
   font-size: 26rpx;
   line-height: 1.7;
-  color: #7A6660;
+  color: #626A66;
 }
 
 /* 核心重构首屏 */
 .core-hero {
   padding: 32rpx 32rpx 28rpx;
-  background: #F7F9FA;
+  background: #FAF8F5;
 }
 
 .core-hero-content {
   padding: 34rpx 30rpx 30rpx;
   border-radius: 28rpx;
-  background: #EAF9F6;
-  border: 1rpx solid #D5F0EB;
-  box-shadow: 0 10rpx 28rpx rgba(42, 174, 155, 0.08);
+  background: #E6F7ED;
+  border: 1rpx solid #E6F7ED;
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
 }
 
 .core-brand {
   display: inline-block;
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
-  background: #D4F2EC;
-  color: #287F74;
+  background: #E6F7ED;
+  color: #397A68;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 700;
@@ -242,7 +442,7 @@
   font-size: 46rpx;
   line-height: 1.28;
   font-weight: 900;
-  color: #243238;
+  color: #2F3432;
 }
 
 .core-desc {
@@ -250,14 +450,14 @@
   margin-top: 18rpx;
   font-size: 27rpx;
   line-height: 1.65;
-  color: #64747B;
+  color: #626A66;
 }
 
 .core-primary-action {
   margin-top: 30rpx;
   min-height: 92rpx;
   border-radius: 20rpx;
-  background: #2AAE9B;
+  background: #6AAE98;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -275,7 +475,8 @@
   padding: 24rpx 24rpx 22rpx;
   border-radius: 22rpx;
   background: #FFFFFF;
-  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.08);
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
 }
 
 .core-status-header,
@@ -301,7 +502,7 @@
   margin-top: 8rpx;
   font-size: 28rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 850;
 }
 
@@ -310,8 +511,8 @@
   flex: 0 0 auto;
   padding: 8rpx 14rpx;
   border-radius: 999rpx;
-  background: #FFF2E8;
-  color: #2F8175;
+  background: #F3DFE3;
+  color: #397A68;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 800;
@@ -322,15 +523,15 @@
   margin-top: 14rpx;
   font-size: 24rpx;
   line-height: 1.6;
-  color: #7A6660;
+  color: #626A66;
 }
 
 .core-boundary-card {
   margin-top: 14rpx;
   padding: 18rpx 20rpx;
   border-radius: 18rpx;
-  background: #FFF8E8;
-  border: 1rpx solid #F2D9A6;
+  background: #F5E8BC;
+  border: 1rpx solid #F5E8BC;
 }
 
 .core-boundary-title,
@@ -349,7 +550,7 @@
   margin-top: 6rpx;
   font-size: 22rpx;
   line-height: 1.55;
-  color: #7A6660;
+  color: #626A66;
 }
 
 .core-today-card {
@@ -357,29 +558,29 @@
   padding: 24rpx;
   border-radius: 22rpx;
   background: #FFFFFF;
-  border: 1rpx solid #DCEEEE;
-  box-shadow: 0 10rpx 28rpx rgba(35, 62, 70, 0.06);
+  border: 1rpx solid #DDEDE5;
+  box-shadow: none;
 }
 
 .core-today-eyebrow {
-  color: #2AAE9B;
+  color: #6AAE98;
 }
 
 .core-today-title {
-  color: #243238;
+  color: #2F3432;
 }
 
 .core-today-count {
-  background: #EAF9F6;
-  color: #287F74;
+  background: #E6F7ED;
+  color: #397A68;
 }
 
 .core-today-task {
   margin-top: 20rpx;
   padding: 20rpx;
   border-radius: 18rpx;
-  background: #F7F9FA;
-  border: 1rpx solid #E5ECEE;
+  background: #FAF8F5;
+  border: 1rpx solid #ECEFEB;
 }
 
 .core-today-task-title,
@@ -391,7 +592,7 @@
 .core-today-task-title {
   font-size: 29rpx;
   line-height: 1.45;
-  color: #243238;
+  color: #2F3432;
   font-weight: 850;
 }
 
@@ -399,14 +600,14 @@
   margin-top: 8rpx;
   font-size: 23rpx;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.78);
+  color: #626A66;
 }
 
 .core-today-task-action {
   margin-top: 14rpx;
   font-size: 23rpx;
   line-height: 1.45;
-  color: #FFE7B8;
+  color: #397A68;
   font-weight: 800;
 }
 
@@ -422,7 +623,7 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 850;
 }
 
@@ -431,7 +632,7 @@
   margin-top: 6rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #929995;
 }
 
 .core-scene-grid {
@@ -445,14 +646,14 @@
   padding: 22rpx 20rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  border: 2rpx solid transparent;
-  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
 .core-scene-item-active {
-  border-color: #2F8175;
-  background: #FFF8F1;
+  border-color: #397A68;
+  background: #F3DFE3;
 }
 
 .core-scene-name {
@@ -460,7 +661,7 @@
   font-size: 27rpx;
   line-height: 1.45;
   font-weight: 850;
-  color: #2F241F;
+  color: #2F3432;
 }
 
 .core-scene-desc {
@@ -468,7 +669,7 @@
   margin-top: 10rpx;
   font-size: 22rpx;
   line-height: 1.55;
-  color: #7A6660;
+  color: #626A66;
 }
 
 .core-age-panel {
@@ -476,7 +677,8 @@
   padding: 24rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
 }
 
 .core-age-header {
@@ -488,7 +690,7 @@
   font-size: 28rpx;
   line-height: 1.45;
   font-weight: 850;
-  color: #2F241F;
+  color: #2F3432;
 }
 
 .core-age-subtitle {
@@ -496,7 +698,7 @@
   margin-top: 8rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #929995;
 }
 
 .core-age-options {
@@ -508,8 +710,8 @@
 .core-age-option {
   min-height: 76rpx;
   border-radius: 16rpx;
-  background: #FFF8F1;
-  border: 2rpx solid #F0DED2;
+  background: #F3DFE3;
+  border: 2rpx solid #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,8 +719,8 @@
 }
 
 .core-age-option-active {
-  background: #2F241F;
-  border-color: #2F241F;
+  background: #2F3432;
+  border-color: #2F3432;
 }
 
 .core-age-option-text {
@@ -536,7 +738,7 @@
   margin-top: 18rpx;
   min-height: 72rpx;
   border-radius: 16rpx;
-  background: #F3E6DB;
+  background: #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -553,8 +755,8 @@
   margin-top: 18rpx;
   padding: 24rpx 22rpx;
   border-radius: 20rpx;
-  background: #F8F5EF;
-  border: 2rpx solid #E9D7CF;
+  background: #FAF8F5;
+  border: 2rpx solid #F3DFE3;
   box-sizing: border-box;
 }
 
@@ -562,7 +764,7 @@
   display: block;
   font-size: 29rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -571,7 +773,7 @@
   margin-top: 10rpx;
   font-size: 24rpx;
   line-height: 1.65;
-  color: #6F5A52;
+  color: #626A66;
 }
 
 .core-focus-tags,
@@ -607,7 +809,7 @@
 .core-focus-tag {
   background: #FFFFFF;
   color: #7A4D3A;
-  border: 2rpx solid #E9D7CF;
+  border: 2rpx solid #F3DFE3;
 }
 
 .core-pain-panel {
@@ -622,7 +824,7 @@
   display: block;
   font-size: 29rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -631,7 +833,7 @@
   margin-top: 6rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #929995;
 }
 
 .core-pain-list {
@@ -649,14 +851,14 @@
 .core-pain-category {
   padding: 18rpx;
   border-radius: 20rpx;
-  background: #F8F5EF;
-  border: 2rpx solid #E9D7CF;
+  background: #FAF8F5;
+  border: 2rpx solid #F3DFE3;
   box-sizing: border-box;
 }
 
 .core-pain-category-active {
-  border-color: #2F8175;
-  background: #FFF8F1;
+  border-color: #397A68;
+  background: #F3DFE3;
 }
 
 .core-pain-category-header {
@@ -667,7 +869,7 @@
   display: block;
   font-size: 26rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -676,7 +878,7 @@
   margin-top: 6rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #929995;
 }
 
 .core-pain-list-compact {
@@ -689,7 +891,7 @@
   border-radius: 20rpx;
   background: #FFFFFF;
   border: 2rpx solid transparent;
-  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
+  box-shadow: none;
   box-sizing: border-box;
 }
 
@@ -700,15 +902,15 @@
 }
 
 .core-pain-item-active {
-  border-color: #2F8175;
-  background: #FFF8F1;
+  border-color: #397A68;
+  background: #F3DFE3;
 }
 
 .core-pain-name {
   display: block;
   font-size: 28rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -731,7 +933,7 @@
   padding: 6rpx 10rpx;
   border-radius: 999rpx;
   background: #EAF3F0;
-  color: #38665A;
+  color: #397A68;
   font-size: 19rpx;
   line-height: 1.45;
   font-weight: 850;
@@ -744,25 +946,25 @@
   margin-top: 8rpx;
   font-size: 23rpx;
   line-height: 1.55;
-  color: #6F5A52;
+  color: #626A66;
 }
 
 .core-pain-sign {
-  background: #F3E6DB;
+  background: #F3DFE3;
   color: #7A4D3A;
 }
 
 .core-ability-tag {
   background: #EAF3F0;
-  color: #38665A;
+  color: #397A68;
 }
 
 .core-pain-more {
   min-height: 76rpx;
   margin-top: 16rpx;
   border-radius: 18rpx;
-  border: 2rpx solid #2F8175;
-  background: #FFF8F1;
+  border: 2rpx solid #397A68;
+  background: #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -781,7 +983,7 @@
   padding: 24rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  box-shadow: 0 8rpx 24rpx rgba(93, 62, 45, 0.07);
+  box-shadow: none;
 }
 
 .core-symptom-header {
@@ -793,7 +995,7 @@
   font-size: 28rpx;
   line-height: 1.45;
   font-weight: 850;
-  color: #2F241F;
+  color: #2F3432;
 }
 
 .core-symptom-subtitle {
@@ -801,7 +1003,7 @@
   margin-top: 8rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #8F756C;
+  color: #929995;
 }
 
 .core-symptom-list {
@@ -814,16 +1016,16 @@
   min-height: 78rpx;
   padding: 18rpx 20rpx;
   border-radius: 16rpx;
-  background: #FFF8F1;
-  border: 2rpx solid #F0DED2;
+  background: #F3DFE3;
+  border: 2rpx solid #F3DFE3;
   box-sizing: border-box;
   display: flex;
   align-items: center;
 }
 
 .core-symptom-item-active {
-  background: #2F241F;
-  border-color: #2F241F;
+  background: #2F3432;
+  border-color: #2F3432;
 }
 
 .core-symptom-name {
@@ -842,7 +1044,7 @@
   padding: 26rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  box-shadow: 0 10rpx 28rpx rgba(93, 62, 45, 0.08);
+  box-shadow: none;
 }
 
 .core-result-header {
@@ -855,7 +1057,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 850;
 }
 
@@ -864,7 +1066,7 @@
   margin-top: 10rpx;
   font-size: 32rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -882,15 +1084,15 @@
   margin-top: 12rpx;
   font-size: 25rpx;
   line-height: 1.7;
-  color: #6F5A52;
+  color: #626A66;
 }
 
 .core-result-observe {
   margin-top: 20rpx;
   padding: 18rpx 18rpx;
   border-radius: 16rpx;
-  background: #F8F5EF;
-  border: 2rpx solid #E9D7CF;
+  background: #FAF8F5;
+  border: 2rpx solid #F3DFE3;
 }
 
 .core-result-observe-title {
@@ -904,8 +1106,8 @@
 
 .core-result-observe-item {
   background: #FFFFFF;
-  color: #6F5A52;
-  border: 2rpx solid #E9D7CF;
+  color: #626A66;
+  border: 2rpx solid #F3DFE3;
 }
 
 .core-result-abilities {
@@ -916,7 +1118,7 @@
   margin-top: 22rpx;
   padding: 22rpx 20rpx;
   border-radius: 18rpx;
-  background: #FFF8F1;
+  background: #F3DFE3;
 }
 
 .core-action-title {
@@ -924,7 +1126,7 @@
   margin-top: 8rpx;
   font-size: 29rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -946,7 +1148,7 @@
   width: 34rpx;
   height: 34rpx;
   border-radius: 50%;
-  background: #2F241F;
+  background: #2F3432;
   color: #FFFFFF;
   font-size: 20rpx;
   line-height: 34rpx;
@@ -979,7 +1181,7 @@
 }
 
 .core-result-primary {
-  background: #2F8175;
+  background: #397A68;
 }
 
 .core-result-secondary {
@@ -1006,7 +1208,7 @@
   margin-top: 14rpx;
   min-height: 76rpx;
   border-radius: 18rpx;
-  background: #F3E6DB;
+  background: #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1044,8 +1246,8 @@
   min-height: 118rpx;
   padding: 18rpx 16rpx;
   border-radius: 16rpx;
-  background: #F8F5EF;
-  border: 2rpx solid #E9D7CF;
+  background: #FAF8F5;
+  border: 2rpx solid #F3DFE3;
   box-sizing: border-box;
 }
 
@@ -1053,7 +1255,7 @@
   display: block;
   font-size: 25rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -1062,7 +1264,7 @@
   margin-top: 8rpx;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #7A6660;
+  color: #626A66;
 }
 
 .core-effect-panel {
@@ -1070,7 +1272,7 @@
   padding: 26rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  box-shadow: 0 10rpx 28rpx rgba(93, 62, 45, 0.08);
+  box-shadow: none;
 }
 
 .core-effect-header {
@@ -1081,7 +1283,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 850;
 }
 
@@ -1090,7 +1292,7 @@
   margin-top: 8rpx;
   font-size: 31rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -1099,7 +1301,7 @@
   margin-top: 10rpx;
   font-size: 25rpx;
   line-height: 1.6;
-  color: #6F5A52;
+  color: #626A66;
 }
 
 .core-effect-options {
@@ -1112,8 +1314,8 @@
   min-height: 82rpx;
   padding: 16rpx 14rpx;
   border-radius: 16rpx;
-  background: #FFF8F1;
-  border: 2rpx solid #F0DED2;
+  background: #F3DFE3;
+  border: 2rpx solid #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1133,7 +1335,7 @@
   padding: 26rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  box-shadow: 0 10rpx 28rpx rgba(93, 62, 45, 0.08);
+  box-shadow: none;
 }
 
 .core-next-header {
@@ -1145,7 +1347,7 @@
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 850;
 }
 
@@ -1154,7 +1356,7 @@
   margin-top: 8rpx;
   font-size: 31rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -1163,7 +1365,7 @@
   margin-top: 10rpx;
   font-size: 25rpx;
   line-height: 1.65;
-  color: #6F5A52;
+  color: #626A66;
 }
 
 .core-next-steps {
@@ -1184,7 +1386,7 @@
   width: 34rpx;
   height: 34rpx;
   border-radius: 50%;
-  background: #2F241F;
+  background: #2F3432;
   color: #FFFFFF;
   font-size: 20rpx;
   line-height: 34rpx;
@@ -1203,7 +1405,7 @@
   margin-top: 22rpx;
   min-height: 82rpx;
   border-radius: 18rpx;
-  background: #2F8175;
+  background: #397A68;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1220,7 +1422,7 @@
   margin-top: 14rpx;
   min-height: 76rpx;
   border-radius: 18rpx;
-  background: #F3E6DB;
+  background: #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1238,15 +1440,15 @@
   padding: 24rpx 22rpx;
   border-radius: 20rpx;
   background: #FFFFFF;
-  border: 1rpx solid #DCEEEE;
-  box-shadow: 0 8rpx 22rpx rgba(35, 62, 70, 0.06);
+  border: 1rpx solid #DDEDE5;
+  box-shadow: none;
 }
 
 .core-membership-eyebrow {
   display: block;
   font-size: 22rpx;
   line-height: 1.45;
-  color: #2AAE9B;
+  color: #6AAE98;
   font-weight: 850;
 }
 
@@ -1255,7 +1457,7 @@
   margin-top: 8rpx;
   font-size: 31rpx;
   line-height: 1.45;
-  color: #243238;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -1264,7 +1466,7 @@
   margin-top: 10rpx;
   font-size: 24rpx;
   line-height: 1.65;
-  color: #64747B;
+  color: #626A66;
 }
 
 .core-membership-action {
@@ -1272,13 +1474,13 @@
   margin-top: 16rpx;
   font-size: 25rpx;
   line-height: 1.45;
-  color: #287F74;
+  color: #397A68;
   font-weight: 900;
 }
 
 .core-tools {
   padding: 4rpx 32rpx 28rpx;
-  background: #F7F9FA;
+  background: #FAF8F5;
 }
 
 .core-tools-header {
@@ -1289,7 +1491,7 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #243238;
+  color: #2F3432;
   font-weight: 850;
 }
 
@@ -1298,7 +1500,7 @@
   margin-top: 6rpx;
   font-size: 23rpx;
   line-height: 1.5;
-  color: #64747B;
+  color: #626A66;
 }
 
 .core-tool-grid {
@@ -1312,8 +1514,8 @@
   padding: 18rpx 12rpx;
   border-radius: 18rpx;
   background: #FFFFFF;
-  border: 1rpx solid #E5ECEE;
-  box-shadow: 0 6rpx 18rpx rgba(35, 62, 70, 0.04);
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
   box-sizing: border-box;
   min-width: 0;
 }
@@ -1323,7 +1525,7 @@
   text-align: center;
   font-size: 24rpx;
   line-height: 1.45;
-  color: #243238;
+  color: #2F3432;
   font-weight: 850;
   word-break: break-word;
 }
@@ -1334,7 +1536,7 @@
   text-align: center;
   font-size: 20rpx;
   line-height: 1.45;
-  color: #64747B;
+  color: #626A66;
   word-break: break-word;
 }
 
@@ -1375,6 +1577,7 @@
 /* Hero区域 */
 .hero {
   background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   padding: 20rpx 0 12rpx;
   position: relative;
   overflow: hidden;
@@ -1387,7 +1590,7 @@
   right: -60rpx;
   width: 240rpx;
   height: 240rpx;
-  background: #EAF9F6;
+  background: #E6F7ED;
   border-radius: 50%;
 }
 
@@ -1396,7 +1599,7 @@
   min-height: 220rpx;
   padding: 30rpx 26rpx;
   border-radius: 24rpx;
-  background: #EAF9F6;
+  background: #E6F7ED;
   position: relative;
   z-index: 2;
 }
@@ -1408,7 +1611,7 @@
   margin: 8rpx 32rpx 24rpx;
   border-radius: 28rpx;
   background: #F1FBFA;
-  box-shadow: 0 10rpx 28rpx rgba(42, 174, 155, 0.10);
+  box-shadow: none;
   position: relative;
   z-index: 2;
 }
@@ -1430,7 +1633,7 @@
   font-size: 34rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #287F74;
+  color: #397A68;
   text-align: center;
 }
 
@@ -1440,16 +1643,16 @@
   text-align: center;
   font-size: 24rpx;
   line-height: 1.6;
-  color: #64747B;
+  color: #626A66;
 }
 
 .hero-badge {
   display: inline-block;
-  background: #D4F2EC;
+  background: #E6F7ED;
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
   font-size: 22rpx;
-  color: #287F74;
+  color: #397A68;
   margin-bottom: 20rpx;
 }
 
@@ -1457,14 +1660,14 @@
   display: block;
   font-size: 48rpx;
   font-weight: 900;
-  color: #243238;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
 
 .hero-desc {
   font-size: 26rpx;
-  color: #64747B;
+  color: #626A66;
   line-height: 1.5;
 }
 
@@ -1485,13 +1688,13 @@
 }
 
 .hero-btn-primary {
-  background: #2AAE9B;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
 }
 
 .hero-btn-secondary {
   background: #FFFFFF;
-  color: #287F74;
+  color: #397A68;
   border: 2rpx solid #BFE8E1;
 }
 
@@ -1506,10 +1709,10 @@
 }
 
 .status-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  box-shadow: none;
 }
 
 .status-row {
@@ -1521,14 +1724,14 @@
 
 .status-title {
   font-size: 30rpx;
-  color: #243238;
+  color: #2F3432;
   font-weight: 600;
   line-height: 1.45;
 }
 
 .status-rate {
   font-size: 34rpx;
-  color: #2AAE9B;
+  color: #6AAE98;
   font-weight: 700;
 }
 
@@ -1548,14 +1751,14 @@
   padding: 30rpx;
   border-radius: 28rpx;
   background: #FFFFFF;
-  border: 1rpx solid #DCEEEE;
-  box-shadow: 0 10rpx 28rpx rgba(35, 62, 70, 0.06);
+  border: 1rpx solid #DDEDE5;
+  box-shadow: none;
 }
 
 .daily-action-eyebrow {
   display: block;
   font-size: 22rpx;
-  color: #2AAE9B;
+  color: #6AAE98;
   font-weight: 700;
   margin-bottom: 12rpx;
 }
@@ -1564,7 +1767,7 @@
   display: block;
   font-size: 36rpx;
   line-height: 1.45;
-  color: #243238;
+  color: #2F3432;
   font-weight: 900;
 }
 
@@ -1573,7 +1776,7 @@
   margin-top: 14rpx;
   font-size: 25rpx;
   line-height: 1.7;
-  color: #64747B;
+  color: #626A66;
 }
 
 .daily-action-buttons {
@@ -1593,13 +1796,13 @@
 }
 
 .daily-action-primary {
-  background: #2AAE9B;
+  background: #6AAE98;
   color: #FFFFFF;
 }
 
 .daily-action-secondary {
-  background: #EAF9F6;
-  color: #287F74;
+  background: #E6F7ED;
+  color: #397A68;
   color: #FFFFFF;
   border: 2rpx solid rgba(255, 255, 255, 0.3);
 }
@@ -1626,7 +1829,7 @@
   background: #FFFFFF;
   border-radius: 24rpx;
   padding: 28rpx;
-  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+  box-shadow: none;
 }
 
 .plan-loading-title,
@@ -1634,7 +1837,7 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.5;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 700;
 }
 
@@ -1644,15 +1847,15 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: #8F756C;
+  color: #929995;
 }
 
 .plan-card {
-  background: #F7F7F2;
+  background: #FAF8F5;
   border: 2rpx solid rgba(255, 126, 75, 0.14);
   border-radius: 24rpx;
   padding: 28rpx;
-  box-shadow: 0 8rpx 24rpx rgba(138, 72, 32, 0.06);
+  box-shadow: none;
 }
 
 .plan-card + .plan-card {
@@ -1671,7 +1874,7 @@
   padding: 8rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 107, 53, 0.1);
-  color: #2F8175;
+  color: #397A68;
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -1691,7 +1894,7 @@
   margin-top: 18rpx;
   font-size: 32rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 800;
 }
 
@@ -1708,7 +1911,7 @@
   margin-top: 12rpx;
   font-size: 23rpx;
   line-height: 1.7;
-  color: #92766B;
+  color: #929995;
 }
 
 .plan-actions {
@@ -1722,7 +1925,7 @@
 .plan-link {
   flex: 1;
   font-size: 24rpx;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 700;
 }
 
@@ -1731,7 +1934,7 @@
   padding: 16rpx 22rpx;
   text-align: center;
   border-radius: 18rpx;
-  background: #2F9D8E;
+  background: #6AAE98;
   color: #FFFFFF;
   font-size: 24rpx;
   font-weight: 700;
@@ -1754,7 +1957,7 @@
   margin-left: 18rpx;
   font-size: 24rpx;
   line-height: 1.45;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 700;
 }
 
@@ -1765,7 +1968,7 @@
   border-radius: 18rpx;
   padding: 22rpx 14rpx;
   text-align: center;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
@@ -1775,7 +1978,7 @@
 
 .module-card:active {
   transform: scale(0.98);
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08);
+  box-shadow: none;
 }
 
 .module-name {
@@ -1813,7 +2016,7 @@
   font-size: 27rpx;
   line-height: 1.45;
   font-weight: 800;
-  color: #243238;
+  color: #2F3432;
 }
 
 .feature-module-card .module-icon {
@@ -1829,18 +2032,18 @@
   font-weight: 700;
 }
 
-.module-icon-assessment { background: #EAF9F6; color: #2AAE9B; }
-.module-icon-training { background: #EEF5FF; color: #5B8DE3; }
+.module-icon-assessment { background: #E6F7ED; color: #6AAE98; }
+.module-icon-training { background: #DDEBF3; color: #5B8DE3; }
 .module-icon-nutrition { background: #FFF7E5; color: #D99A27; }
-.module-icon-parenting { background: #F3EEFF; color: #8A6BD6; }
-.module-icon-chat { background: #EAF4FF; color: #4E9AD6; }
+.module-icon-parenting { background: #E7DDF2; color: #397A68; }
+.module-icon-chat { background: #DDEBF3; color: #4E9AD6; }
 .module-icon-record { background: #F0F6ED; color: #6A9A5B; }
 
 .feature-module-card .module-desc {
   display: block;
   font-size: 22rpx;
   line-height: 1.65;
-  color: #64747B;
+  color: #626A66;
   overflow-wrap: break-word;
 }
 
@@ -1863,7 +2066,7 @@
 
 .development-zone-section .section-header-link {
   flex-shrink: 0;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 800;
 }
 
@@ -1876,15 +2079,16 @@
 .development-zone-entry {
   padding: 30rpx;
   border-radius: 28rpx;
-  background: #E8F5F1;
-  box-shadow: 0 14rpx 34rpx rgba(91, 56, 41, 0.18);
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
+  box-shadow: none;
 }
 
 .development-zone-entry-title {
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #2F3432;
   font-weight: 800;
   letter-spacing: 0;
   overflow-wrap: break-word;
@@ -1895,7 +2099,7 @@
   margin-top: 12rpx;
   font-size: 24rpx;
   line-height: 1.7;
-  color: rgba(255, 250, 244, 0.86);
+  color: #626A66;
   letter-spacing: 0;
   overflow-wrap: break-word;
 }
@@ -1911,7 +2115,7 @@
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.16);
-  color: #FFE8D6;
+  color: #397A68;
   font-size: 22rpx;
   line-height: 1.45;
   font-weight: 700;
@@ -1922,7 +2126,7 @@
   margin-top: 22rpx;
   font-size: 25rpx;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #397A68;
   font-weight: 700;
   letter-spacing: 0;
   overflow-wrap: break-word;
@@ -1941,7 +2145,7 @@
   background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
@@ -1968,7 +2172,7 @@
 
 .quick-arrow {
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 600;
 }
 
@@ -1985,10 +2189,10 @@
 }
 
 .progress-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+  box-shadow: none;
 }
 
 .progress-line {
@@ -2001,7 +2205,7 @@
 .progress-action {
   display: inline-block;
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
 }
 
 .progress-actions {
@@ -2022,7 +2226,7 @@
 }
 
 .touchpoint-card {
-  background: #F7F7F2;
+  background: #FAF8F5;
   border: 2rpx solid #FFE0C8;
   border-radius: 20rpx;
   padding: 24rpx;
@@ -2038,7 +2242,7 @@
 
 .touchpoint-eyebrow {
   font-size: 22rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   background: #FFF0E5;
   border-radius: 8rpx;
   padding: 4rpx 12rpx;
@@ -2062,7 +2266,7 @@
 .touchpoint-desc {
   display: block;
   font-size: 24rpx;
-  color: #7A6660;
+  color: #626A66;
   line-height: 1.6;
 }
 
@@ -2074,14 +2278,14 @@
   display: inline-block;
   font-size: 26rpx;
   font-weight: 600;
-  color: #2F9D8E;
+  color: #6AAE98;
   padding: 8rpx 0;
 }
 
 /* 提示卡片 */
 .tips-card {
   margin: 0 32rpx;
-  background: #FFF8E1;
+  background: #F5E8BC;
   border-radius: 20rpx;
   padding: 24rpx;
   border-left: 8rpx solid #FFC107;

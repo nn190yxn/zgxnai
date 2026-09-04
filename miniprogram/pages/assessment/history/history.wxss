@@ -2,8 +2,10 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
 }
+
+.sync-state { margin: 20rpx 32rpx 0; padding: 18rpx 22rpx; border: 1rpx solid #ECEFEB; border-radius: 20rpx; background: #E6F7ED; color: #397A68; font-size: 24rpx; line-height: 1.55; }
 
 /* 顶部操作栏 */
 .header-bar {
@@ -11,8 +13,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 32rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #F0F0F0;
+  background: #FFFFFF;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .header-info {
@@ -22,7 +24,7 @@
 
 .record-count {
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.5;
 }
 
@@ -37,7 +39,7 @@
   gap: 8rpx;
   min-height: 56rpx;
   padding: 10rpx 20rpx;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 24rpx;
   box-sizing: border-box;
 }
@@ -48,7 +50,7 @@
 
 .action-text {
   font-size: 24rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.45;
 }
 
@@ -60,11 +62,11 @@
 .record-item {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   position: relative;
 }
 
@@ -79,7 +81,7 @@
 .record-icon {
   width: 80rpx;
   height: 80rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 20rpx;
   display: flex;
   align-items: center;
@@ -103,13 +105,13 @@
 .record-name {
   font-size: 30rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
 .record-level {
   font-size: 20rpx;
-  color: #fff;
+  color: #FFFFFF;
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
   line-height: 1.45;
@@ -124,7 +126,7 @@
 
 .record-child {
   font-size: 24rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.5;
 }
 
@@ -136,14 +138,14 @@
 
 .record-score {
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 500;
   line-height: 1.5;
 }
 
 .record-time {
   font-size: 22rpx;
-  color: #999;
+  color: #929995;
   line-height: 1.5;
 }
 
@@ -194,22 +196,22 @@
 
 .empty-text {
   font-size: 32rpx;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
 
 .empty-hint {
   font-size: 26rpx;
-  color: #999;
+  color: #929995;
   margin-bottom: 32rpx;
   line-height: 1.6;
 }
 
 .empty-btn {
   padding: 20rpx 48rpx;
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   font-size: 28rpx;
   font-weight: 500;
   border-radius: 40rpx;
@@ -224,11 +226,11 @@
 .skeleton-record {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .skeleton-record-content {
@@ -252,7 +254,7 @@
 /* 筛选弹窗 */
 .filter-modal {
   width: 100%;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 32rpx 32rpx 0 0;
   max-height: 80vh;
   overflow-y: auto;
@@ -263,13 +265,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 32rpx;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .modal-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
@@ -280,7 +282,7 @@
   align-items: center;
   justify-content: center;
   font-size: 36rpx;
-  color: #999;
+  color: #929995;
 }
 
 .filter-section {
@@ -290,7 +292,7 @@
 .filter-label {
   display: block;
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   margin-bottom: 16rpx;
   line-height: 1.45;
 }
@@ -303,18 +305,18 @@
 
 .filter-option {
   padding: 16rpx 28rpx;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 32rpx;
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
   border: 2rpx solid transparent;
   line-height: 1.45;
 }
 
 .filter-option.active {
-  background: #FFF3ED;
-  color: #2F9D8E;
-  border-color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
+  border-color: #6AAE98;
 }
 
 .filter-footer {
@@ -322,7 +324,7 @@
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   gap: 24rpx;
-  border-top: 1rpx solid #F0F0F0;
+  border-top: 1rpx solid #ECEFEB;
 }
 
 .reset-btn {
@@ -331,8 +333,8 @@
   line-height: 1.45;
   text-align: center;
   font-size: 30rpx;
-  color: #666;
-  background: #F5F5F5;
+  color: #626A66;
+  background: #FAF8F5;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;
@@ -345,8 +347,8 @@
   text-align: center;
   font-size: 30rpx;
   font-weight: 600;
-  color: #fff;
-  background: #2F9D8E;
+  color: #FFFFFF;
+  background: #6AAE98;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;
@@ -356,7 +358,7 @@
 .trend-modal {
   width: 90%;
   max-width: 640rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   overflow: hidden;
 }
@@ -397,7 +399,7 @@
 
 .bar-label {
   font-size: 24rpx;
-  color: #333;
+  color: #2F3432;
   font-weight: 500;
   margin-top: 8rpx;
   line-height: 1.45;
@@ -405,7 +407,7 @@
 
 .bar-date {
   font-size: 20rpx;
-  color: #999;
+  color: #929995;
   margin-top: 4rpx;
   line-height: 1.45;
 }

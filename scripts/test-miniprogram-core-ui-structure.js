@@ -8,6 +8,8 @@ function read(relativePath) {
 
 const home = read('miniprogram/pages/index/index.wxml');
 const homeStyles = read('miniprogram/pages/index/index.wxss');
+const homeScript = read('miniprogram/pages/index/index.js');
+const appConfig = JSON.parse(read('miniprogram/app.json'));
 const coreActionScenes = read('miniprogram/utils/core-action-scenes.js');
 assert.ok(coreActionScenes.includes("require('./core-action-age-catalog.js')"), 'age-first catalog require should use explicit .js extension for WeChat DevTools');
 assert.ok(home.includes('class="core-hero"'), 'home should render core hero');
@@ -15,6 +17,17 @@ assert.ok(home.includes('按年龄找孩子问题'), 'home should explain the ag
 assert.ok(home.includes('学习专注、情绪规则、运动体能、社交表达'), 'home should expose miniprogram theme categories');
 assert.ok(home.includes('class="core-hero" wx:if="{{coreRefactorEnabled}}"'), 'core hero should be gated by core refactor flag');
 assert.ok(home.includes('bindtap="onHomePrimaryActionTap"'), 'home should expose primary action');
+assert.ok(home.includes('class="home-primary-card"'), 'home should expose visible primary action card');
+assert.ok(home.includes('{{homePrimaryCard.title}}'), 'visible primary action should render current card title');
+assert.ok(home.includes('class="home-profile-bar"'), 'home should expose current child profile bar');
+assert.ok(home.includes('{{item.iconPath}}'), 'feature entries should render icon assets');
+assert.ok(home.includes('class="home-growth-service-section"'), 'home should expose growth service section');
+assert.ok(homeStyles.includes('.home-primary-card'), 'home should style visible primary action card');
+assert.ok(homeScript.includes("action: 'growth_record'"), 'growth record banner should use growth record action');
+assert.ok(homeScript.includes("if (action === 'growth_record')"), 'growth record banner should route to growth record');
+const tabIcons = appConfig.tabBar.list.map(function(item) { return item.iconPath; });
+assert.strictEqual(tabIcons.length, 4, 'TabBar should define four icon entries');
+assert.ok(tabIcons.every(function(iconPath) { return iconPath; }), 'TabBar entries should define icon assets');
 assert.ok(home.includes('wx:for="{{coreRefactorState.ageSegments}}"'), 'home should render age segments');
 assert.ok(home.includes('ageFirstCoreEnabled'), 'age-first core entry should be gated by age-first flag');
 assert.ok(home.includes('ageFirstCoreAvailable'), 'age-first core entry should be gated by usable age-first config');

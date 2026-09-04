@@ -1,27 +1,28 @@
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding: 32rpx;
 }
 
 .form-card {
   background: #FFFFFF;
+  border: 2rpx solid #ECEFEB;
   border-radius: 24rpx;
   padding: 36rpx 32rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.05);
+  box-shadow: none;
 }
 
 .form-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #2F2F2F;
+  color: #2F3432;
   margin-bottom: 8rpx;
   line-height: 1.45;
 }
 
 .form-desc {
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   margin-bottom: 36rpx;
   line-height: 1.65;
 }
@@ -33,29 +34,31 @@
 .field-label {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
 
 .picker-value {
   padding: 20rpx 24rpx;
-  background: #F8F8F8;
+  background: #FAF8F5;
   border-radius: 16rpx;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.5;
+  border: 2rpx solid #ECEFEB;
 }
 
 .content-input {
   width: 100%;
   min-height: 240rpx;
   padding: 20rpx 24rpx;
-  background: #F8F8F8;
+  background: #FAF8F5;
   border-radius: 16rpx;
   font-size: 28rpx;
   line-height: 1.6;
   box-sizing: border-box;
+  border: 2rpx solid #ECEFEB;
 }
 
 .char-count {
@@ -69,18 +72,38 @@
 .contact-input {
   width: 100%;
   padding: 20rpx 24rpx;
-  background: #F8F8F8;
+  background: #FAF8F5;
   border-radius: 16rpx;
   font-size: 28rpx;
   line-height: 1.5;
   box-sizing: border-box;
+  border: 2rpx solid #ECEFEB;
+}
+
+.callback-row,
+.history-head,
+.history-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.callback-label {
+  margin-bottom: 4rpx;
+}
+
+.callback-desc {
+  color: #929995;
+  font-size: 22rpx;
+  line-height: 1.5;
 }
 
 .submit-btn {
   width: 100%;
   min-height: 92rpx;
   line-height: 1.45;
-  background: #E8F5F1;
+  background: #6AAE98;
   color: #FFFFFF;
   font-size: 32rpx;
   font-weight: 700;
@@ -102,30 +125,41 @@
 .history-title {
   font-size: 28rpx;
   font-weight: 700;
-  color: #666;
+  color: #626A66;
   margin-bottom: 16rpx;
   line-height: 1.45;
 }
 
 .history-item {
   background: #FFFFFF;
+  border: 2rpx solid #ECEFEB;
   border-radius: 20rpx;
   padding: 24rpx 28rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03);
+  box-shadow: none;
 }
 
 .history-type {
   font-size: 22rpx;
-  color: #2F8175;
+  color: #397A68;
   font-weight: 600;
   margin-bottom: 8rpx;
   line-height: 1.45;
 }
 
+.callback-tag {
+  flex: none;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #E6F7ED;
+  color: #397A68;
+  font-size: 20rpx;
+  line-height: 1.45;
+}
+
 .history-content {
   font-size: 26rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
   margin-bottom: 10rpx;
 }
@@ -133,7 +167,7 @@
 .history-status,
 .history-progress {
   font-size: 22rpx;
-  color: #4a8f86;
+  color: #6AAE98;
   line-height: 1.5;
   margin-bottom: 6rpx;
 }
@@ -146,4 +180,30 @@
   font-size: 20rpx;
   color: #BBB;
   line-height: 1.45;
+}
+
+.history-state,
+.history-error {
+  min-height: 96rpx;
+  padding: 24rpx 28rpx;
+  border: 2rpx solid #ECEFEB;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  color: #626A66;
+  font-size: 24rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.retry-btn {
+  flex: none;
+  min-height: 64rpx;
+  margin: 0;
+  padding: 12rpx 24rpx;
+  border: 2rpx solid #6AAE98;
+  border-radius: 32rpx;
+  background: #FFFFFF;
+  color: #397A68;
+  font-size: 22rpx;
+  line-height: 1.5;
 }

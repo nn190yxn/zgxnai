@@ -23,16 +23,22 @@ function generateMsgId() {
 var scrollBottomCounter = 0;
 
 function scrollToBottom(page) {
+  if (!page || page._isUnloaded) return;
   scrollBottomCounter++;
   page.setData({
+    scrollToView: '',
     scrollTop: 99999000 + scrollBottomCounter
+  }, function() {
+    if (!page._isUnloaded) {
+      page.setData({ scrollToView: 'chat-bottom' });
+    }
   });
 }
 
 function flushScrollToBottom(page, delayMs) {
   var ms = typeof delayMs === 'number' ? delayMs : 80;
   setTimeout(function () {
-    scrollToBottom(page);
+    if (!page._isUnloaded) scrollToBottom(page);
   }, ms);
 }
 
@@ -49,6 +55,8 @@ Page({
     voiceHint: '',
     scrollToView: '',
     scrollTop: 0,
+    keyboardHeight: 0,
+    chatBottomInset: 240,
     featureFlags: {
       aiChatEnabled: true,
       configLoaded: false
@@ -56,6 +64,8 @@ Page({
   },
 
   onLoad: function() {
+    this._isUnloaded = false;
+    this.bindKeyboardHeightChange();
     this.syncFeatureFlags();
     this.initVoiceRecognition();
     var self = this;
@@ -76,8 +86,15 @@ Page({
     this.applyPendingQuestion();
   },
 
+  onReady: function() {
+    this.scheduleBottomDockMeasurement();
+    flushScrollToBottom(this, 80);
+  },
+
   onShow: function() {
     this.applyPendingQuestion();
+    this.scheduleBottomDockMeasurement();
+    flushScrollToBottom(this, 80);
   },
 
   applyPendingQuestion: function() {
@@ -128,10 +145,68 @@ Page({
 
   onHide: function() {
     this.stopVoiceInput({ silent: true });
+    this.setData({ keyboardHeight: 0 });
   },
 
   onUnload: function() {
+    this._isUnloaded = true;
     this.stopVoiceInput({ silent: true });
+    this.unbindKeyboardHeightChange();
+    if (this._dockMeasureTimer) {
+      clearTimeout(this._dockMeasureTimer);
+      this._dockMeasureTimer = null;
+    }
+  },
+
+  bindKeyboardHeightChange: function() {
+    if (!wx.onKeyboardHeightChange || this._keyboardHeightHandler) return;
+    var that = this;
+    this._keyboardHeightHandler = function(res) {
+      that.onKeyboardHeightChange(res);
+    };
+    wx.onKeyboardHeightChange(this._keyboardHeightHandler);
+  },
+
+  unbindKeyboardHeightChange: function() {
+    if (wx.offKeyboardHeightChange && this._keyboardHeightHandler) {
+      wx.offKeyboardHeightChange(this._keyboardHeightHandler);
+    }
+    this._keyboardHeightHandler = null;
+  },
+
+  onKeyboardHeightChange: function(res) {
+    if (this._isUnloaded) return;
+    var height = Math.max(0, Number(res && res.height) || 0);
+    var that = this;
+    this.setData({ keyboardHeight: height }, function() {
+      that.measureBottomDock();
+      flushScrollToBottom(that, 40);
+    });
+  },
+
+  scheduleBottomDockMeasurement: function() {
+    if (this._isUnloaded) return;
+    var that = this;
+    if (this._dockMeasureTimer) clearTimeout(this._dockMeasureTimer);
+    this._dockMeasureTimer = setTimeout(function() {
+      that._dockMeasureTimer = null;
+      that.measureBottomDock();
+    }, 30);
+  },
+
+  measureBottomDock: function() {
+    if (this._isUnloaded || !wx.createSelectorQuery) return;
+    var that = this;
+    var query = wx.createSelectorQuery();
+    if (query.in) query = query.in(this);
+    query.select('.bottom-dock').boundingClientRect(function(rect) {
+      if (!rect || that._isUnloaded) return;
+      var keyboardHeight = Math.max(0, Number(that.data.keyboardHeight) || 0);
+      var nextInset = Math.ceil(rect.height + keyboardHeight + 12);
+      if (nextInset !== that.data.chatBottomInset) {
+        that.setData({ chatBottomInset: nextInset });
+      }
+    }).exec();
   },
 
   syncFeatureFlags: function() {
@@ -144,6 +219,7 @@ Page({
         configLoaded: !!runtimeConfig.configLoaded
       }
     });
+    that.scheduleBottomDockMeasurement();
 
     if (shouldFetchRuntimeConfig && app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
       app.loadRuntimeConfig().then(function() {
@@ -154,6 +230,7 @@ Page({
             configLoaded: !!config.configLoaded
           }
         });
+        that.scheduleBottomDockMeasurement();
       });
     }
   },
@@ -165,6 +242,7 @@ Page({
         voiceSupported: false,
         voiceHint: '当前基础库暂不支持语音输入'
       });
+      this.scheduleBottomDockMeasurement();
       return;
     }
 
@@ -173,6 +251,7 @@ Page({
         isRecognizing: true,
         voiceHint: (res && res.result) ? ('正在识别：' + res.result) : '正在识别语音...'
       });
+      self.scheduleBottomDockMeasurement();
     };
 
     recordRecognitionManager.onStop = function(res) {
@@ -190,12 +269,14 @@ Page({
           voiceResultVisible: true,
           voiceHint: ''
         });
+        self.scheduleBottomDockMeasurement();
       } else {
         self.setData({
           isRecording: false,
           isRecognizing: false,
           voiceHint: ''
         });
+        self.scheduleBottomDockMeasurement();
         wx.showToast({ title: '没有识别到语音，请再说一次', icon: 'none' });
       }
     };
@@ -206,6 +287,7 @@ Page({
         isRecognizing: false,
         voiceHint: '语音识别失败，请换安静环境再试'
       });
+      self.scheduleBottomDockMeasurement();
       wx.showToast({ title: '没听清，请换个安静地方再说一次', icon: 'none' });
     };
 
@@ -213,6 +295,7 @@ Page({
       voiceSupported: true,
       voiceHint: '可先语音输入，再转成文字发送'
     });
+    this.scheduleBottomDockMeasurement();
   },
 
   // 保存聊天记录到本地
@@ -237,6 +320,11 @@ Page({
     });
   },
 
+  onInputLineChange: function() {
+    this.scheduleBottomDockMeasurement();
+    flushScrollToBottom(this, 40);
+  },
+
   startVoiceInput: function() {
     if (!recordRecognitionManager) {
       wx.showToast({ title: '语音识别不可用', icon: 'none' });
@@ -247,6 +335,7 @@ Page({
       isRecognizing: false,
       voiceHint: '正在录音，松开后自动识别文字'
     });
+    this.scheduleBottomDockMeasurement();
     recordRecognitionManager.start({
       lang: 'zh_CN',
       duration: 30000
@@ -286,6 +375,7 @@ Page({
         ? ((options && options.keepHint) ? this.data.voiceHint : '')
         : (cancelled ? '正在结束录音...' : '正在把语音转成文字...')
     });
+    this.scheduleBottomDockMeasurement();
     recordRecognitionManager.stop();
   },
 
@@ -377,6 +467,7 @@ Page({
       voiceResultVisible: false,
       voiceResultText: ''
     });
+    this.scheduleBottomDockMeasurement();
   },
 
   onSendVoiceResult: function() {
@@ -387,6 +478,7 @@ Page({
       voiceResultVisible: false,
       voiceResultText: ''
     });
+    this.scheduleBottomDockMeasurement();
     this.sendMessage();
   },
 
@@ -395,6 +487,7 @@ Page({
       voiceResultVisible: false,
       voiceResultText: ''
     });
+    this.scheduleBottomDockMeasurement();
   },
 
   // 发送消息
@@ -444,6 +537,8 @@ Page({
       inputValue: '',
       loading: true
     });
+    this.saveMessages();
+    this.scheduleBottomDockMeasurement();
     flushScrollToBottom(this, 80);
 
     // 调用AI接口
@@ -625,7 +720,7 @@ Page({
         var headingText = line.replace(/^#{1,3}\s/, '');
         nodes.push({
           name: 'p',
-          attrs: { style: 'font-weight:700;font-size:' + (36 - level * 4) + 'rpx;margin-top:16rpx;margin-bottom:8rpx;color:#2c2623;' },
+          attrs: { style: 'font-weight:700;font-size:' + (36 - level * 4) + 'rpx;margin-top:16rpx;margin-bottom:8rpx;color:#2F3432;' },
           children: this.parseInlineMarkdown(headingText)
         });
         i++;
@@ -637,7 +732,7 @@ Page({
         nodes.push({
           name: 'p',
           attrs: { style: 'padding-left:24rpx;margin-bottom:4rpx;line-height:1.8;' },
-          children: [{ name: 'span', attrs: { style: 'color:#d65a1f;margin-right:12rpx;' }, children: [{ type: 'text', text: '•' }] }].concat(this.parseInlineMarkdown(bulletText))
+          children: [{ name: 'span', attrs: { style: 'color:#F28C72;margin-right:12rpx;' }, children: [{ type: 'text', text: '•' }] }].concat(this.parseInlineMarkdown(bulletText))
         });
         i++;
         continue;
@@ -649,7 +744,7 @@ Page({
         nodes.push({
           name: 'p',
           attrs: { style: 'padding-left:24rpx;margin-bottom:4rpx;line-height:1.8;' },
-          children: [{ name: 'span', attrs: { style: 'color:#d65a1f;margin-right:8rpx;font-weight:600;' }, children: [{ type: 'text', text: num + '.' }] }].concat(this.parseInlineMarkdown(numText))
+          children: [{ name: 'span', attrs: { style: 'color:#F28C72;margin-right:8rpx;font-weight:600;' }, children: [{ type: 'text', text: num + '.' }] }].concat(this.parseInlineMarkdown(numText))
         });
         i++;
         continue;

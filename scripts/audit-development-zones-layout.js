@@ -98,7 +98,7 @@ function testDetailPageLayout() {
   assert.ok(wxml.includes('bindtap="openScenarioDetail"'), 'detail page should open the scenario topic directly');
   assert.ok(jsIncludesAgeGroupParam(), 'detail page should pass selected age group to scenario topic');
   assert.strictEqual(wxml.includes('bindtap="selectScenario"'), false, 'detail page should not keep users on the page after scenario tap');
-  assert.strictEqual(wxml.includes('activePractice'), false, 'detail page should not show practice details below the scenario list');
+  assert.ok(wxml.includes('<block wx:if="{{painPointKey && selectedScenario}}">'), 'detail page should limit inline practice details to pain point mode');
   assert.ok(wxss.includes('overflow-wrap: break-word'), 'detail page should support long text wrapping');
   assert.ok(wxss.includes('letter-spacing: 0'), 'detail page should set stable letter spacing');
   ['.title', '.section-title', '.scenario-group-title', '.scenario-title', '.scenario-link', '.plan-name', '.placeholder-desc'].forEach(function(selector) {

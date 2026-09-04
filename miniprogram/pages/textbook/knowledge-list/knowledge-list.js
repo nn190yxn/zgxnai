@@ -17,6 +17,9 @@ Page({
 
     // 加载状态
     loading: false,
+    loadState: 'idle',
+    errorMessage: '',
+    missingChild: false,
 
     // 快速测试弹窗
     showTestModal: false,
@@ -74,7 +77,19 @@ Page({
     });
 
     // 加载章节数据
+    var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
+    that.setData({
+      childId: that.data.childId || (currentChild && Number(currentChild.id)) || 0,
+      missingChild: !(that.data.childId || (currentChild && currentChild.id))
+    });
     that.loadChapterList();
+  },
+
+  onShow: function() {
+    if (this.data.loading || (this.data.loadState !== 'error' && this.data.loadState !== 'login_required')) {
+      return;
+    }
+    this.loadChapterList();
   },
 
   // 加载章节列表
@@ -88,17 +103,26 @@ Page({
     }
 
     that.setData({
-      loading: true
+      loading: true,
+      loadState: 'loading',
+      errorMessage: ''
     });
 
     if (app.shouldUseMockFallback()) {
       that.setData({
         chapterList: that.getMockChapterList(),
-        loading: false
+        loading: false,
+        loadState: 'ready'
       });
       if (fromPullDown) {
         wx.stopPullDownRefresh();
       }
+      return;
+    }
+
+    if (!wx.getStorageSync('token')) {
+      that.setData({ loading: false, loadState: 'login_required', errorMessage: '' });
+      if (fromPullDown) wx.stopPullDownRefresh();
       return;
     }
 
@@ -111,22 +135,26 @@ Page({
         childId: that.data.childId || ((app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id) || 0)
       }
     }).then(function(res) {
-      if (res && res.list) {
-        that.setData({
-          chapterList: res.list
-        });
-      }
+      var list = res && Array.isArray(res.list) ? res.list : [];
+      that.setData({
+        chapterList: list,
+        loadState: list.length ? 'ready' : 'empty',
+        errorMessage: ''
+      });
     }).catch(function(err) {
       if (!app.shouldUseMockFallback()) {
-        app.showApiError('练习列表没加载出来，请再试一次');
         that.setData({
-          chapterList: []
+          chapterList: [],
+          loadState: 'error',
+          errorMessage: app.getApiErrorMessage(err, '练习列表没加载出来，请再试一次')
         });
         return;
       }
       // 使用模拟数据
       that.setData({
-        chapterList: that.getMockChapterList()
+        chapterList: that.getMockChapterList(),
+        loadState: 'ready',
+        errorMessage: ''
       });
     }).finally(function() {
       that.setData({
@@ -135,6 +163,23 @@ Page({
       if (fromPullDown) {
         wx.stopPullDownRefresh();
       }
+    });
+  },
+
+  retryLoad: function() {
+    this.loadChapterList();
+  },
+
+  loginAndReload: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再查看练习内容').then(function(canOperate) {
+      if (canOperate) that.loadChapterList();
+    });
+  },
+
+  goToChildSetup: function() {
+    app.requireLoginForAction('请先完成微信登录，再完善孩子档案').then(function(canOperate) {
+      if (canOperate) wx.navigateTo({ url: '/pages/profile/children/children' });
     });
   },
 

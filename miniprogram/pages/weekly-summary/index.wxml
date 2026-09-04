@@ -1,5 +1,11 @@
 <view class="page">
-  <view class="summary-card" wx:if="{{!currentChild}}">
+  <view class="summary-card" wx:if="{{loginRequired}}">
+    <text class="summary-title">登录后查看成长总结</text>
+    <text class="summary-copy">完成微信登录后，可以查看孩子每周的记录、练习和阶段变化。</text>
+    <view class="primary-btn" bindtap="loginAndReload">去登录</view>
+  </view>
+
+  <view class="summary-card" wx:elif="{{!currentChild}}">
     <text class="summary-title">先完善孩子档案，再查看成长总结</text>
     <text class="summary-copy">填好孩子信息后，每天记一点，一周后就能看到变化。</text>
     <view class="primary-btn" bindtap="goToChildSetup">去完善档案</view>

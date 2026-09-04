@@ -3,20 +3,23 @@
 .page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg);
 }
 
 /* 聊天区域 */
 .chat-area {
   flex: 1;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
   padding: 24rpx;
-  padding-bottom: 420rpx;
   overflow-y: auto;
 }
 
 .chat-area-with-voice-result {
-  padding-bottom: 740rpx;
+  width: 100%;
 }
 
 .bottom-dock {
@@ -26,7 +29,14 @@
   bottom: 0;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   z-index: 11;
+  transition: bottom 0.18s ease-out;
+}
+
+.chat-bottom-anchor {
+  width: 100%;
+  height: 1px;
 }
 
 .bottom-dock-with-voice-result {
@@ -74,9 +84,9 @@
   margin: 120rpx 16rpx 24rpx;
   padding: 44rpx 32rpx;
   border-radius: 18rpx;
-  background: #fff;
+  background: #FFFFFF;
   border: 1rpx solid var(--border);
-  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   text-align: center;
 }
 
@@ -108,7 +118,7 @@
   line-height: 1.45;
   border-radius: 18rpx;
   background: var(--primary);
-  color: #fff;
+  color: #FFFFFF;
   font-size: 24rpx;
   padding: 14rpx 22rpx;
   text-align: center;
@@ -129,18 +139,18 @@
   box-sizing: border-box;
   border-radius: 24rpx;
   background: #FFFFFF;
-  border: 1rpx solid #DDE8E3;
+  border: 1rpx solid #ECEFEB;
 }
 
 .ai-intro-avatar {
   width: 84rpx;
   height: 84rpx;
   border-radius: 42rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-size: 28rpx;
   font-weight: 700;
   flex-shrink: 0;
@@ -169,7 +179,7 @@
 .ai-intro-desc {
   display: block;
   font-size: 28rpx;
-  color: #7A6660;
+  color: #626A66;
   line-height: 1.8;
   word-break: break-word;
 }
@@ -185,8 +195,8 @@
 .ai-intro-hint-item {
   font-size: 24rpx;
   line-height: 1.45;
-  color: #2F9D8E;
-  background: #FFF3ED;
+  color: #6AAE98;
+  background: #F3DFE3;
   padding: 10rpx 16rpx;
   border-radius: 999rpx;
   word-break: break-word;
@@ -225,7 +235,7 @@
   margin: 0 24rpx 16rpx;
   background: #FFFFFF;
   border-radius: 20rpx;
-  box-shadow: 0 -4rpx 24rpx rgba(0,0,0,0.08), 0 8rpx 32rpx rgba(0,0,0,0.06);
+  box-shadow: none;
   padding: 24rpx;
 }
 
@@ -331,17 +341,20 @@
 }
 
 .message.user .avatar {
-  background: #E3F2FD;
+  background: #DDEBF3;
   margin-left: 20rpx;
 }
 
 .bubble {
+  min-width: 0;
   max-width: 76%;
   padding: 26rpx 30rpx;
   border-radius: 24rpx;
   font-size: 28rpx;
   line-height: 1.75;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .message.bot .bubble {
@@ -349,7 +362,7 @@
   border: 1rpx solid var(--border);
   border-top-left-radius: 8rpx;
   color: var(--text);
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
+  box-shadow: none;
 }
 
 .message.bot.error .bubble {
@@ -360,7 +373,7 @@
 
 .message.user .bubble {
   background: var(--primary);
-  color: #fff;
+  color: #FFFFFF;
   border-top-right-radius: 8rpx;
 }
 
@@ -406,7 +419,7 @@
   display: block;
   margin-bottom: 14rpx;
   font-size: 23rpx;
-  color: #7A6660;
+  color: #626A66;
   font-weight: 700;
 }
 
@@ -440,9 +453,9 @@
 }
 
 .answer-next-btn.primary {
-  background: #2F9D8E;
+  background: #6AAE98;
   color: #FFFFFF;
-  border-color: #2F9D8E;
+  border-color: #6AAE98;
 }
 
 /* 加载动画 */
@@ -459,7 +472,7 @@
   display: block;
   margin-top: 20rpx;
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   text-align: center;
 }
 
@@ -568,7 +581,7 @@
   min-height: 100rpx;
   line-height: 1.45;
   background: var(--primary);
-  color: #fff;
+  color: #FFFFFF;
   border-radius: 20rpx;
   font-size: 32rpx;
   font-weight: 600;

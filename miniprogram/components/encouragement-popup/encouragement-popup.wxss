@@ -14,12 +14,14 @@
 .modal-container {
   width: 86%;
   max-width: 600rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 32rpx;
   overflow: visible;
   animation: modalIn 0.35s ease;
   position: relative;
   padding: 60rpx 40rpx 40rpx;
+  border: 1rpx solid #ECEFEB;
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
 }
 
 @keyframes modalIn {
@@ -40,23 +42,23 @@
   right: 30rpx;
   height: 8rpx;
   border-radius: 0 0 8rpx 8rpx;
-  background: linear-gradient(90deg, #A5D6A7, #FFD54F, #FFAB40);
+  background: #DDEDE5;
 }
 
 .level-1 .modal-glow {
-  background: linear-gradient(90deg, #A5D6A7, #C8E6C9);
+  background: #DDEDE5;
 }
 .level-2 .modal-glow {
-  background: linear-gradient(90deg, #C8E6C9, #FFF59D);
+  background: #DDEBF3;
 }
 .level-3 .modal-glow {
-  background: linear-gradient(90deg, #FFF59D, #FFD54F);
+  background: #F5E8BC;
 }
 .level-4 .modal-glow {
-  background: linear-gradient(90deg, #FFD54F, #FFAB40);
+  background: #E7DDF2;
 }
 .level-5 .modal-glow {
-  background: linear-gradient(90deg, #FFD54F, #FF7043, #FFD54F);
+  background: #F3DFE3;
 }
 
 .modal-icon-area {
@@ -78,7 +80,7 @@
 .modal-message {
   font-size: 34rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
   letter-spacing: 1rpx;
 }
@@ -86,7 +88,7 @@
 .level-4 .modal-message,
 .level-5 .modal-message {
   font-size: 36rpx;
-  color: #E65100;
+  color: #2F3432;
 }
 
 .level-5 .modal-message {
@@ -102,8 +104,8 @@
   width: 320rpx;
   min-height: 80rpx;
   line-height: 1.45;
-  background: linear-gradient(135deg, #66BB6A, #43A047);
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   border-radius: 40rpx;
   font-size: 30rpx;
   font-weight: 600;
@@ -118,13 +120,13 @@
 }
 
 .level-4 .confirm-btn {
-  background: linear-gradient(135deg, #FF7043, #F4511E);
+  background: #F28C72;
 }
 
 .level-5 .confirm-btn {
-  background: linear-gradient(135deg, #FFB300, #FF8F00);
+  background: #F28C72;
 }
 
 .level-5 .modal-container {
-  box-shadow: 0 8rpx 48rpx rgba(255, 152, 0, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
 }

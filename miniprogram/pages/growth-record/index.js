@@ -13,6 +13,7 @@ Page({
     loading: false,
     saving: false,
     sourceContext: null,
+    sourceSaved: false,
     form: {
       moodStatus: 'steady',
       appetiteStatus: 'normal',
@@ -81,6 +82,7 @@ Page({
   },
 
   onShow: function() {
+    this.applySourceContext({});
     this.bootstrap();
   },
 
@@ -108,18 +110,23 @@ Page({
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
     var pendingSourceEnvelope = crossPageStorage.consume('pendingGrowthRecordSource', currentChild && currentChild.id);
     var pendingSource = pendingSourceEnvelope ? pendingSourceEnvelope.payload : null;
-    if (pendingSource && (pendingSource.sourceType === 'development_zone' || pendingSource.sourceType === 'core_action')) {
-      this.setData({ sourceContext: pendingSource });
+    if (pendingSource && (pendingSource.sourceType === 'development_zone' || pendingSource.sourceType === 'development_pain_point' || pendingSource.sourceType === 'core_action')) {
+      this.setData({
+        sourceContext: Object.assign({}, pendingSource, { childId: pendingSourceEnvelope.childId }),
+        sourceSaved: false
+      });
       return;
     }
     if (source === 'core_action') {
       this.setData({
         sourceContext: {
           sourceType: 'core_action',
+          childId: currentChild && currentChild.id,
           sourceId: String((options && options.sourceId) || ''),
           actionTitle: '今晚小任务',
           summary: ''
-        }
+        },
+        sourceSaved: false
       });
       return;
     }
@@ -127,16 +134,22 @@ Page({
       this.setData({
         sourceContext: {
           sourceType: 'development_zone',
+          childId: currentChild && currentChild.id,
           zoneCode: String((options && options.zone) || ''),
           scenarioCode: String((options && options.scenario) || ''),
           practiceTitle: '专区练习',
           sourceId: String((options && options.zone) || '') + ':' + String((options && options.scenario) || '')
-        }
+        },
+        sourceSaved: false
       });
     }
   },
 
   applyBootstrapChild: function(child) {
+    var sourceContext = this.data.sourceContext;
+    if (sourceContext && sourceContext.childId !== null && sourceContext.childId !== undefined && String(sourceContext.childId) !== String(child.id)) {
+      this.setData({ sourceContext: null, sourceSaved: false });
+    }
     this.setData({ currentChild: child });
     if (!this._openedTracked && app.trackKbEvent) {
       this._openedTracked = true;
@@ -215,7 +228,7 @@ Page({
       return;
     }
     this.setData({ saving: true });
-    app.request({
+    return app.request({
       url: '/growth-records',
       method: 'POST',
       data: Object.assign({}, this.data.form, {
@@ -225,6 +238,9 @@ Page({
     }).then(function() {
       return that.saveSourceEntryIfNeeded();
     }).then(function() {
+      if (that.data.sourceContext) {
+        that.setData({ sourceSaved: true });
+      }
       wx.showToast({ title: '已保存', icon: 'success' });
       if (app.trackKbEvent) {
         app.trackKbEvent({
@@ -242,8 +258,29 @@ Page({
 
   saveSourceEntryIfNeeded: function() {
     var sourceContext = this.data.sourceContext || null;
-    if (!sourceContext) {
+    if (!sourceContext || this.data.sourceSaved) {
       return Promise.resolve();
+    }
+    if (sourceContext.sourceType === 'development_pain_point') {
+      return app.request({
+        url: '/growth-records/entry',
+        method: 'POST',
+        data: {
+          childId: this.data.currentChild.id,
+          entry_type: 'core_action',
+          source_type: 'core_action',
+          title: sourceContext.practiceTitle || sourceContext.painPointTitle || '成长痛点行动',
+          summary: this.data.form.noteText || sourceContext.practiceAction || '',
+          source_id: sourceContext.sourceId || sourceContext.painPointKey || '',
+          idempotency_key: ['pain_point', this.data.currentChild.id, this.data.recordDate, sourceContext.painPointKey || sourceContext.sourceId || 'action'].join(':'),
+          user_note: this.data.form.noteText || '',
+          metadata: {
+            painPointKey: sourceContext.painPointKey || '',
+            painPointTitle: sourceContext.painPointTitle || '',
+            practiceAction: sourceContext.practiceAction || ''
+          }
+        }
+      });
     }
     if (sourceContext.sourceType === 'core_action') {
       return app.request({

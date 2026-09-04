@@ -1,12 +1,15 @@
-.training-detail-page { padding-bottom: 60rpx; }
-.detail-card, .feedback-card { margin: 24rpx 32rpx; padding: 32rpx; border-radius: 24rpx; background: #fffaf5; }
-.eyebrow, .safety { display: block; color: #9d8172; font-size: 24rpx; }
-.detail-title { display: block; margin: 12rpx 0; color: #392a25; font-size: 40rpx; font-weight: 600; }
-.detail-objective, .step, .prompt, .signal { display: block; margin-top: 12rpx; color: #66534a; font-size: 28rpx; line-height: 1.6; }
+.training-detail-page { padding-bottom: calc(60rpx + env(safe-area-inset-bottom)); background: #FAF8F5; overflow-x: hidden; }
+.detail-card, .feedback-card { margin: 24rpx 32rpx; padding: 32rpx; border: 1rpx solid #ECEFEB; border-radius: 24rpx; background: #FFFFFF; }
+.eyebrow, .safety { display: block; color: #929995; font-size: 24rpx; }
+.detail-title { display: block; margin: 12rpx 0; color: #2F3432; font-size: 40rpx; font-weight: 600; overflow-wrap: anywhere; word-break: break-word; }
+.detail-objective, .step, .prompt, .signal { display: block; min-width: 0; margin-top: 12rpx; color: #626A66; font-size: 28rpx; line-height: 1.6; overflow-wrap: anywhere; word-break: break-word; }
 .detail-section { margin-top: 28rpx; }
-.detail-label { display: block; color: #392a25; font-size: 28rpx; font-weight: 600; }
-.complete-button, .feedback-card button { margin-top: 28rpx; color: #fff; background: #d46c4b; }
+.detail-label { display: block; color: #2F3432; font-size: 28rpx; font-weight: 600; }
+.complete-button, .feedback-card button { margin-top: 28rpx; color: #FFFFFF; background: #6AAE98; }
+.return-button { margin-top: 16rpx; color: #397A68; background: #FFFFFF; border: 1rpx solid #ECEFEB; }
 .feedback-list { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 20rpx; }
 .feedback-option { padding: 14rpx 20rpx; border: 1rpx solid #ead8ce; border-radius: 30rpx; color: #66534a; font-size: 25rpx; }
-.feedback-option.active { color: #fff; border-color: #d46c4b; background: #d46c4b; }
-textarea { box-sizing: border-box; width: 100%; height: 140rpx; margin-top: 24rpx; padding: 18rpx; border: 1rpx solid #ead8ce; border-radius: 14rpx; background: #fff; }
+.feedback-option.active { color: #FFFFFF; border-color: #F28C72; background: #F28C72; }
+textarea { box-sizing: border-box; width: 100%; height: 140rpx; margin-top: 24rpx; padding: 18rpx; border: 1rpx solid #ECEFEB; border-radius: 14rpx; background: #FFFFFF; }
+.training-detail-page button { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+.state-copy { display: block; margin-top: 16rpx; color: #626A66; font-size: 26rpx; line-height: 1.6; }

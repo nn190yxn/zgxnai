@@ -5,7 +5,7 @@
     class="chat-area {{voiceResultVisible && voiceResultText ? 'chat-area-with-voice-result' : ''}}"
     scroll-y
     enable-flex="true"
-    style="padding-bottom:{{voiceResultVisible && voiceResultText ? '740rpx' : '420rpx'}}"
+    style="padding-bottom: {{chatBottomInset}}px"
     scroll-into-view="{{scrollToView}}"
     scroll-top="{{scrollTop}}"
     scroll-with-animation
@@ -116,9 +116,10 @@
         <text class="loading-hint">小牛正在回答</text>
       </view>
     </view>
+    <view id="chat-bottom" class="chat-bottom-anchor"></view>
   </scroll-view>
 
-  <view class="bottom-dock {{voiceResultVisible && voiceResultText ? 'bottom-dock-with-voice-result' : ''}}">
+  <view class="bottom-dock {{voiceResultVisible && voiceResultText ? 'bottom-dock-with-voice-result' : ''}}" style="bottom: {{keyboardHeight}}px">
     <view class="ai-input-notice" wx:if="{{featureFlags.aiChatEnabled}}">小牛回答仅供参考，请结合实际情况判断。</view>
     <view class="voice-hint" wx:if="{{featureFlags.aiChatEnabled && voiceHint}}">{{voiceHint}}</view>
 
@@ -152,7 +153,7 @@
             bindinput="onInput"
             confirm-type="send"
             bindconfirm="sendMessage"
-            adjust-position="{{true}}"
+            adjust-position="{{false}}"
             hold-keyboard="{{false}}"
             disabled="{{!featureFlags.aiChatEnabled}}"
             placeholder="{{featureFlags.aiChatEnabled ? '追问今晚怎么做、怎么说、观察什么...' : '小牛问答还在准备中'}}"
@@ -160,6 +161,7 @@
             maxlength="2000"
             show-confirm-bar="{{false}}"
             cursor-spacing="16"
+            bindlinechange="onInputLineChange"
           />
         </view>
         <button class="send-btn" bindtap="sendMessage" disabled="{{!featureFlags.aiChatEnabled || !inputValue || loading}}">发送</button>

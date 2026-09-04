@@ -6,7 +6,9 @@ Page({
     children: [],
     maxChildren: 5,
     loading: false,
-    initialized: false
+    initialized: false,
+    loadError: '',
+    loginRequired: false
   },
 
   onLoad: function() {
@@ -26,7 +28,7 @@ Page({
     if (that._loadingPromise) {
       return that._loadingPromise;
     }
-    that.setData({ loading: true });
+    that.setData({ loading: true, loadError: '', loginRequired: false });
 
     // 先从本地缓存读取
     var cachedChildren = wx.getStorageSync('childrenList');
@@ -48,32 +50,44 @@ Page({
       return Promise.resolve(cachedChildren || []);
     }
 
-    that._loadingPromise = app.ensureLogin().then(function() {
-      return app.request({
-        url: '/children',
-        method: 'GET'
-      });
+    that._loadingPromise = app.request({
+      url: '/children',
+      method: 'GET'
     }).then(function(res) {
       var children = app.normalizeChildren(Array.isArray(res) ? res : []);
       that.setData({
         children: children,
-        loading: false
+        loading: false,
+        loadError: '',
+        loginRequired: false
       });
       // 更新本地缓存
       wx.setStorageSync('childrenList', children);
     }).catch(function(err) {
       if (app.globalData.isDebug) console.error('加载孩子档案列表失败', err);
-      that.setData({ loading: false });
-      // 如果没有缓存数据，显示空状态
-      if (!cachedChildren || cachedChildren.length === 0) {
-        // 加载失败，显示空状态
-      }
+      var loginRequired = !wx.getStorageSync('token') || (err && err.message === 'LOGIN_REQUIRED');
+      that.setData({
+        loading: false,
+        loginRequired: loginRequired,
+        loadError: loginRequired ? '' : (cachedChildren && cachedChildren.length ? '档案暂未刷新，当前显示上次记录' : app.getApiErrorMessage(err, '孩子档案暂时没加载出来'))
+      });
     }).finally(function() {
       that._loadingPromise = null;
     });
 
     that.setData({ initialized: true });
     return that._loadingPromise;
+  },
+
+  retryLoad: function() {
+    this.loadChildren();
+  },
+
+  retryLogin: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再管理孩子档案').then(function(canOperate) {
+      if (canOperate) that.loadChildren();
+    });
   },
 
   // 计算年龄

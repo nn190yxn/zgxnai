@@ -35,6 +35,9 @@ Page({
 
     // 加载状态
     loading: true,
+    errorMessage: '',
+    syncMessage: '',
+    loginRequired: false,
 
     // 是否有更多数据
     hasMore: true,
@@ -51,9 +54,12 @@ Page({
   },
 
   onShow: function() {
-    var that = this;
-    // 每次显示时刷新数据
-    that.loadRecords();
+    if (!this._hasShown) {
+      this._hasShown = true;
+      return;
+    }
+    this.loadChildrenList();
+    this.loadRecords();
   },
 
   // 加载孩子列表
@@ -79,8 +85,20 @@ Page({
     that.setData({
       records: filteredRecords,
       loading: false,
-      hasMore: false
+      hasMore: false,
+      errorMessage: '',
+      syncMessage: '',
+      loginRequired: false
     });
+
+    if (!app.globalData.isLoggedIn || !wx.getStorageSync('token')) {
+      that.setData({
+        loginRequired: true,
+        syncMessage: filteredRecords.length ? '当前展示本机记录，登录后可以同步其他设备的观察结果。' : ''
+      });
+      if (fromPullDown) wx.stopPullDownRefresh();
+      return Promise.resolve();
+    }
 
     // 尝试从服务器加载
     return that.loadRecordsFromServer(fromPullDown);
@@ -114,7 +132,10 @@ Page({
 
         that.setData({
           records: filteredRecords,
-          hasMore: false
+          hasMore: false,
+          errorMessage: '',
+          syncMessage: '',
+          loginRequired: false
         });
 
         // 更新本地存储
@@ -122,7 +143,13 @@ Page({
         wx.setStorageSync('assessmentHistory', allRecords.slice(0, 50));
       }
     }).catch(function(err) {
-      // 使用本地数据
+      var hasLocalRecords = that.data.records.length > 0;
+      that.setData({
+        errorMessage: hasLocalRecords ? '' : app.getApiErrorMessage(err, '观察记录暂时没加载出来'),
+        syncMessage: hasLocalRecords ? '在线记录暂时没有刷新，当前展示已保存在本机的记录。' : ''
+      });
+    }).finally(function() {
+      if (fromPullDown) wx.stopPullDownRefresh();
     });
   },
 
@@ -209,7 +236,7 @@ Page({
 
     var filtered = records.filter(function(record) {
       var typeMatch = filterType === 'all' || record.assessmentCode === filterType;
-      var childMatch = filterChild === 'all' || record.childId === filterChild;
+      var childMatch = filterChild === 'all' || String(record.childId) === String(filterChild);
       return typeMatch && childMatch;
     });
 
@@ -315,17 +342,18 @@ Page({
   // 执行删除
   doDeleteRecord: function(recordId) {
     var that = this;
-    var records = that.data.records.filter(function(r) {
-      return r.recordId !== recordId;
+    var allRecords = getAssessmentRecordsStorage().filter(function(r) {
+      return String(r.recordId || '') !== String(recordId || '');
     });
+    var records = that.applyFilters(allRecords);
 
     that.setData({
       records: records
     });
 
     // 更新本地存储
-    wx.setStorageSync('assessmentRecords', records);
-    wx.setStorageSync('assessmentHistory', records);
+    wx.setStorageSync('assessmentRecords', allRecords);
+    wx.setStorageSync('assessmentHistory', allRecords);
 
     // 尝试从服务器删除
     app.request({
@@ -340,6 +368,15 @@ Page({
     wx.showToast({
       title: '已删除',
       icon: 'success'
+    });
+  },
+
+  retryLoad: function() { this.loadRecords(); },
+
+  retryLogin: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再同步观察记录').then(function(canOperate) {
+      if (canOperate) that.loadRecords();
     });
   },
 
@@ -399,16 +436,16 @@ Page({
   // 获取评级颜色
   getLevelColor: function(level) {
     var colors = {
-      '优秀': '#FF6B35',
-      '良好': '#FF7E4B',
-      '中等': '#FFA000',
-      '正常': '#FFA000',
+      '优秀': '#6AAE98',
+      '良好': '#397A68',
+      '中等': '#F28C72',
+      '正常': '#F28C72',
       '需关注': '#FF5722',
       '轻度失调': '#FF5722',
       '需干预': '#D32F2F',
       '中度失调': '#D32F2F'
     };
-    return colors[level] || '#FF6B35';
+    return colors[level] || '#6AAE98';
   },
 
   // 获取名称

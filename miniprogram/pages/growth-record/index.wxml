@@ -13,6 +13,15 @@
       </picker>
     </view>
 
+    <view class="source-action-card" wx:if="{{sourceContext}}">
+      <view class="source-action-head">
+        <text class="source-action-kicker">{{sourceSaved ? '今日行动已记录' : '刚完成的今日行动'}}</text>
+        <text class="source-action-status">{{sourceSaved ? '已记录' : '待记录'}}</text>
+      </view>
+      <text class="source-action-title">{{sourceContext.practiceTitle || sourceContext.painPointTitle || sourceContext.scenarioTitle || sourceContext.actionTitle}}</text>
+      <text class="source-action-desc" wx:if="{{sourceContext.practiceAction}}">{{sourceContext.practiceAction}}</text>
+    </view>
+
     <view class="growth-overview">
       <view class="growth-overview-card" bindtap="goToDevelopment">
         <text class="growth-overview-kicker">行动进度</text>
@@ -58,7 +67,7 @@
       <textarea class="note-box" maxlength="500" placeholder="例如：午睡偏短，晚饭时情绪有点急，散步后稳定很多。" value="{{form.noteText}}" bindinput="onNoteInput"></textarea>
     </view>
 
-    <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : '保存成长记录'}}</view>
+    <view class="primary-btn {{saving ? 'primary-btn-disabled' : ''}}" bindtap="submitRecord">{{saving ? '保存中...' : (sourceSaved ? '更新成长记录' : '保存成长记录')}}</view>
 
     <view class="action-row">
       <view class="secondary-btn" bindtap="goToHistory">查看历史记录</view>

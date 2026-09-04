@@ -17,6 +17,16 @@
     </view>
   </view>
 
+  <view class="sync-state" wx:if="{{syncMessage}}"><text>{{syncMessage}}</text><button wx:if="{{!loginRequired}}" bindtap="retryLoad">重新同步</button></view>
+
+  <view class="empty-state" wx:if="{{!loading && loginRequired && records.length === 0}}">
+    <text class="empty-icon">登录</text><text class="empty-text">登录后查看观察记录</text><text class="empty-hint">完成微信登录后，可以同步和管理孩子的观察结果。</text><button class="empty-btn" bindtap="retryLogin">去登录</button>
+  </view>
+
+  <view class="empty-state" wx:elif="{{!loading && errorMessage}}">
+    <text class="empty-icon">重试</text><text class="empty-text">观察记录暂时没加载出来</text><text class="empty-hint">{{errorMessage}}</text><button class="empty-btn" bindtap="retryLoad">重新加载</button>
+  </view>
+
   <!-- 记录列表 -->
   <view class="record-list" wx:if="{{records.length > 0}}">
     <view
@@ -32,7 +42,7 @@
       <view class="record-content">
         <view class="record-header">
           <text class="record-name">{{item.assessmentName}}</text>
-          <view class="record-level" style="background: {{item.level === '优秀' ? '#FF6B35' : item.level === '良好' ? '#FF7E4B' : item.level === '正常' ? '#FFA000' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};">{{item.level}}</view>
+          <view class="record-level" style="background: {{item.level === '优秀' ? '#6AAE98' : item.level === '良好' ? '#397A68' : item.level === '正常' ? '#F28C72' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};">{{item.level}}</view>
         </view>
         <view class="record-info">
           <text class="record-child">{{item.childName}}</text>
@@ -53,7 +63,7 @@
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{!loading && records.length === 0}}">
+  <view class="empty-state" wx:if="{{!loading && !loginRequired && !errorMessage && records.length === 0}}">
     <text class="empty-icon">记录</text>
     <text class="empty-text">还没有观察记录</text>
     <text class="empty-hint">做完一次成长观察，这里会帮你留好记录</text>
@@ -136,7 +146,7 @@
       <view class="chart-bars">
         <view class="chart-bar-item" wx:for="{{trendData}}" wx:key="recordId">
           <view class="bar-wrapper">
-            <view class="bar" style="height: {{item.percentage}}%; background: {{item.level === '优秀' ? '#FF6B35' : item.level === '良好' ? '#FF7E4B' : item.level === '正常' ? '#FFA000' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};"></view>
+            <view class="bar" style="height: {{item.percentage}}%; background: {{item.level === '优秀' ? '#6AAE98' : item.level === '良好' ? '#397A68' : item.level === '正常' ? '#F28C72' : item.level === '轻度失调' ? '#FF5722' : '#D32F2F'}};"></view>
           </view>
           <text class="bar-label">{{item.percentage}}</text>
           <text class="bar-date">{{item.completedAtStr || ''}}</text>

@@ -1,5 +1,9 @@
 <!-- 知识点列表页面 -->
 <view class="page page-transition">
+  <view class="context-state" wx:if="{{missingChild && loadState === 'ready'}}">
+    <view><text class="context-title">当前按通用内容展示</text><text class="context-copy">完善孩子档案后，可以获得更适龄的练习。</text></view>
+    <button bindtap="goToChildSetup">完善档案</button>
+  </view>
   <!-- 骨架屏加载状态 -->
   <view class="skeleton-container" wx:if="{{loading}}">
     <view class="skeleton-chapter" wx:for="{{3}}" wx:key="*this">
@@ -12,7 +16,7 @@
   </view>
 
   <!-- 章节列表 -->
-  <view class="chapter-list" wx:if="{{!loading && chapterList.length > 0}}">
+  <view class="chapter-list" wx:if="{{!loading && loadState === 'ready' && chapterList.length > 0}}">
     <block wx:for="{{chapterList}}" wx:key="id">
       <!-- 章节头部 -->
       <view class="chapter-header" bindtap="toggleChapter" data-id="{{item.id}}">
@@ -53,9 +57,22 @@
   </view>
 
   <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{!loading && chapterList.length === 0}}">
+  <view class="empty-state" wx:if="{{!loading && loadState === 'login_required'}}">
+    <text class="empty-icon">登录</text>
+    <text class="empty-text">登录后查看练习内容</text>
+    <text class="empty-desc">完成微信登录后，可以查看练习并保存孩子的进度。</text>
+    <button class="state-action" bindtap="loginAndReload">去登录</button>
+  </view>
+  <view class="empty-state" wx:elif="{{!loading && loadState === 'error'}}">
+    <text class="empty-icon">重试</text>
+    <text class="empty-text">练习列表暂时没加载出来</text>
+    <text class="empty-desc">{{errorMessage}}</text>
+    <button class="state-action" bindtap="retryLoad">重新加载</button>
+  </view>
+  <view class="empty-state" wx:elif="{{!loading && loadState === 'empty'}}">
     <text class="empty-icon">内容</text>
     <text class="empty-text">这里暂时还没有练习内容</text>
+    <text class="empty-desc">换一个成长主题看看，或稍后再来。</text>
   </view>
 </view>
 

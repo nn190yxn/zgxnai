@@ -43,7 +43,7 @@
         <text class="form-label required">性别</text>
         <radio-group class="radio-group" bindchange="onGenderChange">
           <label class="radio-item" wx:for="{{genderOptions}}" wx:key="value">
-            <radio value="{{item.value}}" checked="{{formData.gender === item.value}}" color="#FF6B35" />
+            <radio value="{{item.value}}" checked="{{formData.gender === item.value}}" color="#6AAE98" />
             <text class="radio-label">{{item.label}}</text>
           </label>
         </radio-group>

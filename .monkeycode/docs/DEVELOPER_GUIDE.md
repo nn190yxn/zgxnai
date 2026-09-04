@@ -18,7 +18,37 @@
 npm test
 ```
 
-根测试脚本会按顺序覆盖鼓励与档案上下文、聊天和每日计划、认证刷新、发展专区、会员分享、核心动作场景与存储、孩子隔离、首页主流程、运营分析、知识内容、观察训练闭环、小程序核心结构与一级页面导航、Banner 管理、虚拟支付合规、内容专业性、布局、排版和文案审计。任一脚本失败会终止后续脚本。
+根测试脚本会按顺序覆盖鼓励与档案上下文、聊天和每日计划、认证刷新、发展专区、首页到成长痛点详情、今日行动、记录变化和成长页反馈、详情页主行动与返回、会员分享、核心动作场景与存储、孩子隔离、首页主流程、运营分析、知识内容、观察训练闭环、小程序核心结构与一级页面导航、36 个注册页面的状态契约、长内容与聊天键盘避让、Banner 管理、虚拟支付合规、内容专业性、布局、排版、文案和正式视觉系统审计。任一脚本失败会终止后续脚本。
+
+反馈客服闭环由 `scripts/test-feedback-support-flow.js` 覆盖：反馈内容校验、回访联系方式要求、中文工单状态、用户隔离缓存、设备信息白名单、公开工单映射、状态机和回访接口字段。反馈页的提交与历史加载必须保留登录校验、失败恢复和重复提交保护；扩展工单状态时同步更新 `support-tickets.js`、运营后台状态文案和该契约测试。
+
+单独运行小程序页面状态契约测试：
+
+```bash
+node scripts/test-miniprogram-page-states.js
+```
+
+该脚本要求 `miniprogram/app.json` 中的每个注册页面进入验收矩阵，检查 WXML 中 `bindtap`、`catchtap` 对应的页面处理器，并固定训练、成长记录、孩子档案、知识内容、搜索、观察、会员和周总结页面的状态字段、提示文案及恢复入口。新增页面时同步补充矩阵；修改异步页面时覆盖加载、空数据、请求失败、重试、登录恢复和孩子上下文恢复等适用状态。
+
+单独运行长内容与聊天键盘避让契约测试：
+
+```bash
+node scripts/test-miniprogram-long-content-keyboard.js
+```
+
+修改文章、食谱或训练详情时，应保持内容容器宽度约束、连续文本断词、固定行动区避让和安全区间距。修改聊天输入区时，应同步维护键盘高度监听的注册与清理、`.bottom-dock` 动态测量、`chat-bottom` 滚动锚点、输入框 `adjust-position` 配置和用户消息即时持久化，并在微信开发者工具及 iOS/Android 真机环境复核多行输入、语音提示和键盘收起场景。
+
+iOS/Android 模拟器、真机及不同孩子档案状态的验收过程记录在 `miniprogram-device-acceptance.md`。设备验收必须填写实际环境、结果和问题证据，模拟器矩阵全部通过后完成任务 18.3，真机补充矩阵全部通过后进入提交与推送阶段。
+
+首页视觉调整必须保持孩子信息栏、`home-primary-card`、图标入口、Banner 文字降级和成长服务区可见，功能入口使用 `iconPath`，Banner 的成长记录动作使用 `growth_record`，四个 TabBar 保持完整图标配置。`test-miniprogram-core-ui-structure.js` 会固定这些首页设计契约。重点专题与旧发展专区保持单一可见展示，避免重复曝光。
+
+单独运行小程序正式视觉系统审计：
+
+```bash
+node scripts/audit-miniprogram-visual-system.js
+```
+
+审计覆盖正式色彩令牌、字体栈、旧主题色、装饰渐变、阴影范围、代表性卡片边框、奶白导航栏标题对比度和首页关键内容对比度。新增页面或视觉样式时，应同步扩展审计规则以固定新的公共契约。
 
 运行根目录联合静态检查：
 
@@ -45,6 +75,9 @@ npm test -- --runInBand mysql-migrations.test.js business-dimensions.test.js bus
 ```bash
 node scripts/test-home-state.js
 node scripts/test-home-core-flow.js
+node scripts/test-development-pain-point-flow.js
+node scripts/test-detail-primary-navigation.js
+node scripts/test-miniprogram-core-ui-structure.js
 node scripts/test-knowledge-content.js
 node scripts/test-ability-training-loop.js
 node scripts/test-training-loop-integration.js
@@ -94,6 +127,12 @@ git diff --check -- .monkeycode/docs
 4. 使用标准条目类型、来源类型和能力代码。
 5. 兼容旧字段时保留使用统计，便于后续移除兼容入口。
 6. 使用 `growth-timeline.test.js` 验证旧字段归一化、重复写入和孩子分页隔离。
+
+成长痛点完成上下文在小程序内使用 `development_pain_point`，写入服务端时复用 `core_action` 条目和来源类型，并在 `metadata` 中保留稳定痛点键、标题和行动内容。幂等键固定为 `pain_point:<childId>:<recordDate>:<painPointKey>`；成长 Tab 每次显示时消费当前孩子的跨页上下文，切换孩子后清除页面内旧上下文。`scripts/test-development-pain-point-flow.js` 覆盖 Tab 复用、每日记录与时间线写入、重复保存去重、保存状态反馈和跨孩子清理。
+
+成长痛点进入 AI 问答时，详情页应将当前孩子名称和年龄、类别、家庭场景、痛点、表现、观察信号、能力、卡点与行动组成结构化问题，并通过当前孩子对应的 `pendingChatQuestion` 信封传递。字段标签沿用后端 `buildCoreActionChatContext()` 可识别的“年龄、类别、类别Key、场景、痛点、表现、可观察表现、背后能力、卡点判断、今晚第一步、具体步骤”；`app.chat()` 同时保留 `child_profile` 请求字段。修改该链路时运行 `scripts/test-development-pain-point-flow.js`、`scripts/test-chat-context.js` 和 `scripts/test-miniprogram-core-ui-structure.js`。
+
+文章、训练、营养和会员详情页使用 `detail-navigation.js` 处理返回：优先回到页面栈中的入口页，直达时回到该业务所属 Tab。每个详情页保留一个与页面职责一致的主行动；文章和营养进入成长记录时使用 `cross-page-storage.js` 保存当前孩子的 `pendingGrowthRecordNote`，训练继续调用完成任务接口，会员根据状态定位试用、权益、套餐或邀请入口。修改这些页面时运行 `node scripts/test-detail-primary-navigation.js`，同时执行孩子隔离测试和完整根测试。
 
 ## 知识库约定
 

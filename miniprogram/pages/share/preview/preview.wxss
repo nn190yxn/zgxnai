@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background: #F6F7F4;
+  background: #FAF8F5;
   padding: 28rpx;
   box-sizing: border-box;
 }
@@ -14,7 +14,7 @@
   font-size: 38rpx;
   font-weight: 700;
   line-height: 1.35;
-  color: #24312A;
+  color: #2F3432;
 }
 
 .subtitle {
@@ -22,7 +22,7 @@
   margin-top: 8rpx;
   font-size: 24rpx;
   line-height: 1.5;
-  color: #6B746D;
+  color: #626A66;
 }
 
 .card {
@@ -30,9 +30,9 @@
   border-radius: 32rpx;
   padding: 42rpx 38rpx;
   box-sizing: border-box;
-  color: #fff;
-  background: #2F665D;
-  box-shadow: 0 20rpx 46rpx rgba(36, 49, 42, 0.18);
+  color: #FFFFFF;
+  background: #397A68;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
 }
@@ -57,7 +57,7 @@
   font-size: 52rpx;
   font-weight: 800;
   line-height: 1.16;
-  color: #fff;
+  color: #FFFFFF;
 }
 
 .subline {
@@ -82,7 +82,7 @@
   font-size: 96rpx;
   font-weight: 900;
   line-height: 1;
-  color: #FFF8E7;
+  color: #F5E8BC;
 }
 
 .hero-label {
@@ -112,7 +112,7 @@
   font-size: 30rpx;
   font-weight: 800;
   line-height: 1.35;
-  color: #fff;
+  color: #FFFFFF;
 }
 
 .chip-label {
@@ -141,7 +141,7 @@
 .cta {
   font-size: 28rpx;
   font-weight: 700;
-  color: #FFF8E7;
+  color: #F5E8BC;
   text-align: right;
   line-height: 1.45;
 }
@@ -149,16 +149,16 @@
 .copy-card {
   margin-top: 24rpx;
   padding: 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 10rpx;
-  box-shadow: 0 6rpx 18rpx rgba(31, 45, 37, 0.06);
+  box-shadow: none;
 }
 
 .copy-title {
   display: block;
   font-size: 26rpx;
   font-weight: 700;
-  color: #24312A;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
@@ -167,7 +167,7 @@
   display: block;
   font-size: 28rpx;
   line-height: 1.68;
-  color: #3F4A43;
+  color: #2F3432;
 }
 
 .actions {
@@ -187,12 +187,12 @@
 }
 
 .btn-primary {
-  background: #E86B3D;
-  color: #fff;
+  background: #F28C72;
+  color: #FFFFFF;
 }
 
 .btn-secondary {
-  background: #fff;
+  background: #FFFFFF;
   color: #31523A;
   border: 1rpx solid #DCE4D7;
 }
@@ -201,12 +201,12 @@
   margin-top: 18rpx;
   font-size: 23rpx;
   line-height: 1.6;
-  color: #6B746D;
+  color: #626A66;
 }
 
 .stats-panel {
   margin-top: 20rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 10rpx;
   padding: 16rpx;
 }
@@ -215,7 +215,7 @@
   display: block;
   font-size: 24rpx;
   font-weight: 700;
-  color: #24312A;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -228,7 +228,7 @@
 
 .stats-item {
   text-align: center;
-  background: #F6F7F4;
+  background: #FAF8F5;
   border-radius: 8rpx;
   padding: 8rpx 4rpx;
 }
@@ -236,7 +236,7 @@
 .stats-num {
   display: block;
   font-size: 22rpx;
-  color: #E86B3D;
+  color: #F28C72;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -244,7 +244,7 @@
 .stats-label {
   display: block;
   font-size: 18rpx;
-  color: #667168;
+  color: #626A66;
   line-height: 1.45;
 }
 
@@ -252,7 +252,7 @@
   display: block;
   margin-top: 10rpx;
   font-size: 20rpx;
-  color: #667168;
+  color: #626A66;
   line-height: 1.55;
 }
 
@@ -264,7 +264,7 @@
 .source-item {
   display: block;
   font-size: 20rpx;
-  color: #667168;
+  color: #626A66;
   line-height: 1.6;
 }
 
@@ -276,7 +276,7 @@
 
 .debug-logs {
   margin-top: 8rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 10rpx;
   padding: 12rpx;
 }
@@ -292,5 +292,5 @@
 
 .debug-line {
   font-size: 20rpx;
-  color: #667168;
+  color: #626A66;
 }

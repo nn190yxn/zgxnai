@@ -2,7 +2,7 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
@@ -15,7 +15,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 空状态 */
@@ -33,7 +33,7 @@
 
 .empty-text {
   font-size: 32rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.6;
 }
 
@@ -48,7 +48,7 @@
 }
 
 .recipe-visual {
-  background: #F0F3EE;
+  background: #FAF8F5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -127,7 +127,7 @@
   padding: 12rpx 20rpx;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .action-btn.active {
@@ -142,7 +142,7 @@
 .action-text {
   font-size: 20rpx;
   line-height: 1.45;
-  color: #333;
+  color: #2F3432;
 }
 
 .share-btn {
@@ -158,7 +158,7 @@
 
 /* 基本信息区域 */
 .info-section {
-  background: #fff;
+  background: #FFFFFF;
   padding: 32rpx;
   margin-top: -40rpx;
   border-radius: 32rpx 32rpx 0 0;
@@ -169,7 +169,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 14rpx;
   line-height: 1.45;
 }
@@ -177,7 +177,7 @@
 .recipe-desc {
   display: block;
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.7;
   margin-bottom: 20rpx;
 }
@@ -194,7 +194,7 @@
   align-items: center;
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  background: #FFF1EA;
+  background: #F3DFE3;
   color: #C85C23;
   font-size: 24rpx;
   line-height: 1.45;
@@ -215,8 +215,8 @@
   border-radius: 20rpx;
   font-size: 24rpx;
   line-height: 1.45;
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 /* 基本信息 */
@@ -244,7 +244,7 @@
 
 .info-label {
   font-size: 22rpx;
-  color: #999;
+  color: #929995;
   margin-bottom: 8rpx;
   line-height: 1.45;
 }
@@ -253,16 +253,16 @@
   font-size: 26rpx;
   line-height: 1.45;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
 }
 
 /* 区块 */
 .section {
-  background: #fff;
+  background: #FFFFFF;
   margin: 20rpx 32rpx;
   padding: 30rpx;
   border-radius: 28rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .section-header {
@@ -276,19 +276,19 @@
   font-size: 32rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
 }
 
 .section-count {
   font-size: 24rpx;
   line-height: 1.45;
-  color: #999;
+  color: #929995;
 }
 
 .section-action {
   font-size: 26rpx;
   line-height: 1.45;
-  color: #2F9D8E;
+  color: #6AAE98;
 }
 
 /* 营养分析卡片 */
@@ -304,7 +304,7 @@
   align-items: flex-start;
   padding: 22rpx 24rpx;
   margin-bottom: 20rpx;
-  background: #F7F7F2;
+  background: #FAF8F5;
   border-radius: 20rpx;
 }
 
@@ -329,13 +329,13 @@
 .nutrition-name {
   width: 160rpx;
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
 }
 
 .nutrition-bar-wrap {
   flex: 1;
   height: 16rpx;
-  background: #F0F0F0;
+  background: #ECEFEB;
   border-radius: 8rpx;
   overflow: hidden;
   margin: 0 16rpx;
@@ -343,27 +343,27 @@
 
 .nutrition-bar {
   height: 100%;
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 8rpx;
 }
 
 .nutrition-bar.carbs {
-  background: #C58A52;
+  background: #F5E8BC;
 }
 
 .nutrition-bar.fat {
-  background: linear-gradient(90deg, #EF5350, #E53935);
+  background: #F28C72;
 }
 
 .nutrition-bar.fiber {
-  background: linear-gradient(90deg, #42A5F5, #1E88E5);
+  background: #6AAE98;
 }
 
 .nutrition-value {
   width: 100rpx;
   text-align: right;
   font-size: 26rpx;
-  color: #333;
+  color: #2F3432;
   font-weight: 500;
 }
 
@@ -383,7 +383,7 @@
   font-size: 28rpx;
   line-height: 1.45;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 18rpx;
 }
 
@@ -412,7 +412,7 @@
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
 }
 
 .combination-text,
@@ -447,8 +447,8 @@
   text-align: center;
   font-size: 22rpx;
   font-weight: 700;
-  color: #D65A28;
-  background: #FFF3ED;
+  color: #F28C72;
+  background: #F3DFE3;
   flex-shrink: 0;
 }
 
@@ -473,7 +473,7 @@
   display: flex;
   justify-content: space-between;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .ingredient-item:last-child {
@@ -481,16 +481,61 @@
 }
 
 .ingredient-name {
+  flex: 1;
+  min-width: 0;
+  padding-right: 24rpx;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .ingredient-amount {
+  flex-shrink: 0;
+  max-width: 38%;
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.6;
   text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.recipe-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.recipe-step-item {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.recipe-step-index {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  margin-right: 20rpx;
+  border-radius: 50%;
+  background: #E6F7ED;
+  color: #397A68;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 44rpx;
+  text-align: center;
+}
+
+.recipe-step-text {
+  flex: 1;
+  min-width: 0;
+  color: #626A66;
+  font-size: 28rpx;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* 底部操作栏 */
@@ -500,12 +545,14 @@
   left: 0;
   right: 0;
   height: 120rpx;
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40rpx;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  gap: 16rpx;
+  padding: 0 32rpx env(safe-area-inset-bottom);
+  box-shadow: none;
   z-index: 100;
 }
 
@@ -513,6 +560,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.return-bar-btn {
+  width: 112rpx;
+  min-height: 76rpx;
+  justify-content: center;
+  border: 1rpx solid #ECEFEB;
+  border-radius: 24rpx;
+  background: #FFFFFF;
+}
+
+.bar-primary-action {
+  flex: 1;
+  min-height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24rpx;
+  background: #6AAE98;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 700;
+  box-shadow: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
 }
 
 .bar-btn.active .bar-icon {
@@ -526,7 +596,7 @@
 
 .bar-text {
   font-size: 22rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.45;
 }
 
@@ -543,5 +613,5 @@
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 140rpx;
+  height: calc(140rpx + env(safe-area-inset-bottom));
 }

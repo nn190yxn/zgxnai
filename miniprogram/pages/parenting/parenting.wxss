@@ -2,14 +2,14 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
 /* 页面头部 */
 .page-header {
-  background: #E8F5F1;
-  border: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
   border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
@@ -42,7 +42,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 900;
-  color: #fff;
+  color: #FFFFFF;
   margin-bottom: 12rpx;
   position: relative;
   z-index: 1;
@@ -61,7 +61,7 @@
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  color: #FFFFFF;
   font-size: 23rpx;
   position: relative;
   z-index: 1;
@@ -78,10 +78,10 @@
 .search-input-wrap {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 40rpx;
   padding: 20rpx 28rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .search-icon {
@@ -91,7 +91,7 @@
 
 .search-placeholder {
   font-size: 28rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 模块 */
@@ -109,13 +109,13 @@
 .section-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
 }
 
 .section-tag {
   font-size: 22rpx;
-  color: #E9895B;
-  background: #FFF8E1;
+  color: #F28C72;
+  background: #F5E8BC;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
 }
@@ -124,13 +124,13 @@
   display: flex;
   align-items: center;
   font-size: 26rpx;
-  color: #666;
+  color: #626A66;
 }
 
 .more-arrow {
   font-size: 32rpx;
   margin-left: 4rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 分类网格 */
@@ -141,23 +141,23 @@
 }
 
 .category-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 32rpx 24rpx;
   text-align: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
 .category-card:active {
   transform: scale(0.97);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .card-icon-wrap {
   width: 96rpx;
   height: 96rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 24rpx;
   display: flex;
   align-items: center;
@@ -173,7 +173,7 @@
   display: block;
   font-size: 30rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -181,7 +181,7 @@
 .card-desc {
   display: block;
   font-size: 22rpx;
-  color: #999;
+  color: #929995;
   line-height: 1.6;
 }
 
@@ -192,11 +192,11 @@
   height: 300rpx;
   border-radius: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.16);
+  box-shadow: none;
 }
 
 .milestone-cover-placeholder {
-  background: #F0F3EE;
+  background: #FAF8F5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -223,19 +223,19 @@
 }
 
 .milestone-entry {
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 24rpx;
   padding: 32rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.3);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
 .milestone-entry:active {
   transform: scale(0.97);
-  box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, 0.2);
+  box-shadow: none;
 }
 
 .milestone-content {
@@ -256,7 +256,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #fff;
+  color: #FFFFFF;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -270,7 +270,7 @@
 
 .milestone-arrow {
   font-size: 36rpx;
-  color: #fff;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
@@ -300,14 +300,14 @@
   left: 0;
   right: 0;
   padding: 80rpx 24rpx 24rpx;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  background: rgba(47, 52, 50, 0.68);
 }
 
 .swiper-title {
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #fff;
+  color: #FFFFFF;
   margin-bottom: 12rpx;
   line-height: 1.45;
   overflow: hidden;
@@ -324,7 +324,7 @@
 
 .info-category {
   font-size: 22rpx;
-  color: #fff;
+  color: #FFFFFF;
   background: rgba(46, 125, 50, 0.9);
   padding: 4rpx 16rpx;
   border-radius: 16rpx;
@@ -344,10 +344,10 @@
 }
 
 .article-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   overflow: hidden;
   position: relative;
 }
@@ -362,7 +362,7 @@
   height: 150rpx;
   border-radius: 16rpx;
   flex-shrink: 0;
-  background: #f5f5f5;
+  background: #FAF8F5;
 }
 
 .article-content {
@@ -380,7 +380,7 @@
 .article-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -391,7 +391,7 @@
 
 .article-summary {
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   line-height: 1.7;
   margin-top: 10rpx;
   overflow: hidden;
@@ -417,13 +417,13 @@
 }
 
 .tag-primary {
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 .tag-accent {
-  background: #FFF8E1;
-  color: #E9895B;
+  background: #F5E8BC;
+  color: #F28C72;
 }
 
 .article-meta {
@@ -434,7 +434,7 @@
 
 .meta-item {
   font-size: 22rpx;
-  color: #999;
+  color: #929995;
   margin-right: 16rpx;
 }
 
@@ -450,7 +450,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .favorite-btn.active {
@@ -470,7 +470,7 @@
 
 .loading-text {
   font-size: 26rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 空状态 */
@@ -488,14 +488,14 @@
 
 .empty-text {
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   margin-bottom: 8rpx;
   line-height: 1.6;
 }
 
 .empty-desc {
   font-size: 24rpx;
-  color: #999;
+  color: #929995;
   text-align: center;
   max-width: 560rpx;
   line-height: 1.7;
@@ -508,7 +508,7 @@
   line-height: 1.45;
   border-radius: 8rpx;
   background: #2f7cf6;
-  color: #fff;
+  color: #FFFFFF;
   font-size: 24rpx;
   padding: 13rpx 20rpx;
 }
@@ -518,7 +518,7 @@
   text-align: center;
   padding: 30rpx 0;
   font-size: 26rpx;
-  color: #999;
+  color: #929995;
   line-height: 1.6;
 }
 

@@ -46,8 +46,20 @@
     </block>
   </view>
 
+  <view class="error-state" wx:if="{{loginRequired}}">
+    <text class="empty-title">登录后管理孩子档案</text>
+    <text class="empty-desc">完成微信登录后，可以添加和切换孩子。</text>
+    <button class="add-btn-primary" bindtap="retryLogin">去登录</button>
+  </view>
+
+  <view class="error-state compact-error" wx:elif="{{loadError}}">
+    <text class="empty-title">孩子档案暂时没加载出来</text>
+    <text class="empty-desc">{{loadError}}</text>
+    <button class="add-btn-primary" bindtap="retryLoad">重新加载</button>
+  </view>
+
   <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{!loading && children.length === 0}}">
+  <view class="empty-state" wx:if="{{!loading && !loadError && !loginRequired && children.length === 0}}">
     <text class="empty-icon">孩子</text>
     <text class="empty-title">还没有添加孩子档案</text>
     <text class="empty-desc">填好年龄和基本情况，建议会更贴合你家孩子</text>

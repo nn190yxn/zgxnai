@@ -2,22 +2,28 @@
 
 /* 主题变量 */
 page {
-  --primary: #2F9D8E;
-  --primary-light: #79C8BA;
-  --primary-bg: #E8F5F1;
-  --accent: #C58A52;
-  --text: #283936;
-  --text-secondary: #657773;
-  --text-muted: #99AAA5;
-  --bg: #F7F7F2;
+  --primary: #6AAE98;
+  --primary-light: #6AAE98;
+  --primary-bg: #E6F7ED;
+  --primary-deep: #397A68;
+  --accent: #F28C72;
+  --text: #2F3432;
+  --text-secondary: #626A66;
+  --text-muted: #929995;
+  --bg: #FAF8F5;
   --white: #FFFFFF;
-  --surface-soft: #F0F3EE;
-  --border: #DDE8E3;
-  --radius-card: 28rpx;
-  --radius-control: 18rpx;
-  --shadow-card: 0 10rpx 30rpx rgba(54, 83, 75, 0.08);
+  --surface-soft: #FAF8F5;
+  --border: #ECEFEB;
+  --category-study: #F5E8BC;
+  --category-emotion: #E7DDF2;
+  --category-language: #DDEBF3;
+  --category-social: #F3DFE3;
+  --category-body: #DDEDE5;
+  --radius-card: 32rpx;
+  --radius-control: 24rpx;
+  --shadow-floating: 0 8rpx 32rpx rgba(106, 174, 152, 0.12);
   
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
   font-size: 28rpx;
   line-height: 1.6;
   color: var(--text);
@@ -47,7 +53,7 @@ text {
 
 /* 通用容器 */
 .container {
-  padding: 24rpx;
+  padding: 32rpx;
 }
 
 /* 卡片 */
@@ -56,7 +62,8 @@ text {
   border-radius: var(--radius-card);
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: var(--shadow-card);
+  border: 1rpx solid var(--border);
+  box-shadow: none;
 }
 
 /* 按钮 */
@@ -87,15 +94,29 @@ text {
 }
 
 .page-header,
-.header,
+.header {
+  background: var(--white) !important;
+  color: var(--text) !important;
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-card) !important;
+  box-shadow: none;
+}
+
 .user-section,
-.membership-card,
+.membership-card {
+  background: var(--primary-bg) !important;
+  color: var(--text) !important;
+  border: 1rpx solid var(--border);
+  border-radius: var(--radius-card) !important;
+  box-shadow: none;
+}
+
 .core-hero-content {
   background: var(--primary-bg) !important;
   color: var(--text) !important;
   border: 1rpx solid var(--border);
   border-radius: var(--radius-card) !important;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-floating);
 }
 
 .page-header .page-title,
@@ -168,17 +189,17 @@ text {
 .record-card,
 .history-card {
   background: var(--white) !important;
-  border-color: var(--border) !important;
+  border: 1rpx solid var(--border) !important;
   border-radius: var(--radius-card) !important;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 .search-input-wrap,
 .note-box,
 input,
 textarea {
-  background: var(--surface-soft) !important;
-  border-color: var(--border) !important;
+  background: var(--white) !important;
+  border: 1rpx solid var(--border) !important;
   border-radius: var(--radius-control) !important;
   color: var(--text) !important;
 }
@@ -266,8 +287,8 @@ textarea {
 }
 
 .tag-accent {
-  background: #FFF8E1;
-  color: var(--accent);
+  background: var(--category-study);
+  color: var(--text);
 }
 
 /* 分割线 */
@@ -318,9 +339,8 @@ textarea {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
+  background: var(--border);
+  animation: skeleton-loading 1.5s ease-in-out infinite alternate;
   border-radius: 8rpx;
 }
 
@@ -350,6 +370,7 @@ textarea {
 .skeleton-card {
   background: var(--white);
   border-radius: 24rpx;
+  border: 1rpx solid var(--border);
   padding: 28rpx;
   margin-bottom: 24rpx;
 }
@@ -419,7 +440,7 @@ textarea {
 
 /* 图片占位符 */
 .image-placeholder {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  background: var(--border);
   display: flex;
   align-items: center;
   justify-content: center;

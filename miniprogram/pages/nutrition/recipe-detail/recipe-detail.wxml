@@ -241,8 +241,25 @@
       </view>
     </view>
 
+    <!-- 烹饪步骤 -->
+    <view class="section" wx:if="{{recipe.steps && recipe.steps.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">照着这样做</text>
+      </view>
+      <view class="recipe-step-list">
+        <view class="recipe-step-item" wx:for="{{recipe.steps}}" wx:key="index">
+          <text class="recipe-step-index">{{index + 1}}</text>
+          <text class="recipe-step-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部操作栏 -->
     <view class="bottom-bar">
+      <view class="bar-btn return-bar-btn" bindtap="returnToMainPath">
+        <text class="bar-text">返回</text>
+      </view>
+      <view class="bar-primary-action" bindtap="useRecipeMethod">使用这个食谱</view>
       <view class="bar-btn {{isFavorite ? 'active' : ''}}" bindtap="toggleFavorite">
         <text class="bar-icon">{{isFavorite ? '已收藏' : '收藏'}}</text>
         <text class="bar-text">{{isFavorite ? '已收藏' : '收藏'}}</text>

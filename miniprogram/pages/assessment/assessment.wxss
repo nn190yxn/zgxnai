@@ -2,14 +2,14 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
 /* 页面头部 */
 .page-header {
-  background: #E8F5F1;
-  border: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
   border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
@@ -42,7 +42,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 900;
-  color: #283936;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.35;
   position: relative;
@@ -51,7 +51,7 @@
 
 .page-subtitle {
   font-size: 26rpx;
-  color: #657773;
+  color: #626A66;
   line-height: 1.6;
   position: relative;
   z-index: 1;
@@ -61,11 +61,11 @@
 .child-info {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   margin: -20rpx 32rpx 24rpx;
   padding: 24rpx;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   position: relative;
   z-index: 2;
 }
@@ -73,12 +73,12 @@
 .child-avatar {
   width: 80rpx;
   height: 80rpx;
-  background: #CDE9E2;
+  background: #E6F7ED;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: #FFFFFF;
   font-size: 32rpx;
   font-weight: 700;
   margin-right: 20rpx;
@@ -92,7 +92,7 @@
   display: block;
   font-size: 30rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 4rpx;
   line-height: 1.45;
 }
@@ -106,7 +106,7 @@
 .history-entry {
   display: flex;
   align-items: center;
-  background: #FFF3ED;
+  background: #F3DFE3;
   min-height: 56rpx;
   padding: 12rpx 24rpx;
   border-radius: 32rpx;
@@ -121,7 +121,7 @@
 
 .history-text {
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 500;
   line-height: 1.45;
 }
@@ -134,7 +134,7 @@
   height: 36rpx;
   background: #FF5722;
   border-radius: 18rpx;
-  color: #fff;
+  color: #FFFFFF;
   font-size: 20rpx;
   display: flex;
   align-items: center;
@@ -143,11 +143,11 @@
 }
 
 .age-filter {
-  background: #fff;
+  background: #FFFFFF;
   margin: 0 32rpx 24rpx;
   padding: 24rpx;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .age-filter-header {
@@ -161,7 +161,7 @@
 .age-filter-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   flex-shrink: 0;
   line-height: 1.45;
 }
@@ -187,8 +187,8 @@
   margin-right: 14rpx;
   padding: 8rpx 20rpx;
   border-radius: 28rpx;
-  background: #F5F5F5;
-  color: #666;
+  background: #FAF8F5;
+  color: #626A66;
   font-size: 24rpx;
   font-weight: 600;
   line-height: 1.45;
@@ -196,9 +196,9 @@
 }
 
 .age-option.active {
-  background: #2F9D8E;
-  color: #fff;
-  box-shadow: 0 6rpx 16rpx rgba(255, 107, 53, 0.28);
+  background: #6AAE98;
+  color: #FFFFFF;
+  box-shadow: none;
 }
 
 /* 观察工具列表 */
@@ -212,22 +212,22 @@
 .assessment-card {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 28rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
 .assessment-card:active {
   transform: scale(0.98);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .card-icon-wrap {
   width: 100rpx;
   height: 100rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 24rpx;
   display: flex;
   align-items: center;
@@ -249,7 +249,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 10rpx;
   line-height: 1.45;
 }
@@ -283,17 +283,17 @@
 }
 
 .count-tag {
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 .time-tag {
-  background: #FFF8E1;
-  color: #E9895B;
+  background: #F5E8BC;
+  color: #F28C72;
 }
 
 .age-tag {
-  background: #E8F5E9;
+  background: #DDEDE5;
   color: #2E7D32;
 }
 
@@ -303,11 +303,11 @@
 }
 
 .empty-assessment {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 40rpx 28rpx;
   text-align: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .empty-title {
@@ -333,7 +333,7 @@
   line-height: 1.45;
   border-radius: 8rpx;
   background: #2f7cf6;
-  color: #fff;
+  color: #FFFFFF;
   font-size: 24rpx;
   padding: 12rpx 20rpx;
   box-sizing: border-box;
@@ -376,7 +376,7 @@
 .modal-container {
   width: 90%;
   max-width: 640rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 32rpx;
   overflow: hidden;
   animation: modalIn 0.3s ease;
@@ -397,7 +397,7 @@
   display: flex;
   align-items: center;
   padding: 32rpx;
-  background: #E8F5F1;
+  background: #E6F7ED;
   position: relative;
 }
 
@@ -410,7 +410,7 @@
   flex: 1;
   font-size: 36rpx;
   font-weight: 700;
-  color: #2F8175;
+  color: #397A68;
   line-height: 1.35;
 }
 
@@ -421,7 +421,7 @@
   align-items: center;
   justify-content: center;
   font-size: 40rpx;
-  color: #666;
+  color: #626A66;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
 }
@@ -444,7 +444,7 @@
 
 .intro-text {
   font-size: 30rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.6;
 }
 
@@ -460,7 +460,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding: 20rpx;
   border-radius: 16rpx;
 }
@@ -480,12 +480,12 @@
 .info-value {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
 .intro-tips {
-  background: #FFF8E1;
+  background: #F5E8BC;
   padding: 24rpx;
   border-radius: 16rpx;
 }
@@ -494,7 +494,7 @@
   display: block;
   font-size: 26rpx;
   font-weight: 600;
-  color: #E9895B;
+  color: #F28C72;
   margin-bottom: 12rpx;
   line-height: 1.45;
 }
@@ -507,7 +507,7 @@
 
 .tips-item {
   font-size: 24rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.7;
 }
 
@@ -523,8 +523,8 @@
   line-height: 1.45;
   text-align: center;
   font-size: 30rpx;
-  color: #666;
-  background: #F5F5F5;
+  color: #626A66;
+  background: #FAF8F5;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;
@@ -537,8 +537,8 @@
   text-align: center;
   font-size: 30rpx;
   font-weight: 600;
-  color: #fff;
-  background: #2F9D8E;
+  color: #FFFFFF;
+  background: #6AAE98;
   border-radius: 44rpx;
   padding: 20rpx 16rpx;
   box-sizing: border-box;

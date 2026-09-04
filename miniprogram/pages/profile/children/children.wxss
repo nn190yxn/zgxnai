@@ -2,13 +2,13 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 160rpx;
 }
 
 /* 顶部提示 */
 .header-tip {
-  background: #FFF9E6;
+  background: #F5E8BC;
   padding: 20rpx 32rpx;
   border-bottom: 1rpx solid #FFE58F;
 }
@@ -32,11 +32,11 @@
   display: flex;
   align-items: center;
   position: relative;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: none;
 }
 
 .child-card:active {
-  background: #FAFAFA;
+  background: #FAF8F5;
 }
 
 /* 星标按钮 */
@@ -53,7 +53,7 @@
 
 .star-icon {
   font-size: 40rpx;
-  color: #CCCCCC;
+  color: #929995;
 }
 
 .star-btn.active .star-icon {
@@ -65,7 +65,7 @@
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
-  background: #E8F5F1;
+  background: #E6F7ED;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,20 +100,20 @@
 .child-name {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
 .child-nickname {
   font-size: 26rpx;
-  color: #999999;
+  color: #929995;
   line-height: 1.45;
 }
 
 .default-badge {
   font-size: 20rpx;
   color: #FFFFFF;
-  background: #2F9D8E;
+  background: #6AAE98;
   padding: 4rpx 12rpx;
   border-radius: 20rpx;
   line-height: 1.45;
@@ -127,13 +127,13 @@
 
 .detail-item {
   font-size: 26rpx;
-  color: #666666;
+  color: #626A66;
   line-height: 1.5;
 }
 
 .detail-divider {
   font-size: 26rpx;
-  color: #CCCCCC;
+  color: #929995;
   margin: 0 16rpx;
   line-height: 1.5;
 }
@@ -147,8 +147,8 @@
 
 .tag {
   font-size: 22rpx;
-  color: #2F9D8E;
-  background: #FFF3ED;
+  color: #6AAE98;
+  background: #F3DFE3;
   padding: 6rpx 16rpx;
   border-radius: 20rpx;
   line-height: 1.45;
@@ -165,7 +165,7 @@
 
 .arrow-icon {
   font-size: 36rpx;
-  color: #CCCCCC;
+  color: #929995;
 }
 
 /* 空状态 */
@@ -177,6 +177,21 @@
   padding: 120rpx 60rpx;
 }
 
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 24rpx 32rpx;
+  padding: 64rpx 40rpx;
+  border: 1rpx solid #ECEFEB;
+  border-radius: 28rpx;
+  background: #FFFFFF;
+}
+
+.compact-error .empty-desc {
+  margin-bottom: 32rpx;
+}
+
 .empty-icon {
   font-size: 120rpx;
   margin-bottom: 32rpx;
@@ -184,21 +199,21 @@
 
 .empty-title {
   font-size: 32rpx;
-  color: #333333;
+  color: #2F3432;
   margin-bottom: 16rpx;
   line-height: 1.45;
 }
 
 .empty-desc {
   font-size: 26rpx;
-  color: #999999;
+  color: #929995;
   margin-bottom: 48rpx;
   text-align: center;
   line-height: 1.7;
 }
 
 .add-btn-primary {
-  background: #2F9D8E;
+  background: #6AAE98;
   color: #FFFFFF;
   font-size: 30rpx;
   padding: 24rpx 80rpx;
@@ -216,7 +231,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #999999;
+  color: #929995;
   line-height: 1.6;
 }
 
@@ -227,9 +242,10 @@
   left: 0;
   right: 0;
   background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -237,7 +253,7 @@
 
 .add-btn {
   width: 100%;
-  background: #2F9D8E;
+  background: #6AAE98;
   color: #FFFFFF;
   font-size: 30rpx;
   padding: 24rpx 0;
@@ -261,7 +277,7 @@
 
 .count-tip {
   font-size: 24rpx;
-  color: #999999;
+  color: #929995;
   margin-top: 16rpx;
   line-height: 1.6;
 }
@@ -272,7 +288,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #FFF9E6;
+  background: #F5E8BC;
   padding: 24rpx 32rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   text-align: center;

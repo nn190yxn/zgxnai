@@ -1,5 +1,5 @@
 .media-gallery { margin: 20rpx 0; }
 .media-item { overflow: hidden; border-radius: 16rpx; background: #f3f7f7; margin-bottom: 16rpx; }
 .media-item image { display: block; width: 100%; }
-.media-fallback { min-height: 100rpx; padding: 28rpx; color: #64747b; display: flex; align-items: center; }
-.media-caption { display: block; padding: 14rpx 18rpx; color: #64747b; font-size: 24rpx; }
+.media-fallback { min-height: 100rpx; padding: 28rpx; color: #626A66; display: flex; align-items: center; }
+.media-caption { display: block; padding: 14rpx 18rpx; color: #626A66; font-size: 24rpx; }

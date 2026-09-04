@@ -153,7 +153,7 @@
 | PUT | `/support/tickets/:id` | 更新状态、优先级、负责人和公开进展 |
 | POST | `/support/tickets/:id/callbacks` | 记录电话或其他方式的回访结果 |
 
-小程序侧的 `GET /feedback/history` 使用用户 JWT，只返回当前用户工单的状态和公开进展。后台客服写操作会同步生成工单事件和管理员审计记录。
+小程序侧的 `GET /feedback/history` 使用用户 JWT，只返回当前用户工单的状态、公开进展和 `callback_requested` 标识。`POST /feedback` 支持 `channel=callback_request`、`device_info` 和现有孩子、来源字段；申请回访时小程序要求填写手机号或微信号。后台客服写操作会同步生成工单事件和管理员审计记录，回访接口支持 `phone`、`wechat` 方式并同步更新工单状态和公开进展。
 
 ### 会员配置与用户运营
 

@@ -1,12 +1,18 @@
 <view class="page training-detail-page">
-  <view wx:if="{{task}}" class="detail-card"><text class="eyebrow">第{{task.dayIndex}}天 · {{task.durationMinutes}}分钟</text><text class="detail-title">{{task.title}}</text><text class="detail-objective">目标：{{task.objective}}</text>
+  <view wx:if="{{loadState === 'login_required'}}" class="detail-card state-card"><text class="detail-label">登录后查看训练内容</text><text class="state-copy">完成微信登录后，可以继续今天的练习并同步完成记录。</text><button class="complete-button" bindtap="loginAndReload">去登录</button></view>
+  <view wx:elif="{{loadState === 'profile_required'}}" class="detail-card state-card"><text class="detail-label">先完善孩子档案</text><text class="state-copy">填好年龄和基本情况后，再开始适合孩子的训练。</text><button class="complete-button" bindtap="goToChildSetup">去完善档案</button></view>
+  <view wx:elif="{{loading}}" class="detail-card state-card"><text class="detail-label">正在加载训练内容...</text><text class="state-copy">请稍等，我们正在准备今天的步骤。</text></view>
+  <view wx:elif="{{loadState === 'error'}}" class="detail-card state-card"><text class="detail-label">训练内容暂时没加载出来</text><text class="state-copy">{{errorMessage}}</text><button class="complete-button" bindtap="retryLoad">重新加载</button></view>
+  <view wx:elif="{{loadState === 'empty'}}" class="detail-card state-card"><text class="detail-label">这项训练暂时没有内容</text><text class="state-copy">返回成长页选择其他行动。</text><button class="return-button" bindtap="returnToMainPath">返回成长</button></view>
+  <view wx:if="{{loadState === 'ready' && task}}" class="detail-card"><text class="eyebrow">第{{task.dayIndex}}天 · {{task.durationMinutes}}分钟</text><text class="detail-title">{{task.title}}</text><text class="detail-objective">目标：{{task.objective}}</text>
     <view class="detail-section"><text class="detail-label">动作步骤</text><text wx:for="{{task.steps}}" wx:key="*this" class="step">{{index + 1}}. {{item}}</text></view>
     <view class="detail-section"><text class="detail-label">家长可以这样说</text><text class="prompt">{{task.parentPrompt}}</text></view>
     <view class="detail-section"><text class="detail-label">观察什么</text><text wx:for="{{task.observeSignals}}" wx:key="*this" class="signal">{{item}}</text></view>
     <text class="safety">安全提示：{{task.safetyNotice}}</text>
-    <button class="complete-button" bindtap="completeTask">{{task.completed ? '已完成' : (submitting ? '保存中...' : '标记完成')}}</button>
+    <button class="complete-button" loading="{{submitting}}" disabled="{{submitting}}" bindtap="completeTask">{{task.completed ? '已完成，返回成长' : (submitting ? '保存中...' : '完成今天练习')}}</button>
     <text wx:if="{{syncMessage}}" class="sync-status sync-{{syncStatus}}">{{syncMessage}}</text>
+    <button class="return-button" bindtap="returnToMainPath">返回上一页</button>
   </view>
-  <view class="feedback-card"><text class="detail-label">今天陪练得怎么样？</text><view class="feedback-list"><view wx:for="{{feedbackOptions}}" wx:key="key" class="feedback-option {{selectedFeedback === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectFeedback">{{item.label}}</view></view><textarea placeholder="补充一句观察（可选）" value="{{note}}" bindinput="onNoteInput"></textarea><button bindtap="submitFeedback">保存家长反馈</button></view>
-  <view wx:if="{{nextSuggestion}}" class="feedback-card"><text class="detail-label">下一次建议</text><text>{{nextSuggestion}}</text></view>
+  <view wx:if="{{loadState === 'ready' && task}}" class="feedback-card"><text class="detail-label">今天陪练得怎么样？</text><view class="feedback-list"><view wx:for="{{feedbackOptions}}" wx:key="key" class="feedback-option {{selectedFeedback === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectFeedback">{{item.label}}</view></view><textarea placeholder="补充一句观察（可选）" value="{{note}}" bindinput="onNoteInput"></textarea><button bindtap="submitFeedback">保存家长反馈</button></view>
+  <view wx:if="{{loadState === 'ready' && nextSuggestion}}" class="feedback-card"><text class="detail-label">下一次建议</text><text>{{nextSuggestion}}</text></view>
 </view>

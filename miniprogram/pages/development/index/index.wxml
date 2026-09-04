@@ -49,7 +49,7 @@
   </view>
 
   <view class="zone-grid">
-    <view wx:for="{{zones}}" wx:key="code" class="zone-card" data-zone="{{item.code}}" bindtap="openZone" style="border-color: {{item.color}}; background: {{item.tint}};">
+    <view wx:for="{{zones}}" wx:key="code" class="zone-card" data-zone="{{item.code}}" bindtap="openZone" style="background: {{item.tint}};">
       <view class="zone-card-head">
         <text class="zone-title">{{item.title}}</text>
         <text class="zone-arrow">></text>

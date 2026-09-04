@@ -18,7 +18,9 @@ Page({
     hasMore: false,
     page: 1,
     pageSize: 10,
-    requestSeq: 0
+    requestSeq: 0,
+    errorMessage: '',
+    partialMessage: ''
   },
 
   decodeQueryValue: function(value) {
@@ -236,7 +238,9 @@ Page({
       keyword: keyword,
       searchResults: [],
       sceneSolutions: [],
-      matchedScene: null
+      matchedScene: null,
+      errorMessage: '',
+      partialMessage: ''
     });
 
     if (app.shouldUseMockFallback()) {
@@ -275,8 +279,10 @@ Page({
         url: '/search/solutions',
         method: 'GET',
         data: Object.assign({ keyword: keyword }, sceneKey ? { sceneKey: sceneKey } : {}, ageGroup ? { ageGroup: ageGroup } : {}, coreQuery)
-      }).catch(function() {
-        return { matched: false, scene: null, solutions: [], articles: [] };
+      }).then(function(value) {
+        return { ok: true, value: value };
+      }).catch(function(err) {
+        return { ok: false, error: err, value: { matched: false, scene: null, solutions: [], articles: [] } };
       }),
       app.request({
         url: '/parenting/search',
@@ -286,16 +292,30 @@ Page({
           page: 1,
           page_size: that.data.pageSize
         }, ageGroup ? { age_group: ageGroup } : {}, category ? { category: category } : {}, coreQuery)
-      }).catch(function() {
-        return [];
+      }).then(function(value) {
+        return { ok: true, value: value };
+      }).catch(function(err) {
+        return { ok: false, error: err, value: [] };
       })
     ]).then(function(result) {
       if (requestSeq !== that.data.requestSeq) {
         return;
       }
-      var sceneResult = result[0] || {};
+      var sceneRequest = result[0] || {};
+      var articleRequest = result[1] || {};
+      if (!sceneRequest.ok && !articleRequest.ok) {
+        that.setData({
+          errorMessage: app.getApiErrorMessage(sceneRequest.error || articleRequest.error, '搜索暂时没有响应，请再试一次'),
+          partialMessage: '',
+          matchedScene: null,
+          sceneSolutions: [],
+          searchResults: []
+        });
+        return;
+      }
+      var sceneResult = sceneRequest.value || {};
       var fallbackArticles = Array.isArray(sceneResult.articles) ? sceneResult.articles : [];
-      var list = fallbackArticles.length ? fallbackArticles : (result[1] || []);
+      var list = fallbackArticles.length ? fallbackArticles : (articleRequest.value || []);
       list = list.map(function(item) {
         return that.normalizeArticleCard(item);
       });
@@ -303,6 +323,8 @@ Page({
         matchedScene: sceneResult.scene || null,
         sceneSolutions: sceneResult.solutions || [],
         searchResults: list,
+        errorMessage: '',
+        partialMessage: (!sceneRequest.ok || !articleRequest.ok) ? '部分内容暂时没有加载，已先展示可用结果。' : '',
         hasMore: list.length >= that.data.pageSize,
         page: 2
       });
@@ -325,6 +347,10 @@ Page({
       }
       that.setData({ loading: false });
     });
+  },
+
+  retrySearch: function() {
+    this.doSearch(this.data.coreActionContext || { keyword: this.data.keyword });
   },
 
   onSceneTap: function(e) {
@@ -364,7 +390,11 @@ Page({
       showResults: false,
       searchResults: [],
       sceneSolutions: [],
-      matchedScene: null
+      matchedScene: null,
+      errorMessage: '',
+      partialMessage: '',
+      loading: false,
+      requestSeq: this.data.requestSeq + 1
     });
   },
 

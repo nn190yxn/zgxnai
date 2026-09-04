@@ -11,8 +11,9 @@ Page({
   loadData: function() {
     var that = this;
     var child = app.getCurrentChild && app.getCurrentChild();
-    if (!child || !child.id) { that.setData({ loading: false, error: '请先完善孩子档案', dataStatus: 'profile_required' }); return; }
-    that.setData({ child: child, loading: true, error: '' });
+    if (!wx.getStorageSync('token')) { that.setData({ child: child || null, task: null, plans: [], loading: false, error: '', dataStatus: 'login_required' }); return; }
+    if (!child || !child.id) { that.setData({ child: null, task: null, plans: [], loading: false, error: '', dataStatus: 'profile_required' }); return; }
+    that.setData({ child: child, task: null, loading: true, error: '', dataStatus: 'loading' });
     Promise.all([
       app.request({ url: '/training-plans/next?childId=' + child.id, method: 'GET' }),
       app.request({ url: '/training-plans?childId=' + child.id, method: 'GET' })
@@ -25,6 +26,27 @@ Page({
         app.trackKbEvent({ event_type: 'training_task_view', action_id: 'training:' + task.childId + ':' + task.id, plan_id: task.planId, ability_codes: [task.abilityDomain], source_module: 'training', source_page: 'training_index', source_content_type: 'training_task', source_content_id: String(task.id) });
       }
     }).catch(function() { that.setData({ loading: false, error: '训练计划暂时没加载出来，请重试', dataStatus: 'error' }); });
+  },
+
+  retryLoad: function() {
+    this.loadData();
+  },
+
+  loginAndReload: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再查看训练计划').then(function(canOperate) {
+      if (canOperate) that.loadData();
+    });
+  },
+
+  goToChildSetup: function() {
+    app.requireLoginForAction('请先完成微信登录，再完善孩子档案').then(function(canOperate) {
+      if (canOperate) wx.navigateTo({ url: '/pages/profile/children/children' });
+    });
+  },
+
+  goToObservation: function() {
+    wx.navigateTo({ url: '/pages/assessment/assessment' });
   },
 
   openTask: function() {

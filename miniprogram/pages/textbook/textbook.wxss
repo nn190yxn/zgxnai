@@ -2,14 +2,14 @@
 
 .page {
   min-height: 100vh;
-  background: #F5F5F5;
+  background: #FAF8F5;
   padding-bottom: 40rpx;
 }
 
 /* 页面头部 */
 .page-header {
-  background: #E8F5F1;
-  border: 1rpx solid #DDE8E3;
+  background: #E6F7ED;
+  border: 1rpx solid #ECEFEB;
   border-radius: 28rpx;
   padding: 48rpx 32rpx 40rpx;
   position: relative;
@@ -42,7 +42,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 900;
-  color: #283936;
+  color: #2F3432;
   margin-bottom: 12rpx;
   line-height: 1.35;
   position: relative;
@@ -51,7 +51,7 @@
 
 .page-subtitle {
   font-size: 26rpx;
-  color: #657773;
+  color: #626A66;
   line-height: 1.6;
   position: relative;
   z-index: 1;
@@ -60,18 +60,18 @@
 /* 能力成长任务 */
 .reading-task-section {
   margin: 0 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 8rpx 0 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .reading-empty-section {
   margin: 0 32rpx 24rpx;
   padding: 28rpx;
   border-radius: 24rpx;
-  background: #fff;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  background: #FFFFFF;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
@@ -79,7 +79,7 @@
   display: block;
   font-size: 30rpx;
   line-height: 1.45;
-  color: #2F241F;
+  color: #2F3432;
   font-weight: 800;
 }
 
@@ -104,8 +104,8 @@
   min-width: 0;
   min-height: 72rpx;
   border-radius: 18rpx;
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   font-size: 26rpx;
   line-height: 72rpx;
   text-align: center;
@@ -114,7 +114,7 @@
 }
 
 .reading-empty-btn.secondary {
-  background: #FFF3ED;
+  background: #F3DFE3;
   color: #A9512E;
 }
 
@@ -188,7 +188,7 @@
 
 .reading-task-status {
   font-size: 22rpx;
-  color: #999;
+  color: #929995;
   margin-left: auto;
   line-height: 1.45;
 }
@@ -200,7 +200,7 @@
 .reading-task-title {
   display: block;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
   font-weight: 600;
   margin-bottom: 8rpx;
   line-height: 1.45;
@@ -209,7 +209,7 @@
 .reading-task-age {
   font-size: 20rpx;
   color: #A08C86;
-  background: #FAF6F3;
+  background: #FAF8F5;
   padding: 4rpx 10rpx;
   border-radius: 10rpx;
   line-height: 1.45;
@@ -218,7 +218,7 @@
 .reading-task-material {
   display: block;
   font-size: 23rpx;
-  color: #5F514C;
+  color: #626A66;
   line-height: 1.75;
   margin-bottom: 8rpx;
 }
@@ -235,7 +235,7 @@
   margin: 14rpx 0;
   padding: 16rpx;
   border-radius: 12rpx;
-  background: #FAF6F3;
+  background: #FAF8F5;
 }
 
 .reading-task-step {
@@ -259,7 +259,7 @@
   margin: 12rpx 0;
   padding: 16rpx;
   border-radius: 12rpx;
-  background: #E8F5F1;
+  background: #E6F7ED;
 }
 
 .example-title {
@@ -271,7 +271,7 @@
 }
 
 .example-bubble {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 8rpx;
   padding: 12rpx;
   font-size: 22rpx;
@@ -291,7 +291,7 @@
 .tips-title {
   display: block;
   font-size: 20rpx;
-  color: #E9895B;
+  color: #F28C72;
   font-weight: 600;
   margin-bottom: 10rpx;
   line-height: 1.45;
@@ -322,7 +322,7 @@
 
 .task-action-btn {
   font-size: 22rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   line-height: 1.45;
 }
 
@@ -340,10 +340,10 @@
 
 .recording-section {
   margin: 0 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 8rpx 0 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .recording-card {
@@ -353,7 +353,7 @@
 .recording-tip {
   display: block;
   font-size: 22rpx;
-  color: #666;
+  color: #626A66;
   line-height: 1.7;
 }
 
@@ -388,10 +388,10 @@
 .reading-report-section,
 .reading-script-section {
   margin: 0 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 8rpx 0 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .reading-report-card,
@@ -402,7 +402,7 @@
 .reading-report-line {
   display: block;
   font-size: 24rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.8;
 }
 
@@ -417,7 +417,7 @@
 .reading-script-item {
   display: block;
   font-size: 24rpx;
-  color: #333;
+  color: #2F3432;
   line-height: 1.8;
   margin-bottom: 8rpx;
 }
@@ -429,13 +429,13 @@
 /* 年级选择 */
 .grade-selector {
   margin: -20rpx 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 20rpx;
   padding: 24rpx 28rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   position: relative;
   z-index: 10;
 }
@@ -455,7 +455,7 @@
 .grade-value {
   font-size: 32rpx;
   font-weight: 700;
-  color: #2F9D8E;
+  color: #6AAE98;
   line-height: 1.35;
 }
 
@@ -475,23 +475,23 @@
 .section-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
 .section-more {
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   line-height: 1.45;
 }
 
 /* 成长进度概览 */
 .progress-section {
   margin: 0 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .progress-cards {
@@ -517,7 +517,7 @@
 }
 
 .progress-card.mastered {
-  background: #E8F5F1;
+  background: #E6F7ED;
 }
 
 .progress-card.learning {
@@ -532,12 +532,12 @@
   display: block;
   font-size: 44rpx;
   font-weight: 900;
-  color: #333;
+  color: #2F3432;
   line-height: 1.2;
 }
 
 .progress-card.mastered .progress-num {
-  color: #2F9D8E;
+  color: #6AAE98;
 }
 
 .progress-card.learning .progress-num {
@@ -551,7 +551,7 @@
 .progress-label {
   display: block;
   font-size: 22rpx;
-  color: #666;
+  color: #626A66;
   margin-top: 8rpx;
   line-height: 1.45;
 }
@@ -564,7 +564,7 @@
 .progress-bar {
   flex: 1;
   height: 16rpx;
-  background: #E8E8E8;
+  background: #ECEFEB;
   border-radius: 8rpx;
   overflow: hidden;
   margin-right: 16rpx;
@@ -572,14 +572,14 @@
 
 .progress-fill {
   height: 100%;
-  background: #2F9D8E;
+  background: #6AAE98;
   border-radius: 8rpx;
   transition: width 0.3s ease;
 }
 
 .progress-rate {
   font-size: 24rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -587,10 +587,10 @@
 /* 今日成长任务 */
 .task-section {
   margin: 0 32rpx 24rpx;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 8rpx 0;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
 }
 
 .task-count {
@@ -608,7 +608,7 @@
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
 }
 
 .task-item:last-child {
@@ -622,7 +622,7 @@
 .task-icon-wrap {
   width: 80rpx;
   height: 80rpx;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 20rpx;
   display: flex;
   align-items: center;
@@ -667,19 +667,19 @@
 }
 
 .task-status.in_progress {
-  background: #E3F2FD;
+  background: #DDEBF3;
   color: #2F80ED;
 }
 
 .task-status.completed {
-  background: #FFF3ED;
-  color: #2F9D8E;
+  background: #F3DFE3;
+  color: #6AAE98;
 }
 
 .task-title {
   display: block;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
   font-weight: 500;
   line-height: 1.45;
   overflow: hidden;
@@ -698,7 +698,7 @@
 .task-progress-bar {
   flex: 1;
   height: 8rpx;
-  background: #E8E8E8;
+  background: #ECEFEB;
   border-radius: 4rpx;
   overflow: hidden;
   margin-right: 12rpx;
@@ -737,22 +737,22 @@
 .subject-card {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 28rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: none;
   transition: all 0.3s;
 }
 
 .subject-card:active {
   transform: scale(0.98);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .card-icon-wrap {
   width: 96rpx;
   height: 96rpx;
-  background: #FFF3ED;
+  background: #F3DFE3;
   border-radius: 24rpx;
   display: flex;
   align-items: center;
@@ -774,7 +774,7 @@
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   margin-bottom: 8rpx;
   line-height: 1.45;
 }
@@ -822,7 +822,7 @@
 /* 年级选择弹窗 */
 .grade-picker-modal {
   width: 100%;
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 32rpx 32rpx 0 0;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -832,14 +832,14 @@
   align-items: center;
   justify-content: center;
   padding: 32rpx;
-  border-bottom: 1rpx solid #F0F0F0;
+  border-bottom: 1rpx solid #ECEFEB;
   position: relative;
 }
 
 .modal-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #333;
+  color: #2F3432;
   line-height: 1.45;
 }
 
@@ -864,16 +864,16 @@
   padding: 28rpx 24rpx;
   border-radius: 16rpx;
   margin-bottom: 12rpx;
-  background: #F8F8F8;
+  background: #FAF8F5;
   transition: all 0.2s;
 }
 
 .grade-option.active {
-  background: #FFF3ED;
+  background: #F3DFE3;
 }
 
 .grade-option:active {
-  background: #F0F0F0;
+  background: #ECEFEB;
 }
 
 .grade-option.active:active {
@@ -882,19 +882,19 @@
 
 .grade-option-text {
   font-size: 30rpx;
-  color: #333;
+  color: #2F3432;
   font-weight: 500;
   line-height: 1.45;
 }
 
 .grade-option.active .grade-option-text {
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 700;
 }
 
 .grade-option-check {
   font-size: 32rpx;
-  color: #2F9D8E;
+  color: #6AAE98;
   font-weight: 700;
 }
 

@@ -1,13 +1,13 @@
 .page {
   min-height: 100vh;
-  background: #F7F7F2;
+  background: #FAF8F5;
   padding: 24rpx;
   box-sizing: border-box;
 }
 
 .summary-card,
 .content-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 24rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -19,7 +19,7 @@
 .content-title {
   font-size: 32rpx;
   line-height: 1.45;
-  color: #2c2623;
+  color: #2F3432;
   font-weight: 700;
   word-break: break-word;
 }
@@ -27,7 +27,7 @@
 .summary-range {
   display: block;
   margin-top: 14rpx;
-  color: #9a8f87;
+  color: #929995;
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -37,8 +37,8 @@
   margin-top: 16rpx;
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  background: #fff1ea;
-  color: #d65a1f;
+  background: #F3DFE3;
+  color: #F28C72;
   font-size: 22rpx;
   line-height: 1.45;
 }
@@ -55,7 +55,7 @@
 }
 
 .summary-badge-active {
-  background: #eef8ee;
+  background: #DDEDE5;
   color: #2f8f46;
 }
 
@@ -68,7 +68,7 @@
 .content-summary {
   display: block;
   margin-top: 16rpx;
-  color: #6c625b;
+  color: #626A66;
   font-size: 26rpx;
   line-height: 1.7;
   word-break: break-word;
@@ -79,8 +79,8 @@
   text-align: center;
   padding: 22rpx 24rpx;
   border-radius: 18rpx;
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
   font-size: 28rpx;
   line-height: 1.45;
   box-sizing: border-box;
@@ -105,7 +105,7 @@
   padding: 22rpx 24rpx;
   border-radius: 18rpx;
   background: #f4efe6;
-  color: #6c625b;
+  color: #626A66;
   font-size: 28rpx;
   line-height: 1.45;
   box-sizing: border-box;
@@ -155,7 +155,7 @@
 .dimension-fill {
   height: 100%;
   border-radius: 999rpx;
-  background: #2F9D8E;
+  background: #6AAE98;
 }
 
 .trend-row {
@@ -183,7 +183,7 @@
 }
 
 .trend-down {
-  color: #d65a1f;
+  color: #F28C72;
 }
 
 .trend-stable {
@@ -200,8 +200,8 @@
 .zone-chip {
   padding: 10rpx 16rpx;
   border-radius: 999rpx;
-  background: #fff1ea;
-  color: #d65a1f;
+  background: #F3DFE3;
+  color: #F28C72;
   font-size: 22rpx;
   line-height: 1.45;
 }

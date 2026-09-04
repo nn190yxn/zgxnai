@@ -11,7 +11,14 @@
     </view>
   </view>
 
-  <block wx:else>
+  <view class="result-state-card" wx:elif="{{loadState === 'error' || loadState === 'empty'}}">
+    <text class="result-state-title">{{loadState === 'empty' ? '观察结果没找到' : '观察结果暂时没加载出来'}}</text>
+    <text class="result-state-copy">{{errorMessage}}</text>
+    <view class="result-state-actions"><button wx:if="{{recordId}}" bindtap="retryLoad">重新加载</button><button class="secondary" bindtap="goBack">返回观察</button></view>
+  </view>
+
+  <block wx:elif="{{loadState === 'ready'}}">
+    <view class="result-context-tip" wx:if="{{localFallbackMessage}}">{{localFallbackMessage}}</view>
     <!-- 报告头部 -->
     <view class="report-header">
       <view class="header-bg"></view>
@@ -27,7 +34,7 @@
       <view class="score-card">
         <view class="score-circle">
           <view class="circle-bg">
-            <view class="circle-progress" style="background: conic-gradient({{levelColor}} {{percentage * 3.6}}deg, #E8E8E8 {{percentage * 3.6}}deg);"></view>
+            <view class="circle-progress" style="background: conic-gradient({{levelColor}} {{percentage * 3.6}}deg, #ECEFEB {{percentage * 3.6}}deg);"></view>
             <view class="circle-inner">
               <text class="score-number">{{percentage}}</text>
               <text class="score-unit">分</text>
@@ -63,7 +70,7 @@
               <text class="dimension-score">{{item.displayScore || item.score + '分'}}</text>
           </view>
           <view class="dimension-bar">
-            <view class="bar-fill" style="width: {{item.score}}%; background: {{item.score >= 70 ? '#FF6B35' : item.score >= 50 ? '#FFA000' : '#FF5722'}};"></view>
+            <view class="bar-fill" style="width: {{item.score}}%; background: {{item.score >= 70 ? '#6AAE98' : item.score >= 50 ? '#F28C72' : '#FF5722'}};"></view>
           </view>
         </view>
       </view>
@@ -161,12 +168,15 @@
       <view class="btn-primary" bindtap="redoAssessment">重新作答</view>
     </view>
 
-    <view class="section experience-plan-section">
+    <view class="section experience-plan-section" wx:if="{{!needsChildSetup}}">
       <view class="membership-cta-card">
         <text class="cta-title">把观察变成3天小练习</text>
         <text class="cta-desc">每天5-8分钟，记录一次具体表现。</text>
         <view class="cta-btn" bindtap="startExperiencePlan">{{trainingPlanLoading ? '正在生成...' : '开始3天体验'}}</view>
       </view>
+    </view>
+    <view class="section experience-plan-section" wx:else>
+      <view class="membership-cta-card"><text class="cta-title">先完善孩子档案</text><text class="cta-desc">添加孩子后，可以把这次观察变成3天小练习。</text><view class="cta-btn" bindtap="goToChildSetup">去完善档案</view></view>
     </view>
 
     <!-- 底部提示 -->

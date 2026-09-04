@@ -8,7 +8,8 @@ Page({
     childId: 0,
     loading: false,
     summary: null,
-    errorMessage: ''
+    errorMessage: '',
+    loginRequired: false
   },
 
   getDimensionLabel: function(key) {
@@ -148,10 +149,21 @@ Page({
   },
 
   onShow: function() {
-    this.bootstrap();
+    if (!this._hasShown) {
+      this._hasShown = true;
+      return;
+    }
+    var child = app.restoreCurrentChildFromStorage ? app.restoreCurrentChildFromStorage() : (app.getCurrentChild ? app.getCurrentChild() : null);
+    var childId = Number((child && child.id) || 0);
+    this.setData({ childId: childId, currentChild: child || null, summary: null, errorMessage: '' });
+    this.bootstrap({ childId: childId });
   },
 
   bootstrap: function(options) {
+    if (!wx.getStorageSync('token')) {
+      this.setData({ currentChild: null, childId: 0, loading: false, summary: null, errorMessage: '', loginRequired: true });
+      return;
+    }
     var childId = Number((options && options.childId) || this.data.childId || 0);
     var child = app.restoreCurrentChildFromStorage ? app.restoreCurrentChildFromStorage() : (app.getCurrentChild ? app.getCurrentChild() : app.normalizeChild(wx.getStorageSync('currentChild') || null));
     if (!childId && child && child.id) {
@@ -162,7 +174,8 @@ Page({
         currentChild: null,
         childId: 0,
         loading: false,
-        summary: null
+        summary: null,
+        loginRequired: false
       });
       if (app.ensureCurrentChild) {
         app.ensureCurrentChild().then(function(nextChild) {
@@ -177,7 +190,8 @@ Page({
     }
     this.setData({
       childId: childId,
-      currentChild: child && Number(child.id || 0) === childId ? child : this.data.currentChild
+      currentChild: child && Number(child.id || 0) === childId ? child : this.data.currentChild,
+      loginRequired: false
     });
     this.loadSummary();
   },
@@ -187,6 +201,8 @@ Page({
     if (!this.data.childId) {
       return;
     }
+    var requestId = (this._summaryRequestId || 0) + 1;
+    this._summaryRequestId = requestId;
     this.setData({ loading: true });
     this.setData({ errorMessage: '' });
     app.request({
@@ -194,6 +210,7 @@ Page({
       method: 'GET',
       data: { childId: this.data.childId }
     }).then(function(data) {
+      if (requestId !== that._summaryRequestId) return;
       if (data) {
         that.clearPendingCoreWeeklySummary();
         that.applySummary(data, 'api');
@@ -210,6 +227,7 @@ Page({
       }
       that.applySummary(that.getPendingCoreWeeklySummary({ consume: true }), 'core_action_fallback');
     }).catch(function(err) {
+      if (requestId !== that._summaryRequestId) return;
       var fallback = that.getPendingCoreWeeklySummary({ consume: true });
       if (fallback) {
         that.applySummary(fallback, 'core_action_fallback');
@@ -229,7 +247,7 @@ Page({
         });
       }
     }).finally(function() {
-      that.setData({ loading: false });
+      if (requestId === that._summaryRequestId) that.setData({ loading: false });
     });
   },
 
@@ -315,6 +333,13 @@ Page({
         return;
       }
       wx.navigateTo({ url: '/pages/profile/child-edit/child-edit' });
+    });
+  },
+
+  loginAndReload: function() {
+    var that = this;
+    app.requireLoginForAction('请先完成微信登录，再查看成长总结').then(function(canOperate) {
+      if (canOperate) that.bootstrap();
     });
   },
 

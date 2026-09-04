@@ -23,6 +23,7 @@ const { safeObject } = require('./operations-analytics');
 const { responseMeta, sendSuccess, sendError } = require('./api-response');
 const { registerPlatformRoutes, registerPublicRoutes } = require('./platform-routes');
 const releaseProtection = require('./release-protection');
+const supportTickets = require('./support-tickets');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -444,6 +445,8 @@ async function feedbackSubmitHandler(req, res) {
   const type = String((req.body && req.body.type) || '其他');
   const content = String((req.body && req.body.content) || '').trim();
   const contact = String((req.body && req.body.contact) || '').trim();
+  const channel = String(req.body && req.body.channel || 'feedback').slice(0, 32);
+  const deviceInfo = supportTickets.normalizeDeviceInfo(req.body && (req.body.device_info || req.body.deviceInfo));
 
   if (!content || content.length < 5) {
     res.status(400).json({ success: false, message: '反馈内容不能少于5个字' });
@@ -460,13 +463,14 @@ async function feedbackSubmitHandler(req, res) {
       'INSERT INTO feedbacks (user_id, type, content, contact) VALUES (?, ?, ?, ?)',
       [userId, finalType, content, contact]
     );
-    await connection.execute(
+    const [ticketResult] = await connection.execute(
       `INSERT INTO support_tickets
-       (feedback_id, user_id, child_id, type, content, contact, source_page, channel)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [feedbackResult.insertId, userId, Number(req.body && (req.body.child_id || req.body.childId)) || null, finalType, content, contact, String(req.body && (req.body.source_page || req.body.sourcePage) || '').slice(0, 128), String(req.body && req.body.channel || 'feedback').slice(0, 32)]
+       (feedback_id, user_id, child_id, type, content, contact, source_page, channel, device_info)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [feedbackResult.insertId, userId, Number(req.body && (req.body.child_id || req.body.childId)) || null, finalType, content, contact, String(req.body && (req.body.source_page || req.body.sourcePage) || '').slice(0, 128), channel, JSON.stringify(deviceInfo)]
     );
     await connection.commit();
+    res.json({ success: true, message: '感谢你的反馈！', data: { ticket_id: ticketResult.insertId, status: 'pending', callback_requested: channel === 'callback_request' } });
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -474,7 +478,6 @@ async function feedbackSubmitHandler(req, res) {
     connection.release();
   }
 
-  res.json({ success: true, message: '感谢你的反馈！' });
 }
 
 async function feedbackListHandler(req, res) {

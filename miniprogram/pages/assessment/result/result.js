@@ -20,7 +20,7 @@ Page({
     maxScore: 0,
     percentage: 0,
     level: '',
-    levelColor: '#FF6B35',
+    levelColor: '#6AAE98',
 
     // 维度得分
     dimensions: [],
@@ -45,6 +45,10 @@ Page({
 
     // 加载状态
     loading: true,
+    loadState: 'loading',
+    errorMessage: '',
+    localFallbackMessage: '',
+    needsChildSetup: false,
     showMembershipPrompt: false
   },
 
@@ -86,7 +90,7 @@ Page({
         title: '观察结果没找到',
         icon: 'none'
       });
-      that.scheduleNavigateBack(1500);
+      that.setData({ loading: false, loadState: 'empty', errorMessage: '结果入口缺少记录编号' });
       return;
     }
 
@@ -103,6 +107,7 @@ Page({
   // 加载结果数据
   loadResult: function(recordId, isLocal) {
     var that = this;
+    that.setData({ loading: true, loadState: 'loading', errorMessage: '', localFallbackMessage: '' });
 
     if (isLocal) {
       that.loadLocalResult(recordId);
@@ -113,22 +118,25 @@ Page({
   },
 
   // 从本地加载结果
-  loadLocalResult: function(recordId) {
+  loadLocalResult: function(recordId, fallbackError) {
     var that = this;
     var records = wx.getStorageSync('assessmentRecords') || wx.getStorageSync('assessmentHistory') || [];
     var expectedChildId = String(this.data.childId || (app.getCurrentChild && app.getCurrentChild() || {}).id || '');
     var record = records.find(function(r) {
-      return r.recordId === recordId && (!expectedChildId || String(r.childId || '') === expectedChildId);
+      return String(r.recordId || '') === String(recordId || '') && (!expectedChildId || String(r.childId || '') === expectedChildId);
     });
 
     if (record) {
       that.processResult(record);
+      if (fallbackError) {
+        that.setData({ localFallbackMessage: '在线结果暂时没有刷新，当前展示已保存在本机的记录。' });
+      }
     } else {
-      wx.showToast({
-        title: '未找到记录',
-        icon: 'none'
+      that.setData({
+        loading: false,
+        loadState: 'error',
+        errorMessage: fallbackError ? app.getApiErrorMessage(fallbackError, '观察结果暂时没加载出来') : '这条观察记录可能已清理或属于其他孩子'
       });
-      that.scheduleNavigateBack(1500);
     }
   },
 
@@ -148,7 +156,7 @@ Page({
       that.processResult(that.normalizeServerResult(res));
     }).catch(function(err) {
       // 从服务器加载失败，尝试本地
-      that.loadLocalResult(recordId);
+      that.loadLocalResult(recordId, err);
     });
   },
 
@@ -319,7 +327,10 @@ Page({
       ageNote: reportData.ageNote || '',
       expectedByAge: reportData.expectedByAge || '',
       priorityFocus: reportData.priorityFocus || '',
-      loading: false
+      loading: false,
+      loadState: 'ready',
+      errorMessage: '',
+      needsChildSetup: !(app.getCurrentChild && app.getCurrentChild() && app.getCurrentChild().id)
     });
     if (!that._profileViewTracked && app.trackKbEvent) {
       that._profileViewTracked = true;
@@ -380,16 +391,16 @@ Page({
   // 获取评级颜色
   getLevelColor: function(level) {
     var colors = {
-      '优秀': '#FF6B35',
-      '良好': '#FF7E4B',
-      '中等': '#FFA000',
-      '正常': '#FFA000',
+      '优秀': '#6AAE98',
+      '良好': '#397A68',
+      '中等': '#F28C72',
+      '正常': '#F28C72',
       '需关注': '#FF5722',
       '轻度失调': '#FF5722',
       '需干预': '#D32F2F',
       '中度失调': '#D32F2F'
     };
-    return colors[level] || '#FF6B35';
+    return colors[level] || '#6AAE98';
   },
 
   // 生成解读文字
@@ -719,8 +730,9 @@ Page({
           summary: summary,
           source_id: 'assessment_' + (that.data.recordId || that.data.assessmentCode)
         }
-      });
-    }).then(function() {
+      }).then(function() { return true; });
+    }).then(function(saved) {
+      if (!saved) return;
       wx.showToast({ title: '已保存到成长记录', icon: 'success' });
       if (app.trackKbEvent) {
         app.trackKbEvent({
@@ -738,7 +750,11 @@ Page({
   startExperiencePlan: function() {
     var that = this;
     var childId = that.data.childId || (app.getCurrentChild && app.getCurrentChild() || {}).id;
-    if (!childId || that.data.trainingPlanLoading) {
+    if (!childId) {
+      wx.showToast({ title: '请先完善孩子档案', icon: 'none' });
+      return;
+    }
+    if (that.data.trainingPlanLoading) {
       return;
     }
     that.setData({ trainingPlanLoading: true });
@@ -761,6 +777,17 @@ Page({
       wx.showToast({ title: '计划生成失败，请稍后再试', icon: 'none' });
     }).finally(function() {
       that.setData({ trainingPlanLoading: false });
+    });
+  },
+
+  retryLoad: function() {
+    if (!this.data.recordId) return;
+    this.loadResult(this.data.recordId, this.data.isLocal);
+  },
+
+  goToChildSetup: function() {
+    app.requireLoginForAction('请先完成微信登录，再完善孩子档案').then(function(canOperate) {
+      if (canOperate) wx.navigateTo({ url: '/pages/profile/children/children' });
     });
   },
 

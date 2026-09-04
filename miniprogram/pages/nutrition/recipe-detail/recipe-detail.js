@@ -1,6 +1,8 @@
 // 食谱详情页面逻辑
 var app = getApp();
 var contentSource = require('../../../utils/content-source.js');
+var crossPageStorage = require('../../../utils/cross-page-storage.js');
+var detailNavigation = require('../../../utils/detail-navigation.js');
 
 Page({
   data: {
@@ -138,6 +140,14 @@ Page({
     item.safetyWarnings = Array.isArray(item.safetyWarnings) ? item.safetyWarnings : [];
     item.pairingAdvice = Array.isArray(item.pairingAdvice) ? item.pairingAdvice : [];
     item.substitutionAdvice = item.substitutionAdvice || '';
+    item.steps = (Array.isArray(item.steps) ? item.steps : []).map(function(step) {
+      if (step && typeof step === 'object') {
+        return String(step.text || step.description || step.title || '').trim();
+      }
+      return String(step || '').trim();
+    }).filter(function(step) {
+      return !!step;
+    });
     if (item.dailyNutritionPercent && typeof item.dailyNutritionPercent === 'object') {
       var parts = [];
       if (item.dailyNutritionPercent.protein !== undefined) {
@@ -468,6 +478,29 @@ Page({
         });
       }
     });
+  },
+
+  useRecipeMethod: function() {
+    var recipe = this.data.recipe || {};
+    var child = app.getCurrentChild && app.getCurrentChild();
+    crossPageStorage.save('pendingGrowthRecordNote', '今天使用了《' + (recipe.name || recipe.title || '营养食谱') + '》：', {
+      childId: child && child.id,
+      source: 'nutrition_recipe_detail'
+    });
+    app.trackKbEvent(this.buildRecipeTrackPayload({
+      event_type: 'recipe_practice_record_click',
+      event_meta: { action: 'open_growth_record' }
+    }));
+    wx.switchTab({
+      url: '/pages/growth-record/index',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  returnToMainPath: function() {
+    detailNavigation.returnToMainPath('development');
   },
 
   // 下拉刷新

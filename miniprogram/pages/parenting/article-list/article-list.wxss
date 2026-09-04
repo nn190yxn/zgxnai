@@ -2,19 +2,20 @@
 
 .page {
   min-height: 100vh;
-  background: #F6F7F4;
+  background: #FAF8F5;
 }
 
 /* 搜索栏 */
 .search-bar {
   padding: 24rpx 32rpx;
-  background: #fff;
+  background: #FFFFFF;
+  border: 1rpx solid #ECEFEB;
 }
 
 .search-input-wrap {
   display: flex;
   align-items: center;
-  background: #F5F5F5;
+  background: #FAF8F5;
   border-radius: 40rpx;
   padding: 16rpx 24rpx;
 }
@@ -27,18 +28,18 @@
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: #333;
+  color: #2F3432;
 }
 
 .clear-btn {
   font-size: 28rpx;
-  color: #999;
+  color: #929995;
   padding: 8rpx;
 }
 
 /* 筛选区域 */
 .filter-section {
-  background: #fff;
+  background: #FFFFFF;
   padding: 16rpx 0;
   border-bottom: 1rpx solid #eee;
 }
@@ -85,25 +86,25 @@
   margin-right: 16rpx;
   font-size: 26rpx;
   line-height: 1.45;
-  color: #666;
-  background: #F5F5F5;
+  color: #626A66;
+  background: #FAF8F5;
   border-radius: 32rpx;
   transition: all 0.3s;
 }
 
 .filter-item.active {
-  background: #2F9D8E;
-  color: #fff;
+  background: #6AAE98;
+  color: #FFFFFF;
 }
 
 .filter-item.age-item {
-  background: #FFF8E1;
-  color: #E9895B;
+  background: #F5E8BC;
+  color: #F28C72;
 }
 
 .filter-item.age-item.active {
-  background: #E9895B;
-  color: #fff;
+  background: #F28C72;
+  color: #FFFFFF;
 }
 
 /* 文章列表区域 */
@@ -120,7 +121,7 @@
 
 .loading-text {
   font-size: 26rpx;
-  color: #999;
+  color: #929995;
 }
 
 /* 空状态 */
@@ -138,7 +139,7 @@
 
 .empty-text {
   font-size: 28rpx;
-  color: #666;
+  color: #626A66;
   margin-bottom: 10rpx;
   line-height: 1.6;
 }
@@ -146,7 +147,7 @@
 .empty-desc {
   font-size: 24rpx;
   line-height: 1.7;
-  color: #999;
+  color: #929995;
 }
 
 /* 文章列表 */
@@ -155,10 +156,10 @@
 }
 
 .article-card {
-  background: #fff;
+  background: #FFFFFF;
   border-radius: 8rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(31, 45, 37, 0.06);
+  box-shadow: none;
   overflow: hidden;
   position: relative;
 }
@@ -173,7 +174,7 @@
   height: 150rpx;
   border-radius: 8rpx;
   flex-shrink: 0;
-  background: #f5f5f5;
+  background: #FAF8F5;
   position: relative;
   overflow: hidden;
 }
@@ -193,7 +194,7 @@
 .article-title {
   font-size: 31rpx;
   font-weight: 700;
-  color: #24312A;
+  color: #2F3432;
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -204,7 +205,7 @@
 
 .article-summary {
   font-size: 25rpx;
-  color: #667168;
+  color: #626A66;
   line-height: 1.7;
   margin-top: 12rpx;
   overflow: hidden;
@@ -232,7 +233,7 @@
 }
 
 .tag.tag-age {
-  background: #FFF8E7;
+  background: #F5E8BC;
   color: #9A6B19;
 }
 
@@ -261,7 +262,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .favorite-btn.active {
@@ -277,7 +278,7 @@
   text-align: center;
   padding: 30rpx 0;
   font-size: 26rpx;
-  color: #999;
+  color: #929995;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,7 +289,7 @@
   width: 32rpx;
   height: 32rpx;
   border: 3rpx solid #eee;
-  border-top-color: #2F9D8E;
+  border-top-color: #6AAE98;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

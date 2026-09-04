@@ -106,8 +106,8 @@ Page({
         scenarioCount: (zone.scenarios || []).length,
         isPrimary: primaryCodes.indexOf(zone.code) >= 0,
         isPremiumTopic: ['growth_management', 'body_safety'].indexOf(zone.code) >= 0,
-        color: zone.theme && zone.theme.color ? zone.theme.color : '#FF6B35',
-        tint: zone.theme && zone.theme.tint ? zone.theme.tint : '#FFF3EC'
+        color: zone.theme && zone.theme.color ? zone.theme.color : '#397A68',
+        tint: zone.theme && zone.theme.tint ? zone.theme.tint : '#F3DFE3'
       };
     });
   },

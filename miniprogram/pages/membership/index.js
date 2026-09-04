@@ -1,11 +1,15 @@
 // 成长服务页面
 const app = getApp();
 const { ENABLE_VIRTUAL_PAY, SHOW_MEMBERSHIP } = require('../../config/payment');
+const detailNavigation = require('../../utils/detail-navigation.js');
 
 Page({
   data: {
     entrySource: '',
     entryContext: {},
+    membershipLoadState: 'loading',
+    membershipErrorMessage: '',
+    membershipFallbackMessage: '',
     // 会员信息
     membershipInfo: {
       status: 'free',
@@ -54,11 +58,17 @@ Page({
     
     // 选中套餐
     selectedPlan: '',
-    isPaying: false
+    isPaying: false,
+    membershipPrimaryAction: {
+      title: '先了解成长服务',
+      desc: '查看当前状态、可用权益和下一步操作。',
+      cta: '查看成长权益',
+      action: 'benefits'
+    }
   },
 
   isLoggedIn() {
-    return !!(app.globalData.isLoggedIn && wx.getStorageSync('token'));
+    return !!wx.getStorageSync('token');
   },
 
   onLoad(options) {
@@ -69,7 +79,8 @@ Page({
     });
     this.syncPaymentStatus();
     this.setData({
-      displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
+      displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo),
+      membershipPrimaryAction: this.buildMembershipPrimaryAction(this.data.membershipInfo, this.data.showPayment)
     });
     this.loadMembershipInfo();
     this.loadReferralStats();
@@ -99,7 +110,8 @@ Page({
     const showPayment = runtimePaymentEnabled !== undefined ? !!runtimePaymentEnabled : ENABLE_VIRTUAL_PAY;
     this.setData({
       showPayment: showPayment,
-      paymentNotice: showPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励'
+      paymentNotice: showPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励',
+      membershipPrimaryAction: this.buildMembershipPrimaryAction(this.data.membershipInfo, showPayment)
     });
     if (app.globalData && app.globalData.enableRuntimeConfigFetch && app.loadRuntimeConfig && !runtimeConfig.configLoaded) {
       app.loadRuntimeConfig().then(() => {
@@ -107,7 +119,8 @@ Page({
         const latestShowPayment = latestConfig.paymentEnabled !== undefined ? !!latestConfig.paymentEnabled : ENABLE_VIRTUAL_PAY;
         this.setData({
           showPayment: latestShowPayment,
-          paymentNotice: latestShowPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励'
+          paymentNotice: latestShowPayment ? '成长服务为虚拟内容服务，购买全程使用微信官方小程序虚拟支付能力。' : '当前无法发起购买，新用户可先领取体验服务并使用邀请奖励',
+          membershipPrimaryAction: this.buildMembershipPrimaryAction(this.data.membershipInfo, latestShowPayment)
         });
       });
     }
@@ -143,10 +156,65 @@ Page({
     });
   },
 
+  buildMembershipPrimaryAction(membershipInfo, showPayment) {
+    var info = membershipInfo || {};
+    if (info.is_active) {
+      return {
+        title: info.membership_type === 'trial' ? '成长服务试用中' : '成长服务已开通',
+        desc: info.days_left > 0 ? '当前权益还可使用 ' + info.days_left + ' 天。' : '当前成长权益可以继续使用。',
+        cta: '查看当前权益',
+        action: 'benefits'
+      };
+    }
+    if (!info.is_trial_used) {
+      return {
+        title: '先体验成长服务',
+        desc: '领取试用后，可以查看完整能力画像、阶段报告和持续训练计划。',
+        cta: '领取体验服务',
+        action: 'trial'
+      };
+    }
+    if (showPayment) {
+      return {
+        title: info.status === 'expired' || info.membership_type === 'expired' ? '续上成长服务' : '开通成长服务',
+        desc: '选择适合的方案，继续查看成长趋势和陪伴建议。',
+        cta: info.status === 'expired' || info.membership_type === 'expired' ? '选择续费方案' : '选择开通方案',
+        action: 'plans'
+      };
+    }
+    return {
+      title: '使用邀请奖励',
+      desc: '邀请家人或朋友注册，双方都能继续使用成长服务。',
+      cta: '查看邀请方式',
+      action: 'referral'
+    };
+  },
+
+  handleMembershipPrimaryAction() {
+    var action = this.data.membershipPrimaryAction && this.data.membershipPrimaryAction.action;
+    this.trackMembershipEvent('membership_primary_action_click', { action: action || 'benefits' });
+    if (action === 'trial') {
+      this.activateTrial();
+      return;
+    }
+    if (action === 'referral') {
+      wx.pageScrollTo({ selector: '#membership-referral', duration: 250 });
+      return;
+    }
+    wx.pageScrollTo({ selector: action === 'plans' ? '#membership-plans' : '#membership-benefits', duration: 250 });
+  },
+
+  returnToMainPath() {
+    detailNavigation.returnToMainPath('profile');
+  },
+
   // 加载会员信息
   loadMembershipInfo(force) {
     if (!this.isLoggedIn()) {
       this.setData({
+        membershipLoadState: 'login_required',
+        membershipErrorMessage: '',
+        membershipFallbackMessage: '',
         membershipInfo: {
           status: 'free',
           membership_type: 'free',
@@ -156,10 +224,18 @@ Page({
           plans: []
         },
         promoEnabled: false,
-        displayFeatures: this.buildDisplayFeatures({ is_active: false })
+        displayFeatures: this.buildDisplayFeatures({ is_active: false }),
+        membershipPrimaryAction: this.buildMembershipPrimaryAction({ is_active: false, is_trial_used: false }, this.data.showPayment)
       });
       return Promise.resolve(null);
     }
+    var previousUpdatedAt = Number(app.globalData.membershipStateUpdatedAt || 0);
+    var hadCachedState = !!(app.globalData.membershipState || wx.getStorageSync('membershipState'));
+    this.setData({
+      membershipLoadState: 'loading',
+      membershipErrorMessage: '',
+      membershipFallbackMessage: ''
+    });
     var loader = app.getMembershipState
       ? app.getMembershipState({ force: !!force })
       : app.request({ url: '/membership/info', method: 'GET' });
@@ -168,12 +244,17 @@ Page({
       var isActive = !!(data && data.is_active);
       var showExpiryRecall = isActive && daysLeft > 0 && daysLeft <= 7;
       var expiryRecallLevel = daysLeft <= 3 ? 'urgent' : 'soon';
+      var usedCachedState = !!force && hadCachedState && Number(app.globalData.membershipStateUpdatedAt || 0) === previousUpdatedAt;
       this.setData({
+        membershipLoadState: 'ready',
+        membershipErrorMessage: '',
+        membershipFallbackMessage: usedCachedState ? '网络暂时不可用，当前展示上次保存的成长服务状态。' : '',
         membershipInfo: data,
         promoEnabled: !!data.promo_enabled,
         promoBenefitText: data.promo_benefit_text || '兑换码兑换区',
         showPayment: data.payment_available !== undefined ? !!data.payment_available : this.data.showPayment,
         displayFeatures: this.buildDisplayFeatures(data),
+        membershipPrimaryAction: this.buildMembershipPrimaryAction(data, data.payment_available !== undefined ? !!data.payment_available : this.data.showPayment),
         showExpiryRecall: showExpiryRecall,
         expiryRecallLevel: expiryRecallLevel
       });
@@ -181,6 +262,9 @@ Page({
     }).catch(err => {
       console.error('[Membership] Failed to load membership info:', err);
       this.setData({
+        membershipLoadState: 'error',
+        membershipErrorMessage: app.getApiErrorMessage(err, '成长服务状态暂时没加载出来'),
+        membershipFallbackMessage: '',
         displayFeatures: this.buildDisplayFeatures(this.data.membershipInfo)
       });
       if (app.globalData.isDebug) {
@@ -188,6 +272,17 @@ Page({
       }
       return null;
     });
+  },
+
+  retryLoadMembership() {
+    this.loadMembershipInfo(true);
+    this.loadReferralStats();
+  },
+
+  loginAndReload() {
+    app.ensureLogin('请先完成微信登录，再查看成长服务状态').then(() => {
+      this.retryLoadMembership();
+    }).catch(() => {});
   },
 
   // 加载邀请统计
