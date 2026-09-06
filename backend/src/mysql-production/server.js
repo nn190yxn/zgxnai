@@ -12416,12 +12416,7 @@ async function childrenDeleteHandler(req, res) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const [recordRows] = await connection.execute('SELECT id FROM assessment_records WHERE child_id = ?', [req.params.id]);
-    for (const row of recordRows) {
-      await connection.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [row.id]);
-    }
-    await connection.execute('DELETE FROM assessment_records WHERE child_id = ?', [req.params.id]);
-    await connection.execute('DELETE FROM task_progress WHERE child_id = ?', [req.params.id]);
+    await deleteChildData(connection, req.params.id, getUserId(req));
     await connection.execute('DELETE FROM children WHERE id = ? AND user_id = ?', [req.params.id, getUserId(req)]);
     if (child.is_default) {
       const [nextRows] = await connection.execute('SELECT id FROM children WHERE user_id = ? ORDER BY created_at ASC LIMIT 1', [getUserId(req)]);
@@ -12437,6 +12432,32 @@ async function childrenDeleteHandler(req, res) {
   } finally {
     connection.release();
   }
+}
+
+async function deleteChildData(connection, childId, userId) {
+  const [assessmentRows] = await connection.execute('SELECT id FROM assessment_records WHERE child_id = ?', [childId]);
+  for (const row of assessmentRows) {
+    await connection.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [row.id]);
+  }
+  await connection.execute('DELETE FROM assessment_records WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'daily_plan_completions', 'DELETE FROM daily_plan_completions WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'daily_plan_records', 'DELETE FROM daily_plan_records WHERE child_id = ? AND user_id = ?', [childId, userId]);
+  await executeIfTableExists(connection, 'training_feedbacks', 'DELETE FROM training_feedbacks WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'training_completions', 'DELETE FROM training_completions WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'training_tasks', 'DELETE FROM training_tasks WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'training_plans', 'DELETE FROM training_plans WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'ability_profiles', 'DELETE FROM ability_profiles WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'ability_observation_submissions', 'DELETE FROM ability_observation_submissions WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'growth_record_entries', 'DELETE FROM growth_record_entries WHERE child_id = ? AND user_id = ?', [childId, userId]);
+  await executeIfTableExists(connection, 'growth_daily_records', 'DELETE FROM growth_daily_records WHERE child_id = ? AND user_id = ?', [childId, userId]);
+  await executeIfTableExists(connection, 'weekly_growth_summaries', 'DELETE FROM weekly_growth_summaries WHERE child_id = ? AND user_id = ?', [childId, userId]);
+  await executeIfTableExists(connection, 'task_progress', 'DELETE FROM task_progress WHERE child_id = ?', [childId]);
+  await executeIfTableExists(connection, 'growth_timeline_entries', 'DELETE FROM growth_timeline_entries WHERE child_id = ?', [childId]);
+  const [ticketRows] = await connection.execute('SELECT id FROM support_tickets WHERE child_id = ? AND user_id = ?', [childId, userId]);
+  for (const ticket of ticketRows) {
+    await executeIfTableExists(connection, 'support_ticket_events', 'DELETE FROM support_ticket_events WHERE ticket_id = ?', [ticket.id]);
+  }
+  await connection.execute('DELETE FROM support_tickets WHERE child_id = ? AND user_id = ?', [childId, userId]);
 }
 
 function buildArticleCover(category) {
@@ -13096,12 +13117,7 @@ async function accountDeletionHandler(req, res) {
     await connection.beginTransaction();
     const [children] = await connection.execute('SELECT id FROM children WHERE user_id = ?', [userId]);
     for (const child of children) {
-      const [records] = await connection.execute('SELECT id FROM assessment_records WHERE child_id = ?', [child.id]);
-      for (const record of records) {
-        await connection.execute('DELETE FROM assessment_dimensions WHERE record_id = ?', [record.id]);
-      }
-      await connection.execute('DELETE FROM assessment_records WHERE child_id = ?', [child.id]);
-      await connection.execute('DELETE FROM task_progress WHERE child_id = ?', [child.id]);
+      await deleteChildData(connection, child.id, userId);
     }
 
     if (children.length) {
