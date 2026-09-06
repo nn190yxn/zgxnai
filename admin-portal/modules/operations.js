@@ -146,6 +146,8 @@
     const id = existingId || editorIdField.value.trim();
     const body = Object.fromEntries(new FormData(form).entries());
     if (key === 'banners') body.enabled = form.elements.enabled.checked ? 1 : 0;
+    if (key === 'training') body.content_type = 'task';
+    if (key === 'nutrition') body.content_type = 'recipe';
     const path = key === 'banners' ? (existingId ? `/banners/${encodeURIComponent(existingId)}` : '/banners') : key === 'articles' ? (id ? `/articles/${encodeURIComponent(id)}` : '/articles') : key === 'pain-points' ? (id ? `/pain-points/${encodeURIComponent(id)}` : '/pain-points') : `/articles${id ? `/${encodeURIComponent(id)}` : ''}`;
     setEditorState(form, '正在保存草稿...', 'loading');
     try {

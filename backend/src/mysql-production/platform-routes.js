@@ -262,6 +262,7 @@ function articleWriteHandler(pool, mode) {
     let connection;
     try {
       const body = req.body || {};
+      const contentType = ['article', 'task', 'recipe'].includes(String(body.content_type || '')) ? String(body.content_type) : 'article';
       const values = ARTICLE_FIELDS.map((field) => field === 'content' ? cleanRichText(body[field]) : body[field] == null ? '' : body[field]);
       connection = await pool.getConnection();
       const targetId = mode === 'create' ? null : req.params.id;
@@ -276,8 +277,8 @@ function articleWriteHandler(pool, mode) {
           await connection.execute(`UPDATE articles SET ${ARTICLE_FIELDS.map((field) => `${field} = ?`).join(', ')} WHERE id = ?`, values.concat(targetId));
         }
         await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [id]);
-        const [versions] = await connection.execute('SELECT COALESCE(MAX(version), 0) AS max_version FROM content_versions WHERE content_type = "article" AND content_id = ?', [String(id)]);
-        await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) VALUES (?, ?, ?, ?, ?)', ['article', String(id), Number(versions[0].max_version) + 1, JSON.stringify({ id, ...body, content: cleanRichText(body.content) }), req.admin.adminUserId]);
+         const [versions] = await connection.execute('SELECT COALESCE(MAX(version), 0) AS max_version FROM content_versions WHERE content_type = ? AND content_id = ?', [contentType, String(id)]);
+         await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) VALUES (?, ?, ?, ?, ?)', [contentType, String(id), Number(versions[0].max_version) + 1, JSON.stringify({ id, ...body, content: cleanRichText(body.content) }), req.admin.adminUserId]);
         return id;
       });
       res.status(mode === 'create' ? 201 : 200).json({ success: true, data: { id: result, ...body, content: cleanRichText(body.content) }, meta: { status: 'draft' } });

@@ -2532,14 +2532,23 @@ async function adminContentOpsTipsHandler(req, res) {
 async function adminContentOpsArticlesHandler(req, res) {
   const limit = clampAdminLimit(req.query.limit, 8);
   const contentForm = String(req.query.content_form || req.query.contentForm || '').trim();
+  const contentType = String(req.query.content_type || '').trim();
   const keyword = String(req.query.keyword || '').trim();
+  if (contentType && !['article', 'task', 'recipe'].includes(contentType)) {
+    res.status(400).json({ success: false, message: 'content_type参数无效' });
+    return;
+  }
   if (contentForm && !VALID_CONTENT_FORMS.has(contentForm)) {
     res.status(400).json({ success: false, message: 'content_form参数无效' });
     return;
   }
 
   const params = [];
-  let whereClause = 'WHERE is_published = 1';
+  let whereClause = 'WHERE a.is_published = 1';
+  if (contentType) {
+    whereClause += ' AND EXISTS (SELECT 1 FROM content_versions cv WHERE cv.content_type = ? AND cv.content_id = CAST(a.id AS CHAR) AND cv.publish_status IN (\'draft\', \'pending_review\', \'approved\', \'scheduled\', \'published\'))';
+    params.push(contentType);
+  }
   if (contentForm) {
     whereClause += ' AND content_form = ?';
     params.push(contentForm);
@@ -2551,8 +2560,8 @@ async function adminContentOpsArticlesHandler(req, res) {
   }
 
   const [rows] = await pool.execute(
-    `SELECT id, title, summary, category, age_group, content_form, read_count, updated_at
-       FROM articles
+     `SELECT a.id, a.title, a.summary, a.category, a.age_group, a.content_form, a.read_count, a.updated_at
+        FROM articles a
        ${whereClause}
       ORDER BY updated_at DESC, read_count DESC, id DESC
       LIMIT ${limit}`,
