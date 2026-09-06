@@ -589,9 +589,11 @@ Page({
       return app.request({
       url: '/nutrition/recipes/' + id + '/favorite',
       method: 'POST'
-    }).then(function() {
+    }).then(function(res) {
+      var payload = res && (res.data || res) || {};
+      var nextFavoriteState = payload.is_favorited !== undefined ? !!payload.is_favorited : payload.isFavorite !== undefined ? !!payload.isFavorite : !isFavorite;
       var recipeList = that.data.recipeList;
-      recipeList[index].isFavorite = !isFavorite;
+      recipeList[index].isFavorite = nextFavoriteState;
       that.setData({
         recipeList: recipeList
       });

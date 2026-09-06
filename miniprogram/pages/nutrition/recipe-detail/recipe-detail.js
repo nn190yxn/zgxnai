@@ -216,6 +216,7 @@ Page({
       recipeId: recipeId,
       selectedAgeGroup: selectedAgeGroup
     });
+    this.loadFavoriteState();
     if (app.shouldUseMockFallback()) {
       var mockRecipe = this.normalizeRecipeForDisplay(this.getLocalRecipeDetail(recipeId));
       this.setData({
@@ -320,6 +321,22 @@ Page({
     });
   },
 
+  loadFavoriteState: function() {
+    var that = this;
+    if (app.shouldUseMockFallback || app.shouldUseMockFallback()) {
+      return;
+    }
+    app.request({
+      url: '/nutrition/recipes/' + that.data.recipeId + '/favorite/status',
+      method: 'GET'
+    }).then(function(res) {
+      var payload = res && (res.data || res) || {};
+      if (payload.is_favorited !== undefined || payload.isFavorite !== undefined) {
+        that.setData({ isFavorite: payload.is_favorited !== undefined ? !!payload.is_favorited : !!payload.isFavorite });
+      }
+    }).catch(function() {});
+  },
+
   // 切换收藏状态
   toggleFavorite: function() {
     var that = this;
@@ -344,8 +361,9 @@ Page({
       return app.request({
       url: '/nutrition/recipes/' + that.data.recipeId + '/favorite',
       method: 'POST'
-    }).then(function() {
-      var nextFavoriteState = !isFavorite;
+    }).then(function(res) {
+      var payload = res && (res.data || res) || {};
+      var nextFavoriteState = payload.is_favorited !== undefined ? !!payload.is_favorited : payload.isFavorite !== undefined ? !!payload.isFavorite : !isFavorite;
       that.setData({
         isFavorite: nextFavoriteState
       });

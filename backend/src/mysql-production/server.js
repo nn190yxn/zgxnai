@@ -368,6 +368,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
   app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
+  app.get(`${prefix}/nutrition/recipes/:id/favorite/status`, authenticateToken, nutritionRecipeFavoriteStatusHandler);
   app.post(`${prefix}/marketing/generate`, asyncHandler(marketingGenerateHandler));
   app.options(`${prefix}/marketing/generate`, (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -7449,13 +7450,32 @@ function nutritionRecipeDetailHandler(req, res) {
   res.json({ success: true, data: detail });
 }
 
-function nutritionRecipeFavoriteHandler(req, res) {
+async function nutritionRecipeFavoriteHandler(req, res) {
   const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
   if (!recipe) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
   }
+  const userId = req.user.userId;
+  const [rows] = await pool.execute('SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ? LIMIT 1', [userId, 'nutrition_recipe', String(req.params.id)]);
+  if (rows.length) {
+    await pool.execute('DELETE FROM user_favorites WHERE id = ?', [rows[0].id]);
+    res.json({ success: true, data: { is_favorited: false, isFavorite: false } });
+    return;
+  }
+  await pool.execute('INSERT INTO user_favorites (user_id, item_type, item_id) VALUES (?, ?, ?)', [userId, 'nutrition_recipe', String(req.params.id)]);
   res.json({ success: true, data: { is_favorited: true, isFavorite: true } });
+}
+
+async function nutritionRecipeFavoriteStatusHandler(req, res) {
+  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
+  if (!recipe) {
+    res.status(404).json({ success: false, message: '食谱不存在' });
+    return;
+  }
+  const [rows] = await pool.execute('SELECT id FROM user_favorites WHERE user_id = ? AND item_type = ? AND item_id = ? LIMIT 1', [req.user.userId, 'nutrition_recipe', String(req.params.id)]);
+  const isFavorite = rows.length > 0;
+  res.json({ success: true, data: { is_favorited: isFavorite, isFavorite } });
 }
 
 function paymentConfigError() {
