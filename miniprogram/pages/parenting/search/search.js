@@ -369,6 +369,36 @@ Page({
     this.doSearch(this.data.coreActionContext || { keyword: this.data.keyword });
   },
 
+  onReachBottom: function() {
+    var that = this;
+    if (!this.data.showResults || this.data.loading || !this.data.hasMore || !this.data.keyword) {
+      return;
+    }
+    this.setData({ loading: true });
+    app.request({
+      url: '/parenting/search',
+      method: 'GET',
+      data: Object.assign({
+        keyword: this.data.keyword,
+        page: this.data.page,
+        page_size: this.data.pageSize
+      }, this.data.currentAgeGroup ? { age_group: this.data.currentAgeGroup } : {}, this.data.currentCategory ? { category: this.data.currentCategory } : {})
+    }).then(function(payload) {
+      var pageItems = Array.isArray(payload) ? payload : (payload && payload.items) || (payload && payload.data && payload.data.items) || [];
+      var nextItems = pageItems.map(function(item) { return that.normalizeArticleCard(item); });
+      var searchResults = that.data.searchResults.concat(nextItems);
+      that.setData({
+        searchResults: searchResults,
+        page: that.data.page + 1,
+        hasMore: nextItems.length >= that.data.pageSize
+      });
+    }).catch(function() {
+      wx.showToast({ title: '加载更多失败，请再试一次', icon: 'none' });
+    }).finally(function() {
+      that.setData({ loading: false });
+    });
+  },
+
   onSceneTap: function(e) {
     var sceneKey = e.currentTarget.dataset.sceneKey;
     var sceneTitle = e.currentTarget.dataset.sceneTitle;
