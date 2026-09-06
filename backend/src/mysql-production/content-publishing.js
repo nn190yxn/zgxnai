@@ -42,8 +42,12 @@ async function publishDue(connection, now = new Date()) {
       `UPDATE content_versions SET publish_status = 'published', published_at = ?
        WHERE id = ? AND review_status = 'approved' AND publish_status IN ('approved', 'scheduled')`, [now, job.version_id]
     );
-    await connection.execute(`UPDATE content_publish_jobs SET status = 'completed', completed_at = ? WHERE id = ? AND status = 'pending'`, [now, job.id]);
-    published += Number(result.affectedRows || 0);
+    if (Number(result.affectedRows || 0) > 0) {
+      await connection.execute(`UPDATE content_publish_jobs SET status = 'completed', completed_at = ?, attempt_count = attempt_count + 1 WHERE id = ? AND status = 'pending'`, [now, job.id]);
+      published += 1;
+    } else {
+      await connection.execute(`UPDATE content_publish_jobs SET status = 'failed', failed_at = ?, failure_code = 'CONTENT_VERSION_NOT_PUBLISHABLE', attempt_count = attempt_count + 1 WHERE id = ? AND status = 'pending'`, [now, job.id]);
+    }
   }
   return published;
 }

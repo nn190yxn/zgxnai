@@ -251,5 +251,9 @@
     });
   }
 
-  window.AdminOperations = { init, MODULES };
+  function refresh() {
+    MODULES.forEach((module) => loadModule(module.key));
+  }
+
+  window.AdminOperations = { init, refresh, MODULES };
 }());

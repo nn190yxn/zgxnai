@@ -441,7 +441,7 @@ async function marketingGenerateHandler(req, res) {
 }
 
 async function feedbackSubmitHandler(req, res) {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const type = String((req.body && req.body.type) || '其他');
   const content = String((req.body && req.body.content) || '').trim();
   const contact = String((req.body && req.body.contact) || '').trim();
@@ -481,7 +481,7 @@ async function feedbackSubmitHandler(req, res) {
 }
 
 async function feedbackListHandler(req, res) {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const [rows] = await pool.execute(
     `SELECT f.id, f.type, f.content, f.status, f.created_at,
             t.status AS ticket_status, t.public_progress

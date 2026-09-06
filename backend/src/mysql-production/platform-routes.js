@@ -225,13 +225,13 @@ function registerPublicRoutes(app, options) {
       const params = [];
       const where = ['1 = 1'];
       if (req.query.category && PAIN_POINT_CATEGORIES.includes(String(req.query.category))) { where.push('category = ?'); params.push(String(req.query.category)); }
-      const [rows] = await pool.execute(`SELECT * FROM pain_points WHERE ${where.join(' AND ')} ORDER BY id ASC`, params);
+      const [rows] = await pool.execute(`SELECT p.* FROM pain_points p WHERE ${where.map((clause) => clause === '1 = 1' ? clause : clause.replace('category', 'p.category')).join(' AND ')} AND EXISTS (SELECT 1 FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.content_id = p.pain_point_key AND cv.review_status = 'approved' AND cv.publish_status = 'published' AND (cv.published_at IS NULL OR cv.published_at <= NOW())) ORDER BY p.id ASC`, params);
       res.json({ success: true, list: rows.map(formatPainPoint), meta: { source: 'formal', fallback: false } });
     } catch (error) { next(error); }
   });
   app.get(`${prefix}/pain-points/:key`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
-    try { const [rows] = await pool.execute('SELECT * FROM pain_points WHERE pain_point_key = ? LIMIT 1', [req.params.key]); if (!rows.length) return res.status(404).json({ success: false, message: '成长痛点不存在' }); res.json({ success: true, data: formatPainPoint(rows[0]) }); } catch (error) { next(error); }
+     try { const [rows] = await pool.execute("SELECT p.* FROM pain_points p WHERE p.pain_point_key = ? AND EXISTS (SELECT 1 FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.content_id = p.pain_point_key AND cv.review_status = 'approved' AND cv.publish_status = 'published' AND (cv.published_at IS NULL OR cv.published_at <= NOW())) LIMIT 1", [req.params.key]); if (!rows.length) return res.status(404).json({ success: false, message: '成长痛点不存在' }); res.json({ success: true, data: formatPainPoint(rows[0]) }); } catch (error) { next(error); }
   });
   app.get(`${prefix}/content/:type/:id`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
@@ -253,7 +253,7 @@ function registerPublicRoutes(app, options) {
     } catch (error) { next(error); }
   });
   app.get(`${prefix}/feedback/history`, authenticateToken, async (req, res, next) => {
-    try { const [rows] = await pool.execute('SELECT id, type, content, status, channel, public_progress, created_at FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id]); res.json({ success: true, list: rows.map(tickets.publicTicket) }); } catch (error) { next(error); }
+     try { const [rows] = await pool.execute('SELECT id, type, content, status, channel, public_progress, created_at FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.userId]); res.json({ success: true, list: rows.map(tickets.publicTicket) }); } catch (error) { next(error); }
   });
 }
 

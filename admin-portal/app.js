@@ -563,6 +563,7 @@ loginForm.addEventListener('submit', async (event) => {
     updateAuthState();
     setHint(`已登录：${result.admin.display_name || result.admin.username}`, 'status-success');
     await loadDashboard();
+    if (window.AdminOperations && window.AdminOperations.refresh) window.AdminOperations.refresh();
   } catch (error) {
     state.token = '';
     state.admin = null;
