@@ -346,28 +346,16 @@ Page({
       return String(r.recordId || '') !== String(recordId || '');
     });
     var records = that.applyFilters(allRecords);
-
-    that.setData({
-      records: records
-    });
-
-    // 更新本地存储
-    wx.setStorageSync('assessmentRecords', allRecords);
-    wx.setStorageSync('assessmentHistory', allRecords);
-
-    // 尝试从服务器删除
     app.request({
       url: '/assessments/records/' + recordId,
       method: 'DELETE'
     }).then(function(res) {
-      // 服务器删除成功
+      that.setData({ records: records });
+      wx.setStorageSync('assessmentRecords', allRecords);
+      wx.setStorageSync('assessmentHistory', allRecords);
+      wx.showToast({ title: '已删除', icon: 'success' });
     }).catch(function(err) {
-      // 服务器删除失败，已保存到本地
-    });
-
-    wx.showToast({
-      title: '已删除',
-      icon: 'success'
+      wx.showToast({ title: '删除没成功，请再试一次', icon: 'none' });
     });
   },
 
