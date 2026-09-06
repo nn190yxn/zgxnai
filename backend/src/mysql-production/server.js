@@ -59,7 +59,7 @@ const SIGNUP_REWARD_TYPE = 'signup_reward';
 const REFERRAL_REWARD_DAYS = 7;
 const REFERRAL_MAX_DAYS = 60;
 const UNIFIED_PROMO_CODE = String(
-  process.env.MEMBERSHIP_PROMO_CODE || process.env.UNIFIED_MEMBERSHIP_PROMO_CODE || 'zgxn'
+  process.env.MEMBERSHIP_PROMO_CODE || process.env.UNIFIED_MEMBERSHIP_PROMO_CODE || ''
 ).trim().toUpperCase();
 const UNIFIED_PROMO_DAYS = Math.max(1, Number(process.env.MEMBERSHIP_PROMO_DAYS || 60) || 60);
 const UNIFIED_PROMO_PLAN_CODE = 'promo_2month';
@@ -8087,16 +8087,17 @@ async function verifyWechatNotifySignature(headers, rawBody) {
 }
 
 async function bootstrap() {
-  await runStartupStep('migrations', () => runMigrations(pool));
-  await runStartupStep('legacy_schema', () => ensureProductionTables());
-  await runStartupStep('admin_bootstrap', () => ensureAdminBootstrapUser());
-  await runStartupStep('upload_directory', () => fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true }));
+  await runStartupStep('migrations', () => runMigrations(pool), { critical: true });
+  await runStartupStep('legacy_schema', () => ensureProductionTables(), { critical: true });
+  await runStartupStep('admin_bootstrap', () => ensureAdminBootstrapUser(), { critical: true });
+  await runStartupStep('upload_directory', () => fs.promises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true }), { critical: true });
   app.listen(PORT, HOST, () => {
     console.log(`[niuniu-backend] listening on http://${HOST}:${PORT} safe_mode=${startupState.safeMode}`);
   });
 }
 
-async function runStartupStep(name, task) {
+async function runStartupStep(name, task, options) {
+  const critical = options && options.critical;
   try {
     return await task();
   } catch (error) {
@@ -8104,7 +8105,10 @@ async function runStartupStep(name, task) {
     if (name === 'migrations') startupState.migrationFailed = true;
     const alert = await releaseProtection.recordAlert({ event: `startup_${name}_failed`, code: releaseProtection.safeError(error).code });
     startupState.alerts.push(alert.event);
-    console.warn(`[niuniu-backend] ${name} failed; service continues in safe mode`);
+    console.warn(`[niuniu-backend] ${name} failed${critical ? '; service will not start' : '; service continues in safe mode'}`);
+    if (critical) {
+      throw error;
+    }
     return null;
   }
 }
@@ -13325,6 +13329,42 @@ async function assessmentQuestionsHandler(req, res) {
   res.json({ success: true, data: { assessment_code: code, age_group: req.query.age_group || '', questions: buildAssessmentQuestions(code, req.query.age_group || '') } });
 }
 
+function validateAssessmentAnswers(code, ageGroup, answers) {
+  const questions = buildAssessmentQuestions(code, ageGroup);
+  if (!questions.length || answers.length !== questions.length) {
+    return { error: `评估答案数量必须为${questions.length}题` };
+  }
+
+  const questionsById = new Map(questions.map((question) => [String(question.id), question]));
+  const seenQuestionIds = new Set();
+  const normalizedAnswers = [];
+  for (const answer of answers) {
+    if (!answer || answer.question_id === undefined || answer.question_id === null) {
+      return { error: '评估答案缺少题目编号' };
+    }
+    const questionId = String(answer.question_id).trim();
+    const question = questionsById.get(questionId);
+    if (!question) {
+      return { error: '评估答案包含无效题目编号' };
+    }
+    if (seenQuestionIds.has(questionId)) {
+      return { error: '评估答案包含重复题目' };
+    }
+    const value = Number(answer.value);
+    if (!Number.isInteger(value) || value < 0 || value > 3) {
+      return { error: '评估答案分值必须为0至3的整数' };
+    }
+    if (answer.dimension !== undefined && answer.dimension !== null && String(answer.dimension).trim()
+      && String(answer.dimension) !== String(question.dimension || 'general')) {
+      return { error: '评估答案维度与题目不匹配' };
+    }
+    seenQuestionIds.add(questionId);
+    normalizedAnswers.push({ question_id: questionId, dimension: question.dimension || 'general', value });
+  }
+
+  return { answers: normalizedAnswers, questions };
+}
+
 function normalizeAssessmentLevel(percentage) {
   if (percentage >= 85) {
     return 'excellent';
@@ -13442,11 +13482,22 @@ async function assessmentSubmitHandler(req, res) {
     return;
   }
   const childId = Number(req.body.child_id || 0);
-  const answers = Array.isArray(req.body.answers) ? req.body.answers : [];
-  if (!childId || !answers.length) {
+  const ageGroup = String(req.body.age_group || '').trim();
+  const rawAnswers = Array.isArray(req.body.answers) ? req.body.answers : [];
+  if (!childId || !rawAnswers.length) {
     res.status(400).json({ success: false, message: '参数错误：缺少必要字段' });
     return;
   }
+  if (ageGroup && !(meta.age_groups || []).includes(ageGroup)) {
+    res.status(400).json({ success: false, message: '当前评估不支持该年龄段' });
+    return;
+  }
+  const validation = validateAssessmentAnswers(code, ageGroup, rawAnswers);
+  if (validation.error) {
+    res.status(400).json({ success: false, message: validation.error });
+    return;
+  }
+  const answers = validation.answers;
   const child = await getOwnedChild(getUserId(req), childId);
   if (!child) {
     res.status(403).json({ success: false, message: '无权提交该孩子的评估记录' });
@@ -13491,7 +13542,7 @@ async function assessmentSubmitHandler(req, res) {
     grouped.get(dimension).score += value;
     grouped.get(dimension).count += 1;
   }
-  const maxScore = answers.length * 3;
+  const maxScore = validation.questions.length * 3;
   const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
   const level = normalizeAssessmentLevel(percentage);
   const connection = await pool.getConnection();
@@ -13500,7 +13551,7 @@ async function assessmentSubmitHandler(req, res) {
     const [result] = await connection.execute(
       `INSERT INTO assessment_records (child_id, assessment_code, assessment_name, age_group, total_score, max_score, percentage, overall_level, elapsed_time)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [childId, code, meta.name, req.body.age_group || '', totalScore, maxScore, percentage, level, Number(req.body.elapsed_time || 0)]
+      [childId, code, meta.name, ageGroup, totalScore, maxScore, percentage, level, Number(req.body.elapsed_time || 0)]
     );
     for (const [dimension, info] of grouped.entries()) {
       const scoreRate = info.count > 0 ? Math.round((info.score / (info.count * 3)) * 100) : 0;
@@ -13518,7 +13569,7 @@ async function assessmentSubmitHandler(req, res) {
       sourceId: String(result.insertId),
       title: meta.name,
       summary: `完成${meta.name}`,
-      metadata: { assessmentCode: code, ageGroup: req.body.age_group || '', percentage, overallLevel: level },
+      metadata: { assessmentCode: code, ageGroup, percentage, overallLevel: level },
       idempotencyKey: idempotencyKey || `assessment:${childId}:${result.insertId}`
     }, { endpoint: 'assessments/submit' });
     const [interpretationRows] = await pool.execute(
@@ -13527,8 +13578,8 @@ async function assessmentSubmitHandler(req, res) {
       [code, percentage]
     );
     const [suggestionRows] = await pool.execute('SELECT * FROM assessment_suggestions WHERE assessment_code = ? AND level = ?', [code, level]);
-    const ageGroup = req.body.age_group || inferAgeRangeFromChild(child) || '3-4岁';
-    const reportData = buildAssessmentReportData(interpretationRows, suggestionRows, ageGroup);
+    const reportAgeGroup = ageGroup || inferAgeRangeFromChild(child) || '3-4岁';
+    const reportData = buildAssessmentReportData(interpretationRows, suggestionRows, reportAgeGroup);
     sendSuccess(res, req, {
         record_id: result.insertId,
         id: result.insertId,
