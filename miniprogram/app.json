@@ -53,26 +53,26 @@
       {
         "pagePath": "pages/index/index",
         "text": "首页",
-        "iconPath": "/images/tab-home.png",
-        "selectedIconPath": "/images/tab-home-active.png"
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
       },
       {
         "pagePath": "pages/development/index/index",
         "text": "功能",
-        "iconPath": "/images/tab-chat.png",
-        "selectedIconPath": "/images/tab-chat-active.png"
+        "iconPath": "images/tab-chat.png",
+        "selectedIconPath": "images/tab-chat-active.png"
       },
       {
         "pagePath": "pages/growth-record/index",
         "text": "成长",
-        "iconPath": "/images/tab-profile.png",
-        "selectedIconPath": "/images/tab-profile-active.png"
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
       },
       {
         "pagePath": "pages/profile/profile",
         "text": "我的",
-        "iconPath": "/images/tab-profile.png",
-        "selectedIconPath": "/images/tab-profile-active.png"
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
       }
     ]
   },

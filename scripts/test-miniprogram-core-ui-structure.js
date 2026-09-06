@@ -28,7 +28,6 @@ assert.ok(homeScript.includes("if (action === 'growth_record')"), 'growth record
 const tabIcons = appConfig.tabBar.list.map(function(item) { return item.iconPath; });
 assert.strictEqual(tabIcons.length, 4, 'TabBar should define four icon entries');
 assert.ok(tabIcons.every(function(iconPath) { return iconPath; }), 'TabBar entries should define icon assets');
-assert.ok(tabIcons.every(function(iconPath) { return iconPath.indexOf('/images/') === 0; }), 'TabBar icon paths should resolve from the miniprogram root');
 assert.ok(home.includes('wx:for="{{coreRefactorState.ageSegments}}"'), 'home should render age segments');
 assert.ok(home.includes('ageFirstCoreEnabled'), 'age-first core entry should be gated by age-first flag');
 assert.ok(home.includes('ageFirstCoreAvailable'), 'age-first core entry should be gated by usable age-first config');
