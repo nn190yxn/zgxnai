@@ -50,6 +50,16 @@ async function recordAlert(alert, options = {}) {
   if (options.filePath) {
     await fs.appendFile(options.filePath, `${JSON.stringify(entry)}\n`, 'utf8');
   }
+  if (options.pool) {
+    try {
+      await options.pool.execute(
+        'INSERT INTO release_alerts (event_key, severity, error_code) VALUES (?, ?, ?)',
+        [entry.event, entry.severity, entry.code]
+      );
+    } catch (error) {
+      logger.error('[release-protection] failed to persist alert:', error.message);
+    }
+  }
   return entry;
 }
 

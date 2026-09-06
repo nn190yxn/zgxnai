@@ -133,17 +133,37 @@ function aggregateEventQuality(rows, options = {}) {
     return Number.isFinite(occurredAt) && Number.isFinite(createdAt) && createdAt - occurredAt > threshold;
   }).length;
   const noChildCount = events.filter((event) => !isPresent(event.child_id)).length;
+  const unknownValues = countUnknownValues(events);
+  const unknownValueList = Object.keys(unknownValues).reduce((result, field) => result.concat(
+    unknownValues[field].map((item) => Object.assign({ field }, item))
+  ), []);
+  const unknownEventCount = events.filter((event) => Object.keys(UNKNOWN_VALUE_FIELDS).some((field) => {
+    const allowed = UNKNOWN_VALUE_FIELDS[field];
+    const values = field === 'ability_codes' ? event[field] : [event[field]];
+    return values.some((value) => {
+      const normalized = String(value || '').trim();
+      return normalized && !allowed.has(normalized);
+    });
+  })).length;
+  const averageCoverage = EVENT_COMMON_FIELDS.length && total
+    ? Number((EVENT_COMMON_FIELDS.reduce((sum, field) => sum + fieldCoverage[field].coverage_rate, 0) / EVENT_COMMON_FIELDS.length).toFixed(2))
+    : 0;
 
   return {
     total_event_count: total,
     field_coverage: fieldCoverage,
-    unknown_values: countUnknownValues(events),
+    field_completeness: averageCoverage,
+    unknown_values: unknownValues,
+    unknown_code_rate: total ? Number(((unknownEventCount / total) * 100).toFixed(2)) : 0,
     duplicate_count: duplicateCount,
     duplicate_rate: total ? Number(((duplicateCount / total) * 100).toFixed(2)) : 0,
     late_count: lateCount,
     late_rate: total ? Number(((lateCount / total) * 100).toFixed(2)) : 0,
     no_child_count: noChildCount,
-    no_child_rate: total ? Number(((noChildCount / total) * 100).toFixed(2)) : 0
+    no_child_rate: total ? Number(((noChildCount / total) * 100).toFixed(2)) : 0,
+    late_event_rate: total ? Number(((lateCount / total) * 100).toFixed(2)) : 0,
+    missing_child_rate: total ? Number(((noChildCount / total) * 100).toFixed(2)) : 0,
+    unknown_value_list: unknownValueList
   };
 }
 

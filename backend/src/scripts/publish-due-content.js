@@ -33,7 +33,7 @@ if (require.main === module) {
     process.stdout.write(`${JSON.stringify(result)}\n`);
     return pool.end();
   }).catch(async (error) => {
-    await recordAlert({ event: 'publish_due_failed', code: safeError(error).code }, { filePath: process.env.RELEASE_ALERT_LOG_PATH });
+    await recordAlert({ event: 'publish_due_failed', code: safeError(error).code }, { pool, filePath: process.env.RELEASE_ALERT_LOG_PATH });
     process.stderr.write('定时发布任务失败，已记录告警\n');
     await pool.end();
     process.exitCode = 1;

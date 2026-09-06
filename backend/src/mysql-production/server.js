@@ -620,7 +620,7 @@ app.use((err, req, res, next) => {
 
 bootstrap().catch(async (err) => {
   startupState.safeMode = true;
-  await releaseProtection.recordAlert({ event: 'startup_unhandled_failure', code: releaseProtection.safeError(err).code });
+  await releaseProtection.recordAlert({ event: 'startup_unhandled_failure', code: releaseProtection.safeError(err).code }, { pool });
   console.error('[niuniu-backend] bootstrap entered safe mode');
 });
 
@@ -8103,7 +8103,7 @@ async function runStartupStep(name, task, options) {
   } catch (error) {
     startupState.safeMode = true;
     if (name === 'migrations') startupState.migrationFailed = true;
-    const alert = await releaseProtection.recordAlert({ event: `startup_${name}_failed`, code: releaseProtection.safeError(error).code });
+    const alert = await releaseProtection.recordAlert({ event: `startup_${name}_failed`, code: releaseProtection.safeError(error).code }, { pool });
     startupState.alerts.push(alert.event);
     console.warn(`[niuniu-backend] ${name} failed${critical ? '; service will not start' : '; service continues in safe mode'}`);
     if (critical) {

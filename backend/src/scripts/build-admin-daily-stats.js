@@ -47,7 +47,7 @@ async function rebuildOperationsQualityStats(pool, statDate) {
   const [media] = await pool.execute('SELECT status, created_at, updated_at FROM media_assets WHERE updated_at >= ? AND updated_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
   const [usage] = await pool.execute(`SELECT created_at, event_type FROM event_tracks WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND (event_type LIKE '%content%' OR event_type LIKE 'article_%' OR event_type LIKE 'knowledge_%' OR event_type LIKE 'task_%' OR event_type LIKE 'recipe_%')`, [statDate, statDate]);
   const [restores] = await pool.execute(`SELECT created_at FROM admin_audit_logs WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY) AND action_type LIKE '%restore%'`, [statDate, statDate]);
-  const [tickets] = await pool.execute('SELECT status, created_at, updated_at FROM support_tickets WHERE created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate]);
+  const [tickets] = await pool.execute('SELECT status, created_at, updated_at FROM support_tickets WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
   const [ticketEvents] = await pool.execute('SELECT event_type, callback_method, callback_result, created_at FROM support_ticket_events WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)', [statDate, statDate]);
   const aggregates = [
     ['operations_quality', aggregateOperationsMetrics({ versions, reviews, media, usage, restores }, { startDate: statDate, endDate: statDate })],
