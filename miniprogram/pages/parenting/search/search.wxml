@@ -55,7 +55,7 @@
           bindtap="onSolutionTap"
           data-target-path="{{item.targetPath}}"
         >
-          <text class="solution-type">{{item.type}}</text>
+          <text class="solution-type">{{item.typeLabel}}</text>
           <text class="solution-title">{{item.title}}</text>
           <text class="solution-summary">{{item.summary}}</text>
         </view>

@@ -235,7 +235,7 @@ function registerPublicRoutes(app, options) {
   });
   app.get(`${prefix}/content/:type/:id`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
-    try { const [rows] = await pool.execute(`SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY version DESC LIMIT 1`, [req.params.type, req.params.id]); if (!rows.length) return res.status(404).json({ success: false, message: '内容暂不可用' }); res.json({ success: true, data: JSON.parse(rows[0].payload), meta: { version: rows[0].version, published_at: rows[0].published_at } }); } catch (error) { next(error); }
+     try { const [rows] = await pool.execute(`SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY version DESC LIMIT 1`, [req.params.type, req.params.id]); if (!rows.length) return res.json({ success: true, data: null, meta: { available: false } }); res.json({ success: true, data: JSON.parse(rows[0].payload), meta: { available: true, version: rows[0].version, published_at: rows[0].published_at } }); } catch (error) { next(error); }
   });
   app.get(`${prefix}/home/banners`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });

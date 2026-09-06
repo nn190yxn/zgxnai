@@ -127,6 +127,20 @@ Page({
     });
   },
 
+  normalizeSolution: function(solution) {
+    var item = solution || {};
+    var typeLabels = {
+      action: '行动建议',
+      solution_card: '行动建议',
+      parenting_article: '育儿锦囊',
+      ability_task: '能力练习',
+      nutrition_recipe: '营养建议'
+    };
+    return Object.assign({}, item, {
+      typeLabel: typeLabels[item.type] || '相关建议'
+    });
+  },
+
   loadSearchHistory: function() {
     this.setData({
       searchHistory: wx.getStorageSync('parenting_search_history') || []
@@ -321,7 +335,9 @@ Page({
       });
       that.setData({
         matchedScene: sceneResult.scene || null,
-        sceneSolutions: sceneResult.solutions || [],
+         sceneSolutions: (sceneResult.solutions || []).map(function(item) {
+           return that.normalizeSolution(item);
+         }),
         searchResults: list,
         errorMessage: '',
         partialMessage: (!sceneRequest.ok || !articleRequest.ok) ? '部分内容暂时没有加载，已先展示可用结果。' : '',
