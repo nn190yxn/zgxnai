@@ -116,6 +116,15 @@
   margin-top: 20rpx;
 }
 
+.dimension-item-clickable {
+  padding: 12rpx 0;
+  border-radius: 12rpx;
+}
+
+.dimension-item-clickable:active {
+  opacity: 0.65;
+}
+
 .dimension-row {
   display: flex;
   align-items: center;

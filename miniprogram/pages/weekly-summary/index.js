@@ -268,6 +268,20 @@ Page({
     wx.navigateTo({ url: targetPath });
   },
 
+  onOpenDimension: function(e) {
+    var dimensionKey = e.currentTarget.dataset.dimensionKey || '';
+    if (app.trackKbEvent) {
+      app.trackKbEvent({
+        event_type: 'weekly_summary_dimension_click',
+        module_key: 'weekly_summary',
+        page_key: 'weekly_summary_index',
+        child_id: this.data.childId,
+        event_meta: { dimension_key: dimensionKey }
+      });
+    }
+    wx.navigateTo({ url: '/pages/growth-record/index?childId=' + this.data.childId });
+  },
+
   goToMembership: function() {
     if (app.trackKbEvent) {
       app.trackKbEvent({

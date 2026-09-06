@@ -67,7 +67,7 @@
 
   <view class="summary-card" wx:if="{{currentChild && summary && summary.dimensionScoreList.length}}">
     <text class="section-title">成长维度</text>
-    <view class="dimension-item" wx:for="{{summary.dimensionScoreList}}" wx:key="key">
+    <view class="dimension-item dimension-item-clickable" wx:for="{{summary.dimensionScoreList}}" wx:key="key" data-dimension-key="{{item.key}}" bindtap="onOpenDimension">
       <view class="dimension-row">
         <text class="dimension-label">{{item.label}}</text>
         <text class="dimension-score">{{item.scoreText}}</text>
