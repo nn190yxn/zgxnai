@@ -369,11 +369,11 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
   app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
   app.get(`${prefix}/nutrition/recipes/:id/favorite/status`, authenticateToken, nutritionRecipeFavoriteStatusHandler);
-  app.post(`${prefix}/marketing/generate`, asyncHandler(marketingGenerateHandler));
+  app.post(`${prefix}/marketing/generate`, authenticateAdmin, asyncHandler(marketingGenerateHandler));
   app.options(`${prefix}/marketing/generate`, (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.status(204).end();
   });
   app.get(`${prefix}/feedback`, authenticateToken, asyncHandler(feedbackListHandler));
@@ -11025,35 +11025,46 @@ async function dailyPlanCompleteHandler(req, res) {
     }), { deduplicated: true });
     return;
   }
-  await pool.execute(
-    `INSERT INTO daily_plan_completions (daily_plan_record_id, user_id, child_id, completed_at)
-     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-     ON DUPLICATE KEY UPDATE completed_at = CURRENT_TIMESTAMP`,
-    [record.id, userId, record.child_id]
-  );
-  await pool.execute(
-    `UPDATE daily_plan_records
-     SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-     WHERE id = ? AND user_id = ?`,
-    [record.id, userId]
-  );
-  const timelineResult = await growthTimeline.saveTimelineEntry(pool, {
-    childId: record.child_id,
-    entryType: 'training_complete',
-    sourceType: 'training',
-    sourceId: String(record.id),
-    title: record.title || '每日训练完成',
-    summary: record.summary_text || record.action_text || '',
-    metadata: {
-      planId: record.id,
-      planDate: formatStoredDateValue(record.plan_date),
-      planType: record.plan_type || '',
-      targetType: record.target_type || '',
-      targetId: record.target_id || ''
-    },
-    occurredAt: new Date().toISOString(),
-    idempotencyKey: String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `training-complete:${record.id}`)
-  }, { endpoint: 'daily-plan/complete' });
+  const connection = await pool.getConnection();
+  let timelineResult;
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      `INSERT INTO daily_plan_completions (daily_plan_record_id, user_id, child_id, completed_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE completed_at = CURRENT_TIMESTAMP`,
+      [record.id, userId, record.child_id]
+    );
+    await connection.execute(
+      `UPDATE daily_plan_records
+        SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?`,
+      [record.id, userId]
+    );
+    timelineResult = await growthTimeline.saveTimelineEntry(connection, {
+      childId: record.child_id,
+      entryType: 'training_complete',
+      sourceType: 'training',
+      sourceId: String(record.id),
+      title: record.title || '每日训练完成',
+      summary: record.summary_text || record.action_text || '',
+      metadata: {
+        planId: record.id,
+        planDate: formatStoredDateValue(record.plan_date),
+        planType: record.plan_type || '',
+        targetType: record.target_type || '',
+        targetId: record.target_id || ''
+      },
+      occurredAt: new Date().toISOString(),
+      idempotencyKey: String((req.body && (req.body.idempotencyKey || req.body.idempotency_key)) || `training-complete:${record.id}`)
+    }, { endpoint: 'daily-plan/complete' });
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
   await deleteWeeklySummaryCache(userId, record.child_id, formatStoredDateValue(record.plan_date));
   const [updatedRows] = await pool.execute('SELECT * FROM daily_plan_records WHERE id = ? LIMIT 1', [record.id]);
   sendSuccess(res, req, Object.assign(normalizeDailyPlanRecord(updatedRows[0]), {
@@ -11584,10 +11595,9 @@ async function abilityObservationSubmitHandler(req, res) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [validation.childId, profile.ageGroup, profile.assessmentVersion, profile.abilityDomain, JSON.stringify(profile.dimensionScores), JSON.stringify(profile.observableSigns), profile.primaryFocus, submissionResult.insertId, idempotencyKey]
     );
-    await connection.commit();
-    const [rows] = await pool.execute('SELECT * FROM ability_profiles WHERE id = ? LIMIT 1', [profileResult.insertId]);
+    const [rows] = await connection.execute('SELECT * FROM ability_profiles WHERE id = ? LIMIT 1', [profileResult.insertId]);
     const saved = formatAbilityProfile(rows[0] || Object.assign({}, profile, { id: profileResult.insertId, child_id: validation.childId }));
-    await growthTimeline.saveTimelineEntry(pool, {
+    await growthTimeline.saveTimelineEntry(connection, {
       childId: validation.childId,
       entryType: 'assessment_result',
       sourceType: 'ability_observation',
@@ -11599,6 +11609,7 @@ async function abilityObservationSubmitHandler(req, res) {
       metadata: { assessmentVersion: profile.assessmentVersion, observableSigns: profile.observableSigns },
       idempotencyKey: `ability-profile:${idempotencyKey}`
     }, { endpoint: 'ability-observations/submit' });
+    await connection.commit();
     sendSuccess(res, req, Object.assign({}, saved, {
       notice: profile.notice,
       suggestions: profile.suggestions,
@@ -11696,8 +11707,7 @@ async function trainingPlanGenerateHandler(req, res) {
         [planResult.insertId, childId, task.dayIndex, task.title, task.domain, task.objective, task.duration, JSON.stringify(task.steps), task.parentPrompt, JSON.stringify(task.observeSignals), task.safetyNotice, task.contentVersion]
       );
     }
-    await connection.commit();
-    await growthTimeline.saveTimelineEntry(pool, {
+    await growthTimeline.saveTimelineEntry(connection, {
       childId,
       entryType: 'user_note',
       sourceType: 'training',
@@ -11708,6 +11718,7 @@ async function trainingPlanGenerateHandler(req, res) {
       metadata: { durationDays, contentVersion: 1 },
       idempotencyKey: `training-plan:${idempotencyKey}`
     }, { endpoint: 'training-plans/generate' });
+    await connection.commit();
     sendSuccess(res, req, await loadTrainingPlan(planResult.insertId, childId), { deduplicated: false });
   } catch (err) {
     await connection.rollback();
@@ -13561,8 +13572,7 @@ async function assessmentSubmitHandler(req, res) {
         [result.insertId, dimension, info.score, scoreRate, scoreRate]
       );
     }
-    await connection.commit();
-    await growthTimeline.saveTimelineEntry(pool, {
+    await growthTimeline.saveTimelineEntry(connection, {
       childId,
       entryType: 'assessment_result',
       sourceType: 'assessment',
@@ -13572,6 +13582,7 @@ async function assessmentSubmitHandler(req, res) {
       metadata: { assessmentCode: code, ageGroup, percentage, overallLevel: level },
       idempotencyKey: idempotencyKey || `assessment:${childId}:${result.insertId}`
     }, { endpoint: 'assessments/submit' });
+    await connection.commit();
     const [interpretationRows] = await pool.execute(
       `SELECT * FROM assessment_interpretations
        WHERE assessment_code = ? AND ? BETWEEN score_min AND score_max`,
