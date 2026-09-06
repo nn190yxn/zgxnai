@@ -279,7 +279,12 @@ Page({
         event_meta: { dimension_key: dimensionKey }
       });
     }
-    wx.navigateTo({ url: '/pages/growth-record/index?childId=' + this.data.childId });
+    wx.switchTab({
+      url: '/pages/growth-record/index',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
   },
 
   goToMembership: function() {

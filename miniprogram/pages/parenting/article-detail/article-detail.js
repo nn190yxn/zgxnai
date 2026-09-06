@@ -658,7 +658,11 @@ Page({
   askAiAboutArticle: function() {
     var article = this.data.article || {};
     var title = article.title || '这篇育儿内容';
-    wx.setStorageSync('pendingChatQuestion', '我刚看完《' + title + '》，请结合我家孩子情况，拆成今晚可以执行的三步。');
+    var child = app.getCurrentChild && app.getCurrentChild();
+    crossPageStorage.save('pendingChatQuestion', '我刚看完《' + title + '》，请结合我家孩子情况，拆成今晚可以执行的三步。', {
+      childId: child && child.id,
+      source: 'article_detail'
+    });
     app.trackKbEvent(this.buildArticleTrackPayload({
       event_type: 'article_ai_followup',
       event_meta: { action: 'ask_ai_steps' }
@@ -721,8 +725,8 @@ Page({
       url: '/parenting/articles/' + that.data.articleId + '/comments',
       method: 'GET'
     }).then(function(res) {
-      if (res && res.data) {
-        that.setData({ comments: res.data || [] });
+      if (Array.isArray(res)) {
+        that.setData({ comments: res });
       }
     }).catch(function(err) {
       if (app.globalData.isDebug) console.log('获取评论失败', err);
@@ -747,17 +751,17 @@ Page({
       url: '/parenting/articles/' + that.data.articleId + '/like',
       method: 'POST'
     }).then(function(res) {
-      if (res && res.data) {
-        var nextLikedState = !!(res.data.isLiked || res.data.is_liked);
+      if (res && typeof res === 'object') {
+        var nextLikedState = !!(res.isLiked || res.is_liked);
         that.setData({
           isLiked: nextLikedState,
-          likeCount: res.data.like_count || 0
+          likeCount: res.like_count || 0
         });
         app.trackKbEvent(that.buildArticleTrackPayload({
           event_type: nextLikedState ? 'article_like' : 'article_unlike',
           event_meta: {
             action: nextLikedState ? 'like' : 'unlike',
-            like_count: res.data.like_count || 0
+            like_count: res.like_count || 0
           }
         }));
         wx.showToast({

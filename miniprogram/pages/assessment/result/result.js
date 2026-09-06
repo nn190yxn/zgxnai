@@ -705,7 +705,8 @@ Page({
   saveAssessmentToGrowthRecord: function() {
     var that = this;
     var currentChild = app.getCurrentChild ? app.getCurrentChild() : null;
-    if (!currentChild || !currentChild.id) {
+    var targetChildId = that.data.childId || (currentChild && currentChild.id);
+    if (!targetChildId) {
       wx.showToast({ title: '请先在首页完善孩子档案', icon: 'none' });
       return;
     }
@@ -724,7 +725,7 @@ Page({
         url: '/growth-records/entry',
         method: 'POST',
         data: {
-          childId: currentChild.id,
+          childId: targetChildId,
           entry_type: 'assessment_result',
           title: title,
           summary: summary,

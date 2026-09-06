@@ -2304,7 +2304,7 @@ Page({
       return;
     }
     if (tp.targetPath === '/pages/chat/chat') {
-      wx.switchTab({
+      wx.navigateTo({
         url: tp.targetPath,
         fail: function() {
           wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
