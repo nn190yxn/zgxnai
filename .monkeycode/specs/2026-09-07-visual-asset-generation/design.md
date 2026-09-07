@@ -128,6 +128,47 @@ Create an appetizing realistic editorial food photograph of {dish}, suitable for
 - 每项资产记录 `assetId`、中文用途、Prompt、seed 或 reference ID、母版尺寸、派生尺寸、替代文本和消费者页面。
 - TabBar 激活态由同一透明母版重着色为 `#397A68`，普通态重着色为 `#929995`，保证轮廓完全一致。
 
+## 生成后交付合同
+
+产品维护者完成生成和人工选图后，将全部最终原图放入一个单层文件夹。文件夹中的每个资产 ID 只保留一张最终图片，文件名主体使用本方案定义的 `asset-id`，接入流程接受 `.png`、`.jpg`、`.jpeg` 和 `.webp`，并在后处理阶段统一目标格式。
+
+首选工作区结构：
+
+```text
+.monkeycode/incoming/
+└── visual-assets-2026-09-07/
+    ├── brand-calf-ai.png
+    ├── brand-parent-placeholder.png
+    ├── tab-home.png
+    ├── banner-assessment.webp
+    ├── article-cover-emotion.webp
+    └── ...共 106 张最终原图
+```
+
+界面采用压缩包上传时，压缩包使用 `niuniu-visual-assets-106.zip`，包内顶层目录使用 `visual-assets-2026-09-07/`。上传目标为当前工作区；接入流程统一完成运营后台上传、生产服务器同步和 URL 回填。
+
+### 自动接入流程
+
+1. 扫描源图片文件夹，以文件名主体匹配 106 个资产 ID，生成缺失、重复、扩展名和未知文件报告。
+2. 检查图片解码、尺寸、长宽比、透明通道、色彩模式和文件大小，并输出需要重新生成或重新裁切的项目。
+3. 为固定视觉生成 192×192、96×96 和页面实际使用尺寸；为 TabBar 生成普通态与激活态；为内容视觉生成 WebP、缩略图和分享尺寸。
+4. 将品牌、TabBar、固定功能图标和本地降级图写入 `miniprogram/images/generated/{group}/`，再替换小程序中的占位路径与复用图标。
+5. 通过现有管理员媒体接口 `POST /admin-api/v1/media` 上传 Banner、封面、食谱、场景、分享背景和会员插画；服务端将文件登记到 `media_assets` 并存储于 `uploads/media`。
+6. 将媒体接口返回的 URL 写入 `mobile_image_url`、`image_url`、`cover`、`cover_image`、`icon_url` 或 `media[].url` 等对应字段，并登记内容引用关系和替代文本。
+7. 生成 `asset-integration-manifest.json`，记录源文件校验和、派生文件路径、远程媒体 ID、公开 URL、消费者页面和接入状态。
+8. 执行静态资源引用检查、Lint、测试、微信代码包体积检查和 36 页面视觉验收，再按现有发布流程部署服务器资源。
+
+### 接入职责
+
+| 阶段 | 产品维护者 | 接入流程 |
+| --- | --- | --- |
+| 图片生成 | 按 Prompt 生成、挑选最终版本 | 提供文件名与质量规则 |
+| 文件整理 | 将 106 张最终原图放入一个文件夹 | 校验完整性与重复项 |
+| 工作区交付 | 上传文件夹或指定 ZIP | 解包、识别和建立清单 |
+| 小程序资源 | 提供原图 | 转换、压缩、落位并更新代码引用 |
+| 服务器媒体 | 提供原图 | 上传媒体中心、记录 URL 并关联内容 |
+| 发布验收 | 确认视觉效果 | 执行测试、部署和页面验收 |
+
 ## 接入策略
 
 1. 先生成 63 个固定视觉母版并完成风格验收，再用同一参考图和 Prompt 骨架生成 43 个内容与状态母版。
