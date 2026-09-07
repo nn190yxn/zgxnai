@@ -34,8 +34,14 @@ function readReleaseFile(relativePath) {
 
 function verifyContracts() {
   const serverSource = readReleaseFile('backend/src/mysql-production/server.js').toString('utf8');
-  assert(serverSource.includes('await runMigrations(pool);'), '生产入口缺少迁移执行');
-  assert(serverSource.includes('await ensureProductionTables();'), '生产入口缺少历史表初始化');
+  assert(
+    /await runStartupStep\('migrations', \(\) => runMigrations\(pool\), \{ critical: true \}\);/.test(serverSource),
+    '生产入口缺少关键迁移执行'
+  );
+  assert(
+    /await runStartupStep\('legacy_schema', \(\) => ensureProductionTables\(\), \{ critical: true \}\);/.test(serverSource),
+    '生产入口缺少关键历史表初始化'
+  );
   assert(serverSource.includes('process.exit(1);'), '生产入口缺少启动失败退出保护');
   assert(!serverSource.includes('MySQL init skipped'), '生产入口仍允许跳过数据库初始化');
   assert(serverSource.includes('/knowledge/contents`'), '生产入口缺少知识内容路由');

@@ -622,6 +622,7 @@ bootstrap().catch(async (err) => {
   startupState.safeMode = true;
   await releaseProtection.recordAlert({ event: 'startup_unhandled_failure', code: releaseProtection.safeError(err).code }, { pool });
   console.error('[niuniu-backend] bootstrap entered safe mode');
+  process.exit(1);
 });
 
 function loadEnv(envPath) {
