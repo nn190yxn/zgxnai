@@ -59,4 +59,18 @@ managed-editing.js、recipe-content.js 为新增文件。其余 7 个文件先�
 
 本轮 `npm test` 全部通过，其中 pretest 包括 57 条文章请求用例、UI 状态回归及 16 项 Node 测试（包含新增发布清单测试）。`npm run lint` 通过后端 88 个文件、小程序 66 个文件的语法检查。
 
-生产文件同步、备份、重启、数据库修改均尚未执行。后台账号登录、真实生产 MySQL 数据验收及小程序真机验收仍待完成。
+用户确认生产操作后，已完成备份、9 个文件同步和 niuniu-backend 重启。生产 schema_migrations 的 6 项迁移均为 applied，checksum 与部署定义一致；6 张关键表字段检查通过，本次无需应用新增迁移。数据库包含 63 张 InnoDB 表。
+
+## 发布结果
+
+- 发布业务版本：c5aca1d；发布准备提交：e1776df。
+- 服务重启时间：2026-09-08 15:07:31 UTC（北京时间 23:07:31）。
+- 备份目录：`/home/ubuntu/niuniu-parenting/backups/content-publication-e1776df-20260908-01/`。
+- 备份内容：7 个原始文件、仅含必要进程信息的清单，以及 `niuniu_parenting.sql`。数据库备份大小 15,296,344 字节，SHA-256 为 `bdd80da9111a0b34e7696fe0d1537c436dd459b4da7151b76d9bac88fc3f2027`；63 个建表定义及导出完成标记已核对。
+- 同步后再次校验 41 个文件：9 个目标文件符合本方案目标 hash，其余文件符合生产原始 hash。生产食谱 JSON 和 backend/package.json 保留原版本。
+- PM2 重启次数由 117 增至 118，后续复核保持 118；进程 online，启动后 startup 类告警为 0，本地健康接口通过。
+- 三个开关均为 true：server_content_read_enabled、miniprogram_remote_content_enabled、admin_content_write_enabled。
+- 公网 11 项 GET 验收通过：health、runtime/config、knowledge/contents、knowledge/ability-content、pain-points、nutrition/recipes、已有食谱详情、home/banners，以及后台 index.html、app.js、modules/operations.js。两个知识接口携带 schema_version: 1，三个后台文件均与工作区 SHA-256 一致。
+- 以上操作仅针对小牛育儿部署目录、niuniu_parenting 数据库和 niuniu-backend 进程。
+
+后台账号登录、生产内容编辑/审核/发布操作，以及小程序真机验收仍待完成。本轮公网验收仅调用已知公开 GET 接口。
