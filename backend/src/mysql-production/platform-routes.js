@@ -6,6 +6,7 @@ const publishing = require('./content-publishing');
 const tickets = require('./support-tickets');
 const membership = require('./membership-operations');
 const users = require('./user-operations');
+const managedEditing = require('./managed-editing');
 const { normalizePainPoint } = require('./pain-points');
 const { ARTICLE_FIELDS, PAIN_POINT_CATEGORIES } = require('./platform-contract');
 const { getReleaseFlags } = require('./release-protection');
@@ -66,9 +67,47 @@ function registerPlatformRoutes(app, options) {
 
   app.post(`${prefix}/articles`, permission('article:write'), articleWriteHandler(pool, 'create'));
   app.put(`${prefix}/articles/:id`, permission('article:write'), articleWriteHandler(pool, 'update'));
-  app.get(`${prefix}/articles`, permission('article:read'), async (req, res, next) => { try { const [rows] = await pool.execute('SELECT * FROM articles ORDER BY updated_at DESC LIMIT ?', [boundedLimit(req.query.limit)]); res.json({ success: true, list: rows }); } catch (error) { next(error); } });
+  app.get(`${prefix}/articles`, permission('article:read'), async (req, res, next) => { try { const [rows] = await pool.execute("SELECT a.*, cv.payload, cv.publish_status, cv.review_status FROM articles a LEFT JOIN content_versions cv ON cv.content_type = 'article' AND cv.content_id = CAST(a.id AS CHAR) AND cv.version = (SELECT MAX(v.version) FROM content_versions v WHERE v.content_type = cv.content_type AND v.content_id = cv.content_id) ORDER BY a.updated_at DESC LIMIT ?", [boundedLimit(req.query.limit)]); res.json({ success: true, list: rows.map(({ payload, ...row }) => ({ ...row, ...parseJsonObject(payload), id: row.id, publish_status: row.publish_status, review_status: row.review_status })) }); } catch (error) { next(error); } });
+  app.get(`${prefix}/pain-points`, permission('pain_point:read'), async (req, res, next) => {
+    try {
+      const [rows] = await pool.execute("SELECT cv.* FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.version = (SELECT MAX(v.version) FROM content_versions v WHERE v.content_type = cv.content_type AND v.content_id = cv.content_id) ORDER BY cv.id DESC LIMIT ?", [boundedLimit(req.query.limit)]);
+      res.json({ success: true, list: rows.map((row) => ({ ...parseJsonObject(row.payload), id: row.content_id, publish_status: row.publish_status, review_status: row.review_status })) });
+    } catch (error) { next(error); }
+  });
   app.post(`${prefix}/pain-points`, permission('pain_point:write'), painPointWrite(pool, 'create'));
   app.put(`${prefix}/pain-points/:key`, permission('pain_point:write'), painPointWrite(pool, 'update'));
+  app.get(`${prefix}/content/managed/:type`, permission('article:read'), async (req, res, next) => {
+    try {
+      const type = req.params.type;
+      const sources = await managedEditing.sourceItems(pool, type);
+      const [versions] = await pool.execute('SELECT * FROM content_versions WHERE content_type = ? ORDER BY version DESC', [type]);
+      const latest = new Map();
+      versions.forEach((row) => { if (!latest.has(row.content_id)) latest.set(row.content_id, row); });
+      const list = sources.map((source) => {
+        const id = String(type === 'task' ? source.task_code : source.id);
+        const version = latest.get(id);
+        return { ...source, ...(version ? parseJsonObject(version.payload) : {}), id, content_id: id, publish_status: version?.publish_status || 'published' };
+      });
+      res.json({ success: true, list });
+    } catch (error) { next(error); }
+  });
+  app.put(`${prefix}/content/managed/:type/:id`, permission('article:write'), async (req, res, next) => {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const { type, id } = req.params;
+      const result = await access.withAudit(connection, auditRequest(req, 'content.edit', type, id, null, req.body), async () => {
+        const sources = await managedEditing.sourceItems(connection, type, id);
+        if (!sources.length) throw Object.assign(new Error('请选择现有内容进行编辑'), { statusCode: 404 });
+        const [versions] = await connection.execute('SELECT * FROM content_versions WHERE content_type = ? AND content_id = ? ORDER BY version DESC LIMIT 1 FOR UPDATE', [type, id]);
+        const base = { ...sources[0], ...(versions.length ? parseJsonObject(versions[0].payload) : {}) };
+        const payload = managedEditing.normalizeEdit(type, base, req.body || {});
+        await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) VALUES (?, ?, ?, ?, ?)', [type, id, Number(versions[0]?.version || 0) + 1, JSON.stringify(payload), req.admin.adminUserId]);
+        return { ...payload, id, content_id: id };
+      });
+      res.json({ success: true, data: result, meta: { status: 'draft' } });
+    } catch (error) { next(error); } finally { if (connection) connection.release(); }
+  });
 
   app.get(`${prefix}/banners`, permission('banner:read'), bannerList(pool));
   app.post(`${prefix}/banners`, permission('banner:write'), bannerWrite(pool, 'create'));
@@ -225,13 +264,14 @@ function registerPublicRoutes(app, options) {
       const params = [];
       const where = ['1 = 1'];
       if (req.query.category && PAIN_POINT_CATEGORIES.includes(String(req.query.category))) { where.push('category = ?'); params.push(String(req.query.category)); }
-      const [rows] = await pool.execute(`SELECT p.* FROM pain_points p WHERE ${where.map((clause) => clause === '1 = 1' ? clause : clause.replace('category', 'p.category')).join(' AND ')} AND EXISTS (SELECT 1 FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.content_id = p.pain_point_key AND cv.review_status = 'approved' AND cv.publish_status = 'published' AND (cv.published_at IS NULL OR cv.published_at <= NOW())) ORDER BY p.id ASC`, params);
-      res.json({ success: true, list: rows.map(formatPainPoint), meta: { source: 'formal', fallback: false } });
+      const [rows] = await pool.execute("SELECT cv.payload FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.review_status = 'approved' AND cv.publish_status = 'published' AND (cv.published_at IS NULL OR cv.published_at <= NOW()) AND cv.version = (SELECT MAX(v.version) FROM content_versions v WHERE v.content_type = cv.content_type AND v.content_id = cv.content_id AND v.review_status = 'approved' AND v.publish_status = 'published') ORDER BY cv.content_id");
+      const list = rows.map((row) => parseJsonObject(row.payload)).filter((row) => !params.length || row.category === params[0]).map(formatPainPoint);
+      res.json({ success: true, list, meta: { source: 'formal', fallback: false } });
     } catch (error) { next(error); }
   });
   app.get(`${prefix}/pain-points/:key`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
-     try { const [rows] = await pool.execute("SELECT p.* FROM pain_points p WHERE p.pain_point_key = ? AND EXISTS (SELECT 1 FROM content_versions cv WHERE cv.content_type = 'pain_point' AND cv.content_id = p.pain_point_key AND cv.review_status = 'approved' AND cv.publish_status = 'published' AND (cv.published_at IS NULL OR cv.published_at <= NOW())) LIMIT 1", [req.params.key]); if (!rows.length) return res.status(404).json({ success: false, message: '成长痛点不存在' }); res.json({ success: true, data: formatPainPoint(rows[0]) }); } catch (error) { next(error); }
+     try { const [rows] = await pool.execute("SELECT payload FROM content_versions WHERE content_type = 'pain_point' AND content_id = ? AND review_status = 'approved' AND publish_status = 'published' AND (published_at IS NULL OR published_at <= NOW()) ORDER BY version DESC LIMIT 1", [req.params.key]); if (!rows.length) return res.status(404).json({ success: false, message: '成长痛点不存在' }); res.json({ success: true, data: formatPainPoint(parseJsonObject(rows[0].payload)) }); } catch (error) { next(error); }
   });
   app.get(`${prefix}/content/:type/:id`, async (req, res, next) => {
     if (!releaseFlags.serverContentRead) return res.status(503).json({ success: false, code: 'CONTENT_READ_DISABLED', message: '服务端内容暂未开放' });
@@ -263,6 +303,7 @@ function articleWriteHandler(pool, mode) {
     try {
       const body = req.body || {};
       const contentType = ['article', 'task', 'recipe'].includes(String(body.content_type || '')) ? String(body.content_type) : 'article';
+      if (contentType !== 'article') throw Object.assign(new Error('请通过训练或营养编辑入口保存现有内容'), { statusCode: 400 });
       const values = ARTICLE_FIELDS.map((field) => field === 'content' ? cleanRichText(body[field]) : body[field] == null ? '' : body[field]);
       connection = await pool.getConnection();
       const targetId = mode === 'create' ? null : req.params.id;
@@ -273,10 +314,13 @@ function articleWriteHandler(pool, mode) {
         if (mode === 'create') {
           const [insert] = await connection.execute(`INSERT INTO articles (${ARTICLE_FIELDS.join(', ')}) VALUES (${ARTICLE_FIELDS.map(() => '?').join(', ')})`, values);
           id = insert.insertId;
+          await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [id]);
         } else {
-          await connection.execute(`UPDATE articles SET ${ARTICLE_FIELDS.map((field) => `${field} = ?`).join(', ')} WHERE id = ?`, values.concat(targetId));
+          const [existing] = await connection.execute('SELECT * FROM articles WHERE id = ? FOR UPDATE', [id]);
+          if (!existing.length) throw Object.assign(new Error('内容不存在'), { statusCode: 404 });
+          const [latest] = await connection.execute('SELECT payload FROM content_versions WHERE content_type = ? AND content_id = ? ORDER BY version DESC LIMIT 1', [contentType, String(id)]);
+          Object.assign(body, { ...existing[0], ...(latest.length ? parseJsonObject(latest[0].payload) : {}), ...body });
         }
-        await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [id]);
          const [versions] = await connection.execute('SELECT COALESCE(MAX(version), 0) AS max_version FROM content_versions WHERE content_type = ? AND content_id = ?', [contentType, String(id)]);
          await connection.execute('INSERT INTO content_versions (content_type, content_id, version, payload, created_by) VALUES (?, ?, ?, ?, ?)', [contentType, String(id), Number(versions[0].max_version) + 1, JSON.stringify({ id, ...body, content: cleanRichText(body.content) }), req.admin.adminUserId]);
         return id;
@@ -340,6 +384,7 @@ function contentAction(pool, targetStatus) {
       const isRestore = targetStatus === 'draft' && req.path.endsWith('/restore');
       const requestedVersion = isRestore ? Number(req.body && req.body.version) : null;
       if (!contentType) return res.status(400).json({ success: false, message: '内容类型不能为空' });
+      if (contentType === 'task' && targetStatus === 'offline') return res.status(409).json({ success: false, message: '已有训练关联计划和记录，当前仅支持修改后重新发布' });
       if (isRestore && (!Number.isInteger(requestedVersion) || requestedVersion < 1)) return res.status(400).json({ success: false, message: '历史版本号无效' });
       connection = await pool.getConnection();
       await connection.beginTransaction();
@@ -358,17 +403,19 @@ function contentAction(pool, targetStatus) {
         restoredId = insert.insertId;
       } else {
         publishing.assertTransition(from, targetStatus);
-        await connection.execute('UPDATE content_versions SET review_status = ?, publish_status = ? WHERE id = ?', [targetStatus === 'approved' ? 'approved' : current.review_status, targetStatus, current.id]);
+        if (targetStatus === 'published') {
+          if (!await publishing.publishVersion(connection, current.id)) throw Object.assign(new Error('内容版本不可发布'), { statusCode: 409 });
+        } else {
+          await connection.execute('UPDATE content_versions SET review_status = ?, publish_status = ? WHERE id = ?', [targetStatus === 'approved' ? 'approved' : current.review_status, targetStatus, current.id]);
+        }
         if (targetStatus === 'pending_review' || targetStatus === 'approved' || targetStatus === 'rejected') await connection.execute('INSERT INTO content_reviews (content_version_id, reviewer_id, decision, comment) VALUES (?, ?, ?, ?)', [current.id, req.admin.adminUserId, targetStatus, String(req.body && (req.body.comment || req.body.reason) || '').slice(0, 2000)]);
         if (targetStatus === 'scheduled') await connection.execute('INSERT INTO content_publish_jobs (content_type, content_id, version_id, scheduled_at) VALUES (?, ?, ?, ?)', [contentType, req.params.id, current.id, req.body && req.body.scheduled_at ? new Date(req.body.scheduled_at) : new Date()]);
-        if (targetStatus === 'published') await connection.execute('UPDATE content_versions SET published_at = NOW() WHERE id = ?', [current.id]);
-        if (contentType === 'article' && targetStatus === 'published') await connection.execute('UPDATE articles SET is_published = 1 WHERE id = ?', [req.params.id]);
         if (contentType === 'article' && targetStatus === 'offline') await connection.execute('UPDATE articles SET is_published = 0 WHERE id = ?', [req.params.id]);
       }
       const actionName = isRestore ? 'restore' : targetStatus;
       const afterPayload = isRestore ? { status: targetStatus, version: restoredVersion, restored_from: requestedVersion } : { status: targetStatus };
       await connection.execute('INSERT INTO admin_audit_logs (admin_user_id, action_type, target_type, target_id, before_payload, after_payload, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)', [req.admin.adminUserId, `content.${actionName}`, contentType, req.params.id, JSON.stringify({ status: from }), JSON.stringify(afterPayload), req.ip]);
-      await connection.commit().catch(() => {});
+      await connection.commit();
       res.json({ success: true, data: { id: isRestore ? restoredId : current.id, status: targetStatus, ...(isRestore ? { version: restoredVersion, restored_from: requestedVersion } : {}) } });
     } catch (error) { if (connection) await connection.rollback().catch(() => {}); next(error); } finally { if (connection) connection.release(); }
   };

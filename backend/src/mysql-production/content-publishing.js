@@ -31,6 +31,28 @@ function nextVersion(rows) {
   return rows.reduce((max, row) => Math.max(max, Number(row.version) || 0), 0) + 1;
 }
 
+async function publishVersion(connection, versionId, now = new Date()) {
+  const [rows] = await connection.execute('SELECT * FROM content_versions WHERE id = ? FOR UPDATE', [versionId]);
+  const row = rows[0];
+  if (!row || row.review_status !== 'approved' || !['approved', 'scheduled'].includes(row.publish_status)) return false;
+  const payload = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload;
+  if (row.content_type === 'task' || row.content_type === 'recipe') {
+    const { sourceItems, normalizeEdit, TASK_FIELDS } = require('./managed-editing');
+    const sources = await sourceItems(connection, row.content_type, row.content_id);
+    if (!sources.length) throw new Error('Managed content source no longer exists');
+    const normalized = normalizeEdit(row.content_type, sources[0], payload);
+    if (row.content_type === 'task') await connection.execute(`UPDATE reading_tasks SET ${TASK_FIELDS.map((field) => `${field} = ?`).join(', ')} WHERE task_code = ?`, TASK_FIELDS.map((field) => normalized[field] ?? null).concat(row.content_id));
+  }
+  if (row.content_type === 'article') {
+    const { ARTICLE_FIELDS } = require('./platform-contract');
+    const fields = ARTICLE_FIELDS.filter((field) => Object.prototype.hasOwnProperty.call(payload, field));
+    await connection.execute(`UPDATE articles SET ${fields.map((field) => `${field} = ?, `).join('')}is_published = 1 WHERE id = ?`, fields.map((field) => payload[field]).concat(row.content_id));
+  }
+  await connection.execute("UPDATE content_versions SET publish_status = 'offline' WHERE content_type = ? AND content_id = ? AND id <> ? AND publish_status = 'published'", [row.content_type, row.content_id, row.id]);
+  await connection.execute("UPDATE content_versions SET publish_status = 'published', published_at = ? WHERE id = ?", [now, row.id]);
+  return true;
+}
+
 async function publishDue(connection, now = new Date()) {
   const [jobs] = await connection.execute(
     `SELECT id, content_type, content_id, version_id FROM content_publish_jobs
@@ -38,11 +60,7 @@ async function publishDue(connection, now = new Date()) {
   );
   let published = 0;
   for (const job of jobs) {
-    const [result] = await connection.execute(
-      `UPDATE content_versions SET publish_status = 'published', published_at = ?
-       WHERE id = ? AND review_status = 'approved' AND publish_status IN ('approved', 'scheduled')`, [now, job.version_id]
-    );
-    if (Number(result.affectedRows || 0) > 0) {
+    if (await publishVersion(connection, job.version_id, now)) {
       await connection.execute(`UPDATE content_publish_jobs SET status = 'completed', completed_at = ?, attempt_count = attempt_count + 1 WHERE id = ? AND status = 'pending'`, [now, job.id]);
       published += 1;
     } else {
@@ -52,4 +70,4 @@ async function publishDue(connection, now = new Date()) {
   return published;
 }
 
-module.exports = { TRANSITIONS, canTransition, assertTransition, isPublicVersion, nextVersion, publishDue };
+module.exports = { TRANSITIONS, canTransition, assertTransition, isPublicVersion, nextVersion, publishVersion, publishDue };

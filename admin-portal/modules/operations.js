@@ -5,9 +5,9 @@
     { key: 'media', label: '媒体', read: '/media?status=active&limit=30', permission: 'media:read' },
     { key: 'banners', label: 'Banner', read: '/banners?limit=30', permission: 'banner:read' },
     { key: 'articles', label: '文章', read: '/articles?limit=30', permission: 'article:read' },
-    { key: 'pain-points', label: '成长痛点', read: '/content/ops/tips?limit=30', permission: 'pain_point:read' },
-    { key: 'training', label: '训练', read: '/content/ops/articles?content_type=task&limit=30', permission: 'article:read' },
-    { key: 'nutrition', label: '营养', read: '/content/ops/articles?content_type=recipe&limit=30', permission: 'article:read' },
+    { key: 'pain-points', label: '成长痛点', read: '/pain-points?limit=30', permission: 'pain_point:read' },
+    { key: 'training', label: '训练', read: '/content/managed/task', permission: 'article:read' },
+    { key: 'nutrition', label: '营养', read: '/content/managed/recipe', permission: 'article:read' },
     { key: 'membership', label: '会员', read: '/membership/config', permission: 'membership:read' },
     { key: 'users', label: '用户', read: '/users/operations?limit=30', permission: 'user:read' },
     { key: 'support', label: '客服', read: '/support/tickets?limit=30', permission: 'ticket:read' }
@@ -100,18 +100,26 @@
       return;
     }
     const isContent = contentTypes.includes(key);
+    if ((key === 'training' || key === 'nutrition') && !itemId) {
+      container.innerHTML = '<div class="empty-state">请从列表选择现有内容进行编辑。</div>';
+      return;
+    }
     container.innerHTML = `<form class="operation-editor" data-editor-form="${key}" data-item-id="${esc(itemId || '')}">
       <div class="editor-heading"><h4>${esc(title || `新建${MODULES.find((module) => module.key === key).label}`)}</h4><span class="permission-badge" data-permission="${MODULES.find((module) => module.key === key).permission}">权限按角色显示</span></div>
       <label>标识<input name="content_id" value="${esc(itemId || '')}" placeholder="稳定标识" /></label>
       <label>标题<input name="title" required value="${esc(title || '')}" placeholder="标题" /></label>
-      <label>摘要<textarea name="summary" placeholder="摘要、典型表现或安全提示"></textarea></label>
-      <label>正文<textarea name="content" required placeholder="正文、步骤、家长话术或营养说明"></textarea></label>
+      <label>摘要<textarea name="summary" placeholder="摘要、典型表现或安全提示">${esc(item?.summary || item?.description || '')}</textarea></label>
+      <label>正文<textarea name="content" required placeholder="正文、步骤、家长话术或营养说明">${esc(item?.content || item?.parent_prompt || '')}</textarea></label>
       <label>媒体 URL<input name="media_url" placeholder="选择已有媒体 URL 或填写引用地址" /></label>
+      ${key === 'training' || key === 'nutrition' ? `<label>完整内容字段（JSON，保留食材、步骤和年龄范围）<textarea name="structured_content" required>${esc(JSON.stringify(item || {}, null, 2))}</textarea></label>` : ''}
       ${isContent ? '<label>计划上线时间<input name="scheduled_at" type="datetime-local" /></label><label>审核意见<textarea name="comment" placeholder="送审或审核通过时填写"></textarea></label>' : ''}
       <div class="editor-actions"><button type="submit">保存草稿</button>${isContent ? '<button type="button" class="ghost editor-preview">预览内容</button><button type="button" class="ghost content-action" data-action="submit-review">送审</button><button type="button" class="ghost content-action" data-action="approve">审核通过</button><button type="button" class="content-action" data-action="publish">立即上线</button><button type="button" class="ghost content-action" data-action="schedule">安排上线</button><button type="button" class="ghost content-action" data-action="restore">恢复之前的修改</button>' : ''}</div>
       <p class="hint" data-unsaved></p><div class="editor-preview-panel" hidden></div><div class="editor-state" data-editor-state>等待操作</div>
     </form>`;
     const form = container.querySelector('form');
+    if (key === 'training' || key === 'nutrition') {
+      ['title', 'summary', 'content', 'media_url', 'content_id'].forEach((name) => { form.elements[name].required = false; form.elements[name].closest('label').hidden = true; });
+    }
     form.addEventListener('input', () => markDirty(form, true));
     form.addEventListener('submit', (event) => saveEditor(event, key, form));
     container.querySelector('.editor-preview')?.addEventListener('click', () => previewEditor(form));
@@ -144,14 +152,35 @@
     const existingId = form.dataset.itemId || '';
     const editorIdField = key === 'banners' ? form.elements.banner_id : form.elements.content_id;
     const id = existingId || editorIdField.value.trim();
-    const body = Object.fromEntries(new FormData(form).entries());
+    const original = itemList(state[key]?.payload).find((item) => String(item.id || item.content_id || item.pain_point_key || '') === existingId) || {};
+    const body = { ...original, ...Object.fromEntries(new FormData(form).entries()) };
+    if (key === 'training' || key === 'nutrition') {
+      try {
+        const payload = JSON.parse(form.elements.structured_content.value);
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('内容必须为对象');
+        const saved = await window.AdminPortal.request(`/content/managed/${key === 'training' ? 'task' : 'recipe'}/${encodeURIComponent(existingId)}`, { method: 'PUT', body: JSON.stringify(payload) });
+        markDirty(form, false);
+        setEditorState(form, '草稿已保存', 'success');
+        form.elements.title.value = saved.title || '';
+        loadModule(key);
+      } catch (error) { setEditorState(form, `保存失败：${error.message}`, 'error'); }
+      return;
+    }
+    if (key === 'pain-points') {
+      body.pain_point_key = id;
+      body.short_title = body.title;
+      body.description = body.summary;
+      body.parent_prompt = body.content;
+    }
     if (key === 'banners') body.enabled = form.elements.enabled.checked ? 1 : 0;
     if (key === 'training') body.content_type = 'task';
     if (key === 'nutrition') body.content_type = 'recipe';
     const path = key === 'banners' ? (existingId ? `/banners/${encodeURIComponent(existingId)}` : '/banners') : key === 'articles' ? (id ? `/articles/${encodeURIComponent(id)}` : '/articles') : key === 'pain-points' ? (id ? `/pain-points/${encodeURIComponent(id)}` : '/pain-points') : `/articles${id ? `/${encodeURIComponent(id)}` : ''}`;
     setEditorState(form, '正在保存草稿...', 'loading');
     try {
-      await window.AdminPortal.request(path, { method: key === 'banners' ? (existingId ? 'PUT' : 'POST') : (id ? 'PUT' : 'POST'), body: JSON.stringify(body) });
+      const saved = await window.AdminPortal.request(path, { method: key === 'banners' ? (existingId ? 'PUT' : 'POST') : (id ? 'PUT' : 'POST'), body: JSON.stringify(body) });
+      const savedId = saved?.id || saved?.content_id || saved?.pain_point_key || id;
+      if (savedId) { form.dataset.itemId = String(savedId); editorIdField.value = String(savedId); }
       markDirty(form, false);
       setEditorState(form, '草稿已保存', 'success');
       loadModule(key);

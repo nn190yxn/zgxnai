@@ -135,6 +135,81 @@ function createImportPool() {
   return { getConnection: async () => connection };
 }
 
+function testLocalPagination() {
+  const filters = { contentType: 'task', limit: 50 };
+  const all = knowledgeContent.getLocalKnowledge(filters);
+  assert.ok(all.length > 1);
+  assert.deepStrictEqual(knowledgeContent.getLocalKnowledge({ ...filters, limit: 1 }), all.slice(0, 1));
+  assert.deepStrictEqual(knowledgeContent.getLocalKnowledge({ ...filters, offset: 1, limit: 1 }), all.slice(1, 2));
+  assert.deepStrictEqual(knowledgeContent.getLocalKnowledge({ ...filters, offset: '1', limit: '1' }), all.slice(1, 2));
+  assert.deepStrictEqual(knowledgeContent.getLocalKnowledge({ ...filters, offset: -1, limit: 1 }), all.slice(0, 1));
+  assert.deepStrictEqual(knowledgeContent.getLocalKnowledge({ ...filters, offset: all.length }), []);
+}
+
+async function testPaginatedFallback() {
+  const filters = {
+    contentType: 'task',
+    ageSegmentCodes: ['age_4_5', 'age_6_9'],
+    abilityCodes: ['attention'],
+    sceneCodes: ['learning_focus'],
+    contentForm: 'task',
+    reviewStatus: 'approved',
+    publishedOnly: true,
+    keywords: ['练习'],
+    limit: 2,
+    offset: 1
+  };
+  const invalidRow = createFormalRow({ source_name: '' });
+  const error = Object.assign(new Error('database unavailable'), { code: 'ECONNREFUSED' });
+  const cases = [
+    { name: 'nonempty formal page', pages: [[createFormalRow()]], formal: true },
+    { name: 'empty later page with governed first page', pages: [[], [invalidRow, createFormalRow()]], formal: true },
+    { name: 'ungoverned later page with governed first page', pages: [[invalidRow], [createFormalRow()]], formal: true },
+    { name: 'empty formal dataset', pages: [[], []], reason: 'formal_content_missing' },
+    { name: 'ungoverned first page', pages: [[], [invalidRow]], reason: 'formal_content_missing' },
+    { name: 'later page query failure', pages: [error], reason: 'formal_content_query_failed' },
+    { name: 'first page check failure', pages: [[], error], reason: 'formal_content_query_failed' },
+    { name: 'empty initial page', pages: [[]], offset: 0, reason: 'formal_content_missing' }
+  ];
+  for (const testCase of cases) {
+    const options = { ...filters, offset: testCase.offset === undefined ? filters.offset : testCase.offset };
+    const originalOptions = JSON.parse(JSON.stringify(options));
+    const calls = [];
+    const gaps = [];
+    const pool = {
+      execute: async (sql, params) => {
+        const page = testCase.pages[calls.length];
+        calls.push({ sql, params });
+        assert.ok(page !== undefined, `${testCase.name}: unexpected query`);
+        if (page instanceof Error) throw page;
+        return [page];
+      }
+    };
+    const result = await knowledgeContent.queryKnowledgeWithFallback(pool, options, (...args) => gaps.push(args));
+    assert.strictEqual(calls.length, testCase.pages.length, testCase.name);
+    assert.deepStrictEqual(calls[0], knowledgeContent.buildKnowledgeQuery(options));
+    if (calls.length === 2) {
+      assert.deepStrictEqual(calls[1], knowledgeContent.buildKnowledgeQuery({ ...options, offset: 0 }));
+    }
+    assert.deepStrictEqual(options, originalOptions);
+    if (testCase.formal) {
+      const expectedItems = testCase.pages.length === 1
+        ? [knowledgeContent.normalizeKnowledgeRow(testCase.pages[0][0], false)] : [];
+      assert.deepStrictEqual(result, { items: expectedItems, source: 'formal', fallback: false, gapReason: '' });
+      assert.deepStrictEqual(gaps, []);
+    } else {
+      const allLocal = knowledgeContent.getLocalKnowledge({ ...options, limit: 50, offset: 0 });
+      assert.ok(allLocal.length > options.offset, testCase.name);
+      assert.deepStrictEqual(result, {
+        items: allLocal.slice(options.offset, options.offset + options.limit),
+        source: 'local_fallback', fallback: true, gapReason: testCase.reason
+      });
+      assert.deepStrictEqual(gaps, [testCase.reason === 'formal_content_query_failed'
+        ? [testCase.reason, options, error] : [testCase.reason, options]]);
+    }
+  }
+}
+
 async function testIdempotentImportResults() {
   const task = sample.find((item) => item.task_code === 'focus_36_red_light_freeze');
   const pool = createImportPool();
@@ -174,6 +249,8 @@ async function run() {
   testNormalizationAndQueryBuilder();
   await testFormalQueryLegality();
   await testFallbackPaths();
+  testLocalPagination();
+  await testPaginatedFallback();
   await testIdempotentImportResults();
   testFormalContentProperty();
   console.log('Knowledge content import, query, recall, fallback and property tests passed.');

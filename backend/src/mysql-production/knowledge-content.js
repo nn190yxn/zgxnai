@@ -265,6 +265,8 @@ function getLocalKnowledge(filters) {
   const sceneCodes = normalizeTextList(options.sceneCodes);
   const contentTypes = normalizeTextList(options.contentTypes || options.contentType);
   const keywords = normalizeTextList(options.keywords).map((item) => item.toLowerCase());
+  const limit = Math.max(1, Math.min(50, Number(options.limit || 20)));
+  const offset = Math.max(0, Number(options.offset || 0));
   return localKnowledgeItems.map((rawItem) => validateKnowledgeItem(rawItem)).filter((result) => result.valid).map((result) => result.item).filter((item) => {
     if (contentTypes.length && !contentTypes.includes(item.type)) return false;
     if (options.contentForm && item.contentForm !== options.contentForm) return false;
@@ -277,7 +279,7 @@ function getLocalKnowledge(filters) {
     }
     const reviewStatus = String(options.reviewStatus || 'approved').trim().toLowerCase();
     return item.reviewStatus === reviewStatus && (options.publishedOnly === false || item.isPublished);
-  }).slice(0, Math.max(1, Math.min(50, Number(options.limit || 20)))).map((item) => normalizeKnowledgeRow({
+  }).slice(offset, offset + limit).map((item) => normalizeKnowledgeRow({
     type: item.type,
     contentId: item.contentId,
     title: item.title,
@@ -306,6 +308,10 @@ async function queryKnowledgeWithFallback(pool, filters, onGap) {
   try {
     const items = await queryFormalKnowledge(pool, filters);
     if (items.length) return { items, source: 'formal', fallback: false, gapReason: '' };
+    if (Number(filters && filters.offset || 0) > 0) {
+      const firstPage = await queryFormalKnowledge(pool, { ...filters, offset: 0 });
+      if (firstPage.length) return { items, source: 'formal', fallback: false, gapReason: '' };
+    }
     if (onGap) onGap('formal_content_missing', filters);
     return { items: getLocalKnowledge(filters), source: 'local_fallback', fallback: true, gapReason: 'formal_content_missing' };
   } catch (error) {

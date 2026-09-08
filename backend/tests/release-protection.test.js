@@ -47,6 +47,7 @@ describe('渐进式发布保护', () => {
     const connection = {
       async execute(sql) {
         if (sql.includes('SELECT id, content_type')) return [run++ === 0 ? [{ id: 1, version_id: 2 }] : []];
+        if (sql.includes('SELECT * FROM content_versions')) return [[{ id: 2, content_type: 'article', content_id: '10', review_status: 'approved', publish_status: 'scheduled', payload: '{"title":"Scheduled article"}' }]];
         if (sql.includes('UPDATE content_versions')) return [{ affectedRows: 1 }];
         return [{ affectedRows: 1 }];
       }

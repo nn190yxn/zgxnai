@@ -23,6 +23,7 @@ const { safeObject } = require('./operations-analytics');
 const { responseMeta, sendSuccess, sendError } = require('./api-response');
 const { registerPlatformRoutes, registerPublicRoutes } = require('./platform-routes');
 const releaseProtection = require('./release-protection');
+const { listRecipes } = require('./recipe-content');
 const supportTickets = require('./support-tickets');
 const {
   HOT_KEYWORDS,
@@ -66,7 +67,7 @@ const UNIFIED_PROMO_PLAN_CODE = 'promo_2month';
 const UNIFIED_PROMO_MEMBERSHIP_TYPE = 'gift';
 const UNIFIED_PROMO_TYPE = 'unified_membership_2month';
 const RAW_NUTRITION_RECIPES = require('../nutrition-recipes.json');
-const NUTRITION_RECIPES = RAW_NUTRITION_RECIPES
+const LEGACY_NUTRITION_RECIPES = RAW_NUTRITION_RECIPES
   .map((recipe) => sanitizeNutritionRecipeSource(recipe))
   .filter(Boolean);
 const UPLOAD_ROOT = path.resolve(__dirname, '../../../uploads');
@@ -365,11 +366,11 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/assessments/history/count`, authenticateToken, requireActiveMembership, asyncHandler(assessmentHistoryCountHandler));
   app.delete(`${prefix}/assessments/records/:id`, authenticateToken, requireActiveMembership, asyncHandler(assessmentDeleteHandler));
   app.post(`${prefix}/chat`, authenticateToken, requireActiveMembership, asyncHandler(chatHandler));
-  app.get(`${prefix}/nutrition/recommendations`, nutritionRecommendationsHandler);
-  app.get(`${prefix}/nutrition/recipes`, nutritionRecipesHandler);
-  app.get(`${prefix}/nutrition/recipes/:id`, nutritionRecipeDetailHandler);
-  app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, nutritionRecipeFavoriteHandler);
-  app.get(`${prefix}/nutrition/recipes/:id/favorite/status`, authenticateToken, nutritionRecipeFavoriteStatusHandler);
+  app.get(`${prefix}/nutrition/recommendations`, asyncHandler(nutritionRecommendationsHandler));
+  app.get(`${prefix}/nutrition/recipes`, asyncHandler(nutritionRecipesHandler));
+  app.get(`${prefix}/nutrition/recipes/:id`, asyncHandler(nutritionRecipeDetailHandler));
+  app.post(`${prefix}/nutrition/recipes/:id/favorite`, authenticateToken, asyncHandler(nutritionRecipeFavoriteHandler));
+  app.get(`${prefix}/nutrition/recipes/:id/favorite/status`, authenticateToken, asyncHandler(nutritionRecipeFavoriteStatusHandler));
   app.post(`${prefix}/marketing/generate`, authenticateAdmin, asyncHandler(marketingGenerateHandler));
   app.options(`${prefix}/marketing/generate`, (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -4520,7 +4521,8 @@ async function collectChatReferences(chatAnalysis, message, ageGroup, coreAction
   }
 
   if (chatAnalysis.intent === 'nutrition') {
-    for (const recipe of NUTRITION_RECIPES.slice(0, 120)) {
+    const nutritionRecipes = await listRecipes(pool, LEGACY_NUTRITION_RECIPES);
+    for (const recipe of nutritionRecipes.slice(0, 120)) {
       if (ageGroup && !isRecipeAgeCompatible(recipe.ageRange || recipe.age_range, ageGroup)) continue;
       const score = scoreText([recipe.title, recipe.description, (recipe.ingredients || []).join(' ')].join(' '));
       if (score > 0) {
@@ -6742,12 +6744,12 @@ function normalizeNutritionRecipeDetail(recipe, selectedAgeRange) {
   });
 }
 
-function filterNutritionRecipes(query) {
+function filterNutritionRecipes(query, recipes) {
   const keyword = String((query && query.keyword) || '').trim();
   const category = String((query && query.category) || '').trim();
   const age = normalizeNutritionAgeQuery((query && (query.age_group || query.age)) || '');
-  return NUTRITION_RECIPES.filter((recipe) => {
-    const text = `${recipe.title} ${recipe.description} ${recipe.category} ${recipe.tags.join(' ')}`;
+  return recipes.filter((recipe) => {
+    const text = `${recipe.title} ${recipe.description} ${recipe.category} ${(recipe.tags || []).join(' ')}`;
     if (keyword && !text.includes(keyword)) {
       return false;
     }
@@ -7328,8 +7330,8 @@ function diversifyNutritionRecommendationPool(recipes, selectedAgeRange, limit, 
   return picked;
 }
 
-function resolveNutritionRecipeForDetail(recipeId, selectedAgeRange) {
-  const recipe = NUTRITION_RECIPES.find((item) => item.id === recipeId);
+function resolveNutritionRecipeForDetail(recipeId, selectedAgeRange, recipes) {
+  const recipe = recipes.find((item) => String(item.id) === String(recipeId));
   if (!recipe) {
     return null;
   }
@@ -7341,7 +7343,7 @@ function resolveNutritionRecipeForDetail(recipeId, selectedAgeRange) {
     };
   }
   const title = String(recipe.title || '').trim();
-  const sameTitleRecipes = (NUTRITION_RECIPES || []).filter((item) => String(item.title || '').trim() === title && isNutritionAgeMatch(item.ageRange || item.age_range, normalizedAge));
+  const sameTitleRecipes = recipes.filter((item) => String(item.title || '').trim() === title && isNutritionAgeMatch(item.ageRange || item.age_range, normalizedAge));
   const curated = curateNutritionRecipesForAge(sameTitleRecipes.length ? sameTitleRecipes : [recipe], normalizedAge);
   if (curated.length) {
     const resolvedRecipe = curated[0];
@@ -7356,7 +7358,7 @@ function resolveNutritionRecipeForDetail(recipeId, selectedAgeRange) {
       notice: ''
     };
   }
-  const fallbackPool = curateNutritionRecipesForAge((NUTRITION_RECIPES || []).filter((item) => String((item.category || '')).trim() === String((recipe.category || '')).trim()), normalizedAge);
+  const fallbackPool = curateNutritionRecipesForAge(recipes.filter((item) => String((item.category || '')).trim() === String((recipe.category || '')).trim()), normalizedAge);
   if (fallbackPool.length) {
     return {
       recipe: Object.assign({}, fallbackPool[0], { id: recipe.id }),
@@ -7406,22 +7408,24 @@ function isNutritionAgeMatch(recipeAgeRange, selectedAgeRange) {
   return isRecipeAgeCompatible(recipeAgeRange, normalizedSelectedAge);
 }
 
-function nutritionRecommendationsHandler(req, res) {
+async function nutritionRecommendationsHandler(req, res) {
   const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
   const count = Math.min(Math.max(Number((req.query && req.query.count) || 7) || 7, 1), 12);
-  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query), selectedAgeRange);
-  const source = filtered.length ? filtered : curateNutritionRecipesForAge(NUTRITION_RECIPES, selectedAgeRange);
+  const nutritionRecipes = await listRecipes(pool, LEGACY_NUTRITION_RECIPES);
+  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query, nutritionRecipes), selectedAgeRange);
+  const source = filtered.length ? filtered : curateNutritionRecipesForAge(nutritionRecipes, selectedAgeRange);
   const mealPeriod = String((req.query && req.query.meal_period) || '').trim() || null;
   const diversified = diversifyNutritionRecommendationPool(source, selectedAgeRange, count, mealPeriod);
   const recipes = diversified.map((recipe) => normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange));
   res.json({ success: true, data: recipes });
 }
 
-function nutritionRecipesHandler(req, res) {
+async function nutritionRecipesHandler(req, res) {
   const page = Math.max(Number(req.query.page || 1), 1);
   const pageSize = Math.min(Math.max(Number(req.query.page_size || req.query.pageSize || 10), 1), 30);
   const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
-  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query), selectedAgeRange);
+  const nutritionRecipes = await listRecipes(pool, LEGACY_NUTRITION_RECIPES);
+  const filtered = curateNutritionRecipesForAge(filterNutritionRecipes(req.query, nutritionRecipes), selectedAgeRange);
   const offset = (page - 1) * pageSize;
   const recipes = filtered.slice(offset, offset + pageSize).map((recipe) => normalizeNutritionRecipeSummaryForAge(recipe, selectedAgeRange));
   res.json({
@@ -7438,9 +7442,9 @@ function nutritionRecipesHandler(req, res) {
   });
 }
 
-function nutritionRecipeDetailHandler(req, res) {
+async function nutritionRecipeDetailHandler(req, res) {
   const selectedAgeRange = normalizeNutritionAgeQuery((req.query && (req.query.age_group || req.query.age)) || '');
-  const resolved = resolveNutritionRecipeForDetail(req.params.id, selectedAgeRange);
+  const resolved = resolveNutritionRecipeForDetail(req.params.id, selectedAgeRange, await listRecipes(pool, LEGACY_NUTRITION_RECIPES));
   if (!resolved || !resolved.recipe) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
@@ -7453,7 +7457,7 @@ function nutritionRecipeDetailHandler(req, res) {
 }
 
 async function nutritionRecipeFavoriteHandler(req, res) {
-  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
+  const recipe = (await listRecipes(pool, LEGACY_NUTRITION_RECIPES)).find((item) => String(item.id) === String(req.params.id));
   if (!recipe) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
@@ -7470,7 +7474,7 @@ async function nutritionRecipeFavoriteHandler(req, res) {
 }
 
 async function nutritionRecipeFavoriteStatusHandler(req, res) {
-  const recipe = NUTRITION_RECIPES.find((item) => item.id === req.params.id);
+  const recipe = (await listRecipes(pool, LEGACY_NUTRITION_RECIPES)).find((item) => String(item.id) === String(req.params.id));
   if (!recipe) {
     res.status(404).json({ success: false, message: '食谱不存在' });
     return;
@@ -10527,9 +10531,9 @@ function isRecipeAgeCompatible(recipeAgeRange, childAgeRange) {
   return recipeRange.min <= childRange.max && recipeRange.max >= childRange.min;
 }
 
-function getRecommendedNutritionRecipe(ageGroup) {
-  const matched = (NUTRITION_RECIPES || []).filter((item) => isRecipeAgeCompatible(item.ageRange || item.age_range, ageGroup));
-  const poolList = matched.length ? matched : (NUTRITION_RECIPES || []);
+function getRecommendedNutritionRecipe(ageGroup, recipes) {
+  const matched = recipes.filter((item) => isRecipeAgeCompatible(item.ageRange || item.age_range, ageGroup));
+  const poolList = matched.length ? matched : recipes;
   if (!poolList.length) {
     return null;
   }
@@ -10627,7 +10631,7 @@ async function buildDailyPlanCards(userId, child, planDate) {
   const recentUsage = await getRecentModuleUsage(userId, child.id);
   const readingTask = await getRecommendedReadingTask(child.id, ageGroup, planProfile.subjectCode, weakDimension && weakDimension.dimension_name);
   const article = await getRecommendedParentingArticle(ageGroup, planProfile.articleCategory, planProfile.articleKeyword, userId);
-  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const recipe = getRecommendedNutritionRecipe(ageGroup, await listRecipes(pool, LEGACY_NUTRITION_RECIPES));
   const developmentPractice = getRecommendedDevelopmentZonePractice(ageGroup, child.id, planDate);
   const cards = [];
 
@@ -11927,7 +11931,7 @@ async function buildWeeklySummaryPayload(userId, child, weekStart) {
   const dimAdvice = getWeeklyDimensionAdvice(weakestDimension[0], ageStage);
   const overviewData = buildWeeklyAgeOverview(growthList.length, avgScore, ageStage);
   const article = await getRecommendedParentingArticle(ageGroup, sceneProfile.articleCategory, sceneProfile.articleKeyword, userId);
-  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const recipe = getRecommendedNutritionRecipe(ageGroup, await listRecipes(pool, LEGACY_NUTRITION_RECIPES));
   const developmentZoneSummary = buildWeeklyDevelopmentZoneSummary(developmentPlanRows, developmentEntryRows);
   const recommendedContent = [
     article ? {
@@ -12221,7 +12225,7 @@ async function sceneSearchSolutionsHandler(req, res) {
   const profile = getSceneProfileByKey(matchedScene.scene_key);
   const articleKeywords = buildCoreSearchKeywords(keyword, profile, coreSearchContext);
   const article = await getRecommendedParentingArticle(ageGroup, profile.articleCategory, articleKeywords, userId || 0);
-  const recipe = getRecommendedNutritionRecipe(ageGroup);
+  const recipe = getRecommendedNutritionRecipe(ageGroup, await listRecipes(pool, LEGACY_NUTRITION_RECIPES));
   const task = child ? await getRecommendedReadingTask(child.id, ageGroup, profile.subjectCode) : null;
   const [recommendationRows] = await pool.execute(
     `SELECT *
