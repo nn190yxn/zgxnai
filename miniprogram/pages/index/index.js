@@ -245,6 +245,7 @@ Page({
   },
 
   onShow() {
+    this._loginNavigationVersion = (this._loginNavigationVersion || 0) + 1;
     if (app.globalData.enableStartupSafeMode) {
       return;
     }
@@ -260,7 +261,13 @@ Page({
     this.deferHeroImage();
   },
 
+  onHide() {
+    this._loginNavigationVersion = (this._loginNavigationVersion || 0) + 1;
+    clearTimeout(this._loginReloadTimer);
+  },
+
   onUnload() {
+    this.onHide();
     this.clearHeroImageTimer();
   },
 
@@ -2289,10 +2296,14 @@ Page({
       });
     }
     if (tp.key === 'login_to_personalize') {
+      var that = this;
+      var navigationVersion = this._loginNavigationVersion;
       app.requireLoginForAction('请先登录，获得个性化育儿陪伴').then(function(canOperate) {
-        if (canOperate) {
+        if (canOperate && navigationVersion === that._loginNavigationVersion) {
           wx.showToast({ title: '登录成功，刷新中', icon: 'success' });
-          setTimeout(function() {
+          clearTimeout(that._loginReloadTimer);
+          that._loginReloadTimer = setTimeout(function() {
+            if (navigationVersion !== that._loginNavigationVersion) return;
             wx.reLaunch({ url: '/pages/index/index' });
           }, 800);
         }

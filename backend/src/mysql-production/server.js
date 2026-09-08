@@ -244,7 +244,8 @@ app.use(['/wechat/message-push'].concat(API_PREFIXES.map((prefix) => `${prefix}/
 app.use(express.json({
   limit: '2mb',
   verify: (req, res, buf) => {
-    if (API_PREFIXES.some((prefix) => req.originalUrl === `${prefix}/payment/notify`)) {
+    const pathname = req.path.replace(/\/$/, '').toLowerCase();
+    if (API_PREFIXES.some((prefix) => pathname === `${prefix}/payment/notify`.toLowerCase())) {
       req.rawBody = buf.toString('utf8');
     }
   }
@@ -7804,7 +7805,7 @@ async function handleVirtualPayGoodsDeliver(payload) {
     }
     const order = orders[0];
     assertVirtualPayDeliveryMatchesOrder(payload, order);
-    if (order.status !== 'paid') {
+    if (order.status !== 'paid' && order.status !== 'refunded') {
       await connection.execute(
         'UPDATE payment_orders SET status = ?, wx_transaction_id = COALESCE(NULLIF(?, \'\'), wx_transaction_id), paid_at = NOW() WHERE order_no = ?',
         ['paid', getVirtualPayTransactionId(payload), orderNo]

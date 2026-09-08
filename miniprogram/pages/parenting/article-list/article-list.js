@@ -156,11 +156,14 @@ Page({
   },
 
   // 加载文章列表
-  loadArticles: function(fromPullDown) {
+  loadArticles: function(fromPullDown, reset) {
     var that = this;
-    if (that.data.loading || !that.data.hasMore) {
+    if (that._unloaded || (!reset && (that.data.loading || !that.data.hasMore))) {
       return;
     }
+    var requestGeneration = that._requestGeneration = (that._requestGeneration || 0) + 1;
+    // A replacement request owns any pending pull-down refresh cleanup.
+    that._pullDownPending = that._pullDownPending || !!fromPullDown;
     var currentPage = that.data.page;
 
     that.setData({
@@ -197,7 +200,8 @@ Page({
         page: 2,
         loading: false
       });
-      if (fromPullDown) {
+      if (that._pullDownPending) {
+        that._pullDownPending = false;
         wx.stopPullDownRefresh();
       }
       return;
@@ -208,6 +212,7 @@ Page({
       method: 'GET',
       data: params
     }).then(function(payload) {
+      if (requestGeneration !== that._requestGeneration || that._unloaded) return;
       var pagination = payload && payload.pagination ? payload.pagination : null;
       var list = payload && Array.isArray(payload.list) ? payload.list : payload;
       list = list || [];
@@ -228,7 +233,7 @@ Page({
         });
         return;
       }
-      var newList = that.data.page === 1 ? list : that.data.articleList.concat(list);
+      var newList = currentPage === 1 ? list : that.data.articleList.concat(list);
       var hasMore = pagination && typeof pagination.hasMore === 'boolean'
         ? pagination.hasMore
         : list.length >= that.data.pageSize;
@@ -244,6 +249,7 @@ Page({
         });
       }
     }).catch(function() {
+      if (requestGeneration !== that._requestGeneration || that._unloaded) return;
       if (currentPage === 1) {
         that.setData({
           articleList: that.getLocalArticles().map(function(item) { return that.normalizeArticleCard(item); }),
@@ -257,10 +263,12 @@ Page({
         icon: 'none'
       });
     }).finally(function() {
+      if (requestGeneration !== that._requestGeneration || that._unloaded) return;
       that.setData({
         loading: false
       });
-      if (fromPullDown) {
+      if (that._pullDownPending) {
+        that._pullDownPending = false;
         wx.stopPullDownRefresh();
       }
     });
@@ -287,7 +295,7 @@ Page({
       page: 1,
       hasMore: true
     });
-    this.loadArticles();
+    this.loadArticles(false, true);
   },
 
   // 分类选择
@@ -302,7 +310,7 @@ Page({
       page: 1,
       hasMore: true
     });
-    this.loadArticles();
+    this.loadArticles(false, true);
   },
 
   // 年龄段选择
@@ -320,7 +328,7 @@ Page({
       page: 1,
       hasMore: true
     });
-    this.loadArticles();
+    this.loadArticles(false, true);
   },
 
   // 搜索输入
@@ -337,7 +345,7 @@ Page({
       page: 1,
       hasMore: true
     });
-    this.loadArticles();
+    this.loadArticles(false, true);
   },
 
   // 清除搜索
@@ -348,7 +356,7 @@ Page({
       page: 1,
       hasMore: true
     });
-    this.loadArticles();
+    this.loadArticles(false, true);
   },
 
   // 点击文章
@@ -414,16 +422,21 @@ Page({
 
   // 下拉刷新
   onPullDownRefresh: function() {
-    if (this.data.loading) {
-      wx.stopPullDownRefresh();
-      return;
-    }
     this.setData({
       articleList: [],
       page: 1,
       hasMore: true
     });
-    this.loadArticles(true);
+    this.loadArticles(true, true);
+  },
+
+  onUnload: function() {
+    this._unloaded = true;
+    this._requestGeneration = (this._requestGeneration || 0) + 1;
+    if (this._pullDownPending) {
+      this._pullDownPending = false;
+      wx.stopPullDownRefresh();
+    }
   },
 
   // 上拉加载更多

@@ -323,7 +323,7 @@ Page({
 
   loadFavoriteState: function() {
     var that = this;
-    if (app.shouldUseMockFallback || app.shouldUseMockFallback()) {
+    if (app.shouldUseMockFallback && app.shouldUseMockFallback()) {
       return;
     }
     app.request({

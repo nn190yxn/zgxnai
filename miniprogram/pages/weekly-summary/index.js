@@ -148,6 +148,10 @@ Page({
     this.bootstrap(options);
   },
 
+  onUnload: function() {
+    this._summaryRequestId = (this._summaryRequestId || 0) + 1;
+  },
+
   onShow: function() {
     if (!this._hasShown) {
       this._hasShown = true;
@@ -160,6 +164,7 @@ Page({
   },
 
   bootstrap: function(options) {
+    this._summaryRequestId = (this._summaryRequestId || 0) + 1;
     if (!wx.getStorageSync('token')) {
       this.setData({ currentChild: null, childId: 0, loading: false, summary: null, errorMessage: '', loginRequired: true });
       return;
@@ -190,7 +195,7 @@ Page({
     }
     this.setData({
       childId: childId,
-      currentChild: child && Number(child.id || 0) === childId ? child : this.data.currentChild,
+      currentChild: child && Number(child.id || 0) === childId ? child : null,
       loginRequired: false
     });
     this.loadSummary();

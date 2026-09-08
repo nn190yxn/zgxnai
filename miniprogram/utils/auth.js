@@ -3,18 +3,15 @@ function checkLoginStatus(app) {
   var userInfo = wx.getStorageSync('userInfo');
   var token = wx.getStorageSync('token');
   var refreshToken = wx.getStorageSync('refreshToken');
-  if (token) {
-    app.globalData.userInfo = userInfo || null;
-    app.globalData.isLoggedIn = true;
-  }
-  if (refreshToken) {
-    app.globalData.refreshToken = refreshToken;
-  }
+  app.globalData.userInfo = token ? userInfo || null : null;
+  app.globalData.isLoggedIn = !!token;
+  app.globalData.refreshToken = refreshToken || null;
 }
 
 function logout(app) {
   app.globalData.userInfo = null;
   app.globalData.isLoggedIn = false;
+  app.globalData.refreshToken = null;
   app.globalData.currentChild = null;
   app.globalData.childrenList = [];
   wx.removeStorageSync('userInfo');
