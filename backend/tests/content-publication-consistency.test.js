@@ -62,11 +62,23 @@ test('public pain point reads published payload rather than editable master data
 
 test('failed publication commit returns an error and rolls back', async () => {
   let rolledBack = false;
-  const connection = { beginTransaction: async () => {}, commit: async () => { throw new Error('commit failed'); }, rollback: async () => { rolledBack = true; }, release() {}, execute: async (sql) => sql.startsWith('SELECT') ? [[{ id: 2, content_type: 'article', content_id: '10', review_status: 'approved', publish_status: 'approved', payload: '{}' }]] : [{ affectedRows: 1 }] };
+  const connection = { beginTransaction: async () => {}, commit: async () => { throw new Error('commit failed'); }, rollback: async () => { rolledBack = true; }, release() {}, execute: async (sql) => sql.startsWith('SELECT id FROM content_versions') ? [[]] : sql.startsWith('SELECT') ? [[{ id: 2, version: 2, content_type: 'article', content_id: '10', review_status: 'approved', publish_status: 'approved', payload: '{}' }]] : [{ affectedRows: 1 }] };
   let caught;
   const res = response();
   await contentAction({ getConnection: async () => connection }, 'published')({ params: { type: 'article', id: '10' }, path: '/content/article/10/publish', admin: { adminUserId: 1 }, body: {} }, res, (error) => { caught = error; });
   assert.equal(caught.message, 'commit failed');
   assert.equal(rolledBack, true);
   assert.equal(res.body, undefined);
+});
+
+test('an older scheduled version is skipped after a newer version was published', async () => {
+  const calls = [];
+  const connection = { async execute(sql, params) {
+    calls.push({ sql, params });
+    if (sql.startsWith('SELECT *')) return [[{ id: 1, version: 1, content_type: 'article', content_id: '10', review_status: 'approved', publish_status: 'scheduled', payload: '{"title":"Older"}' }]];
+    if (sql.startsWith('SELECT id FROM content_versions')) return [[{ id: 2 }]];
+    throw new Error('An outdated version must not change live data');
+  } };
+  assert.equal(await publishing.publishVersion(connection, 1), false);
+  assert.deepEqual(calls[1].params, ['article', '10', 1]);
 });

@@ -15,3 +15,15 @@
 文章草稿隔离、直接与定时发布快照同步、痛点公开快照读取、后台编辑字段回填、知识回退分页已实现。根目录 npm test 与 npm run lint 通过；后台 content-publication-consistency、content-operations、release-protection 三组共 17 项通过。
 
 用户确认本期仅编辑现有训练和食谱。后台新增结构化载荷编辑接口，训练以 task_code 为稳定标识，发布在同一事务更新 reading_tasks；现有计划和完成记录保持原任务 ID。训练下线暂返回明确冲突提示，避免中断已有计划。食谱以现有 JSON ID 为标识，读取合并最后公开状态，草稿保留线上版本，下线版本作为墓碑；合并后执行适龄和分类筛选，列表、详情、收藏、AI与每日推荐使用一致入口。后台结构化字段采用完整 JSON 编辑，后续可进一步提升表单易用性。
+
+## 数据库联调
+
+通过独立 MariaDB 10.11 临时实例执行 `scripts/test-content-database-flow.js`。脚本显式接收本地 socket，创建独立测试库，从生产入口提取基础建表与补充列，应用运营迁移，经 Express/Supertest 执行保存、送审、审核、发布与恢复操作。管理员身份在测试应用中注入，认证登录及生产 MySQL 版本兼容性另行验收。
+
+```bash
+NODE_PATH=/usr/local/lib/node_modules node scripts/test-content-database-flow.js /tmp/opencode/content-review.sock
+```
+
+每次执行保留独立测试数据库用于复核。此测试要求隔离数据库已启动，不加入默认无数据库的测试命令。覆盖文章草稿和历史恢复、痛点公开快照、训练业务同步及无效输入回滚、食谱草稿和下线、定时发布与重复执行。
+
+联调发现旧定时任务可能覆盖新版：发布事务现检查相同内容更高版本是否具有发布时间，若已有更新发布历史则跳过旧版本，任务记录失败。显式恢复历史内容会创建更高版本，仍可正常发布。

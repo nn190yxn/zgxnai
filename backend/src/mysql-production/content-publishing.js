@@ -35,6 +35,11 @@ async function publishVersion(connection, versionId, now = new Date()) {
   const [rows] = await connection.execute('SELECT * FROM content_versions WHERE id = ? FOR UPDATE', [versionId]);
   const row = rows[0];
   if (!row || row.review_status !== 'approved' || !['approved', 'scheduled'].includes(row.publish_status)) return false;
+  const [newer] = await connection.execute(
+    'SELECT id FROM content_versions WHERE content_type = ? AND content_id = ? AND version > ? AND published_at IS NOT NULL LIMIT 1 FOR UPDATE',
+    [row.content_type, row.content_id, row.version]
+  );
+  if (newer.length) return false;
   const payload = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload;
   if (row.content_type === 'task' || row.content_type === 'recipe') {
     const { sourceItems, normalizeEdit, TASK_FIELDS } = require('./managed-editing');
