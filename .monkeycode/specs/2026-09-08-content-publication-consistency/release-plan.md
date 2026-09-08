@@ -71,6 +71,9 @@ managed-editing.js、recipe-content.js 为新增文件。其余 7 个文件先�
 - PM2 重启次数由 117 增至 118，后续复核保持 118；进程 online，启动后 startup 类告警为 0，本地健康接口通过。
 - 三个开关均为 true：server_content_read_enabled、miniprogram_remote_content_enabled、admin_content_write_enabled。
 - 公网 11 项 GET 验收通过：health、runtime/config、knowledge/contents、knowledge/ability-content、pain-points、nutrition/recipes、已有食谱详情、home/banners，以及后台 index.html、app.js、modules/operations.js。两个知识接口携带 schema_version: 1，三个后台文件均与工作区 SHA-256 一致。
+- 后续补充 6 组线上只读验收（8 次 GET）通过：知识分页去重及来源/发布状态一致性、知识年龄筛选、知识类型筛选、食谱分页与总数一致性、食谱分类筛选、食谱详情 ID/食材/步骤完整性。
 - 以上操作仅针对小牛育儿部署目录、niuniu_parenting 数据库和 niuniu-backend 进程。
 
 后台账号登录、生产内容编辑/审核/发布操作，以及小程序真机验收仍待完成。本轮公网验收仅调用已知公开 GET 接口。
+
+后台写入验收前还需要用户指定测试账号的安全配置位置，以及允许编辑并恢复的现有文章、训练和食谱 ID。当前没有可用登录会话；验收记录不保存密码、令牌或 Cookie。
