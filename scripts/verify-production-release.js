@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const workspaceRoot = path.resolve(__dirname, '..');
-const releaseFiles = [
+const releaseRoots = [
   'backend/src/mysql-production/server.js',
   'backend/src/mysql-production/knowledge-content.js',
   'backend/src/mysql-production/migration-runner.js',
@@ -17,8 +17,41 @@ const releaseFiles = [
   'backend/src/mysql-production/api-response.js',
   'backend/src/shared/business-dimensions.js',
   'shared/business-dimensions.json',
-  'backend/examples/knowledgebase-sample.json'
+  'backend/examples/knowledgebase-sample.json',
+  'backend/src/scripts/publish-due-content.js',
+  'backend/package.json'
 ];
+
+function collectReleaseFiles(root, entries) {
+  const files = new Set();
+  function visit(relativePath) {
+    const normalized = relativePath.split(path.sep).join('/');
+    if (files.has(normalized)) return;
+    const absolute = path.resolve(root, relativePath);
+    assert(absolute.startsWith(path.resolve(root) + path.sep), `发布依赖超出项目目录: ${relativePath}`);
+    assert(['.js', '.json', '.html', '.css', '.svg', '.png', '.webp', '.ico'].includes(path.extname(absolute)), `不支持的发布文件类型: ${relativePath}`);
+    const content = fs.readFileSync(absolute);
+    files.add(normalized);
+    if (path.extname(absolute) !== '.js') return;
+    for (const match of content.toString('utf8').matchAll(/require\(\s*['"](\.[^'"]+)['"]\s*\)/g)) {
+      const dependency = require.resolve(path.resolve(path.dirname(absolute), match[1]));
+      visit(path.relative(root, dependency));
+    }
+  }
+  entries.forEach(visit);
+  const portal = path.join(root, 'admin-portal');
+  function visitPortal(directory) {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name.startsWith('.')) continue;
+      const filename = path.join(directory, entry.name);
+      if (entry.isDirectory()) visitPortal(filename);
+      else if (/\.(js|json|html|css|svg|png|webp|ico)$/.test(entry.name)) visit(path.relative(root, filename));
+    }
+  }
+  visitPortal(portal);
+  return [...files].sort();
+}
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -66,7 +99,7 @@ function verifyContracts() {
 }
 
 function buildManifest() {
-  return releaseFiles.map((relativePath) => {
+  return collectReleaseFiles(workspaceRoot, releaseRoots).map((relativePath) => {
     const content = readReleaseFile(relativePath);
     return {
       path: relativePath,
@@ -76,11 +109,15 @@ function buildManifest() {
   });
 }
 
-verifyContracts();
-const manifest = buildManifest();
-if (process.argv.includes('--json')) {
-  process.stdout.write(`${JSON.stringify({ schemaVersion: 1, files: manifest }, null, 2)}\n`);
-} else {
-  manifest.forEach((entry) => console.log(`${entry.sha256}  ${entry.path}  ${entry.bytes} bytes`));
-  console.log(`Production release verification passed for ${manifest.length} files.`);
+if (require.main === module) {
+  verifyContracts();
+  const manifest = buildManifest();
+  if (process.argv.includes('--json')) {
+    process.stdout.write(`${JSON.stringify({ schemaVersion: 1, files: manifest }, null, 2)}\n`);
+  } else {
+    manifest.forEach((entry) => console.log(`${entry.sha256}  ${entry.path}  ${entry.bytes} bytes`));
+    console.log(`Production release verification passed for ${manifest.length} files.`);
+  }
 }
+
+module.exports = { collectReleaseFiles, buildManifest, verifyContracts };
