@@ -25,7 +25,7 @@
 
     <!-- AI 介绍（未开始对话时展示） -->
     <view class="ai-intro" wx:if="{{featureFlags.aiChatEnabled && messages.length === 0}}">
-      <view class="ai-intro-avatar">小牛</view>
+      <image class="ai-intro-avatar" src="/images/generated/brand/brand-calf-ai.png" mode="aspectFit" />
       <view class="ai-intro-content">
         <text class="ai-intro-title">继续追问细节</text>
         <text class="ai-intro-desc">带着孩子的年龄、场景和卡点，把今晚怎么说、怎么做、明天观察什么拆清楚。</text>
@@ -42,7 +42,7 @@
     <view wx:for="{{messages}}" wx:key="id" id="msg-{{index}}">
       <view class="message {{item.role}} {{item.isError ? 'error' : ''}}">
         <view wx:if="{{item.role === 'user'}}" class="avatar">家</view>
-        <view wx:else class="avatar avatar-image avatar-ai">牛</view>
+        <image wx:else class="avatar avatar-image avatar-ai" src="/images/generated/brand/brand-calf-ai.png" mode="aspectFill" />
         <view class="bubble">
           <text class="ai-label" wx:if="{{item.role !== 'user'}}">小牛回答</text>
           <rich-text wx:if="{{item.markdownNodes && item.markdownNodes.length > 0}}" nodes="{{item.markdownNodes}}"></rich-text>
@@ -106,7 +106,7 @@
 
     <!-- 加载中 -->
     <view class="message bot" wx:if="{{loading}}">
-      <view class="avatar avatar-ai">牛</view>
+      <image class="avatar avatar-ai" src="/images/generated/brand/brand-calf-ai.png" mode="aspectFill" />
       <view class="bubble loading-bubble">
         <view class="typing">
           <view class="dot"></view>

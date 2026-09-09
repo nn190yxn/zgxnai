@@ -7,7 +7,10 @@
 
   <block wx:else>
     <view class="home-profile-bar">
-      <view class="home-profile-avatar"><text>{{currentChild ? (currentChild.name || currentChild.nickname || '孩') : '家'}}</text></view>
+        <image wx:if="{{currentChild && currentChild.avatar}}" class="home-profile-avatar" src="{{currentChild.avatar}}" mode="aspectFill" />
+        <image wx:elif="{{currentChild && currentChild.gender === 'male'}}" class="home-profile-avatar" src="/images/generated/brand/brand-child-boy-placeholder.png" mode="aspectFill" />
+        <image wx:elif="{{currentChild && currentChild.gender === 'female'}}" class="home-profile-avatar" src="/images/generated/brand/brand-child-girl-placeholder.png" mode="aspectFill" />
+        <image wx:else class="home-profile-avatar" src="/images/generated/brand/brand-parent-placeholder.png" mode="aspectFill" />
       <view class="home-profile-copy">
         <text class="home-profile-name">{{currentChild ? (currentChild.name || currentChild.nickname || '当前孩子') : '欢迎来到小牛育儿'}}</text>
         <text class="home-profile-stage">{{currentChild ? '为孩子选择今天的一小步' : '先浏览内容，也可以完善孩子档案'}}</text>
