@@ -79,28 +79,28 @@ Page({
         title: '能力观察',
         desc: '看看孩子当前的表现',
         action: 'assessment',
-        iconPath: 'images/tab-home.png'
+        iconPath: 'images/generated/feature/feature-assessment.png'
       },
       {
         key: 'training',
         title: '今日训练',
         desc: '完成一个适龄短训练',
         action: 'today_task',
-        iconPath: 'images/tab-chat.png'
+        iconPath: 'images/generated/feature/feature-training.png'
       },
       {
         key: 'report',
         title: '成长报告',
         desc: '回看近期表现变化',
         action: 'weekly_report',
-        iconPath: 'images/tab-profile.png'
+        iconPath: 'images/generated/feature/feature-report.png'
       },
       {
         key: 'development',
         title: '发展专题',
         desc: '按年龄查看支持内容',
         action: 'development_zones',
-        iconPath: 'images/tab-chat.png'
+        iconPath: 'images/generated/feature/feature-development.png'
       },
     ],
     coreAuxiliaryTools: [
@@ -109,28 +109,28 @@ Page({
         title: '家庭支持助手',
         desc: '描述家庭场景，获得支持步骤',
         action: 'chat',
-        iconPath: 'images/tab-chat.png'
+        iconPath: 'images/generated/feature/feature-chat.png'
       },
       {
         key: 'textbook',
         title: '文章与练习',
         desc: '按年龄补充家庭练习',
         action: 'textbook',
-        iconPath: 'images/tab-home.png'
+        iconPath: 'images/generated/feature/feature-reading.png'
       },
       {
         key: 'nutrition',
         title: '营养支持',
         desc: '查看家庭饮食建议',
         action: 'nutrition',
-        iconPath: 'images/tab-profile.png'
+        iconPath: 'images/generated/feature/feature-nutrition.png'
       },
       {
         key: 'parenting',
         title: '家庭场景支持',
         desc: '查找吃饭、睡前和出门步骤',
         action: 'parenting',
-        iconPath: 'images/tab-home.png'
+        iconPath: 'images/generated/feature/feature-family-scene.png'
       }
     ],
     homePrimaryCard: {
