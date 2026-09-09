@@ -284,6 +284,7 @@ app.get('/wechat/message-push', asyncHandler(wechatMessagePushHandler));
 app.all('/wechat/message-push', asyncHandler(wechatMessagePushHandler));
 for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/health`, healthHandler);
+  app.use(`${prefix}/media`, express.static(path.join(UPLOAD_ROOT, 'media')));
   app.get(`${prefix}/runtime/config`, runtimeConfigHandler);
   app.get(`${prefix}/retention/status`, optionalAuthenticateToken, asyncHandler(retentionStatusHandler));
   app.post(`${prefix}/encouragement/acknowledge`, authenticateToken, asyncHandler(encouragementAcknowledgeHandler));
