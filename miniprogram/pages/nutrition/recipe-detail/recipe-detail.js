@@ -401,7 +401,7 @@ Page({
       var payload = {
         title: app.buildShareTitle('recipe_detail', { name: recipe.name }),
         path: '/pages/nutrition/recipe-detail/recipe-detail?id=' + recipe.id,
-        imageUrl: recipe.image || '/images/default-recipe.png'
+         imageUrl: recipe.image || '/images/generated/meal/meal-breakfast.png'
       };
       return payload;
     }
@@ -423,7 +423,7 @@ Page({
       var payload = {
         title: app.buildShareTitle('recipe_detail', { name: recipe.name }),
         query: 'id=' + recipe.id,
-        imageUrl: recipe.image || '/images/default-recipe.png'
+         imageUrl: recipe.image || '/images/generated/meal/meal-breakfast.png'
       };
       return payload;
     }

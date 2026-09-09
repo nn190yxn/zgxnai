@@ -2784,7 +2784,7 @@ Page({
     return {
       title: app.buildShareTemplate(draft),
       path: '/pages/index/index?shareSource=' + encodeURIComponent(source) + '&from=index',
-      imageUrl: '/images/default-article.png'
+       imageUrl: '/images/generated/article-cover-emotion.png'
     };
   }
 });

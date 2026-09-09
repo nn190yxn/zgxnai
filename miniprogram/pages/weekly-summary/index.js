@@ -347,7 +347,7 @@ Page({
     return {
       title: (this.data.summary && this.data.summary.overview) || '看看孩子这周的成长记录',
       path: '/pages/share/preview/preview?shareType=stage_report',
-      imageUrl: '/images/default-article.png'
+       imageUrl: '/images/generated/empty/empty-growth-record.png'
     };
   },
 
