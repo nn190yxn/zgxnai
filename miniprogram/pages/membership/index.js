@@ -205,6 +205,15 @@ Page({
   },
 
   returnToMainPath() {
+    if (this.data.entrySource === 'membership_required') {
+      wx.switchTab({
+        url: '/pages/index/index',
+        fail: function() {
+          detailNavigation.returnToMainPath('profile');
+        }
+      });
+      return;
+    }
     detailNavigation.returnToMainPath('profile');
   },
 

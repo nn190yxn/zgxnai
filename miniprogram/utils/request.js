@@ -178,6 +178,30 @@ function retryWithFreshAuth(app, options, resolve, reject, fallbackError) {
   });
 }
 
+var membershipRedirectInFlight = false;
+var MEMBERSHIP_PAGE_PATH = '/pages/membership/index';
+
+function getCurrentRoute() {
+  var pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [];
+  var current = pages.length ? pages[pages.length - 1] : null;
+  var route = current && (current.route || current.__route__);
+  return route ? '/' + String(route).replace(/^\//, '') : '';
+}
+
+function openMembershipRequiredPage(payload) {
+  if (getCurrentRoute() === MEMBERSHIP_PAGE_PATH || membershipRedirectInFlight) {
+    return;
+  }
+  membershipRedirectInFlight = true;
+  wx.showToast({ title: (payload && payload.message) || '请先查看宝贝成长服务', icon: 'none' });
+  wx.redirectTo({
+    url: MEMBERSHIP_PAGE_PATH + '?source=membership_required',
+    complete: function() {
+      membershipRedirectInFlight = false;
+    }
+  });
+}
+
 function request(app, options) {
   return new Promise(function(resolve, reject) {
     var url = options.url;
@@ -220,8 +244,7 @@ function request(app, options) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(unwrapResponse(res.data));
         } else if (res.statusCode === 403 && res.data && res.data.code === 'MEMBERSHIP_REQUIRED') {
-          wx.showToast({ title: res.data.message || '请先查看宝贝成长服务', icon: 'none' });
-          wx.navigateTo({ url: '/pages/membership/index' });
+          openMembershipRequiredPage(res.data);
           reject(res.data);
         } else if (isAuthExpiredResponse(res.statusCode, res.data) && !skipAuthRetry) {
           retryWithFreshAuth(app, options, resolve, reject, res.data || new Error('请求失败'));
@@ -242,5 +265,6 @@ module.exports = {
   shouldUseMockFallback: shouldUseMockFallback,
   getApiErrorMessage: getApiErrorMessage,
   showApiError: showApiError,
-  request: request
+  request: request,
+  openMembershipRequiredPage: openMembershipRequiredPage
 };

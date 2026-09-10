@@ -80,5 +80,43 @@ const membership = cases[3].js;
 ['成长服务试用中', '成长服务已开通', '续上成长服务', '领取体验服务'].forEach((copy) => {
   assert.ok(membership.includes(copy), `membership primary action should cover ${copy}`);
 });
+assert.ok(membership.includes("entrySource === 'membership_required'"), 'membership return should leave gated pages instead of bouncing back into them');
+assert.ok(membership.includes("url: '/pages/index/index'"), 'gated membership visits should return to home');
+
+const requestSource = read('miniprogram/utils/request.js');
+assert.ok(requestSource.includes('openMembershipRequiredPage'), 'membership intercept should use a shared redirect helper');
+assert.ok(requestSource.includes("wx.redirectTo({"), 'membership intercept should replace the gated page');
+assert.ok(requestSource.includes("source=membership_required"), 'membership intercept should mark the gated entry source');
+assert.ok(requestSource.includes('membershipRedirectInFlight'), 'membership intercept should ignore concurrent 403s');
+
+const originalWxForMembership = global.wx;
+const originalGetCurrentPagesForMembership = global.getCurrentPages;
+const membershipNavCalls = [];
+let membershipRedirectComplete = null;
+global.wx = {
+  showToast() {},
+  redirectTo(options) {
+    membershipNavCalls.push(['redirect', options.url]);
+    membershipRedirectComplete = options.complete;
+  },
+  navigateTo(options) {
+    membershipNavCalls.push(['navigate', options.url]);
+  }
+};
+global.getCurrentPages = () => [{ route: 'pages/textbook/textbook' }];
+delete require.cache[require.resolve('../miniprogram/utils/request.js')];
+const requestUtil = require('../miniprogram/utils/request.js');
+requestUtil.openMembershipRequiredPage({ message: '会员已到期或尚未开通，请先开通会员' });
+requestUtil.openMembershipRequiredPage({ message: '会员已到期或尚未开通，请先开通会员' });
+assert.deepStrictEqual(membershipNavCalls, [['redirect', '/pages/membership/index?source=membership_required']], 'concurrent membership 403s should open the membership page once');
+membershipNavCalls.length = 0;
+if (membershipRedirectComplete) {
+  membershipRedirectComplete();
+}
+global.getCurrentPages = () => [{ route: 'pages/membership/index' }];
+requestUtil.openMembershipRequiredPage({ message: '会员已到期或尚未开通，请先开通会员' });
+assert.deepStrictEqual(membershipNavCalls, [], 'membership page should not redirect onto itself');
+global.wx = originalWxForMembership;
+global.getCurrentPages = originalGetCurrentPagesForMembership;
 
 console.log('Detail primary action and navigation contract tests passed.');
