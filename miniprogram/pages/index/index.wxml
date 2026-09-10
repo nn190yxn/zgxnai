@@ -56,14 +56,18 @@
       </view>
       <view class="home-feature-grid">
         <view class="home-feature-item" wx:for="{{coreSupportTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
-          <view class="home-feature-icon"><image src="{{item.iconPath}}" mode="aspectFit" /></view>
+          <view class="home-feature-icon">
+            <image class="home-feature-icon-image" src="{{item.iconPath}}" mode="aspectFit" />
+          </view>
           <text class="home-feature-title">{{item.title}}</text>
           <text class="home-feature-desc">{{item.desc}}</text>
         </view>
       </view>
       <view class="home-feature-grid home-feature-grid-secondary">
         <view class="home-feature-item" wx:for="{{coreAuxiliaryTools}}" wx:key="key" data-action="{{item.action}}" bindtap="onCoreToolTap">
-          <view class="home-feature-icon"><image src="{{item.iconPath}}" mode="aspectFit" /></view>
+          <view class="home-feature-icon">
+            <image class="home-feature-icon-image" src="{{item.iconPath}}" mode="aspectFit" />
+          </view>
           <text class="home-feature-title">{{item.title}}</text>
           <text class="home-feature-desc">{{item.desc}}</text>
         </view>

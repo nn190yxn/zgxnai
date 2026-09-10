@@ -21,6 +21,15 @@ assert.ok(home.includes('class="home-primary-card"'), 'home should expose visibl
 assert.ok(home.includes('{{homePrimaryCard.title}}'), 'visible primary action should render current card title');
 assert.ok(home.includes('class="home-profile-bar"'), 'home should expose current child profile bar');
 assert.ok(home.includes('{{item.iconPath}}'), 'feature entries should render icon assets');
+assert.ok(!/iconPath:\s*'images\//.test(homeScript), 'feature icon paths should be miniprogram-root absolute');
+const featureIconPaths = homeScript.match(/iconPath:\s*'(\/images\/generated\/feature\/[^']+\.png)'/g) || [];
+assert.strictEqual(featureIconPaths.length, 8, 'home should define eight absolute feature icon paths');
+featureIconPaths.forEach(function(entry) {
+  const relativePath = entry.replace(/iconPath:\s*'\/(.*)'/, '$1');
+  assert.ok(fs.existsSync(path.resolve(__dirname, '..', 'miniprogram', relativePath)), relativePath + ' should exist in the mini program package');
+});
+assert.ok(home.includes('class="home-feature-icon-image"'), 'feature entries should assign an explicit icon image class');
+assert.ok(/\.home-feature-icon-image\s*\{[^}]*width:\s*84rpx/.test(homeStyles), 'feature icon images should fill the 84rpx icon box');
 assert.ok(home.includes('class="home-growth-service-section"'), 'home should expose growth service section');
 assert.ok(homeStyles.includes('.home-primary-card'), 'home should style visible primary action card');
 assert.ok(homeScript.includes("action: 'growth_record'"), 'growth record banner should use growth record action');
