@@ -87,11 +87,42 @@ const articles = [
     tags: '',
     sub_category: '',
     category: '营养健康'
+  },
+  {
+    id: 10,
+    title: '第9章 给治疗师 治疗（片段5）',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '认知健康'
+  },
+  {
+    id: 11,
+    title: '第一章 全新理念的起源',
+    summary: '睡眠与健康的关系。',
+    content: '入睡质量影响健康。',
+    tags: '',
+    sub_category: '',
+    category: '认知健康'
   }
 ];
 
+// 把 SQL LIKE 模式（含 % 通配）转成等价正则，避免用子串近似
+function likeToRegExp(likePattern) {
+  const escaped = String(likePattern).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp('^' + escaped.replace(/%/g, '[\\s\\S]*') + '$', 'i');
+}
+
 // 按 SQL 条件出现顺序消费参数，模拟数据库 LIKE/IN 语义。
-function evaluateFilter(filter, article) {
+function evaluateFilter(filter, article, exclusion) {
+  if (exclusion) {
+    const title = String(article.title || '');
+    const excluded = exclusion.params.some(function(param) {
+      return likeToRegExp(param).test(title);
+    });
+    if (excluded) return false;
+  }
   const tokens = [];
   const pattern = /(title|summary|content|tags|sub_category) LIKE \?|category IN \(([^)]*)\)/g;
   let match;
@@ -102,11 +133,12 @@ function evaluateFilter(filter, article) {
       tokens.push({ type: 'in', count: (match[2].match(/\?/g) || []).length });
     }
   }
+  assert.ok(tokens.length, 'filter SQL should expose at least one condition');
   let index = 0;
   return tokens.map(function(token) {
     if (token.type === 'like') {
-      const needle = String(filter.params[index++]).replace(/%/g, '').toLowerCase();
-      return String(article[token.field] || '').toLowerCase().indexOf(needle) !== -1;
+      const matcher = likeToRegExp(filter.params[index++]);
+      return matcher.test(String(article[token.field] || ''));
     }
     const categories = filter.params.slice(index, index + token.count);
     index += token.count;
@@ -125,17 +157,40 @@ assert.equal(articlePainPoints.buildPainPointFilter('unknown_key'), null, 'unkno
 
 catalog.forEach(function(tag) {
   const filter = articlePainPoints.buildPainPointFilter(tag.key);
+  const exclusion = articlePainPoints.buildPainPointExclusion();
   assert.ok(filter && filter.sql && Array.isArray(filter.params), tag.key + ' should build a SQL filter');
+  assert.ok(exclusion && exclusion.sql && Array.isArray(exclusion.params),
+    'should build a SQL exclusion for non-article content');
   articles.forEach(function(article) {
     const matchedInJs = articlePainPoints.matchArticlePainPoints(article)
       .some(function(item) { return item.key === tag.key; });
     assert.equal(
-      evaluateFilter(filter, article),
+      evaluateFilter(filter, article, exclusion),
       matchedInJs,
       tag.key + ' SQL filter should match JS result for article ' + article.id
     );
   });
 });
+
+// 书籍章节与拆条内容不参与痛点标签与筛选
+const bookChapter = articles.filter(function(article) { return article.id >= 10; });
+bookChapter.forEach(function(article) {
+  assert.equal(articlePainPoints.isPainPointEligible(article), false,
+    'book chapter should be ineligible: ' + article.id);
+  assert.deepEqual(articlePainPoints.matchArticlePainPoints(article), [],
+    'book chapter should not receive pain point tags: ' + article.id);
+  catalog.forEach(function(tag) {
+    const filter = articlePainPoints.buildPainPointFilter(tag.key);
+    const exclusion = articlePainPoints.buildPainPointExclusion();
+    assert.equal(evaluateFilter(filter, article, exclusion), false,
+      'book chapter should be filtered out for ' + tag.key + ' (article ' + article.id + ')');
+  });
+});
+
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排' }), true,
+  'normal articles stay eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '文章里提到章节结构' }), true,
+  'titles mentioning 章节 without 第…章 stay eligible');
 
 articles.forEach(function(article) {
   const first = articlePainPoints.matchArticlePainPoints(article);

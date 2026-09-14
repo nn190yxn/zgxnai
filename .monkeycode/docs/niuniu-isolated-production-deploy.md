@@ -62,7 +62,9 @@
 
 发布前执行 `npm run verify:production-release`，保存动态生成的文件清单及 SHA-256。脚本从上述入口递归收集静态相对 `require()` 依赖，并包含定时发布入口、后端包声明和后台静态资源。通过变量加载的模块、文件系统读取的数据及第三方依赖仍需另行核对。该清单用于比较部署差异，具体同步范围以本次发布方案为准；明确保留的生产数据和包声明应记录例外。文件同步后在生产目录对批准同步的文件重新计算校验值，全部一致后再重启服务。
 
-当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 11 个公网检查点通过，两个知识接口必须返回 200 且携带 `meta.schema_version: 1`，家长痛点标签目录接口必须返回 200 且每项包含 `key`、`label`、`category`。
+当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 12 个公网检查点通过：两个知识接口必须返回 200 且携带 `meta.schema_version: 1`，家长痛点标签目录接口必须返回 200 且每项包含 `key`、`label`、`category`，`/api/v1/runtime/config` 必须返回布尔型 `pain_point_collection_enabled`，`/parenting/articles?pain_point_key=body_adaptation` 的结果标题不得包含「片段」或「第…章」。
+
+家长痛点标签与筛选会排除书籍章节内容：文章标题含「片段」或匹配「第…章」时不参与标签派生，也不进入合集筛选。该判定在 JS 与 SQL 两侧用同一组 `LIKE` 条件表达（`%片段%`、`%第%章%`），保证展示与筛选口径一致。
 
 家长痛点合集支持独立下线：`RUNTIME_PAIN_POINT_COLLECTION_ENABLED` 未配置时跟随 `RUNTIME_MINIPROGRAM_REMOTE_CONTENT_ENABLED`，`/api/v1/runtime/config` 会输出解析后的 `pain_point_collection_enabled`，公网验收会校验该字段为布尔值。文章列表缓存新增容量上限环境变量 `PARENTING_ARTICLES_CACHE_MAX_ENTRIES`（默认 500，FIFO 淘汰）；改动 `RUNTIME_*` 后需 `pm2 restart niuniu-backend --update-env`。
 

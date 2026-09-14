@@ -61,6 +61,11 @@ const PAIN_POINT_TAGS = Object.freeze([
 
 const MAX_TAGS_PER_ARTICLE = 3;
 const TEXT_FIELDS = ['title', 'summary', 'content', 'tags', 'sub_category'];
+// 书籍章节与拆条内容混在文章表里，标题含「片段」或「第…章」的内容不参与痛点标签与筛选。
+// 这两条同时可以用 LIKE 表达，保证 JS 判定与 SQL 下推筛选等价。
+const EXCLUDED_TITLE_SUBSTRINGS = ['片段'];
+const EXCLUDED_TITLE_PATTERN = /第[\s\S]*章/;
+const EXCLUDED_TITLE_LIKE_PARAMS = ['%\u7247\u6bb5%', '%\u7b2c%\u7ae0%'];
 
 function listPainPointTags() {
   return PAIN_POINT_TAGS.map(function(tag) {
@@ -75,6 +80,14 @@ function getPainPointTag(key) {
 
 function isPainPointTagKey(key) {
   return !!getPainPointTag(key);
+}
+
+function isPainPointEligible(article) {
+  const title = String((article || {}).title || '');
+  if (EXCLUDED_TITLE_SUBSTRINGS.some(function(item) { return title.indexOf(item) !== -1; })) {
+    return false;
+  }
+  return !EXCLUDED_TITLE_PATTERN.test(title);
 }
 
 function buildArticleText(article) {
@@ -96,12 +109,23 @@ function matchesTag(article, tag) {
 }
 
 function matchArticlePainPoints(article) {
+  if (!isPainPointEligible(article)) {
+    return [];
+  }
   return PAIN_POINT_TAGS
     .filter(function(tag) { return matchesTag(article, tag); })
     .slice(0, MAX_TAGS_PER_ARTICLE)
     .map(function(tag) {
       return { key: tag.key, label: tag.label, category: tag.category };
     });
+}
+
+// 与 isPainPointEligible 等价的 SQL 排除条件，供文章接口下推。
+function buildPainPointExclusion() {
+  return {
+    sql: 'NOT (COALESCE(title, \'\') LIKE ? OR COALESCE(title, \'\') LIKE ?)',
+    params: EXCLUDED_TITLE_LIKE_PARAMS.slice()
+  };
 }
 
 // 生成与 matchesTag 等价的 SQL 条件，供文章接口下推筛选。
@@ -133,5 +157,7 @@ module.exports = {
   getPainPointTag: getPainPointTag,
   isPainPointTagKey: isPainPointTagKey,
   matchArticlePainPoints: matchArticlePainPoints,
-  buildPainPointFilter: buildPainPointFilter
+  buildPainPointFilter: buildPainPointFilter,
+  isPainPointEligible: isPainPointEligible,
+  buildPainPointExclusion: buildPainPointExclusion
 };

@@ -135,7 +135,7 @@ graph TD
 ## Correctness Properties
 
 1. **确定性**：同一篇文章字段不变时，`matchArticlePainPoints` 始终返回相同标签序列。
-2. **筛选等价**：`buildPainPointFilter(key)` 的 SQL 条件与 `matchArticlePainPoints` 对同一 key 的判定完全等价，等价性由「关键词析取 + 分类析取」结构保证。
+2. **筛选等价**：`buildPainPointFilter(key)` 与 `buildPainPointExclusion()` 组合出的 SQL 条件与 `matchArticlePainPoints` 对同一 key 的判定完全等价，等价性由「关键词析取 + 分类析取」与「标题排除」结构共同保证，排除条件在 JS 与 SQL 两侧使用同一组 `LIKE` 模式。
 3. **目录一致**：文章载荷中的标签与 `/pain-point-tags` 来自同一份 `PAIN_POINT_TAGS`，`key`、`label`、`category` 不产生分叉。
 4. **排序与上限**：标签按目录顺序排列，数量不超过 3；文章分类已知时至少 1 个。
 5. **分页正确**：`total` 与 `has_more` 基于同一过滤条件计算，翻页不重复、不遗漏。
@@ -143,7 +143,8 @@ graph TD
 
 ## Known Limitations
 
-- 生产文章语料包含书籍章节内容（分类如 `认知健康`、`情绪养育`、`家庭教育`，标题形如「第X章 …（片段N）」）。这些内容含 `运动`、`受伤`、`专注` 等通用词，仅靠关键词匹配仍会少量误召回。要彻底消除需要内容侧治理（下架、打标或加白名单），不属于标签规则本身。
+- 生产文章语料包含书籍章节与拆条内容（分类如 `认知健康`、`情绪养育`、`家庭教育`，标题形如「第X章 …」「…（片段N）」）。已对标题含「片段」或匹配「第…章」的内容做排除（`isPainPointEligible` + `buildPainPointExclusion`），生产 2800 篇中排除 734 篇，抽样确认无误伤正常文章。
+- 仍有少量导入内容未被覆盖：标题形如「01 学习 越动越多的脑细胞」「11 该怎么正确地给孩子刷牙?」的编号条目，既不含「片段」也不含「第…章」。编号开头规则会误伤正常问答标题，因此未纳入，需内容侧治理。
 - 文章筛选基于 `articles` 基表行，展示标签基于 `resolvePublishedArticle` 合并已发布版本后的文本。已发布内容被后台改动后，两者可能分叉；当前语料未观察到该情况。
 - 单篇文章最多展示 3 个标签，而筛选不截断，因此排在目录末位的标签（如 `body_adaptation`）可能出现在合集里但卡片不显示该标签。
 

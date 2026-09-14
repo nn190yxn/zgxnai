@@ -12641,9 +12641,13 @@ async function parentingArticlesHandler(req, res) {
   }
   if (req.query.pain_point_key) {
     const painPointFilter = articlePainPoints.buildPainPointFilter(req.query.pain_point_key);
+    const painPointExclusion = articlePainPoints.buildPainPointExclusion();
     whereClause += ' AND ' + painPointFilter.sql;
     params.push(...painPointFilter.params);
     countParams.push(...painPointFilter.params);
+    whereClause += ' AND ' + painPointExclusion.sql;
+    params.push(...painPointExclusion.params);
+    countParams.push(...painPointExclusion.params);
   }
   let cachedPayload = getCachedParentingArticles(cacheKey);
   if (!cachedPayload) {
