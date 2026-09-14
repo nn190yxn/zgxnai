@@ -73,6 +73,8 @@ async function main() {
     const { page, requests } = context;
     assert.equal(requests.length, 1);
     assert.equal(requests[0].url, '/pain-point-tags');
+    assert.equal(page.data.loadState, 'loading', 'catalog should render its own loading state before tags arrive');
+    assert.equal(page.data.tags.length, 0);
     await settle(requests[0], 'success', { list: TAGS });
     assert.equal(requests.length, 2);
     assert.equal(requests[1].url, '/parenting/articles');
@@ -127,6 +129,34 @@ async function main() {
     assert.equal(context.page.data.hasMore, false);
     context.page.onReachBottom();
     assert.equal(context.requests.length, 3, 'exhausted list ignores further pagination');
+  }
+
+  {
+    const context = createPage();
+    await settle(context.requests[0], 'success', { list: TAGS });
+    assert.equal(context.requests.length, 2, 'first tag article request is in flight');
+    context.page.onTagTap({ currentTarget: { dataset: { key: 'distracted_during_task' } } });
+    assert.equal(context.requests.length, 3, 'switching tag supersedes the in-flight request');
+    assert.equal(context.requests[2].params.pain_point_key, 'distracted_during_task');
+    assert.equal(context.requests[2].params.page, 1);
+    await settle(context.requests[1], 'success', { list: [{ id: 'stale' }], pagination: { hasMore: true } });
+    assert.equal(context.page.data.articles.length, 0, 'stale tag response must not write into the new tag');
+    await settle(context.requests[2], 'success', { list: [{ id: 'fresh' }], pagination: { hasMore: false } });
+    assert.equal(context.page.data.articles[0].id, 'fresh');
+    assert.equal(context.page.data.activeTagKey, 'distracted_during_task');
+  }
+
+  {
+    const context = createPage({ query: { painPointKey: 'called_no_response' } });
+    await loadFirstPage(context);
+    context.page.onReachBottom();
+    assert.equal(context.requests.length, 3, 'second page request is in flight');
+    context.page.onTagTap({ currentTarget: { dataset: { key: 'cries_when_switching' } } });
+    assert.equal(context.requests.length, 4);
+    await settle(context.requests[2], 'success', { list: [{ id: 'stale-page' }], pagination: { hasMore: true } });
+    assert.equal(context.page.data.articles.length, 0, 'stale pagination must not write after a tag switch');
+    await settle(context.requests[3], 'success', { list: [{ id: 'next-tag' }], pagination: { hasMore: false } });
+    assert.equal(context.page.data.articles.map(item => item.id).join(','), 'next-tag');
   }
 
   {

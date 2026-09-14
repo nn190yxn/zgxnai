@@ -28,10 +28,28 @@ Page({
     this.setData({
       zones: localCards,
       featuredZones: localCards.filter(function(item) { return item.isPrimary; }),
-      painPointCollectionEnabled: !!(app.isFeatureEnabled && app.isFeatureEnabled('painPointCollection'))
+      painPointCollectionEnabled: this.resolvePainPointCollectionEnabled()
     });
+    this.syncPainPointCollectionFlag();
     this.loadZones();
     this.loadPainPoints();
+  },
+
+  resolvePainPointCollectionEnabled: function() {
+    return !!(app.isFeatureEnabled && app.isFeatureEnabled('painPointCollection'));
+  },
+
+  // 运行时配置是异步加载的，到达后需要重新确认入口开关
+  syncPainPointCollectionFlag: function() {
+    var that = this;
+    var apply = function() {
+      that.setData({ painPointCollectionEnabled: that.resolvePainPointCollectionEnabled() });
+    };
+    var config = app.getRuntimeConfig ? app.getRuntimeConfig() : {};
+    if (!app.loadRuntimeConfig || !app.globalData || !app.globalData.enableRuntimeConfigFetch || (config && config.configLoaded)) {
+      return;
+    }
+    app.loadRuntimeConfig().then(apply).catch(function() {});
   },
 
   loadPainPoints: function() {

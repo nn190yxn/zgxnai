@@ -144,6 +144,14 @@ Page({
     this.loadArticles();
   },
 
+  // 切换标签或刷新时调用：让仍在飞行中的旧请求失效，避免旧数据写入新标签
+  invalidateArticleRequest: function() {
+    this._requestGeneration = (this._requestGeneration || 0) + 1;
+    this.setData({
+      articlesLoading: false
+    });
+  },
+
   // 加载当前标签下的文章
   loadArticles: function() {
     var that = this;
@@ -255,6 +263,7 @@ Page({
         source: 'collection_page'
       }
     }));
+    this.invalidateArticleRequest();
     this.loadArticles();
   },
 
@@ -293,6 +302,7 @@ Page({
       hasMore: true,
       articleError: ''
     });
+    this.invalidateArticleRequest();
     this.loadCatalogs();
   },
 

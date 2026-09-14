@@ -157,6 +157,9 @@ const developmentHome = read('miniprogram/pages/development/index/index.wxml');
 assert.ok(developmentHome.includes('class="pain-point-collection-entry"'), 'development page should expose a pain point collection entry');
 assert.ok(developmentHome.includes('bindtap="openPainPointCollection"'), 'development pain point entry should open the collection page');
 assert.ok(developmentHome.includes('wx:if="{{painPointCollectionEnabled}}"'), 'development pain point entry should be gated by the collection flag');
+const developmentScript = read('miniprogram/pages/development/index/index.js');
+assert.ok(developmentScript.includes('syncPainPointCollectionFlag'), 'development page should re-check the collection flag after runtime config loads');
+assert.ok(developmentScript.includes('loadRuntimeConfig'), 'development page should wait for runtime config before hiding the entry');
 
 const articleListWxml = read('miniprogram/pages/parenting/article-list/article-list.wxml');
 assert.ok(articleListWxml.includes('item.painPointTags'), 'article list should render pain point tags');
@@ -172,6 +175,8 @@ assert.ok(collectionJs.includes("url: '/pain-point-tags'"), 'collection page sho
 assert.ok(collectionJs.includes("url: '/parenting/articles'"), 'collection page should load filtered articles');
 assert.ok(collectionJs.includes('pain_point_key'), 'collection page should filter articles by pain point key');
 assert.ok(collectionWxml.includes('pain-point-collection') || collectionWxml.includes('pp-'), 'collection page should render collection markup');
+assert.ok(collectionWxml.includes('正在加载痛点合集'), 'collection page should show a catalog loading state');
+assert.ok(collectionWxml.includes("loadState === 'empty'"), 'collection empty state should be driven by loadState to avoid flashing during catalog load');
 const appConfigSource = read('miniprogram/utils/app-config.js');
 assert.ok(appConfigSource.includes('painPointCollectionEnabled'), 'runtime config should expose the pain point collection flag');
 assert.ok(appConfigSource.includes("featureName === 'painPointCollection'"), 'feature gate should resolve the pain point collection flag');

@@ -19,6 +19,12 @@
       <view class="pp-retry" bindtap="retryLoadCatalog">重新加载</view>
     </view>
 
+    <!-- 标签目录加载中 -->
+    <view class="pp-state-card" wx:elif="{{!tags.length}}">
+      <text class="pp-state-title">正在加载痛点合集</text>
+      <text class="pp-state-desc">正在整理家长常问的问题，马上就好。</text>
+    </view>
+
     <block wx:else>
       <!-- 痛点标签目录 -->
       <scroll-view class="pp-tag-scroll scroll-view-optimized" scroll-x>
@@ -51,7 +57,7 @@
       </view>
 
       <!-- 空状态 -->
-      <view class="pp-state-card" wx:elif="{{!articlesLoading && articles.length === 0}}">
+      <view class="pp-state-card" wx:elif="{{loadState === 'empty'}}">
         <text class="pp-state-title">这个痛点还没有文章</text>
         <text class="pp-state-desc">换个痛点看看，或下拉刷新试试。</text>
       </view>

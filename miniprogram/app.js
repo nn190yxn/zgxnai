@@ -68,6 +68,9 @@ App({
        serverContentReadEnabled: envConfig.enableServerContentRead === true,
        miniprogramRemoteContentEnabled: envConfig.enableMiniprogramRemoteContent === true,
        adminContentWriteEnabled: envConfig.enableAdminContentWrite === true,
+       painPointCollectionEnabled: envConfig.enablePainPointCollection !== undefined
+         ? envConfig.enablePainPointCollection === true
+         : envConfig.enableMiniprogramRemoteContent === true,
       coreRefactorRolloutPercent: Number(envConfig.coreRefactorRolloutPercent || 0),
       coreRefactorUserWhitelist: envConfig.coreRefactorUserWhitelist || [],
       multimodalEnabled: envConfig.enableMultimodal === true,

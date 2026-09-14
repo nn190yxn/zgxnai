@@ -122,7 +122,7 @@ const stateContracts = [
   {
     page: 'pages/parenting/pain-point-collection/index',
     js: ["loadState: 'loading'", "'catalog_error'", "'error'", "'empty'", "'disabled'", 'retryLoadCatalog', 'retryLoadArticles'],
-    wxml: ['家长痛点合集还没开放', '痛点合集暂时没加载出来', '文章暂时没加载出来', '这个痛点还没有文章', '重新加载']
+    wxml: ['家长痛点合集还没开放', '痛点合集暂时没加载出来', '正在加载痛点合集', '文章暂时没加载出来', '这个痛点还没有文章', '重新加载']
   },
   {
     page: 'pages/profile/children/children',
