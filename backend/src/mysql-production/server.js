@@ -11392,7 +11392,7 @@ async function growthRecordHistoryHandler(req, res) {
     `SELECT *
      FROM growth_daily_records
      WHERE user_id = ? AND child_id = ?
-     ORDER BY record_date DESC
+     ORDER BY record_date DESC, id DESC
      ${paginationClause}`,
     [userId, childId]
   );
@@ -12179,7 +12179,7 @@ async function searchParentingArticlesByKeyword(keyword, page, pageSize, userId)
     `SELECT * FROM articles
      WHERE is_published = 1
        ${searchSql}
-     ORDER BY read_count DESC, created_at DESC
+     ORDER BY read_count DESC, created_at DESC, id DESC
      ${paginationClause}`,
     params
   );
@@ -12652,7 +12652,7 @@ async function parentingArticlesHandler(req, res) {
   let cachedPayload = getCachedParentingArticles(cacheKey);
   if (!cachedPayload) {
     const [countRows] = await pool.execute(`SELECT COUNT(*) AS total FROM articles ${whereClause}`, countParams);
-    const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC${paginationClause}`, params);
+    const [rows] = await pool.execute(`SELECT * FROM articles ${whereClause} ORDER BY created_at DESC, id DESC${paginationClause}`, params);
     cachedPayload = {
       rows,
       total: normalizeAggregateNumber(countRows[0] && countRows[0].total)
@@ -12894,7 +12894,7 @@ async function parentingCommentsHandler(req, res) {
      FROM article_comments c
      LEFT JOIN users u ON c.user_id = u.id
      WHERE c.article_id = ? AND c.parent_id = 0
-     ORDER BY c.created_at DESC
+     ORDER BY c.created_at DESC, c.id DESC
      ${paginationClause}`,
     [req.params.id]
   );
@@ -13717,7 +13717,7 @@ async function assessmentHistoryHandler(req, res) {
     `SELECT ar.* FROM assessment_records ar
      JOIN children c ON c.id = ar.child_id
      ${whereClause}
-     ORDER BY ar.completed_at DESC
+     ORDER BY ar.completed_at DESC, ar.id DESC
      ${paginationClause}`,
     params
   );

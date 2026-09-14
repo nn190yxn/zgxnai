@@ -137,6 +137,14 @@ assert.ok(serverJs.includes('coreSearchContext && coreSearchContext.categoryLabe
 assert.ok(serverJs.includes('coreActionContext: coreSearchContext'), 'search backend should return core action context');
 assert.ok(serverJs.includes('normalizeSearchKeywordList(keyword)'), 'parenting article search should support multiple context keywords');
 
+// Paginated queries must break ties on a unique key, otherwise equal sort values
+// let LIMIT/OFFSET return the same row twice and skip others across pages.
+assert.ok(serverJs.includes('ORDER BY created_at DESC, id DESC${paginationClause}'), 'article list pagination should tie-break on id');
+assert.ok(serverJs.includes('ORDER BY read_count DESC, created_at DESC, id DESC'), 'article search pagination should tie-break on id');
+assert.ok(serverJs.includes('ORDER BY record_date DESC, id DESC'), 'growth record pagination should tie-break on id');
+assert.ok(serverJs.includes('ORDER BY c.created_at DESC, c.id DESC'), 'comment pagination should tie-break on id');
+assert.ok(serverJs.includes('ORDER BY ar.completed_at DESC, ar.id DESC'), 'assessment pagination should tie-break on id');
+
 const growth = read('miniprogram/pages/growth-record/index.wxml');
 assert.ok(growth.includes('empty-card'), 'growth record should include empty state');
 
