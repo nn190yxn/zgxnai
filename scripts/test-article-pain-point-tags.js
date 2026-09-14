@@ -132,6 +132,26 @@ const articles = [
     tags: '运动',
     sub_category: '',
     category: '家庭教育'
+  },
+  {
+    id: 15,
+    title: '睡前流程怎么安排，先固定起床时间',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '睡眠管理',
+    author: '约翰·瑞迪'
+  },
+  {
+    id: 16,
+    title: '睡前流程怎么安排，先固定起床时间',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '睡眠管理',
+    author: '小牛育儿内容组'
   }
 ];
 
@@ -142,17 +162,35 @@ function likeToRegExp(likePattern) {
 }
 
 // 按 SQL 条件出现顺序消费参数，模拟数据库 LIKE/IN 语义。
+// 逐条求值排除条件（以 AND 连接），保持与 isPainPointEligible 等价的语义。
+function evaluateExclusion(exclusion, article) {
+  const conditions = exclusion.sql.split(' AND ');
+  let index = 0;
+  return conditions.every(function(condition) {
+    const negated = condition.match(/^NOT \(COALESCE\((\w+), ''\) REGEXP \?\)$/);
+    if (negated) {
+      const pattern = exclusion.params[index++];
+      return !new RegExp(pattern).test(String(article[negated[1]] || ''));
+    }
+    const notIn = condition.match(/^COALESCE\((\w+), ''\) NOT IN \(([?, ]+)\)$/);
+    if (notIn) {
+      const count = (notIn[2].match(/\?/g) || []).length;
+      const values = exclusion.params.slice(index, index + count);
+      index += count;
+      return values.indexOf(String(article[notIn[1]] || '').trim()) === -1;
+    }
+    const curated = condition.match(/^TRIM\(COALESCE\((\w+), ''\)\) REGEXP \?$/);
+    if (curated) {
+      const pattern = exclusion.params[index++];
+      return new RegExp(pattern).test(String(article[curated[1]] || '').trim());
+    }
+    throw new Error('unrecognized exclusion condition: ' + condition);
+  });
+}
+
 function evaluateFilter(filter, article, exclusion) {
-  if (exclusion) {
-    const title = String(article.title || '');
-    const match = /REGEXP \?/.test(exclusion.sql);
-    const titleExcluded = match
-      ? new RegExp(exclusion.params[0]).test(title)
-      : exclusion.params.some(function(param) { return likeToRegExp(param).test(title); });
-    const categoryExcluded = /category, ''\) NOT IN \(/.test(exclusion.sql)
-      ? exclusion.params.slice(1).indexOf(String(article.category || '').trim()) !== -1
-      : false;
-    if (titleExcluded || categoryExcluded) return false;
+  if (exclusion && !evaluateExclusion(exclusion, article)) {
+    return false;
   }
   const tokens = [];
   const pattern = /(title|summary|content|tags|sub_category) LIKE \?|category IN \(([^)]*)\)/g;
@@ -204,7 +242,7 @@ catalog.forEach(function(tag) {
 });
 
 // 书籍章节与拆条内容不参与痛点标签与筛选
-const bookChapter = articles.filter(function(article) { return article.id >= 10; });
+const bookChapter = articles.filter(function(article) { return article.id >= 10 && article.id <= 14; });
 bookChapter.forEach(function(article) {
   assert.equal(articlePainPoints.isPainPointEligible(article), false,
     'book chapter should be ineligible: ' + article.id);
@@ -242,13 +280,27 @@ assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么�
   'import-only category is excluded even with a clean title');
 assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '行为习惯' }), true,
   'canonical category with a clean title stays eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '睡眠管理', author: '约翰·瑞迪' }), false,
+  'imported book author is excluded even with a clean title and category');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '睡眠管理', author: '小牛育儿内容组' }), true,
+  'curated content team author stays eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '睡眠管理', author: '小牛育儿内容组（循证审校）' }), false,
+  'review-suffixed author is not treated as curated');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '睡眠管理', author: '' }), true,
+  'blank author historical Q&A stays eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '睡眠管理' }), true,
+  'missing author stays eligible like a blank author');
 
 // 排除参数必须与 EXCLUDED_CATEGORIES 对齐，避免 SQL 与 JS 判定分叉
 const exclusionContract = articlePainPoints.buildPainPointExclusion();
 assert.equal(exclusionContract.params[0], '片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章| - |^[0-9]+\\s',
   'exclusion should reuse a single shared title pattern');
-assert.deepEqual(exclusionContract.params.slice(1), Array.from(articlePainPoints.EXCLUDED_CATEGORIES),
+assert.deepEqual(exclusionContract.params.slice(1, 1 + articlePainPoints.EXCLUDED_CATEGORIES.length),
+  Array.from(articlePainPoints.EXCLUDED_CATEGORIES),
   'exclusion should push the excluded category list in order');
+assert.equal(exclusionContract.params[exclusionContract.params.length - 1],
+  '^(' + articlePainPoints.CURATED_AUTHORS.join('|') + ')?$',
+  'exclusion should end with the curated author allow-list pattern');
 
 articles.forEach(function(article) {
   const first = articlePainPoints.matchArticlePainPoints(article);

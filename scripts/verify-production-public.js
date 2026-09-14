@@ -2,6 +2,8 @@ const https = require('https');
 
 const hostname = 'api.woyai.cn';
 const allowKnownDrift = process.argv.includes('--allow-known-drift');
+// 与 backend/src/mysql-production/article-pain-points.js 的 CURATED_AUTHORS 保持一致
+const CURATED_AUTHORS = ['小牛育儿内容组', '小牛育儿编辑部', '追光小牛'];
 
 const checks = [
   { path: '/api/v1/health', statuses: [200], validate: (body) => body.status === 'ok' && body.service === 'niuniu-backend' },
@@ -45,14 +47,17 @@ function validatePainPointArticles(body) {
   return list.every((article) => {
     const title = String((article && article.title) || '');
     const category = String((article && article.category) || '').trim();
-    // 与 article-pain-points.js 的 EXCLUDED_TITLE_PATTERN_SOURCE / EXCLUDED_CATEGORIES 对齐：
-    // 拆条标记、书名分隔符「 - 」、前导序号、以及整批导入分类都不得出现在合集结果里。
+    const author = String((article && article.author) || '').trim();
+    // 与 article-pain-points.js 的 EXCLUDED_TITLE_PATTERN_SOURCE / EXCLUDED_CATEGORIES / CURATED_AUTHORS 对齐：
+    // 合集只收录内容团队自产内容，拆条标记、书名分隔符「 - 」、前导序号、整批导入分类、
+    // 以及非白名单作者（书籍导入）都不得出现在结果里。
     return title.indexOf('片段') === -1
       && !/第[0-9]+\s*步/.test(title)
       && !/第[0-9一二三四五六七八九十百]+章/.test(title)
       && title.indexOf(' - ') === -1
       && !/^[0-9]+\s/.test(title)
-      && category !== '家庭教育';
+      && category !== '家庭教育'
+      && (author === '' || CURATED_AUTHORS.indexOf(author) !== -1);
   });
 }
 

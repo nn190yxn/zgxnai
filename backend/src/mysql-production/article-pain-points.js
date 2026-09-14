@@ -72,6 +72,11 @@ const EXCLUDED_TITLE_PATTERN_SOURCE = '片段|第[0-9]+步|第[0-9一二三四�
 const EXCLUDED_TITLE_PATTERN = new RegExp(EXCLUDED_TITLE_PATTERN_SOURCE);
 // 整批导入、经核对不含正式手写内容的分类；这些分类下的文章全部不参与痛点标签与筛选。
 const EXCLUDED_CATEGORIES = Object.freeze(['家庭教育']);
+// 痛点合集只收录内容团队自产的方案卡与问答。书籍导入内容由书名或外籍作者署名，不属于合集来源，
+// 其正文是书稿散文，直接展示会污染合集。空白作者是历史问答内容的署名方式，一并纳入白名单。
+const CURATED_AUTHORS = Object.freeze(['小牛育儿内容组', '小牛育儿编辑部', '追光小牛']);
+const CURATED_AUTHOR_PATTERN_SOURCE = '^(' + CURATED_AUTHORS.join('|') + ')?$';
+const CURATED_AUTHOR_PATTERN = new RegExp(CURATED_AUTHOR_PATTERN_SOURCE);
 
 function listPainPointTags() {
   return PAIN_POINT_TAGS.map(function(tag) {
@@ -93,7 +98,10 @@ function isPainPointEligible(article) {
   if (EXCLUDED_TITLE_PATTERN.test(String(source.title || ''))) {
     return false;
   }
-  return EXCLUDED_CATEGORIES.indexOf(String(source.category || '').trim()) === -1;
+  if (EXCLUDED_CATEGORIES.indexOf(String(source.category || '').trim()) !== -1) {
+    return false;
+  }
+  return CURATED_AUTHOR_PATTERN.test(String(source.author || '').trim());
 }
 
 function buildArticleText(article) {
@@ -129,12 +137,14 @@ function matchArticlePainPoints(article) {
 // 与 isPainPointEligible 等价的 SQL 排除条件，供文章接口下推。
 function buildPainPointExclusion() {
   const params = [EXCLUDED_TITLE_PATTERN_SOURCE];
-  let sql = 'NOT (COALESCE(title, \'\') REGEXP ?)';
+  const conditions = ['NOT (COALESCE(title, \'\') REGEXP ?)'];
   if (EXCLUDED_CATEGORIES.length) {
-    sql += ' AND COALESCE(category, \'\') NOT IN (' + EXCLUDED_CATEGORIES.map(function() { return '?'; }).join(', ') + ')';
+    conditions.push('COALESCE(category, \'\') NOT IN (' + EXCLUDED_CATEGORIES.map(function() { return '?'; }).join(', ') + ')');
     params.push.apply(params, EXCLUDED_CATEGORIES);
   }
-  return { sql: sql, params: params };
+  conditions.push('TRIM(COALESCE(author, \'\')) REGEXP ?');
+  params.push(CURATED_AUTHOR_PATTERN_SOURCE);
+  return { sql: conditions.join(' AND '), params: params };
 }
 
 // 生成与 matchesTag 等价的 SQL 条件，供文章接口下推筛选。
@@ -169,5 +179,6 @@ module.exports = {
   buildPainPointFilter: buildPainPointFilter,
   isPainPointEligible: isPainPointEligible,
   buildPainPointExclusion: buildPainPointExclusion,
-  EXCLUDED_CATEGORIES: EXCLUDED_CATEGORIES
+  EXCLUDED_CATEGORIES: EXCLUDED_CATEGORIES,
+  CURATED_AUTHORS: CURATED_AUTHORS
 };
