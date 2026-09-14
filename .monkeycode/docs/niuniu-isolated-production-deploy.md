@@ -53,6 +53,7 @@
 - `backend/src/mysql-production/event-protocol.js`
 - `backend/src/mysql-production/analytics-quality.js`
 - `backend/src/mysql-production/api-response.js`
+- `backend/src/mysql-production/article-pain-points.js`
 - `backend/src/shared/business-dimensions.js`
 - `shared/business-dimensions.json`
 - `backend/examples/knowledgebase-sample.json`
@@ -61,7 +62,7 @@
 
 发布前执行 `npm run verify:production-release`，保存动态生成的文件清单及 SHA-256。脚本从上述入口递归收集静态相对 `require()` 依赖，并包含定时发布入口、后端包声明和后台静态资源。通过变量加载的模块、文件系统读取的数据及第三方依赖仍需另行核对。该清单用于比较部署差异，具体同步范围以本次发布方案为准；明确保留的生产数据和包声明应记录例外。文件同步后在生产目录对批准同步的文件重新计算校验值，全部一致后再重启服务。
 
-当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 10 个公网检查点通过，两个知识接口必须返回 200 且携带 `meta.schema_version: 1`。
+当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 11 个公网检查点通过，两个知识接口必须返回 200 且携带 `meta.schema_version: 1`，家长痛点标签目录接口必须返回 200 且每项包含 `key`、`label`、`category`。
 
 ## 回滚策略
 

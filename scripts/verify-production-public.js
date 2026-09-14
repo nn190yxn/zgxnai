@@ -11,6 +11,7 @@ const checks = [
   { path: '/api/v1/payment/virtual-order', method: 'POST', statuses: [401] },
   { path: '/api/v1/wechat/message-push', statuses: [403], json: false, validate: (body) => body.trim() === 'signature invalid' },
   { path: '/api/v1/development-zones', statuses: [200], validate: (body) => body.success === true && Array.isArray(body.data && body.data.list) },
+  { path: '/api/v1/pain-point-tags', statuses: [200], validate: validatePainPointTags },
   { path: '/api/v1/education/knowledge/chapters', statuses: [401] },
   { path: '/api/v1/knowledge/contents', statuses: allowKnownDrift ? [200, 404] : [200], validate: validateKnowledgeResponse },
   { path: '/api/v1/knowledge/ability-content', statuses: allowKnownDrift ? [200, 404] : [200], validate: validateKnowledgeResponse }
@@ -19,6 +20,12 @@ const checks = [
 function validateKnowledgeResponse(body, statusCode) {
   if (allowKnownDrift && statusCode === 404) return body.success === false;
   return body.success === true && Array.isArray(body.data) && body.meta && body.meta.schema_version === 1;
+}
+
+function validatePainPointTags(body) {
+  const list = body && body.data && body.data.list;
+  if (body.success !== true || !Array.isArray(list) || list.length === 0) return false;
+  return list.every((tag) => tag && tag.key && tag.label && tag.category);
 }
 
 function request(check) {
