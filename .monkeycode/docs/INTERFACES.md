@@ -179,9 +179,12 @@
 | --- | --- | --- |
 | GET | `/pain-points` | 按分类查询正式成长痛点 |
 | GET | `/pain-points/:key` | 查询指定稳定键的成长痛点详情 |
+| GET | `/pain-point-tags` | 查询家长痛点标签目录 |
 | GET | `/content/:type/:id` | 查询指定内容已发布版本 |
 
 成长痛点返回 `pain_point_key`、分类、短标题、描述、可观察表现、可能原因、今日行动、家长提示和观察信号。公共内容接口会过滤未审核、未发布或尚未到发布时间的版本。
+
+家长痛点标签由后端按「关键词命中 + 分类兜底」在查询期从文章标题、摘要、标签、子分类和分类派生，不写入数据库。`/pain-point-tags` 返回 `key`、`label`、`category` 有序目录；`/parenting/articles` 接受 `pain_point_key`，用同一份定义过滤文章并在文章载荷中返回 `painPointTags`（最多 3 个），不受支持的 `pain_point_key` 返回 400。
 
 ### 首页 Banner 公共接口
 

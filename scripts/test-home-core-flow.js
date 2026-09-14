@@ -533,6 +533,23 @@ function testRuntimeConfigCoreRefactorMapping() {
   assert.strictEqual(camelCase.coreRefactorRolloutPercent, 12);
   assert.deepStrictEqual(camelCase.coreRefactorUserWhitelist, ['user-e', 'user-f']);
   assert.strictEqual(appConfig.isFeatureEnabled({ globalData: { runtimeConfig: camelCase } }, 'ageFirstCore'), true);
+
+  const painPointOn = appConfig.normalizeRuntimeConfig({
+    miniprogram_remote_content_enabled: true,
+    pain_point_collection_enabled: true
+  });
+  assert.strictEqual(painPointOn.painPointCollectionEnabled, true);
+  assert.strictEqual(appConfig.isFeatureEnabled({ globalData: { runtimeConfig: painPointOn } }, 'painPointCollection'), true);
+
+  const painPointOff = appConfig.normalizeRuntimeConfig({
+    miniprogram_remote_content_enabled: true,
+    pain_point_collection_enabled: false
+  });
+  assert.strictEqual(painPointOff.painPointCollectionEnabled, false, 'explicit flag should win over remote content');
+  assert.strictEqual(appConfig.isFeatureEnabled({ globalData: { runtimeConfig: painPointOff } }, 'painPointCollection'), false);
+
+  const painPointFallback = appConfig.normalizeRuntimeConfig({ miniprogram_remote_content_enabled: true });
+  assert.strictEqual(painPointFallback.painPointCollectionEnabled, true, 'collection should default to remote content availability');
 }
 
 function testCoreSceneSearchFeatureFlag() {
