@@ -26,9 +26,22 @@ Page({
     professionalBoundary: ''
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue(value) {
+    const text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad(options) {
     if (options && options.painPointKey) {
-      this.loadPainPoint(decodeURIComponent(String(options.painPointKey)));
+      this.loadPainPoint(this.decodeQueryValue(String(options.painPointKey)));
       return;
     }
     this.loadZone(options && options.zone ? String(options.zone) : '');
