@@ -179,6 +179,7 @@ module.exports = {
   buildPainPointFilter: buildPainPointFilter,
   isPainPointEligible: isPainPointEligible,
   buildPainPointExclusion: buildPainPointExclusion,
+  EXCLUDED_TITLE_PATTERN_SOURCE: EXCLUDED_TITLE_PATTERN_SOURCE,
   EXCLUDED_CATEGORIES: EXCLUDED_CATEGORIES,
   CURATED_AUTHORS: CURATED_AUTHORS
 };
