@@ -118,9 +118,10 @@ function likeToRegExp(likePattern) {
 function evaluateFilter(filter, article, exclusion) {
   if (exclusion) {
     const title = String(article.title || '');
-    const excluded = exclusion.params.some(function(param) {
-      return likeToRegExp(param).test(title);
-    });
+    const match = /REGEXP \?/.test(exclusion.sql);
+    const excluded = match
+      ? new RegExp(exclusion.params[0]).test(title)
+      : exclusion.params.some(function(param) { return likeToRegExp(param).test(title); });
     if (excluded) return false;
   }
   const tokens = [];
@@ -191,6 +192,16 @@ assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么�
   'normal articles stay eligible');
 assert.equal(articlePainPoints.isPainPointEligible({ title: '文章里提到章节结构' }), true,
   'titles mentioning 章节 without 第…章 stay eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '上学前磨蹭，第一步小到马上能做' }), true,
+  'chinese first step phrasing stays eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '迈出社交第一步' }), true,
+  'chinese first step phrasing stays eligible without keywords');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '第16步 重新看待犯错' }), false,
+  'numeric step book content is excluded');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '第9章 给治疗师 治疗' }), false,
+  'chapter book content is excluded');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '10 个亲子游戏（片段2）' }), false,
+  'fragment book content is excluded');
 
 articles.forEach(function(article) {
   const first = articlePainPoints.matchArticlePainPoints(article);
