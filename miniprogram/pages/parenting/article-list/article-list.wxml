@@ -118,6 +118,7 @@
                 class="tag tag-pain-point"
                 wx:for="{{item.painPointTags}}"
                 wx:for-item="painTag"
+                wx:for-index="painTagIndex"
                 wx:key="key"
                 data-key="{{painTag.key}}"
                 data-label="{{painTag.label}}"

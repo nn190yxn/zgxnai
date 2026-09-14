@@ -161,6 +161,7 @@ assert.ok(developmentHome.includes('wx:if="{{painPointCollectionEnabled}}"'), 'd
 const articleListWxml = read('miniprogram/pages/parenting/article-list/article-list.wxml');
 assert.ok(articleListWxml.includes('item.painPointTags'), 'article list should render pain point tags');
 assert.ok(articleListWxml.includes('catchtap="onArticleTagTap"'), 'article list tags should open the collection without opening the article');
+assert.ok(articleListWxml.includes('wx:for-index="painTagIndex"'), 'article list tag loop should rename its index so the article index stays in scope');
 const articleDetailWxml = read('miniprogram/pages/parenting/article-detail/article-detail.wxml');
 assert.ok(articleDetailWxml.includes('article.painPointTags'), 'article detail should render pain point tags');
 assert.ok(articleDetailWxml.includes('bindtap="onPainPointTagTap"'), 'article detail tags should open the collection page');
