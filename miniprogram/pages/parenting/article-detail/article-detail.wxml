@@ -27,6 +27,17 @@
           <text class="tag tag-accent" wx:if="{{article.ageRange}}">{{article.ageRange}}</text>
           <text class="tag tag-evidence" wx:if="{{article.evidenceLevelText}}">{{article.evidenceLevelText}}</text>
         </view>
+        <view class="article-tags pain-point-tags" wx:if="{{article.painPointTags.length}}">
+          <text
+            class="tag tag-pain-point"
+            wx:for="{{article.painPointTags}}"
+            wx:for-item="painTag"
+            wx:key="key"
+            data-key="{{painTag.key}}"
+            data-label="{{painTag.label}}"
+            bindtap="onPainPointTagTap"
+          >{{painTag.label}}</text>
+        </view>
       </view>
 
       <!-- 作者信息 -->

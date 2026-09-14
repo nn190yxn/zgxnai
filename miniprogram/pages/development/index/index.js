@@ -13,6 +13,7 @@ Page({
     painPoints: [],
     painPointSource: 'local_fallback',
     painPointCategory: '',
+    painPointCollectionEnabled: true,
     familyScenes: [
       { key: 'homework', title: '写作业', description: '拖着不开始、做着分心', keyword: '写作业' },
       { key: 'meal', title: '吃饭', description: '挑食、坐不住、容易磨蹭', keyword: '吃饭' },
@@ -26,7 +27,8 @@ Page({
     var localCards = this.buildZoneCards();
     this.setData({
       zones: localCards,
-      featuredZones: localCards.filter(function(item) { return item.isPrimary; })
+      featuredZones: localCards.filter(function(item) { return item.isPrimary; }),
+      painPointCollectionEnabled: !!(app.isFeatureEnabled && app.isFeatureEnabled('painPointCollection'))
     });
     this.loadZones();
     this.loadPainPoints();
@@ -53,6 +55,19 @@ Page({
     var key = e.currentTarget.dataset.key || '';
     if (!key) return;
     wx.navigateTo({ url: '/pages/development/detail/detail?painPointKey=' + encodeURIComponent(key) });
+  },
+
+  openPainPointCollection: function() {
+    if (!this.data.painPointCollectionEnabled) {
+      wx.showToast({ title: '家长痛点合集还在准备中', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/parenting/pain-point-collection/index',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
   },
 
   openFamilyScene: function(e) {

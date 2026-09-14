@@ -1460,6 +1460,18 @@ Page({
     this.openCoreSupportAction(action);
   },
 
+  onPainPointCollectionTap: function() {
+    if (!this.ensureFeatureEnabled('painPointCollection', '家长痛点合集还在准备中')) {
+      return;
+    }
+    wx.navigateTo({
+      url: '/pages/parenting/pain-point-collection/index',
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
   onCoreResultSupportTap: function(e) {
     var action = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset.action : '';
     var state = this.data.coreRefactorState || {};

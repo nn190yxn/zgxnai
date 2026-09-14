@@ -32,6 +32,7 @@ const pageReviewMatrix = {
   'pages/parenting/article-list/article-list': 'remote-content-list',
   'pages/parenting/article-detail/article-detail': 'remote-content-detail',
   'pages/parenting/search/search': 'parallel-remote-search',
+  'pages/parenting/pain-point-collection/index': 'remote-content-list',
   'pages/parenting/milestone/milestone': 'interactive',
   'pages/parenting/milestone-result/milestone-result': 'local-detail',
   'pages/development/index/index': 'remote-content',
@@ -117,6 +118,11 @@ const stateContracts = [
     page: 'pages/parenting/search/search',
     js: ['errorMessage', 'partialMessage', 'retrySearch'],
     wxml: ['重新搜索', '还没有找到直接匹配的内容']
+  },
+  {
+    page: 'pages/parenting/pain-point-collection/index',
+    js: ["loadState: 'loading'", "'catalog_error'", "'error'", "'empty'", "'disabled'", 'retryLoadCatalog', 'retryLoadArticles'],
+    wxml: ['家长痛点合集还没开放', '痛点合集暂时没加载出来', '文章暂时没加载出来', '这个痛点还没有文章', '重新加载']
   },
   {
     page: 'pages/profile/children/children',

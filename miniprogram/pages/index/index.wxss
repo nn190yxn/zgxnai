@@ -253,6 +253,43 @@
   margin-top: 20rpx;
 }
 
+.home-pain-point-entry {
+  margin-top: 24rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  background: #EAF3EF;
+  border: 1rpx solid #CBE0D7;
+  border-radius: 24rpx;
+}
+
+.home-pain-point-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.home-pain-point-entry-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #2F6B57;
+}
+
+.home-pain-point-entry-desc {
+  font-size: 23rpx;
+  line-height: 1.5;
+  color: #5C7068;
+}
+
+.home-pain-point-entry-arrow {
+  flex: 0 0 auto;
+  font-size: 30rpx;
+  color: #397A68;
+}
+
 .home-feature-item {
   min-width: 0;
   text-align: center;

@@ -22,6 +22,7 @@
     "pages/parenting/article-list/article-list",
     "pages/parenting/article-detail/article-detail",
     "pages/parenting/search/search",
+    "pages/parenting/pain-point-collection/index",
     "pages/parenting/milestone/milestone",
     "pages/parenting/milestone-result/milestone-result",
     "pages/development/index/index",

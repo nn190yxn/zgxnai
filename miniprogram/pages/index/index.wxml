@@ -72,6 +72,13 @@
           <text class="home-feature-desc">{{item.desc}}</text>
         </view>
       </view>
+      <view class="home-pain-point-entry" wx:if="{{featureFlags.painPointCollectionEnabled}}" bindtap="onPainPointCollectionTap">
+        <view class="home-pain-point-entry-text">
+          <text class="home-pain-point-entry-title">家长痛点合集</text>
+          <text class="home-pain-point-entry-desc">按你正遇到的问题，集中看同一类文章</text>
+        </view>
+        <text class="home-pain-point-entry-arrow">></text>
+      </view>
     </view>
 
     <view class="home-topic-section" wx:if="{{developmentZones.length}}">

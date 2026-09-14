@@ -272,3 +272,6 @@
 .pain-point-title { color: #2F3432; font-weight: 600; }
 .pain-point-desc { color: #626A66; font-size: 24rpx; margin-top: 8rpx; }
 .pain-point-link { color: #397A68; font-size: 23rpx; margin-top: 10rpx; }
+.pain-point-collection-entry { margin-top: 20rpx; padding: 22rpx 24rpx; display: flex; align-items: center; justify-content: space-between; background: #EAF3EF; border: 1rpx solid #CBE0D7; border-radius: 16rpx; }
+.pain-point-collection-title { color: #2F6B57; font-size: 27rpx; font-weight: 600; }
+.pain-point-collection-arrow { color: #397A68; font-size: 28rpx; }

@@ -1,0 +1,86 @@
+<!-- 家长痛点合集页 -->
+<view class="page page-transition">
+  <!-- 功能未开放 -->
+  <view class="pp-state-card" wx:if="{{loadState === 'disabled'}}">
+    <text class="pp-state-title">家长痛点合集还没开放</text>
+    <text class="pp-state-desc">先在文章里按分类浏览，合集开放后会汇总同一类问题。</text>
+  </view>
+
+  <block wx:else>
+    <view class="pp-header">
+      <text class="pp-eyebrow">家长痛点合集</text>
+      <text class="pp-title">按你正遇到的问题翻文章</text>
+      <text class="pp-subtitle">先选一个最像的表现，再看同一类问题的做法。</text>
+    </view>
+
+    <!-- 标签目录加载失败 -->
+    <view class="pp-state-card" wx:if="{{loadState === 'catalog_error'}}">
+      <text class="pp-state-title">{{catalogError || '痛点合集暂时没加载出来'}}</text>
+      <view class="pp-retry" bindtap="retryLoadCatalog">重新加载</view>
+    </view>
+
+    <block wx:else>
+      <!-- 痛点标签目录 -->
+      <scroll-view class="pp-tag-scroll scroll-view-optimized" scroll-x>
+        <view class="pp-tag-list">
+          <view
+            class="pp-tag {{activeTagKey === item.key ? 'pp-tag-active' : ''}}"
+            wx:for="{{tags}}"
+            wx:key="key"
+            data-key="{{item.key}}"
+            bindtap="onTagTap"
+          >
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 文章骨架屏 -->
+      <view class="pp-skeleton-list" wx:if="{{articlesLoading && articles.length === 0}}">
+        <view class="pp-skeleton-card" wx:for="{{3}}" wx:key="*this">
+          <view class="skeleton pp-skeleton-title"></view>
+          <view class="skeleton pp-skeleton-line"></view>
+          <view class="skeleton pp-skeleton-line pp-skeleton-line-short"></view>
+        </view>
+      </view>
+
+      <!-- 文章加载失败 -->
+      <view class="pp-state-card" wx:elif="{{loadState === 'error'}}">
+        <text class="pp-state-title">{{articleError || '文章暂时没加载出来'}}</text>
+        <view class="pp-retry" bindtap="retryLoadArticles">重新加载</view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="pp-state-card" wx:elif="{{!articlesLoading && articles.length === 0}}">
+        <text class="pp-state-title">这个痛点还没有文章</text>
+        <text class="pp-state-desc">换个痛点看看，或下拉刷新试试。</text>
+      </view>
+
+      <!-- 文章列表 -->
+      <view class="pp-article-list" wx:else>
+        <view
+          class="pp-article-card list-item-enter"
+          wx:for="{{articles}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-index="{{index}}"
+          bindtap="onArticleTap"
+        >
+          <text class="pp-article-title">{{item.title}}</text>
+          <text class="pp-article-summary">{{item.summary}}</text>
+          <view class="pp-article-meta">
+            <text class="pp-article-tag" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
+            <text class="pp-article-tag" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="pp-load-more" wx:if="{{articles.length > 0}}">
+        <view class="loading-spinner-small" wx:if="{{articlesLoading}}"></view>
+        <text wx:if="{{articlesLoading}}">加载中...</text>
+        <text wx:elif="{{!hasMore}}">已经到底了</text>
+      </view>
+    </block>
+  </block>
+</view>

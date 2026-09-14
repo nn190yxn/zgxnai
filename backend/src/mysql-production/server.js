@@ -25,6 +25,7 @@ const { registerPlatformRoutes, registerPublicRoutes } = require('./platform-rou
 const releaseProtection = require('./release-protection');
 const { listRecipes } = require('./recipe-content');
 const supportTickets = require('./support-tickets');
+const articlePainPoints = require('./article-pain-points');
 const {
   HOT_KEYWORDS,
   PARENTING_ARTICLES,
@@ -341,6 +342,7 @@ for (const prefix of API_PREFIXES) {
   app.get(`${prefix}/parenting/articles`, optionalAuthenticateToken, asyncHandler(parentingArticlesHandler));
   app.get(`${prefix}/parenting/articles/:id`, optionalAuthenticateToken, asyncHandler(parentingArticleDetailHandler));
   app.get(`${prefix}/parenting/articles/:id/related`, optionalAuthenticateToken, asyncHandler(parentingRelatedArticlesHandler));
+  app.get(`${prefix}/pain-point-tags`, optionalAuthenticateToken, asyncHandler(painPointTagsHandler));
   app.get(`${prefix}/development-zones`, optionalAuthenticateToken, asyncHandler(developmentZonesHandler));
   app.get(`${prefix}/development-zones/:code`, optionalAuthenticateToken, asyncHandler(developmentZoneDetailHandler));
   app.get(`${prefix}/knowledge/contents`, optionalAuthenticateToken, asyncHandler(knowledgeContentsHandler));
@@ -2972,7 +2974,8 @@ function buildParentingArticlesCacheKey(query) {
     category: String(query.category || '').trim(),
     age_group: String(query.age_group || '').trim(),
     keyword: String(query.keyword || '').trim(),
-    content_form: String(query.content_form || '').trim()
+    content_form: String(query.content_form || '').trim(),
+    pain_point_key: String(query.pain_point_key || '').trim()
   });
 }
 
@@ -12527,6 +12530,7 @@ async function normalizeArticle(row, userId) {
     cover: row.cover || row.cover_image || row.icon_url || buildArticleCover(row.category),
     is_favorited: favorited,
     isFavorite: favorited,
+    painPointTags: articlePainPoints.matchArticlePainPoints(row),
     keyPoints: buildKeyPointsFromContent(row.content || row.summary || ''),
     images: []
   };
@@ -12557,6 +12561,15 @@ function buildKeyPointsFromContent(content) {
     .slice(0, 4);
 }
 
+function painPointTagsHandler(req, res) {
+  res.json({
+    success: true,
+    data: {
+      list: articlePainPoints.listPainPointTags()
+    }
+  });
+}
+
 async function parentingArticlesHandler(req, res) {
   if (!isValidBoundedIntInput(req.query.page, 1, 1000000)) {
     res.status(400).json({ success: false, message: 'page参数无效' });
@@ -12576,6 +12589,10 @@ async function parentingArticlesHandler(req, res) {
   }
   if (req.query.content_form && !VALID_CONTENT_FORMS.has(String(req.query.content_form).trim())) {
     res.status(400).json({ success: false, message: 'content_form参数无效' });
+    return;
+  }
+  if (req.query.pain_point_key && !articlePainPoints.isPainPointTagKey(req.query.pain_point_key)) {
+    res.status(400).json({ success: false, message: 'pain_point_key参数无效' });
     return;
   }
   const page = normalizeBoundedInt(req.query.page, 1, 1, 1000000);
@@ -12606,6 +12623,12 @@ async function parentingArticlesHandler(req, res) {
     whereClause += ' AND content_form = ?';
     params.push(req.query.content_form);
     countParams.push(req.query.content_form);
+  }
+  if (req.query.pain_point_key) {
+    const painPointFilter = articlePainPoints.buildPainPointFilter(req.query.pain_point_key);
+    whereClause += ' AND ' + painPointFilter.sql;
+    params.push(...painPointFilter.params);
+    countParams.push(...painPointFilter.params);
   }
   let cachedPayload = getCachedParentingArticles(cacheKey);
   if (!cachedPayload) {

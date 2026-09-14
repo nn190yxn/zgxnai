@@ -113,6 +113,19 @@
               <text class="tag" wx:if="{{item.categoryName}}">{{item.categoryName}}</text>
               <text class="tag tag-age" wx:if="{{item.ageRange}}">{{item.ageRange}}</text>
             </view>
+            <view class="article-tags pain-point-tags" wx:if="{{item.painPointTags.length}}">
+              <text
+                class="tag tag-pain-point"
+                wx:for="{{item.painPointTags}}"
+                wx:for-item="painTag"
+                wx:key="key"
+                data-key="{{painTag.key}}"
+                data-label="{{painTag.label}}"
+                data-id="{{item.id}}"
+                data-index="{{index}}"
+                catchtap="onArticleTagTap"
+              >{{painTag.label}}</text>
+            </view>
             <view class="article-meta">
               <text class="meta-item">{{item.author || '小牛育儿'}}</text>
               <text class="meta-item" wx:if="{{item.viewCount}}">阅读 {{item.viewCount}}</text>

@@ -16,6 +16,12 @@ function normalizeRuntimeConfig(payload) {
   var ageFirstCoreEnabled = data.age_first_core_enabled !== undefined
     ? !!data.age_first_core_enabled
     : (data.ageFirstCoreEnabled !== undefined ? !!data.ageFirstCoreEnabled : envConfig.enableAgeFirstCore === true);
+  var miniprogramRemoteContentEnabled = data.miniprogram_remote_content_enabled !== undefined
+    ? !!data.miniprogram_remote_content_enabled
+    : (envConfig.enableMiniprogramRemoteContent === true);
+  var painPointCollectionEnabled = data.pain_point_collection_enabled !== undefined
+    ? !!data.pain_point_collection_enabled
+    : (envConfig.enablePainPointCollection !== undefined ? !!envConfig.enablePainPointCollection : miniprogramRemoteContentEnabled);
   return {
     envName: data.env_name || data.envName || (envConfig.envName || 'development'),
     debug: !!data.debug,
@@ -30,8 +36,9 @@ function normalizeRuntimeConfig(payload) {
     coreRefactorEnabled: coreRefactorEnabled,
     ageFirstCoreEnabled: ageFirstCoreEnabled,
     serverContentReadEnabled: data.server_content_read_enabled !== undefined ? !!data.server_content_read_enabled : envConfig.enableServerContentRead === true,
-    miniprogramRemoteContentEnabled: data.miniprogram_remote_content_enabled !== undefined ? !!data.miniprogram_remote_content_enabled : envConfig.enableMiniprogramRemoteContent === true,
+    miniprogramRemoteContentEnabled: miniprogramRemoteContentEnabled,
     adminContentWriteEnabled: data.admin_content_write_enabled !== undefined ? !!data.admin_content_write_enabled : envConfig.enableAdminContentWrite === true,
+    painPointCollectionEnabled: painPointCollectionEnabled,
     coreRefactorRolloutPercent: Math.max(0, Math.min(100, isNaN(rolloutPercent) ? 0 : rolloutPercent)),
     coreRefactorUserWhitelist: normalizeStringList(whitelistSource),
     multimodalEnabled: data.multimodal_enabled !== undefined ? !!data.multimodal_enabled : (envConfig.enableMultimodal === true),
@@ -144,6 +151,7 @@ function isFeatureEnabled(app, featureName) {
   if (featureName === 'serverContentRead') return !!config.serverContentReadEnabled;
   if (featureName === 'miniprogramRemoteContent') return !!config.miniprogramRemoteContentEnabled;
   if (featureName === 'adminContentWrite') return !!config.adminContentWriteEnabled;
+  if (featureName === 'painPointCollection') return !!config.painPointCollectionEnabled;
   return true;
 }
 

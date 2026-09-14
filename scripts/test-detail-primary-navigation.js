@@ -89,6 +89,14 @@ assert.ok(requestSource.includes("wx.redirectTo({"), 'membership intercept shoul
 assert.ok(requestSource.includes("source=membership_required"), 'membership intercept should mark the gated entry source');
 assert.ok(requestSource.includes('membershipRedirectInFlight'), 'membership intercept should ignore concurrent 403s');
 
+const articleListSource = read('miniprogram/pages/parenting/article-list/article-list.js');
+assert.ok(articleListSource.includes('/pages/parenting/pain-point-collection/index?painPointKey='), 'article list tags should open the collection page with the tag key');
+const articleDetailSource = read('miniprogram/pages/parenting/article-detail/article-detail.js');
+assert.ok(articleDetailSource.includes('/pages/parenting/pain-point-collection/index?painPointKey='), 'article detail tags should open the collection page with the tag key');
+const collectionSource = read('miniprogram/pages/parenting/pain-point-collection/index.js');
+assert.ok(collectionSource.includes('painPointKey || options.pain_point_key'), 'collection page should read the incoming tag key');
+assert.ok(collectionSource.includes('wx.navigateTo({'), 'collection page should stack over the entry page so back returns to it');
+
 const originalWxForMembership = global.wx;
 const originalGetCurrentPagesForMembership = global.getCurrentPages;
 const membershipNavCalls = [];

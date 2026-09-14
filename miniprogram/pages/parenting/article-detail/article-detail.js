@@ -232,6 +232,7 @@ Page({
     article.publishTime = article.publishTime || article.created_at || '';
     article.content = this.sanitizeRichText(article.content);
     article.isFavorite = !!(article.is_favorited || article.isFavorite);
+    article.painPointTags = Array.isArray(article.painPointTags) ? article.painPointTags : [];
     return article;
   },
 
@@ -696,6 +697,29 @@ Page({
 
   returnToMainPath: function() {
     detailNavigation.returnToMainPath('development');
+  },
+
+  // 点击痛点标签，进入家长痛点合集
+  onPainPointTagTap: function(e) {
+    var dataset = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
+    var key = dataset.key;
+    if (!key) {
+      return;
+    }
+    app.trackKbEvent(this.buildArticleTrackPayload({
+      event_type: 'pain_point_tag_click',
+      event_meta: {
+        source: 'article_detail',
+        pain_point_key: key,
+        pain_point_label: dataset.label || ''
+      }
+    }));
+    wx.navigateTo({
+      url: '/pages/parenting/pain-point-collection/index?painPointKey=' + encodeURIComponent(key),
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
   },
 
   // 下拉刷新

@@ -103,6 +103,7 @@ Page({
     article = article || {};
     article.categoryName = article.categoryName || article.category || '';
     article.ageRange = article.ageRange || article.age_group || '';
+    article.painPointTags = Array.isArray(article.painPointTags) ? article.painPointTags : [];
     article.viewCount = typeof article.viewCount === 'number' ? article.viewCount : Number(article.read_count || article.viewCount || 0);
     article.publishTime = article.publishTime || article.created_at || '';
     article.isFavorite = !!(article.is_favorited || article.isFavorite);
@@ -373,6 +374,31 @@ Page({
     }));
     wx.navigateTo({
       url: '/pages/parenting/article-detail/article-detail?id=' + id,
+      fail: function() {
+        wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
+      }
+    });
+  },
+
+  // 点击文章痛点标签，进入家长痛点合集
+  onArticleTagTap: function(e) {
+    var dataset = e && e.currentTarget && e.currentTarget.dataset ? e.currentTarget.dataset : {};
+    var key = dataset.key;
+    if (!key) {
+      return;
+    }
+    var index = dataset.index;
+    var article = this.data.articleList[index] || { id: dataset.id };
+    app.trackKbEvent(this.buildArticleTrackPayload(article, {
+      event_type: 'pain_point_tag_click',
+      event_meta: {
+        source: 'article_list',
+        pain_point_key: key,
+        pain_point_label: dataset.label || ''
+      }
+    }));
+    wx.navigateTo({
+      url: '/pages/parenting/pain-point-collection/index?painPointKey=' + encodeURIComponent(key),
       fail: function() {
         wx.showToast({ title: '页面没打开，请再试一次', icon: 'none' });
       }

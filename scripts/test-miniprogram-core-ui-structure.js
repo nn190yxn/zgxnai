@@ -148,4 +148,31 @@ assert.ok(textbook.includes('reading-empty-section'), 'reading practice should i
 const weeklySummaryJs = read('miniprogram/pages/weekly-summary/index.js');
 assert.ok(weeklySummaryJs.includes("crossPageStorage.consume('pendingCoreWeeklySummary'"), 'weekly summary should clear consumed core fallback summary');
 
+assert.ok(appConfig.pages.indexOf('pages/parenting/pain-point-collection/index') !== -1, 'pain point collection page should be registered');
+assert.ok(home.includes('class="home-pain-point-entry"'), 'home should expose a pain point collection entry');
+assert.ok(home.includes('featureFlags.painPointCollectionEnabled'), 'home pain point entry should be gated by the collection flag');
+assert.ok(home.includes('bindtap="onPainPointCollectionTap"'), 'home pain point entry should open the collection page');
+
+const developmentHome = read('miniprogram/pages/development/index/index.wxml');
+assert.ok(developmentHome.includes('class="pain-point-collection-entry"'), 'development page should expose a pain point collection entry');
+assert.ok(developmentHome.includes('bindtap="openPainPointCollection"'), 'development pain point entry should open the collection page');
+assert.ok(developmentHome.includes('wx:if="{{painPointCollectionEnabled}}"'), 'development pain point entry should be gated by the collection flag');
+
+const articleListWxml = read('miniprogram/pages/parenting/article-list/article-list.wxml');
+assert.ok(articleListWxml.includes('item.painPointTags'), 'article list should render pain point tags');
+assert.ok(articleListWxml.includes('catchtap="onArticleTagTap"'), 'article list tags should open the collection without opening the article');
+const articleDetailWxml = read('miniprogram/pages/parenting/article-detail/article-detail.wxml');
+assert.ok(articleDetailWxml.includes('article.painPointTags'), 'article detail should render pain point tags');
+assert.ok(articleDetailWxml.includes('bindtap="onPainPointTagTap"'), 'article detail tags should open the collection page');
+
+const collectionJs = read('miniprogram/pages/parenting/pain-point-collection/index.js');
+const collectionWxml = read('miniprogram/pages/parenting/pain-point-collection/index.wxml');
+assert.ok(collectionJs.includes("url: '/pain-point-tags'"), 'collection page should load the tag catalog');
+assert.ok(collectionJs.includes("url: '/parenting/articles'"), 'collection page should load filtered articles');
+assert.ok(collectionJs.includes('pain_point_key'), 'collection page should filter articles by pain point key');
+assert.ok(collectionWxml.includes('pain-point-collection') || collectionWxml.includes('pp-'), 'collection page should render collection markup');
+const appConfigSource = read('miniprogram/utils/app-config.js');
+assert.ok(appConfigSource.includes('painPointCollectionEnabled'), 'runtime config should expose the pain point collection flag');
+assert.ok(appConfigSource.includes("featureName === 'painPointCollection'"), 'feature gate should resolve the pain point collection flag');
+
 console.log('Miniprogram core UI structure tests passed.');
