@@ -79,6 +79,7 @@ function verifyContracts() {
   assert(!serverSource.includes('MySQL init skipped'), '生产入口仍允许跳过数据库初始化');
   assert(serverSource.includes('/knowledge/contents`'), '生产入口缺少知识内容路由');
   assert(serverSource.includes('/knowledge/ability-content`'), '生产入口缺少知识兼容路由');
+  assert(serverSource.includes('pain_point_collection_enabled'), '生产入口缺少家痛点合集运行时开关');
 
   const migrations = require(path.join(workspaceRoot, 'backend/src/mysql-production/migrations'));
   assert(Array.isArray(migrations) && migrations.length > 0, '迁移定义不能为空');

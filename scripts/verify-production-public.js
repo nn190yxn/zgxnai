@@ -5,7 +5,13 @@ const allowKnownDrift = process.argv.includes('--allow-known-drift');
 
 const checks = [
   { path: '/api/v1/health', statuses: [200], validate: (body) => body.status === 'ok' && body.service === 'niuniu-backend' },
-  { path: '/api/v1/runtime/config', statuses: [200], validate: (body) => body.env_name === 'production' && body.config_loaded === true },
+  {
+    path: '/api/v1/runtime/config',
+    statuses: [200],
+    validate: (body) => body.env_name === 'production'
+      && body.config_loaded === true
+      && typeof body.pain_point_collection_enabled === 'boolean'
+  },
   { path: '/api/v1/children', statuses: [401] },
   { path: '/api/v1/recommendations', statuses: [401] },
   { path: '/api/v1/payment/virtual-order', method: 'POST', statuses: [401] },

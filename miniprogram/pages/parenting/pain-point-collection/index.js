@@ -157,6 +157,13 @@ Page({
     if (target.key === existingKey && this.data.articles.length) {
       return;
     }
+    if (initialKey && !hasInitial) {
+      // 分享直达的标签已下线或拼错时明确告知，而不是静默跳到第一个标签
+      wx.showToast({
+        title: '这个痛点暂时没有合集',
+        icon: 'none'
+      });
+    }
     this.setData({
       activeTagKey: target.key,
       activeTagLabel: target.label || '',
@@ -172,6 +179,7 @@ Page({
         source: initialKey ? 'article_tag' : 'collection_page'
       }
     }));
+    this.invalidateArticleRequest();
     this.loadArticles();
   },
 

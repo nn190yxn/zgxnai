@@ -98,6 +98,7 @@ async function main() {
     assert.equal(page.data.page, 2);
     assert.equal(page.data.hasMore, true);
     assert.ok(context.events.tracks.some(item => item.event_type === 'pain_point_collection_view'));
+    assert.equal(context.events.toasts.length, 0, 'known tag should not warn');
   }
 
   {
@@ -114,6 +115,8 @@ async function main() {
     const context = createPage({ query: { painPointKey: 'unknown_tag' } });
     await settle(context.requests[0], 'success', { list: TAGS });
     assert.equal(context.requests[1].params.pain_point_key, 'called_no_response', 'invalid tag falls back to the first tag');
+    assert.ok(context.events.toasts.some(title => title.indexOf('痛点') !== -1),
+      'unknown share tag should tell the user instead of silently switching');
     await settle(context.requests[1], 'success', { list: [{ id: 1 }], pagination: { hasMore: true } });
     context.page.onTagTap({ currentTarget: { dataset: { key: 'distracted_during_task' } } });
     assert.equal(context.requests.length, 3);

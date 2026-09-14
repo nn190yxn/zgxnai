@@ -184,7 +184,7 @@
 
 成长痛点返回 `pain_point_key`、分类、短标题、描述、可观察表现、可能原因、今日行动、家长提示和观察信号。公共内容接口会过滤未审核、未发布或尚未到发布时间的版本。
 
-家长痛点标签由后端按「关键词命中 + 分类兜底」在查询期从文章标题、摘要、标签、子分类和分类派生，不写入数据库。`/pain-point-tags` 返回 `key`、`label`、`category` 有序目录；`/parenting/articles` 接受 `pain_point_key`，用同一份定义过滤文章并在文章载荷中返回 `painPointTags`（最多 3 个），不受支持的 `pain_point_key` 返回 400。
+家长痛点标签由后端按「关键词命中 + 分类兜底」在查询期从文章标题、摘要、标签、子分类和分类派生，不写入数据库。分类兜底只用于与痛点近乎同义的分类（情绪管理、社交能力、营养健康），宽泛分类只做关键词匹配，避免把整类文章都归入某个痛点。`/pain-point-tags` 返回 `key`、`label`、`category` 有序目录；`/parenting/articles` 接受 `pain_point_key`，用同一份定义过滤文章并在文章载荷中返回 `painPointTags`（最多 3 个），不受支持的 `pain_point_key` 返回 400。
 
 ### 首页 Banner 公共接口
 

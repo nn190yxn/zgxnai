@@ -60,6 +60,33 @@ const articles = [
     tags: '',
     sub_category: '',
     category: '未知分类'
+  },
+  {
+    id: 7,
+    title: '整理玩具的小方法',
+    summary: '把玩具按大小归位，方便下次找。',
+    content: '',
+    tags: '',
+    sub_category: '',
+    category: '行为习惯'
+  },
+  {
+    id: 8,
+    title: '数数练习小游戏',
+    summary: '按顺序数到十。',
+    content: '',
+    tags: '',
+    sub_category: '',
+    category: '认知发展'
+  },
+  {
+    id: 9,
+    title: '蔬菜的挑选方法',
+    summary: '看颜色和手感挑选当季蔬菜。',
+    content: '',
+    tags: '',
+    sub_category: '',
+    category: '营养健康'
   }
 ];
 
@@ -126,6 +153,24 @@ assert.ok(emotional.every(function(tag) { return tag.label && tag.category; }),
 const orphan = articlePainPoints.matchArticlePainPoints(articles[5]);
 assert.deepEqual(orphan, [], 'articles without keyword or category hit should stay untagged');
 
-assert.ok(articlePainPoints.matchArticlePainPoints(articles[2]).length, 'nutrition articles should match through category fallback');
+// 宽泛分类不再兜底：只有行为习惯/认知发展分类、正文无关键词的文章不应被打上痛点标签
+['called_no_response', 'distracted_during_task', 'sleep_resistance', 'unclear_speech', 'body_adaptation']
+  .forEach(function(key) {
+    assert.deepEqual(
+      articlePainPoints.getPainPointTag(key).articleCategories,
+      [],
+      key + ' should not fall back to a broad category'
+    );
+  });
+assert.deepEqual(articlePainPoints.matchArticlePainPoints(articles[6]), [],
+  '行为习惯 articles without keywords should stay untagged');
+assert.deepEqual(articlePainPoints.matchArticlePainPoints(articles[7]), [],
+  '认知发展 articles without keywords should stay untagged');
+
+assert.ok(articlePainPoints.matchArticlePainPoints(articles[2]).length,
+  'nutrition articles should match through keyword');
+assert.ok(articlePainPoints.matchArticlePainPoints(articles[8]).some(function(tag) {
+  return tag.key === 'picky_eating';
+}), 'near-synonymous category fallback should still apply for picky eating');
 
 console.log('Article pain point tag tests passed.');

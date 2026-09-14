@@ -1,18 +1,19 @@
 // 家长痛点标签：由文章文本与分类在查询期派生，不写入数据库。
+// 分类兜底只保留与痛点近乎同义、实测漂移极低的分类；宽泛分类（如行为习惯、认知发展）会引入大量无关文章，仅靠关键词匹配。
 const PAIN_POINT_TAGS = Object.freeze([
   {
     key: 'called_no_response',
     label: '叫了几次像没听见',
     category: '做事与学习',
     keywords: ['叫不应', '没反应', '听不见', '不理人', '喊不动'],
-    articleCategories: ['行为习惯']
+    articleCategories: []
   },
   {
     key: 'distracted_during_task',
     label: '做事容易分心',
     category: '做事与学习',
     keywords: ['分心', '坐不住', '走神', '专注', '磨蹭', '拖延'],
-    articleCategories: ['行为习惯', '认知发展']
+    articleCategories: []
   },
   {
     key: 'cries_when_switching',
@@ -26,7 +27,7 @@ const PAIN_POINT_TAGS = Object.freeze([
     label: '说话说不清楚',
     category: '说话与表达',
     keywords: ['说不清', '表达', '语言', '复述', '词汇', '口齿'],
-    articleCategories: ['认知发展', '社交能力']
+    articleCategories: []
   },
   {
     key: 'cannot_play_together',
@@ -40,7 +41,7 @@ const PAIN_POINT_TAGS = Object.freeze([
     label: '睡前不肯睡',
     category: '身体与适应',
     keywords: ['睡前', '入睡', '睡眠', '作息', '洗漱'],
-    articleCategories: ['行为习惯']
+    articleCategories: []
   },
   {
     key: 'picky_eating',
@@ -51,10 +52,10 @@ const PAIN_POINT_TAGS = Object.freeze([
   },
   {
     key: 'body_adaptation',
-    label: '身体适应与安全',
+    label: '运动与安全',
     category: '身体与适应',
-    keywords: ['运动', '安全', '适应', '换季', '健康', '体能'],
-    articleCategories: ['营养健康']
+    keywords: ['运动', '体能', '户外', '换季', '身体不适', '摔倒', '磕碰', '受伤'],
+    articleCategories: []
   }
 ]);
 

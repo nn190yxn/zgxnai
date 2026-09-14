@@ -33,6 +33,7 @@ Page({
       sceneSearchEnabled: true,
       multimodalEnabled: true,
       paymentEnabled: false,
+      painPointCollectionEnabled: true,
       ageFirstCoreEnabled: true,
       configLoaded: false
     },

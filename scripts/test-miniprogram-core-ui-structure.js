@@ -152,6 +152,8 @@ assert.ok(appConfig.pages.indexOf('pages/parenting/pain-point-collection/index')
 assert.ok(home.includes('class="home-pain-point-entry"'), 'home should expose a pain point collection entry');
 assert.ok(home.includes('featureFlags.painPointCollectionEnabled'), 'home pain point entry should be gated by the collection flag');
 assert.ok(home.includes('bindtap="onPainPointCollectionTap"'), 'home pain point entry should open the collection page');
+assert.ok(homeScript.includes('painPointCollectionEnabled: true'),
+  'home initial feature flags should render the entry on first paint instead of waiting for runtime config');
 
 const developmentHome = read('miniprogram/pages/development/index/index.wxml');
 assert.ok(developmentHome.includes('class="pain-point-collection-entry"'), 'development page should expose a pain point collection entry');

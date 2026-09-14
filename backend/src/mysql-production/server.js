@@ -51,6 +51,7 @@ const CHAT_RATE_LIMIT_WINDOW_MS = Math.max(1000, Number(process.env.CHAT_RATE_LI
 const CHAT_RATE_LIMIT_MAX = Math.max(1, Number(process.env.CHAT_RATE_LIMIT_MAX || 12) || 12);
 const SCENE_TAGS_CACHE_TTL_MS = Math.max(1000, Number(process.env.SCENE_TAGS_CACHE_TTL_MS || 30000) || 30000);
 const PARENTING_ARTICLES_CACHE_TTL_MS = Math.max(1000, Number(process.env.PARENTING_ARTICLES_CACHE_TTL_MS || 30000) || 30000);
+const PARENTING_ARTICLES_CACHE_MAX_ENTRIES = Math.max(10, Number(process.env.PARENTING_ARTICLES_CACHE_MAX_ENTRIES || 500) || 500);
 const REQUEST_SLOW_LOG_MS = Math.max(100, Number(process.env.REQUEST_SLOW_LOG_MS || 800) || 800);
 const DB_POOL_CONNECTION_LIMIT = Math.max(1, Number(process.env.DB_POOL_CONNECTION_LIMIT || 20) || 20);
 const WECHAT_PAY_HOST = 'api.mch.weixin.qq.com';
@@ -687,7 +688,7 @@ function parseRuntimeListEnv(name) {
 
 function getRuntimeFeatureFlags(aiStatus) {
   const virtualPayEnabled = ['month', 'quarter', 'year'].some(isVirtualPayConfigured);
-  return {
+  const flags = {
     ai_chat_enabled: parseRuntimeBooleanEnv('RUNTIME_AI_CHAT_ENABLED', aiStatus.configured),
     assessments_enabled: parseRuntimeBooleanEnv('RUNTIME_ASSESSMENTS_ENABLED', true),
     education_enabled: parseRuntimeBooleanEnv('RUNTIME_EDUCATION_ENABLED', true),
@@ -705,6 +706,12 @@ function getRuntimeFeatureFlags(aiStatus) {
     ai_mock_fallback: parseRuntimeBooleanEnv('RUNTIME_AI_MOCK_FALLBACK', false),
     ...releaseProtection.getPublicFlags()
   };
+  // 痛点合集未显式配置时跟随远程内容开关，运维可单独下线而不影响其他远程内容
+  flags.pain_point_collection_enabled = parseRuntimeBooleanEnv(
+    'RUNTIME_PAIN_POINT_COLLECTION_ENABLED',
+    flags.miniprogram_remote_content_enabled
+  );
+  return flags;
 }
 
 function runtimeConfigHandler(req, res) {
@@ -731,6 +738,7 @@ function runtimeConfigHandler(req, res) {
     server_content_read_enabled: runtimeFlags.server_content_read_enabled,
     miniprogram_remote_content_enabled: runtimeFlags.miniprogram_remote_content_enabled,
     admin_content_write_enabled: runtimeFlags.admin_content_write_enabled,
+    pain_point_collection_enabled: runtimeFlags.pain_point_collection_enabled,
     startup_safe_mode: startupState.safeMode,
     ai_service_ready: aiStatus.configured,
     ai_provider: aiStatus.provider,
@@ -2992,6 +3000,13 @@ function getCachedParentingArticles(key) {
 }
 
 function setCachedParentingArticles(key, value) {
+  // 缓存键含用户可控的 keyword/pain_point_key，按 FIFO 限制总量，避免长期运行时无界增长
+  if (!parentingArticlesCache.has(key) && parentingArticlesCache.size >= PARENTING_ARTICLES_CACHE_MAX_ENTRIES) {
+    const oldestKey = parentingArticlesCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      parentingArticlesCache.delete(oldestKey);
+    }
+  }
   parentingArticlesCache.set(key, {
     expiresAt: Date.now() + PARENTING_ARTICLES_CACHE_TTL_MS,
     value

@@ -48,16 +48,18 @@ graph TD
 
 标签定义：
 
-| key | label | category | 关键词示例 | 关联文章分类 |
+| key | label | category | 关键词示例 | 分类兜底 |
 | --- | --- | --- | --- | --- |
-| `called_no_response` | 叫了几次像没听见 | 做事与学习 | 叫不应、没反应、听不见、不理 | 行为习惯 |
-| `distracted_during_task` | 做事容易分心 | 做事与学习 | 分心、坐不住、走神、专注、磨蹭 | 行为习惯、认知发展 |
+| `called_no_response` | 叫了几次像没听见 | 做事与学习 | 叫不应、没反应、听不见、不理 | 无 |
+| `distracted_during_task` | 做事容易分心 | 做事与学习 | 分心、坐不住、走神、专注、磨蹭 | 无 |
 | `cries_when_switching` | 换活动就哭闹 | 情绪与配合 | 哭闹、发脾气、情绪、分离焦虑、顶嘴 | 情绪管理 |
-| `unclear_speech` | 说话说不清楚 | 说话与表达 | 说不清、表达、语言、复述、词汇 | 认知发展、社交能力 |
+| `unclear_speech` | 说话说不清楚 | 说话与表达 | 说不清、表达、语言、复述、词汇 | 无 |
 | `cannot_play_together` | 不会和同伴相处 | 同伴与相处 | 同伴、冲突、抢、分享、一起玩 | 社交能力 |
-| `sleep_resistance` | 睡前不肯睡 | 身体与适应 | 睡前、入睡、睡眠、作息、洗漱 | 行为习惯 |
+| `sleep_resistance` | 睡前不肯睡 | 身体与适应 | 睡前、入睡、睡眠、作息、洗漱 | 无 |
 | `picky_eating` | 吃饭挑食磨蹭 | 身体与适应 | 挑食、吃饭、食欲、偏食、早餐 | 营养健康 |
-| `body_adaptation` | 身体适应与安全 | 身体与适应 | 运动、安全、适应、换季、健康 | 营养健康 |
+| `body_adaptation` | 运动与安全 | 身体与适应 | 运动、体能、户外、换季、身体不适、摔倒、磕碰、受伤 | 无 |
+
+分类兜底只保留与痛点近乎同义、实测漂移极低的分类（情绪管理、社交能力、营养健康）。宽泛分类（如行为习惯、认知发展）会引入大量无关文章，因此这些标签只做关键词匹配。多义词也不作为关键词：`叫他`/`喊他`/`不理` 会命中书籍章节，`适应`/`健康`/`安全` 会命中「入园适应」「认知健康」「安全感」。用生产全量 2800 篇文章做回归，收紧后各标签的分类兜底漂移从 96%/54%/26%/22% 降到 ≤1.7%。
 
 **`backend/src/mysql-production/server.js`（修改）**
 
@@ -97,7 +99,8 @@ graph TD
 
 **`miniprogram/utils/app-config.js`（修改）**
 
-- 增加 `painPointCollectionEnabled`，读取 `pain_point_collection_enabled`，默认回退到 `envConfig.enablePainPointCollection`。
+- 增加 `painPointCollectionEnabled`，读取 `pain_point_collection_enabled`，缺省时回退到 `envConfig.enablePainPointCollection`，再回退到 `miniprogram_remote_content_enabled`。
+- 后端 `runtimeConfigHandler` 输出 `pain_point_collection_enabled`，来源是环境变量 `RUNTIME_PAIN_POINT_COLLECTION_ENABLED`，未配置时跟随 `RUNTIME_MINIPROGRAM_REMOTE_CONTENT_ENABLED`。运维可以单独下线合集而不关闭其他远程内容。
 
 ## Data Models
 

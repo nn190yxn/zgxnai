@@ -11,6 +11,7 @@ test('release manifest includes transitive publication dependencies and admin as
     'backend/src/mysql-production/recipe-content.js',
     'backend/src/mysql-production/platform-routes.js',
     'backend/src/mysql-production/content-publishing.js',
+    'backend/src/mysql-production/article-pain-points.js',
     'backend/src/scripts/publish-due-content.js',
     'backend/src/nutrition-recipes.json',
     'admin-portal/index.html',

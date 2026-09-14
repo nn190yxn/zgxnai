@@ -64,6 +64,8 @@
 
 当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 11 个公网检查点通过，两个知识接口必须返回 200 且携带 `meta.schema_version: 1`，家长痛点标签目录接口必须返回 200 且每项包含 `key`、`label`、`category`。
 
+家长痛点合集支持独立下线：`RUNTIME_PAIN_POINT_COLLECTION_ENABLED` 未配置时跟随 `RUNTIME_MINIPROGRAM_REMOTE_CONTENT_ENABLED`，`/api/v1/runtime/config` 会输出解析后的 `pain_point_collection_enabled`，公网验收会校验该字段为布尔值。文章列表缓存新增容量上限环境变量 `PARENTING_ARTICLES_CACHE_MAX_ENTRIES`（默认 500，FIFO 淘汰）；改动 `RUNTIME_*` 后需 `pm2 restart niuniu-backend --update-env`。
+
 ## 回滚策略
 
 - PM2 回滚：停止并移除 `niuniu-backend`，不操作 `woying-backend`。
