@@ -133,12 +133,25 @@ function buildParentingRecommendation(child, now) {
   };
 }
 
+function decodeQueryValue(value) {
+  var text = String(value == null ? '' : value);
+  if (!text) {
+    return '';
+  }
+  try {
+    return decodeURIComponent(text);
+  } catch (err) {
+    return text;
+  }
+}
+
 function resolveArticleListInitialAgeFilter(options, ageList, recommendation) {
   options = options || {};
   ageList = Array.isArray(ageList) ? ageList : [];
   recommendation = recommendation || { ageGroup: '', label: '', fallback: '' };
   var explicitAgeGroup = String(options.age_group || options.ageGroup || options.age || '').trim();
-  var ageGroup = explicitAgeGroup ? decodeURIComponent(explicitAgeGroup) : recommendation.ageGroup;
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  var ageGroup = explicitAgeGroup ? decodeQueryValue(explicitAgeGroup) : recommendation.ageGroup;
   var ageIndex = ageList.findIndex(function(item) {
     return item && item.name === ageGroup;
   });

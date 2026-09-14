@@ -129,22 +129,42 @@ Page({
     return payload;
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue: function(value) {
+    var text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad: function(options) {
     options = options || {};
     // 处理传入的参数
     if (options.categoryId) {
-      this.setData({
-        currentCategory: parseInt(options.categoryId)
+      // 只接受目录里真实存在的分类，越界或非法值退回“全部”，避免读取 undefined 崩溃
+      var categoryId = parseInt(options.categoryId, 10);
+      var isKnownCategory = this.data.categoryList.some(function(item) {
+        return item && item.id === categoryId;
       });
+      if (isKnownCategory && categoryId > 0) {
+        this.setData({
+          currentCategory: categoryId
+        });
+      }
     }
     if (options.categoryName) {
       wx.setNavigationBarTitle({
-        title: decodeURIComponent(options.categoryName)
+        title: this.decodeQueryValue(options.categoryName)
       });
     }
     if (options.keyword) {
       this.setData({
-        keyword: decodeURIComponent(options.keyword)
+        keyword: this.decodeQueryValue(options.keyword)
       });
     }
     this.applyInitialAgeFilter(options);
