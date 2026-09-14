@@ -61,11 +61,17 @@ const PAIN_POINT_TAGS = Object.freeze([
 
 const MAX_TAGS_PER_ARTICLE = 3;
 const TEXT_FIELDS = ['title', 'summary', 'content', 'tags', 'sub_category'];
-// 书籍章节与拆条内容混在文章表里，标题像「…片段N」「第N步 …」「第N章 …」的内容不参与痛点标签与筛选。
-// 只用阿拉伯数字匹配序号，避免误伤「第一步」「迈出社交第一步」这类正常文章标题。
+// 书籍章节与拆条内容混在文章表里，以下标题形态不参与痛点标签与筛选：
+//   「…片段N」「第N步 …」「第N章 …」拆条标记；
+//   「 - 」书名/章节与正文分隔符，如「第二阶段 从病态模式到主动选择 - …」；
+//   前导序号加空格，如「65 摇晃宝宝」「09 大脑训练计划 塑造你的大脑」。
+// 只用阿拉伯数字匹配序号，避免误伤「第一步」「迈出社交第一步」这类正常文章标题；
+// 前导序号要求数字后跟空白，避免误伤「3岁孩子…」这类以数字开头的正常标题。
 // JS 与 SQL 复用同一个模式串，保证展示判定与下推筛选等价。
-const EXCLUDED_TITLE_PATTERN_SOURCE = '片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章';
+const EXCLUDED_TITLE_PATTERN_SOURCE = '片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章| - |^[0-9]+\\s';
 const EXCLUDED_TITLE_PATTERN = new RegExp(EXCLUDED_TITLE_PATTERN_SOURCE);
+// 整批导入、经核对不含正式手写内容的分类；这些分类下的文章全部不参与痛点标签与筛选。
+const EXCLUDED_CATEGORIES = Object.freeze(['家庭教育']);
 
 function listPainPointTags() {
   return PAIN_POINT_TAGS.map(function(tag) {
@@ -83,8 +89,11 @@ function isPainPointTagKey(key) {
 }
 
 function isPainPointEligible(article) {
-  const title = String((article || {}).title || '');
-  return !EXCLUDED_TITLE_PATTERN.test(title);
+  const source = article || {};
+  if (EXCLUDED_TITLE_PATTERN.test(String(source.title || ''))) {
+    return false;
+  }
+  return EXCLUDED_CATEGORIES.indexOf(String(source.category || '').trim()) === -1;
 }
 
 function buildArticleText(article) {
@@ -119,10 +128,13 @@ function matchArticlePainPoints(article) {
 
 // 与 isPainPointEligible 等价的 SQL 排除条件，供文章接口下推。
 function buildPainPointExclusion() {
-  return {
-    sql: 'NOT (COALESCE(title, \'\') REGEXP ?)',
-    params: [EXCLUDED_TITLE_PATTERN_SOURCE]
-  };
+  const params = [EXCLUDED_TITLE_PATTERN_SOURCE];
+  let sql = 'NOT (COALESCE(title, \'\') REGEXP ?)';
+  if (EXCLUDED_CATEGORIES.length) {
+    sql += ' AND COALESCE(category, \'\') NOT IN (' + EXCLUDED_CATEGORIES.map(function() { return '?'; }).join(', ') + ')';
+    params.push.apply(params, EXCLUDED_CATEGORIES);
+  }
+  return { sql: sql, params: params };
 }
 
 // 生成与 matchesTag 等价的 SQL 条件，供文章接口下推筛选。
@@ -156,5 +168,6 @@ module.exports = {
   matchArticlePainPoints: matchArticlePainPoints,
   buildPainPointFilter: buildPainPointFilter,
   isPainPointEligible: isPainPointEligible,
-  buildPainPointExclusion: buildPainPointExclusion
+  buildPainPointExclusion: buildPainPointExclusion,
+  EXCLUDED_CATEGORIES: EXCLUDED_CATEGORIES
 };

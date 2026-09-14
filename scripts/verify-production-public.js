@@ -44,7 +44,15 @@ function validatePainPointArticles(body) {
   if (body.success !== true || !Array.isArray(list) || list.length === 0) return false;
   return list.every((article) => {
     const title = String((article && article.title) || '');
-    return title.indexOf('片段') === -1 && !/第[\s\S]*章/.test(title);
+    const category = String((article && article.category) || '').trim();
+    // 与 article-pain-points.js 的 EXCLUDED_TITLE_PATTERN_SOURCE / EXCLUDED_CATEGORIES 对齐：
+    // 拆条标记、书名分隔符「 - 」、前导序号、以及整批导入分类都不得出现在合集结果里。
+    return title.indexOf('片段') === -1
+      && !/第[0-9]+\s*步/.test(title)
+      && !/第[0-9一二三四五六七八九十百]+章/.test(title)
+      && title.indexOf(' - ') === -1
+      && !/^[0-9]+\s/.test(title)
+      && category !== '家庭教育';
   });
 }
 

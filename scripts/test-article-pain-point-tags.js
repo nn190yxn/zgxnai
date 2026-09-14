@@ -105,6 +105,33 @@ const articles = [
     tags: '',
     sub_category: '',
     category: '认知健康'
+  },
+  {
+    id: 12,
+    title: '65 摇晃宝宝',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '营养健康'
+  },
+  {
+    id: 13,
+    title: '第二阶段 从病态模式到主动选择 - 我得想个办法',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '营养健康'
+  },
+  {
+    id: 14,
+    title: '睡前流程怎么安排，先固定起床时间',
+    summary: '运动能改善情绪。',
+    content: '每天运动三十分钟。',
+    tags: '运动',
+    sub_category: '',
+    category: '家庭教育'
   }
 ];
 
@@ -119,10 +146,13 @@ function evaluateFilter(filter, article, exclusion) {
   if (exclusion) {
     const title = String(article.title || '');
     const match = /REGEXP \?/.test(exclusion.sql);
-    const excluded = match
+    const titleExcluded = match
       ? new RegExp(exclusion.params[0]).test(title)
       : exclusion.params.some(function(param) { return likeToRegExp(param).test(title); });
-    if (excluded) return false;
+    const categoryExcluded = /category, ''\) NOT IN \(/.test(exclusion.sql)
+      ? exclusion.params.slice(1).indexOf(String(article.category || '').trim()) !== -1
+      : false;
+    if (titleExcluded || categoryExcluded) return false;
   }
   const tokens = [];
   const pattern = /(title|summary|content|tags|sub_category) LIKE \?|category IN \(([^)]*)\)/g;
@@ -202,6 +232,23 @@ assert.equal(articlePainPoints.isPainPointEligible({ title: '第9章 给治疗�
   'chapter book content is excluded');
 assert.equal(articlePainPoints.isPainPointEligible({ title: '10 个亲子游戏（片段2）' }), false,
   'fragment book content is excluded');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '第二阶段 从病态模式到主动选择 - 我得想个办法' }), false,
+  'dash-separated book prose is excluded');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '65 摇晃宝宝' }), false,
+  'leading numeric section marker is excluded');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '3岁孩子的分离焦虑怎么处理' }), true,
+  'titles starting with a number without whitespace stay eligible');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '家庭教育' }), false,
+  'import-only category is excluded even with a clean title');
+assert.equal(articlePainPoints.isPainPointEligible({ title: '睡前流程怎么安排', category: '行为习惯' }), true,
+  'canonical category with a clean title stays eligible');
+
+// 排除参数必须与 EXCLUDED_CATEGORIES 对齐，避免 SQL 与 JS 判定分叉
+const exclusionContract = articlePainPoints.buildPainPointExclusion();
+assert.equal(exclusionContract.params[0], '片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章| - |^[0-9]+\\s',
+  'exclusion should reuse a single shared title pattern');
+assert.deepEqual(exclusionContract.params.slice(1), Array.from(articlePainPoints.EXCLUDED_CATEGORIES),
+  'exclusion should push the excluded category list in order');
 
 articles.forEach(function(article) {
   const first = articlePainPoints.matchArticlePainPoints(article);

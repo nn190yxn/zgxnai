@@ -64,7 +64,7 @@
 
 当前线上版本核验使用 `npm run verify:production-baseline`，该模式允许两个已知知识接口返回 404。完成文件同步、迁移和 PM2 重启后执行 `npm run verify:production-public`，发布模式要求全部 12 个公网检查点通过：两个知识接口必须返回 200 且携带 `meta.schema_version: 1`，家长痛点标签目录接口必须返回 200 且每项包含 `key`、`label`、`category`，`/api/v1/runtime/config` 必须返回布尔型 `pain_point_collection_enabled`，`/parenting/articles?pain_point_key=body_adaptation` 的结果标题不得包含「片段」或「第…章」。
 
-家长痛点标签与筛选会排除书籍章节内容：文章标题匹配 `片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章` 时不参与标签派生，也不进入合集筛选。该模式串在 JS 与 SQL 两侧复用（SQL 用 `NOT (COALESCE(title, '') REGEXP ?)`），保证展示与筛选口径一致；只用阿拉伯数字匹配序号，避免误伤「迈出社交第一步」这类正常标题。生产 2800 篇中排除 964 篇。
+家长痛点标签与筛选会排除书籍导入内容：文章标题匹配 `片段|第[0-9]+步|第[0-9一二三四五六七八九十百]+章| - |^[0-9]+\s`，或分类属于 `EXCLUDED_CATEGORIES`（`家庭教育`，整批导入、经核对不含正式手写内容）时，不参与标签派生，也不进入合集筛选。标题模式串在 JS 与 SQL 两侧复用（SQL 用 `NOT (COALESCE(title, '') REGEXP ?) AND COALESCE(category, '') NOT IN (?...)`），保证展示与筛选口径一致；只用阿拉伯数字匹配序号，前导序号要求数字后跟空白，避免误伤「迈出社交第一步」「3岁孩子…」这类正常标题。生产 2800 篇中，旧模式排除 964 篇，新增形态与分类排除后再核减约 900 条命中，各合集首页均回到正式手写内容。
 
 家长痛点合集支持独立下线：`RUNTIME_PAIN_POINT_COLLECTION_ENABLED` 未配置时跟随 `RUNTIME_MINIPROGRAM_REMOTE_CONTENT_ENABLED`，`/api/v1/runtime/config` 会输出解析后的 `pain_point_collection_enabled`，公网验收会校验该字段为布尔值。文章列表缓存新增容量上限环境变量 `PARENTING_ARTICLES_CACHE_MAX_ENTRIES`（默认 500，FIFO 淘汰）；改动 `RUNTIME_*` 后需 `pm2 restart niuniu-backend --update-env`。
 
