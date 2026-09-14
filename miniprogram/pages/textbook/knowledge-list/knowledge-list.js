@@ -42,6 +42,19 @@ Page({
     }, 300);
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue: function(value) {
+    var text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad: function(options) {
     var that = this;
     options = options || {};
@@ -57,7 +70,7 @@ Page({
     });
     if (options.subjectName) {
       that.setData({
-        subjectName: decodeURIComponent(options.subjectName)
+        subjectName: that.decodeQueryValue(options.subjectName)
       });
     }
     if (options.grade) {

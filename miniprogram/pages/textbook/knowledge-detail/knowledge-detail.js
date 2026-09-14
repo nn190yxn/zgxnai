@@ -56,18 +56,31 @@ Page({
     return aliasMap[value] || value;
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue: function(value) {
+    var text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad: function(options) {
     var that = this;
 
     // 获取页面参数
     if (options.pointId) {
       that.setData({
-        pointId: that.normalizeReadingPointId(decodeURIComponent(options.pointId))
+        pointId: that.normalizeReadingPointId(that.decodeQueryValue(options.pointId))
       });
     }
     if (options.pointName) {
       that.setData({
-        pointName: decodeURIComponent(options.pointName)
+        pointName: that.decodeQueryValue(options.pointName)
       });
     }
     if (options.subjectCode) {
@@ -88,7 +101,7 @@ Page({
     }
     if (options.taskId) {
       that.setData({
-        pointId: that.normalizeReadingPointId(decodeURIComponent(options.taskId))
+        pointId: that.normalizeReadingPointId(that.decodeQueryValue(options.taskId))
       });
     }
 

@@ -197,6 +197,93 @@ function testDevelopmentDetail() {
   assert.equal(captured, '%', 'malformed pain point key should stay raw without throwing');
 }
 
+function loadPageWithGlobals(relativePath) {
+  let definition = null;
+  global.getApp = () => ({
+    getCurrentChild: () => null,
+    globalData: {},
+    buildParentingRecommendation: () => ({ ageGroup: '', label: '', fallback: '' }),
+    shouldUseMockFallback: () => false,
+    request: () => new Promise(() => {}),
+    trackKbEvent: () => {},
+    getRuntimeConfig: () => ({ configLoaded: true })
+  });
+  global.wx = {
+    navigateTo: () => {},
+    redirectTo: () => {},
+    navigateBack: () => {},
+    switchTab: () => {},
+    setNavigationBarTitle: () => {},
+    setStorageSync: () => {},
+    getStorageSync: () => '',
+    showToast: () => {},
+    stopPullDownRefresh: () => {},
+    showLoading: () => {},
+    hideLoading: () => {}
+  };
+  global.getCurrentPages = () => [{}];
+  global.Page = candidate => { definition = candidate; };
+  const modulePath = path.resolve(__dirname, '..', relativePath);
+  delete require.cache[require.resolve(modulePath)];
+  require(modulePath);
+  definition.data = JSON.parse(JSON.stringify(definition.data));
+  definition.setData = patch => Object.assign(definition.data, patch);
+  return definition;
+}
+
+// 其余分享入口共用同一防护：畸形 query 不抛错，合法 query 正常解码
+const shareEntries = [
+  {
+    file: 'miniprogram/pages/textbook/knowledge-detail/knowledge-detail.js',
+    malformed: { pointId: '%', pointName: '%', taskId: '%' },
+    valid: { pointName: encodeURIComponent('\u8bfe\u6587') },
+    field: 'pointName',
+    expected: '\u8bfe\u6587'
+  },
+  {
+    file: 'miniprogram/pages/textbook/knowledge-list/knowledge-list.js',
+    malformed: { subjectCode: 'math', subjectName: '%' },
+    valid: { subjectCode: 'math', subjectName: encodeURIComponent('\u6570\u5b66') },
+    field: 'subjectName',
+    expected: '\u6570\u5b66'
+  },
+  {
+    file: 'miniprogram/pages/development/scene/scene.js',
+    malformed: { ageGroup: '%' },
+    valid: { ageGroup: encodeURIComponent('4-5\u5c81') },
+    field: 'selectedAgeGroup',
+    expected: '4-5\u5c81'
+  },
+  {
+    file: 'miniprogram/pages/nutrition/recipe-detail/recipe-detail.js',
+    malformed: { id: '1', age_group: '%' },
+    valid: {},
+    field: null
+  },
+  {
+    file: 'miniprogram/pages/assessment/do/do.js',
+    malformed: { code: 'sample', ageGroup: '%' },
+    valid: {},
+    field: null
+  }
+];
+
+shareEntries.forEach(entry => {
+  const page = loadPageWithGlobals(entry.file);
+  const label = entry.file.split('/').pop();
+  assert.equal(page.decodeQueryValue(encodeURIComponent('\u7761\u7720')), '\u7761\u7720',
+    `${label} should decode a valid query value`);
+  assert.equal(page.decodeQueryValue('%'), '%',
+    `${label} should keep a malformed query value raw`);
+  assert.doesNotThrow(() => page.onLoad(entry.malformed),
+    `${label} onLoad should tolerate malformed query params`);
+  if (entry.field) {
+    page.onLoad(entry.valid);
+    assert.equal(page.data[entry.field], entry.expected,
+      `${label} onLoad should decode a valid query param into ${entry.field}`);
+  }
+});
+
 testArticleList();
 testRecipeList();
 testDevelopmentDetail();

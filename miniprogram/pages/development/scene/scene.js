@@ -21,10 +21,23 @@ Page({
     this.loadScene(options || {});
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue(value) {
+    const text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   loadScene(options) {
     var zoneCode = options && options.zone ? String(options.zone) : '';
     var scenarioCode = options && options.scenario ? String(options.scenario) : '';
-    var selectedAgeGroup = options && options.ageGroup ? decodeURIComponent(String(options.ageGroup)) : '';
+    var selectedAgeGroup = options && options.ageGroup ? this.decodeQueryValue(String(options.ageGroup)) : '';
     var validAgeGroup = developmentZones.isDevelopmentAgeGroup(selectedAgeGroup) ? selectedAgeGroup : '';
     var zone = developmentZones.getDevelopmentZoneByCode(zoneCode);
     var scenario = developmentZones.getDevelopmentScenario(zoneCode, scenarioCode);

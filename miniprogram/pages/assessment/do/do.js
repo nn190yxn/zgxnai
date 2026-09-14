@@ -213,11 +213,24 @@ Page({
     pendingNavigateTimer: null
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue: function(value) {
+    var text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad: function(options) {
     var that = this;
     var code = options.code;
     var isContinue = options.continue === '1';
-    var selectedAgeGroup = options.ageGroup ? decodeURIComponent(options.ageGroup) : '';
+    var selectedAgeGroup = options.ageGroup ? this.decodeQueryValue(options.ageGroup) : '';
 
     if (!code) {
       wx.showToast({

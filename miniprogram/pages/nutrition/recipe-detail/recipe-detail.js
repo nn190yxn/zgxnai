@@ -194,9 +194,22 @@ Page({
     return !!(recipe && recipe.ingredients && recipe.ingredients.length && recipe.nutrition);
   },
 
+  // 分享链接里的 query 可能被手工构造或损坏，避免 decodeURIComponent 抛错让页面白屏
+  decodeQueryValue: function(value) {
+    var text = String(value == null ? '' : value);
+    if (!text) {
+      return '';
+    }
+    try {
+      return decodeURIComponent(text);
+    } catch (err) {
+      return text;
+    }
+  },
+
   onLoad: function(options) {
     var recipeId = options && options.id;
-    var selectedAgeGroup = options && (options.age_group || options.ageGroup || options.age) ? decodeURIComponent(options.age_group || options.ageGroup || options.age) : '';
+    var selectedAgeGroup = options && (options.age_group || options.ageGroup || options.age) ? this.decodeQueryValue(options.age_group || options.ageGroup || options.age) : '';
     if (!recipeId) {
       this.setData({
         loading: false,
