@@ -28,12 +28,43 @@ Page({
       featureEnabled: featureEnabled
     });
     if (!featureEnabled) {
+      // 冷启动或分享直达时运行时配置可能还没到，等配置回来再判断一次
+      if (this.shouldAwaitRuntimeConfig()) {
+        this.setData({
+          featureEnabled: true,
+          loadState: 'loading'
+        });
+        this.recheckFeatureAfterConfig();
+        return;
+      }
       this.setData({
         loadState: 'disabled'
       });
       return;
     }
     this.loadCatalogs();
+  },
+
+  shouldAwaitRuntimeConfig: function() {
+    var config = app.getRuntimeConfig ? app.getRuntimeConfig() : null;
+    return !!(app.loadRuntimeConfig && app.globalData && app.globalData.enableRuntimeConfigFetch && (!config || !config.configLoaded));
+  },
+
+  recheckFeatureAfterConfig: function() {
+    var that = this;
+    app.loadRuntimeConfig().then(function() {
+      if (that._unloaded) return;
+      var enabled = appConfig.isFeatureEnabled(app, 'painPointCollection');
+      that.setData({ featureEnabled: enabled });
+      if (enabled) {
+        that.loadCatalogs();
+        return;
+      }
+      that.setData({ loadState: 'disabled' });
+    }).catch(function() {
+      if (that._unloaded) return;
+      that.setData({ featureEnabled: false, loadState: 'disabled' });
+    });
   },
 
   decodeQueryValue: function(value) {

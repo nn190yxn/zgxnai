@@ -19,6 +19,9 @@ function createPage(options) {
   const events = { toasts: [], navigations: [], stops: 0, tracks: [] };
   let page;
   const app = {
+    globalData: { enableRuntimeConfigFetch: !!(options && options.awaitRuntimeConfig) },
+    getRuntimeConfig: () => (options && options.runtimeConfig) || { configLoaded: true },
+    loadRuntimeConfig: () => (options && options.runtimeConfigPromise ? options.runtimeConfigPromise() : Promise.resolve()),
     request: requestOptions => new Promise((resolve, reject) => {
       requests.push({ url: requestOptions.url, params: requestOptions.data || {}, resolve, reject });
     }),
@@ -30,7 +33,11 @@ function createPage(options) {
     getApp: () => app,
     require: name => {
       assert.equal(name, '../../../utils/app-config.js');
-      return { isFeatureEnabled: () => options && options.enabled === false ? false : true };
+      return {
+        isFeatureEnabled: options && typeof options.isFeatureEnabled === 'function'
+          ? options.isFeatureEnabled
+          : () => (options && options.enabled === false ? false : true)
+      };
     },
     Page: definition => { page = definition; },
     wx: {
@@ -210,6 +217,32 @@ async function main() {
     const context = createPage({ enabled: false });
     assert.equal(context.requests.length, 0);
     assert.equal(context.page.data.loadState, 'disabled');
+  }
+
+  {
+    let featureChecks = 0;
+    const context = createPage({
+      awaitRuntimeConfig: true,
+      runtimeConfig: { configLoaded: false },
+      isFeatureEnabled: () => { featureChecks += 1; return featureChecks > 1; }
+    });
+    assert.equal(context.page.data.loadState, 'loading', 'collection should wait for runtime config before declaring itself disabled');
+    assert.equal(context.requests.length, 0);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(context.requests.length, 1);
+    assert.equal(context.requests[0].url, '/pain-point-tags', 'collection should load once runtime config confirms the feature');
+    assert.equal(context.page.data.featureEnabled, true);
+  }
+
+  {
+    const context = createPage({
+      awaitRuntimeConfig: true,
+      runtimeConfig: { configLoaded: false },
+      isFeatureEnabled: () => false
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(context.requests.length, 0);
+    assert.equal(context.page.data.loadState, 'disabled', 'collection should stay disabled when runtime config rejects the feature');
   }
 
   console.log('Pain point collection page: all cases passed');
